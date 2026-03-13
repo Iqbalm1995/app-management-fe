@@ -36,13 +36,20 @@ import {
   Heading,
   IconButton,
   useDisclosure,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  Collapse,
 } from "@chakra-ui/react";
 import { radiusStyle, RES_CODE_OK, BAISC_POINT_EV_OPT, TIMELESS_POINT_EV_OPT, EXTRA_POINT_EV_OPT, TYPE_REQ, ALLOCATION_SECTION_POINTS } from "@/app/constants/applicationConstants";
-import { UserEvaluationReportListResponse, RptUserEvaluationReport } from "@/app/services/useReports";
+import { UserEvaluationReportListResponse, RptUserEvaluationReport, UserEvaluationReportLogResponse } from "@/app/services/useReports";
 import useReports from "@/app/services/useReports";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { ConfirmationDialog } from "@/app/components/confirmationDialog";
-import { FiUser, FiEdit3, FiFolder, FiFileText, FiTarget, FiCalendar, FiTrendingUp, FiInfo } from "react-icons/fi";
+import { FiUser, FiEdit3, FiFolder, FiFileText, FiTarget, FiCalendar, FiTrendingUp, FiInfo, FiClock, FiChevronDown, FiChevronUp } from "react-icons/fi";
 
 interface EvaluationAdjustModalProps {
   isOpen: boolean;
@@ -59,13 +66,19 @@ const EvaluationAdjustModal = ({
 }: EvaluationAdjustModalProps) => {
   const { colorMode } = useColorMode();
   const showToast = useToastHelper();
-  const { UpdateUserEvaluationReport, GetUserEvaluationReportById } = useReports();
+  const { UpdateUserEvaluationReport, GetUserEvaluationReportById, ListUserEvaluationReportLogs } = useReports();
 
   const [tokenData, setTokenData] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [openConfirmUpdate, setOpenConfirmUpdate] = useState(false);
   const [reportData, setReportData] = useState<RptUserEvaluationReport | null>(null);
+
+  // Audit log state
+  const [auditLogs, setAuditLogs] = useState<UserEvaluationReportLogResponse[]>([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+  const [showMoreLogs, setShowMoreLogs] = useState(false);
+  const [visibleLogsCount, setVisibleLogsCount] = useState(5);
 
   // Form state
   const [evBasicPoint, setEvBasicPoint] = useState<number>(0);
@@ -128,8 +141,107 @@ const EvaluationAdjustModal = ({
   useEffect(() => {
     if (isOpen && user && tokenData) {
       loadReportData();
+      loadAuditLogs();
     }
   }, [isOpen, user, tokenData]);
+
+  const loadAuditLogs = async () => {
+    if (!user?.id || !tokenData) return;
+    
+    setIsLoadingLogs(true);
+    try {
+      const payload = {
+        page: 0,
+        limit: 10,
+        search: "",
+        filterWhere: [],
+        fieldOrder: ["UpdatedAt"],
+        orderDir: "desc" as const,
+        reportEvaluationId: user.id,
+      };
+      
+      const response = await ListUserEvaluationReportLogs(payload, tokenData);
+      
+      if (response?.statusCode === RES_CODE_OK && response.data) {
+        setAuditLogs(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading audit logs:', error);
+    } finally {
+      setIsLoadingLogs(false);
+    }
+  };
+
+  const handleShowMoreLogs = () => {
+    if (showMoreLogs) {
+      setVisibleLogsCount(5);
+      setShowMoreLogs(false);
+    } else {
+      setVisibleLogsCount(auditLogs.length);
+      setShowMoreLogs(true);
+    }
+  };
+
+  // Helper function to safely parse JSON payload
+  const parseJsonPayload = (jsonString: string | null | undefined) => {
+    if (!jsonString) return null;
+    try {
+      const parsed = JSON.parse(jsonString);
+      return parsed;
+    } catch (error) {
+      return null;
+    }
+  };
+
+  // Helper function to format field names for display
+  const formatFieldName = (fieldName: string): string => {
+    const fieldMap: { [key: string]: string } = {
+      'EV_BASIC_POINT': 'Basic Point',
+      'EV_TIMELESS_POINT': 'Timeless Point', 
+      'EV_EXTRA_POINT': 'Extra Point',
+      'EV_TOTAL_POINT': 'Total Point',
+      'EV_GRAND_TOTAL': 'Grand Total'
+    };
+    return fieldMap[fieldName] || fieldName;
+  };
+
+  // Helper function to render before/after comparison
+  const renderComparison = (beforeData: any, afterData: any) => {
+    if (!beforeData || !afterData) {
+      return <Text fontSize="xs" color="gray.500">No changes data</Text>;
+    }
+    
+    const fields = ['EV_BASIC_POINT', 'EV_TIMELESS_POINT', 'EV_EXTRA_POINT', 'EV_TOTAL_POINT', 'EV_GRAND_TOTAL'];
+    
+    const changes = fields.map(field => {
+      const beforeValue = Number(beforeData[field] || 0);
+      const afterValue = Number(afterData[field] || 0);
+      const hasChanged = beforeValue !== afterValue;
+      
+      if (!hasChanged) return null;
+      
+      return (
+        <HStack key={field} justify="space-between" spacing={2}>
+          <Text fontWeight="medium" minW="80px">{formatFieldName(field)}:</Text>
+          <HStack spacing={2}>
+            <Text color="red.500" textDecoration="line-through">{beforeValue}</Text>
+            <Text color="gray.400">→</Text>
+            <Text color="green.500" fontWeight="medium">{afterValue}</Text>
+          </HStack>
+        </HStack>
+      );
+    }).filter(Boolean);
+
+    if (changes.length === 0) {
+      return <Text fontSize="xs" color="gray.500">No changes detected</Text>;
+    }
+
+    return (
+      <VStack align="stretch" spacing={2} fontSize="xs">
+        {changes}
+      </VStack>
+    );
+  };
 
   const loadReportData = async () => {
     if (!user?.id || !tokenData) return;
@@ -190,6 +302,8 @@ const EvaluationAdjustModal = ({
         });
         onSuccess();
         onClose();
+        // Reload audit logs after successful update
+        loadAuditLogs();
       } else {
         showToast({
           description: response?.message || "Failed to update evaluation points",
@@ -210,7 +324,7 @@ const EvaluationAdjustModal = ({
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose} size="6xl" closeOnOverlayClick={false}>
+      <Modal isOpen={isOpen} onClose={onClose} size="6xl" closeOnOverlayClick={false} scrollBehavior={"inside"}>
         <ModalOverlay backdropFilter="blur(4px)" />
         <ModalContent>
           <ModalHeader>
@@ -243,7 +357,7 @@ const EvaluationAdjustModal = ({
                   </Text>
                 </Alert>
 
-                <Grid templateColumns="1fr 1fr" gap={6}>
+                <Grid templateColumns="1.2fr 0.8fr" gap={6}>
                   {/* Left Column - Context Information */}
                   <GridItem>
                     <VStack spacing={4} align="stretch">
@@ -364,6 +478,96 @@ const EvaluationAdjustModal = ({
                                 <Badge colorScheme="purple">{user?.monthPeriod}</Badge>
                               </HStack>
                             </VStack>
+                          </VStack>
+                        </CardBody>
+                      </Card>
+
+                      {/* Audit Log Card */}
+                      <Card
+                        shadow="sm"
+                        rounded={radiusStyle}
+                        border="1px"
+                        borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                      >
+                        <CardBody>
+                          <VStack align="stretch" spacing={4}>
+                            <HStack spacing={3}>
+                              <Icon as={FiClock} color="orange.500" boxSize={5} />
+                              <Heading size="sm">Change History</Heading>
+                              {auditLogs.length > 0 && (
+                                <Badge colorScheme="orange" variant="subtle">
+                                  {auditLogs.length} changes
+                                </Badge>
+                              )}
+                            </HStack>
+                            
+                            {isLoadingLogs ? (
+                              <HStack justify="center" py={4}>
+                                <Spinner size="sm" color="orange.500" />
+                                <Text fontSize="sm" color="gray.500">Loading history...</Text>
+                              </HStack>
+                            ) : auditLogs.length === 0 ? (
+                              <Text fontSize="sm" color="gray.500" textAlign="center" py={4}>
+                                No changes recorded yet
+                              </Text>
+                            ) : (
+                              <VStack align="stretch" spacing={0}>
+                                <Table variant="simple" size="sm">
+                                  <Thead>
+                                    <Tr>
+                                      <Th fontSize="xs" color="gray.600" px={2} py={2}>Changed By</Th>
+                                      <Th fontSize="xs" color="gray.600" px={2} py={2}>Date</Th>
+                                      <Th fontSize="xs" color="gray.600" px={2} py={2}>Changes</Th>
+                                    </Tr>
+                                  </Thead>
+                                  <Tbody>
+                                    {auditLogs.slice(0, visibleLogsCount).map((log, index) => {
+                                      const beforeData = parseJsonPayload(log.jsonPayloadOnload);
+                                      const afterData = parseJsonPayload(log.jsonPayloadChangeTo);
+                                      
+                                      return (
+                                        <Tr key={log.id}>
+                                          <Td fontSize="xs" px={2} py={2} verticalAlign="top">
+                                            <Text fontWeight="medium" noOfLines={1}>
+                                              {log.updatedByNama}
+                                            </Text>
+                                          </Td>
+                                          <Td fontSize="xs" px={2} py={2} color="gray.600" verticalAlign="top">
+                                            {new Date(log.updatedAt).toLocaleDateString('en-US', {
+                                              month: 'short',
+                                              day: 'numeric',
+                                              hour: '2-digit',
+                                              minute: '2-digit'
+                                            })}
+                                          </Td>
+                                          <Td fontSize="xs" px={2} py={2} verticalAlign="top">
+                                            {beforeData && afterData ? (
+                                              renderComparison(beforeData, afterData)
+                                            ) : (
+                                              <Text color="gray.500" fontSize="xs">No changes data</Text>
+                                            )}
+                                          </Td>
+                                        </Tr>
+                                      );
+                                    })}
+                                  </Tbody>
+                                </Table>
+                                
+                                {auditLogs.length > 5 && (
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    colorScheme="orange"
+                                    onClick={handleShowMoreLogs}
+                                    rightIcon={showMoreLogs ? <FiChevronUp /> : <FiChevronDown />}
+                                    fontSize="xs"
+                                    py={2}
+                                  >
+                                    {showMoreLogs ? 'Show Less' : `Show ${auditLogs.length - 5} More`}
+                                  </Button>
+                                )}
+                              </VStack>
+                            )}
                           </VStack>
                         </CardBody>
                       </Card>

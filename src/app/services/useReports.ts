@@ -342,6 +342,16 @@ export interface DivisionPerformanceResponse {
   monthPeriod: string;
 }
 
+export interface UserEvaluationReportLogResponse {
+  id: string;
+  updatedByUserId: string;
+  updatedByNama: string;
+  updatedAt: string;
+  jsonPayloadOnload?: string | null;
+  jsonPayloadChangeTo?: string | null;
+  reportEvaluationId: string;
+}
+
 export interface UserEvaluationSnapshotResponse {
   message: string;
   snapshotTime: string;
@@ -416,6 +426,13 @@ interface useReportsServices {
     id: string,
     token: string,
   ) => Promise<ApiGenericResponse<RptUserEvaluationReport | null> | null>;
+
+  ListUserEvaluationReportLogs: (
+    payload: PaggingListPayloadCustom,
+    token: string,
+  ) => Promise<ApiGenericResponse<
+    UserEvaluationReportLogResponse[] | null
+  > | null>;
 
   ExportUserEvaluationReportExcel: (
     data: UserEvaluationReportListResponse[],
@@ -1482,6 +1499,42 @@ const useReports = (): useReportsServices => {
     }
   };
 
+  const ListUserEvaluationReportLogs = async (
+    payload: PaggingListPayloadCustom,
+    token: string,
+  ): Promise<ApiGenericResponse<UserEvaluationReportLogResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC,
+    );
+    const PathEndpoint: string = `/v1/Report/list-user-evaluation-report-logs`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<UserEvaluationReportLogResponse[] | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request.",
+        );
+        return errorResponse;
+      } else {
+        setError("An unexpected error occurred.");
+        return null;
+      }
+    }
+  };
+
   const ExportUserEvaluationReportExcel = async (
     data: UserEvaluationReportListResponse[],
   ): Promise<Blob | null> => {
@@ -1591,6 +1644,7 @@ const useReports = (): useReportsServices => {
     ListUserEvaluationReport,
     UpdateUserEvaluationReport,
     GetUserEvaluationReportById,
+    ListUserEvaluationReportLogs,
     ExportUserEvaluationReportExcel,
 
     isLoading,

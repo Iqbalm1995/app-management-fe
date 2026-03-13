@@ -54,6 +54,7 @@ export interface PaggingListPayloadCustom {
   backlogId?: string | null;
   projectType?: string | null;
   requirementType?: string | null;
+  reportEvaluationId?: string | null;
   limit: number;
   page: number;
   filterWhere: ListSearchByParam[];
