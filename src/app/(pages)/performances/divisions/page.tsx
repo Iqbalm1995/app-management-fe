@@ -25,7 +25,10 @@ import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useReports, {
   UserEvaluationReportListResponse,
 } from "@/app/services/useReports";
-import { PROJECT_STATUS_OPTIONS } from "@/app/constants/masterStatusConstants";
+import {
+  PROJECT_ACTIVE_STATUS_OPTIONS,
+  PROJECT_CLOSE_STATUS_OPTIONS,
+} from "@/app/constants/masterStatusConstants";
 import useOrganization, {
   OrganizationResponse,
 } from "@/app/services/useOrganization";
@@ -62,6 +65,8 @@ import {
   getFacetedMinMaxValues,
   getFacetedUniqueValues,
   getFilteredRowModel,
+  getPaginationRowModel,
+  PaginationState,
   useReactTable,
 } from "@tanstack/react-table";
 import React, { useEffect, useMemo, useState } from "react";
@@ -209,10 +214,32 @@ function DivisionPerformancePage() {
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
 
+  const [totalPages, setTotalPageData] = useState<number>(0);
   const [globalFilter, setGlobalFilter] = useState<string>("");
+  const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 99999,
+  });
 
-  const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([]);
-  const [FilterProjectStatus, setFilterProjectStatus] = useState<string>("");
+  const pagination = useMemo(
+    () => ({
+      pageIndex,
+      pageSize,
+    }),
+    [pageIndex, pageSize],
+  );
+
+  const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([
+    // Default filter for Project Closed
+    {
+      field: "projectStatus",
+      operator: "=",
+      value: "PROJECT_CLOSED",
+      filterLabel: "Project Status",
+    },
+  ]);
+  const [FilterProjectStatus, setFilterProjectStatus] =
+    useState<string>("PROJECT_CLOSED");
   const [FilterManageGroup, setFilterManageGroup] = useState<string>("");
   const [FilterTeamCode, setFilterTeamCode] = useState<string>("");
   const [FilterUserName, setFilterUserName] = useState<string>("");
@@ -303,26 +330,28 @@ function DivisionPerformancePage() {
 
     try {
       // Get current filtered data from table
-      const filteredData = table.getFilteredRowModel().rows.map(row => row.original);
-      
+      const filteredData = table
+        .getFilteredRowModel()
+        .rows.map((row) => row.original);
+
       const blob = await ExportUserEvaluationReportExcel(filteredData);
-      
+
       if (blob) {
         // Create download link
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        
+
         // Generate filename with current date and filters
-        const currentDate = new Date().toISOString().split('T')[0];
+        const currentDate = new Date().toISOString().split("T")[0];
         const filename = `User_Evaluation_Report_${selectedYear}_Q${selectedQuarter}_${currentDate}.xlsx`;
         link.download = filename;
-        
+
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        
+
         showToast({
           description: "Excel file exported successfully",
           statusToast: "success",
@@ -353,58 +382,76 @@ function DivisionPerformancePage() {
   }, [TeamOptions, FilterManageGroup]);
 
   // Option mappings for chakra-react-select
-  const statusOptions = useMemo(() => 
-    PROJECT_STATUS_OPTIONS.map(status => ({
-      value: status.value,
-      label: status.label
-    })), []
+  const statusOptions = useMemo(
+    () => [
+      { value: "PROJECT_ACTIVE", label: "Project Active" },
+      { value: "PROJECT_CLOSED", label: "Project Closed" },
+    ],
+    [],
   );
 
-  const groupOptions = useMemo(() => 
-    GroupOptions.map(group => ({
-      value: group.orgCode,
-      label: group.orgName
-    })), [GroupOptions]
+  const groupOptions = useMemo(
+    () =>
+      GroupOptions.map((group) => ({
+        value: group.orgCode,
+        label: group.orgName,
+      })),
+    [GroupOptions],
   );
 
-  const teamOptions = useMemo(() => 
-    filteredTeams.map(team => ({
-      value: team.teamCode,
-      label: team.teamName
-    })), [filteredTeams]
+  const teamOptions = useMemo(
+    () =>
+      filteredTeams.map((team) => ({
+        value: team.teamCode,
+        label: team.teamName,
+      })),
+    [filteredTeams],
   );
 
-  const userOptions = useMemo(() => 
-    UserOptions.map(user => ({
-      value: user.userId,
-      label: `${user.nama} (${user.nip || user.userId})`
-    })), [UserOptions]
+  const userOptions = useMemo(
+    () =>
+      UserOptions.map((user) => ({
+        value: user.userId,
+        label: `${user.nama} (${user.nip || user.userId})`,
+      })),
+    [UserOptions],
   );
 
-  const yearOptions = useMemo(() => 
-    years.map(year => ({
-      value: year,
-      label: year.toString()
-    })), [years]
+  const yearOptions = useMemo(
+    () =>
+      years.map((year) => ({
+        value: year,
+        label: year.toString(),
+      })),
+    [years],
   );
 
-  const quarterOptions = useMemo(() => [
-    { value: 1, label: "Q1" },
-    { value: 2, label: "Q2" },
-    { value: 3, label: "Q3" },
-    { value: 4, label: "Q4" }
-  ], []);
+  const quarterOptions = useMemo(
+    () => [
+      { value: 1, label: "Q1" },
+      { value: 2, label: "Q2" },
+      { value: 3, label: "Q3" },
+      { value: 4, label: "Q4" },
+    ],
+    [],
+  );
 
-  const sortFieldOptions = useMemo(() => [
-    { value: "nama", label: "NAMA" },
-    { value: "usertotaltaskdone", label: "TOTAL TASK DONE" },
-    { value: "evgrandtotal", label: "GRAND TOTAL" }
-  ], []);
+  const sortFieldOptions = useMemo(
+    () => [
+      { value: "nama", label: "NAMA" },
+      { value: "usertotaltaskdone", label: "TOTAL TASK DONE" },
+      { value: "evgrandtotal", label: "GRAND TOTAL" },
+    ],
+    [],
+  );
 
-  const sortOrderOptions = useMemo(() => [
-    { value: "asc", label: "ASC" },
-    { value: "desc", label: "DESC" }
-  ], []);
+  const sortOrderOptions = useMemo(
+    () => [
+      { value: "asc", label: "ASC" },
+      { value: "desc", label: "DESC" },
+    ],
+    [],
+  );
 
   // Quarterly filter effect
   useEffect(() => {
@@ -439,7 +486,9 @@ function DivisionPerformancePage() {
         accessorKey: "numbData",
         cell: (info) => (
           <Flex justifyContent={"center"} alignItems="flex-start" h={"full"}>
-            <Text fontSize="sm">{info.row.index + 1}.</Text>
+            <Text fontSize="sm">
+              {pageIndex * pageSize + info.row.index + 1}.
+            </Text>
           </Flex>
         ),
         header: () => <Flex justifyContent={"center"}>No.</Flex>,
@@ -738,8 +787,8 @@ function DivisionPerformancePage() {
     if (DataAuth && tokenData) {
       const PayloadList: PaggingListPayloadCustom = {
         search: globalFilter,
-        limit: 10000, // Large number to get all records
-        page: 0,
+        limit: pageSize,
+        page: pageIndex,
         filterWhere: ParamFilter,
         fieldOrder: [sortField],
         orderDir: sortOrder as "asc" | "desc",
@@ -773,6 +822,7 @@ function DivisionPerformancePage() {
           const itemsData: UserEvaluationReportListResponse[] =
             requestData.data as UserEvaluationReportListResponse[];
           setDataReport(itemsData);
+          setTotalPageData(Math.ceil((requestData.countTotal || 0) / pageSize));
           setIsLoadingProcess(false);
         }
       };
@@ -786,19 +836,26 @@ function DivisionPerformancePage() {
     tokenData,
     sortField,
     sortOrder,
+    pageIndex,
+    pageSize,
   ]);
 
   const table = useReactTable({
     data: DataReport,
     columns: columnsData,
+    pageCount: totalPages,
     state: {
       globalFilter,
+      pagination,
     },
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
     onGlobalFilterChange: setGlobalFilter,
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
+    manualPagination: true,
     debugTable: false,
     manualFiltering: true,
   });
@@ -891,7 +948,11 @@ function DivisionPerformancePage() {
                     </Text>
                     <Select
                       placeholder="All Status"
-                      value={statusOptions.find(option => option.value === FilterProjectStatus) || null}
+                      value={
+                        statusOptions.find(
+                          (option) => option.value === FilterProjectStatus,
+                        ) || null
+                      }
                       onChange={(selectedOption) => {
                         const value = selectedOption?.value || "";
                         setFilterProjectStatus(value);
@@ -923,7 +984,11 @@ function DivisionPerformancePage() {
                     </Text>
                     <Select
                       placeholder="All Groups"
-                      value={groupOptions.find(option => option.value === FilterManageGroup) || null}
+                      value={
+                        groupOptions.find(
+                          (option) => option.value === FilterManageGroup,
+                        ) || null
+                      }
                       onChange={(selectedOption) => {
                         const value = selectedOption?.value || "";
                         setFilterManageGroup(value);
@@ -962,7 +1027,11 @@ function DivisionPerformancePage() {
                     </Text>
                     <Select
                       placeholder="All Teams"
-                      value={teamOptions.find(option => option.value === FilterTeamCode) || null}
+                      value={
+                        teamOptions.find(
+                          (option) => option.value === FilterTeamCode,
+                        ) || null
+                      }
                       onChange={(selectedOption) => {
                         const value = selectedOption?.value || "";
                         setFilterTeamCode(value);
@@ -1001,7 +1070,11 @@ function DivisionPerformancePage() {
                     </Text>
                     <Select
                       placeholder="All Users"
-                      value={userOptions.find(option => option.value === FilterUserName) || null}
+                      value={
+                        userOptions.find(
+                          (option) => option.value === FilterUserName,
+                        ) || null
+                      }
                       onChange={(selectedOption) => {
                         const value = selectedOption?.value || "";
                         setFilterUserName(value);
@@ -1117,8 +1190,14 @@ function DivisionPerformancePage() {
                           Sort by:
                         </Text>
                         <Select
-                          value={sortFieldOptions.find(option => option.value === sortField) || null}
-                          onChange={(selectedOption) => setSortField(selectedOption?.value || "nama")}
+                          value={
+                            sortFieldOptions.find(
+                              (option) => option.value === sortField,
+                            ) || null
+                          }
+                          onChange={(selectedOption) =>
+                            setSortField(selectedOption?.value || "nama")
+                          }
                           options={sortFieldOptions}
                           size="sm"
                           chakraStyles={{
@@ -1130,8 +1209,14 @@ function DivisionPerformancePage() {
                           }}
                         />
                         <Select
-                          value={sortOrderOptions.find(option => option.value === sortOrder) || null}
-                          onChange={(selectedOption) => setSortOrder(selectedOption?.value || "asc")}
+                          value={
+                            sortOrderOptions.find(
+                              (option) => option.value === sortOrder,
+                            ) || null
+                          }
+                          onChange={(selectedOption) =>
+                            setSortOrder(selectedOption?.value || "asc")
+                          }
                           options={sortOrderOptions}
                           size="sm"
                           chakraStyles={{

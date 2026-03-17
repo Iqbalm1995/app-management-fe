@@ -58,14 +58,10 @@ export const PROJECT_ONGOING = [
   "INITIATING",
   "RUNNING",
   "TEMPORARY CLOSED",
-  "CLOSED",
   "ON HOLD",
 ];
 
-export const PROJECT_DONE = [
-  "CANCELED",
-  "COMPLETED",
-];
+export const PROJECT_DONE = ["CANCELED", "COMPLETED", "CLOSED"];
 
 // PROJECT DEVELOPMENT STATUSES
 export const PRO_DEV_STATUS_NOT_STARTED = "NOT STARTED";
@@ -160,7 +156,7 @@ export const PROJECT_STATUS_OPTIONS: StatusOption[] = PROJECT_STATUSES.map(
     value: status,
     label: status,
     colorScheme: getStatusColor(status),
-  })
+  }),
 );
 
 export const PROJECT_DEVELOPMENT_STATUS_OPTIONS: StatusOption[] =
@@ -171,18 +167,17 @@ export const PROJECT_DEVELOPMENT_STATUS_OPTIONS: StatusOption[] =
   }));
 
 // PROJECT STATUS GROUP OPTIONS
-export const PROJECT_ACTIVE_STATUS_OPTIONS: StatusOption[] = PROJECT_ONGOING.map(
-  (status) => ({
+export const PROJECT_ACTIVE_STATUS_OPTIONS: StatusOption[] =
+  PROJECT_ONGOING.map((status) => ({
     value: status,
     label: status,
     colorScheme: getStatusColor(status),
-  })
-);
+  }));
 
 export const PROJECT_CLOSE_STATUS_OPTIONS: StatusOption[] = PROJECT_DONE.map(
   (status) => ({
     value: status,
     label: status,
     colorScheme: getStatusColor(status),
-  })
+  }),
 );
