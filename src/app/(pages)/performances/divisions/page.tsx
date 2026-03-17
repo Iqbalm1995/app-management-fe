@@ -30,6 +30,7 @@ import useOrganization, {
   OrganizationResponse,
 } from "@/app/services/useOrganization";
 import useTeams, { TeamsResponse } from "@/app/services/useTeams";
+import useUsers, { UsersResponse } from "@/app/services/useUsers";
 import {
   addParamFilterUpdate,
   ColumnMetaCustom,
@@ -49,11 +50,12 @@ import {
   Heading,
   HStack,
   Input,
-  Select,
+  Select as ChakraSelect,
   Stack,
   Text,
   useColorMode,
 } from "@chakra-ui/react";
+import { Select } from "chakra-react-select";
 import {
   ColumnDef,
   getCoreRowModel,
@@ -85,6 +87,7 @@ function DivisionPerformancePage() {
   } = useReports();
   const { List: ListOrganization } = useOrganization();
   const { List: ListTeams } = useTeams();
+  const { List: ListUsers } = useUsers();
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -171,6 +174,34 @@ function DivisionPerformancePage() {
     loadTeams();
   }, [tokenData]);
 
+  // Load users
+  useEffect(() => {
+    const loadUsers = async () => {
+      if (!tokenData) return;
+
+      try {
+        const response = await ListUsers(
+          {
+            search: "",
+            limit: 1000,
+            page: 0,
+            filterWhere: [],
+            fieldOrder: ["nama"],
+            orderDir: "asc",
+          } as PaggingListPayload,
+          tokenData,
+        );
+        if (response?.statusCode === RES_CODE_OK && response.data) {
+          setUserOptions(response.data);
+        }
+      } catch (error) {
+        console.error("Failed to load users:", error);
+      }
+    };
+
+    loadUsers();
+  }, [tokenData]);
+
   const [DataReport, setDataReport] = useState<
     UserEvaluationReportListResponse[]
   >([]);
@@ -184,8 +215,10 @@ function DivisionPerformancePage() {
   const [FilterProjectStatus, setFilterProjectStatus] = useState<string>("");
   const [FilterManageGroup, setFilterManageGroup] = useState<string>("");
   const [FilterTeamCode, setFilterTeamCode] = useState<string>("");
+  const [FilterUserName, setFilterUserName] = useState<string>("");
   const [GroupOptions, setGroupOptions] = useState<OrganizationResponse[]>([]);
   const [TeamOptions, setTeamOptions] = useState<TeamsResponse[]>([]);
+  const [UserOptions, setUserOptions] = useState<UsersResponse[]>([]);
 
   // Sorting state
   const [sortField, setSortField] = useState<string>("nama");
@@ -318,6 +351,60 @@ function DivisionPerformancePage() {
       (team) => team.orgGroupCode === FilterManageGroup,
     );
   }, [TeamOptions, FilterManageGroup]);
+
+  // Option mappings for chakra-react-select
+  const statusOptions = useMemo(() => 
+    PROJECT_STATUS_OPTIONS.map(status => ({
+      value: status.value,
+      label: status.label
+    })), []
+  );
+
+  const groupOptions = useMemo(() => 
+    GroupOptions.map(group => ({
+      value: group.orgCode,
+      label: group.orgName
+    })), [GroupOptions]
+  );
+
+  const teamOptions = useMemo(() => 
+    filteredTeams.map(team => ({
+      value: team.teamCode,
+      label: team.teamName
+    })), [filteredTeams]
+  );
+
+  const userOptions = useMemo(() => 
+    UserOptions.map(user => ({
+      value: user.userId,
+      label: `${user.nama} (${user.nip || user.userId})`
+    })), [UserOptions]
+  );
+
+  const yearOptions = useMemo(() => 
+    years.map(year => ({
+      value: year,
+      label: year.toString()
+    })), [years]
+  );
+
+  const quarterOptions = useMemo(() => [
+    { value: 1, label: "Q1" },
+    { value: 2, label: "Q2" },
+    { value: 3, label: "Q3" },
+    { value: 4, label: "Q4" }
+  ], []);
+
+  const sortFieldOptions = useMemo(() => [
+    { value: "nama", label: "NAMA" },
+    { value: "usertotaltaskdone", label: "TOTAL TASK DONE" },
+    { value: "evgrandtotal", label: "GRAND TOTAL" }
+  ], []);
+
+  const sortOrderOptions = useMemo(() => [
+    { value: "asc", label: "ASC" },
+    { value: "desc", label: "DESC" }
+  ], []);
 
   // Quarterly filter effect
   useEffect(() => {
@@ -754,7 +841,7 @@ function DivisionPerformancePage() {
                     <Text fontWeight={600} minW="fit-content">
                       Period:
                     </Text>
-                    <Select
+                    <ChakraSelect
                       value={selectedYear}
                       size={"md"}
                       onChange={(e) => setSelectedYear(Number(e.target.value))}
@@ -766,8 +853,8 @@ function DivisionPerformancePage() {
                           {year}
                         </option>
                       ))}
-                    </Select>
-                    <Select
+                    </ChakraSelect>
+                    <ChakraSelect
                       value={selectedQuarter}
                       size={"md"}
                       onChange={(e) =>
@@ -780,7 +867,7 @@ function DivisionPerformancePage() {
                       <option value="2">Q2</option>
                       <option value="3">Q3</option>
                       <option value="4">Q4</option>
-                    </Select>
+                    </ChakraSelect>
                   </Flex>
                 </GridItem>
                 <GridItem colSpan={{ base: 12, lg: 4 }}>
@@ -804,26 +891,29 @@ function DivisionPerformancePage() {
                     </Text>
                     <Select
                       placeholder="All Status"
-                      value={FilterProjectStatus}
-                      onChange={(e) => {
-                        setFilterProjectStatus(e.target.value);
+                      value={statusOptions.find(option => option.value === FilterProjectStatus) || null}
+                      onChange={(selectedOption) => {
+                        const value = selectedOption?.value || "";
+                        setFilterProjectStatus(value);
                         const newFilters = addParamFilterUpdate(ParamFilter, {
                           field: "projectStatus",
-                          value: e.target.value,
+                          value: value,
                           operator: "=",
                           filterLabel: "Project Status",
                         });
                         handleFilterChange(newFilters);
                       }}
+                      options={statusOptions}
                       size="md"
-                      bgColor={colorMode == "light" ? "white" : "gray.800"}
-                    >
-                      {PROJECT_STATUS_OPTIONS.map((status) => (
-                        <option key={status.value} value={status.value}>
-                          {status.label}
-                        </option>
-                      ))}
-                    </Select>
+                      chakraStyles={{
+                        container: (provided) => ({
+                          ...provided,
+                          width: "100%",
+                          bg: colorMode == "light" ? "white" : "gray.800",
+                        }),
+                      }}
+                      isClearable
+                    />
                   </Flex>
                 </GridItem>
                 <GridItem colSpan={{ base: 12, lg: 3 }}>
@@ -833,33 +923,36 @@ function DivisionPerformancePage() {
                     </Text>
                     <Select
                       placeholder="All Groups"
-                      value={FilterManageGroup}
-                      onChange={(e) => {
-                        setFilterManageGroup(e.target.value);
+                      value={groupOptions.find(option => option.value === FilterManageGroup) || null}
+                      onChange={(selectedOption) => {
+                        const value = selectedOption?.value || "";
+                        setFilterManageGroup(value);
                         setFilterTeamCode("");
 
                         let newFilters = ParamFilter.filter(
                           (f) => f.field !== "userOrgGroupCode",
                         );
-                        if (e.target.value) {
+                        if (value) {
                           newFilters = addParamFilterUpdate(newFilters, {
                             field: "userOrgGroupCode",
-                            value: e.target.value,
+                            value: value,
                             operator: "=",
                             filterLabel: "User Group",
                           });
                         }
                         handleFilterChange(newFilters);
                       }}
+                      options={groupOptions}
                       size="md"
-                      bgColor={colorMode == "light" ? "white" : "gray.800"}
-                    >
-                      {GroupOptions.map((group) => (
-                        <option key={group.id} value={group.orgCode}>
-                          {group.orgName}
-                        </option>
-                      ))}
-                    </Select>
+                      chakraStyles={{
+                        container: (provided) => ({
+                          ...provided,
+                          width: "100%",
+                          bg: colorMode == "light" ? "white" : "gray.800",
+                        }),
+                      }}
+                      isClearable
+                    />
                   </Flex>
                 </GridItem>
                 <GridItem colSpan={{ base: 12, lg: 3 }}>
@@ -869,33 +962,75 @@ function DivisionPerformancePage() {
                     </Text>
                     <Select
                       placeholder="All Teams"
-                      value={FilterTeamCode}
-                      onChange={(e) => {
-                        setFilterTeamCode(e.target.value);
+                      value={teamOptions.find(option => option.value === FilterTeamCode) || null}
+                      onChange={(selectedOption) => {
+                        const value = selectedOption?.value || "";
+                        setFilterTeamCode(value);
 
                         let newFilters = ParamFilter.filter(
                           (f) => f.field !== "userTeamCode",
                         );
-                        if (e.target.value) {
+                        if (value) {
                           newFilters = addParamFilterUpdate(newFilters, {
                             field: "userTeamCode",
-                            value: e.target.value,
+                            value: value,
                             operator: "=",
                             filterLabel: "User Team",
                           });
                         }
                         handleFilterChange(newFilters);
                       }}
+                      options={teamOptions}
                       size="md"
-                      bgColor={colorMode == "light" ? "white" : "gray.800"}
+                      chakraStyles={{
+                        container: (provided) => ({
+                          ...provided,
+                          width: "100%",
+                          bg: colorMode == "light" ? "white" : "gray.800",
+                        }),
+                      }}
                       isDisabled={!FilterManageGroup}
-                    >
-                      {filteredTeams.map((team) => (
-                        <option key={team.id} value={team.teamCode}>
-                          {team.teamName}
-                        </option>
-                      ))}
-                    </Select>
+                      isClearable
+                    />
+                  </Flex>
+                </GridItem>
+                <GridItem colSpan={{ base: 12, lg: 3 }}>
+                  <Flex alignItems={"center"} gap={3}>
+                    <Text fontWeight={600} minW="fit-content">
+                      Nama:
+                    </Text>
+                    <Select
+                      placeholder="All Users"
+                      value={userOptions.find(option => option.value === FilterUserName) || null}
+                      onChange={(selectedOption) => {
+                        const value = selectedOption?.value || "";
+                        setFilterUserName(value);
+
+                        let newFilters = ParamFilter.filter(
+                          (f) => f.field !== "userId",
+                        );
+                        if (value) {
+                          newFilters = addParamFilterUpdate(newFilters, {
+                            field: "userId",
+                            value: value,
+                            operator: "=",
+                            filterLabel: "User Name",
+                          });
+                        }
+                        handleFilterChange(newFilters);
+                      }}
+                      options={userOptions}
+                      size="md"
+                      chakraStyles={{
+                        container: (provided) => ({
+                          ...provided,
+                          width: "100%",
+                          bg: colorMode == "light" ? "white" : "gray.800",
+                        }),
+                      }}
+                      isClearable
+                      isSearchable
+                    />
                   </Flex>
                 </GridItem>
               </Grid>
@@ -982,28 +1117,31 @@ function DivisionPerformancePage() {
                           Sort by:
                         </Text>
                         <Select
-                          value={sortField}
-                          onChange={(e) => setSortField(e.target.value)}
+                          value={sortFieldOptions.find(option => option.value === sortField) || null}
+                          onChange={(selectedOption) => setSortField(selectedOption?.value || "nama")}
+                          options={sortFieldOptions}
                           size="sm"
-                          w="180px"
-                          bgColor={colorMode == "light" ? "white" : "gray.800"}
-                        >
-                          <option value="nama">NAMA</option>
-                          <option value="usertotaltaskdone">
-                            TOTAL TASK DONE
-                          </option>
-                          <option value="evgrandtotal">GRAND TOTAL</option>
-                        </Select>
+                          chakraStyles={{
+                            container: (provided) => ({
+                              ...provided,
+                              width: "180px",
+                              bg: colorMode == "light" ? "white" : "gray.800",
+                            }),
+                          }}
+                        />
                         <Select
-                          value={sortOrder}
-                          onChange={(e) => setSortOrder(e.target.value)}
+                          value={sortOrderOptions.find(option => option.value === sortOrder) || null}
+                          onChange={(selectedOption) => setSortOrder(selectedOption?.value || "asc")}
+                          options={sortOrderOptions}
                           size="sm"
-                          w="80px"
-                          bgColor={colorMode == "light" ? "white" : "gray.800"}
-                        >
-                          <option value="asc">ASC</option>
-                          <option value="desc">DESC</option>
-                        </Select>
+                          chakraStyles={{
+                            container: (provided) => ({
+                              ...provided,
+                              width: "80px",
+                              bg: colorMode == "light" ? "white" : "gray.800",
+                            }),
+                          }}
+                        />
                       </Flex>
                     </Flex>
                     <TableComponentWithFilterCTX

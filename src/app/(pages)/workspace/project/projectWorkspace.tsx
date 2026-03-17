@@ -4385,7 +4385,7 @@ function ProjectWorkspaceView({
       };
       LoadRequirementData();
     }
-  }, [DataProject?.reqParentId, tokenData, GetRequirementDetail]);
+  }, [DataProject?.reqParentId, tokenData]);
 
   // Refresh Project Tasks (triggered by RefreshData changes after initialization)
   useEffect(() => {
