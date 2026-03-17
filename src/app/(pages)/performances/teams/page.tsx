@@ -71,14 +71,15 @@ import {
 } from "@tanstack/react-table";
 import React, { useEffect, useMemo, useState } from "react";
 import { FiRefreshCcw, FiCamera, FiEdit3, FiDownload } from "react-icons/fi";
+import { redirect } from "next/navigation";
 import EvaluationAdjustModal from "../shared/EvaluationAdjustModal";
 
 const HeaderDataContent: HeaderContentProps = {
-  titleName: "Division Performance Report",
-  breadCrumb: ["Home", "Performances", "Divisions"],
+  titleName: "Team Performance Report",
+  breadCrumb: ["Home", "Performances", "Teams"],
 };
 
-function DivisionPerformancePage() {
+function TeamPerformancePage() {
   // SetUp auth data on current page
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
@@ -103,7 +104,41 @@ function DivisionPerformancePage() {
         const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
         const UserData: AuthDataResponse =
           StorageAuth.dataLogin as AuthDataResponse;
+        
+        // Validate team data for teams page
+        if (!UserData?.team?.orgGroupCode || !UserData?.team?.teamCode) {
+          showToast({
+            description: "Current user login does not have the required team assignment to access this page",
+            statusToast: "warning",
+          });
+          redirect("/not-found");
+          return;
+        }
+        
         setDataAuth(UserData);
+        
+        // Set default group and team filters
+        const defaultGroupFilter: ListSearchByParamProps = {
+          field: "userOrgGroupCode",
+          operator: "=",
+          value: UserData.team.orgGroupCode,
+          filterLabel: "Group Filter"
+        };
+        
+        const defaultTeamFilter: ListSearchByParamProps = {
+          field: "userTeamCode",
+          operator: "=",
+          value: UserData.team.teamCode,
+          filterLabel: "Team Filter"
+        };
+        
+        setParamFilter(prev => {
+          let filtered = prev.filter(f => f.field !== "userOrgGroupCode" && f.field !== "userTeamCode");
+          return [...filtered, defaultGroupFilter, defaultTeamFilter];
+        });
+        
+        setFilterManageGroup(UserData.team.orgGroupCode);
+        setFilterTeamCode(UserData.team.teamCode);
       }
     }
 
@@ -1009,6 +1044,7 @@ function DivisionPerformancePage() {
                       }}
                       options={groupOptions}
                       size="md"
+                      isDisabled={!!DataAuth?.team?.orgGroupCode}
                       chakraStyles={{
                         container: (provided) => ({
                           ...provided,
@@ -1016,7 +1052,7 @@ function DivisionPerformancePage() {
                           bg: colorMode == "light" ? "white" : "gray.800",
                         }),
                       }}
-                      isClearable
+                      isClearable={!DataAuth?.team?.orgGroupCode}
                     />
                   </Flex>
                 </GridItem>
@@ -1051,6 +1087,7 @@ function DivisionPerformancePage() {
                       }}
                       options={teamOptions}
                       size="md"
+                      isDisabled={!!DataAuth?.team?.teamCode}
                       chakraStyles={{
                         container: (provided) => ({
                           ...provided,
@@ -1058,8 +1095,7 @@ function DivisionPerformancePage() {
                           bg: colorMode == "light" ? "white" : "gray.800",
                         }),
                       }}
-                      isDisabled={!FilterManageGroup}
-                      isClearable
+                      isClearable={!DataAuth?.team?.teamCode}
                     />
                   </Flex>
                 </GridItem>
@@ -1252,4 +1288,4 @@ function DivisionPerformancePage() {
   );
 }
 
-export default DivisionPerformancePage;
+export default TeamPerformancePage;

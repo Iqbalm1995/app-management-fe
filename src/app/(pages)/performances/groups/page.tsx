@@ -71,14 +71,15 @@ import {
 } from "@tanstack/react-table";
 import React, { useEffect, useMemo, useState } from "react";
 import { FiRefreshCcw, FiCamera, FiEdit3, FiDownload } from "react-icons/fi";
+import { redirect } from "next/navigation";
 import EvaluationAdjustModal from "../shared/EvaluationAdjustModal";
 
 const HeaderDataContent: HeaderContentProps = {
-  titleName: "Division Performance Report",
-  breadCrumb: ["Home", "Performances", "Divisions"],
+  titleName: "Group Performance Report",
+  breadCrumb: ["Home", "Performances", "Groups"],
 };
 
-function DivisionPerformancePage() {
+function GroupPerformancePage() {
   // SetUp auth data on current page
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
@@ -103,7 +104,33 @@ function DivisionPerformancePage() {
         const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
         const UserData: AuthDataResponse =
           StorageAuth.dataLogin as AuthDataResponse;
+        
+        // Validate team data for groups page
+        if (!UserData?.team?.orgGroupCode) {
+          showToast({
+            description: "Current user login does not have the required team assignment to access this page",
+            statusToast: "warning",
+          });
+          redirect("/not-found");
+          return;
+        }
+        
         setDataAuth(UserData);
+        
+        // Set default group filter to user's team orgGroupCode
+        const defaultGroupFilter: ListSearchByParamProps = {
+          field: "userOrgGroupCode",
+          operator: "=",
+          value: UserData.team.orgGroupCode,
+          filterLabel: "Group Filter"
+        };
+        
+        setParamFilter(prev => {
+          const filtered = prev.filter(f => f.field !== "userOrgGroupCode");
+          return [...filtered, defaultGroupFilter];
+        });
+        
+        setFilterManageGroup(UserData.team.orgGroupCode);
       }
     }
 
@@ -1009,6 +1036,7 @@ function DivisionPerformancePage() {
                       }}
                       options={groupOptions}
                       size="md"
+                      isDisabled={!!DataAuth?.team?.orgGroupCode}
                       chakraStyles={{
                         container: (provided) => ({
                           ...provided,
@@ -1016,7 +1044,7 @@ function DivisionPerformancePage() {
                           bg: colorMode == "light" ? "white" : "gray.800",
                         }),
                       }}
-                      isClearable
+                      isClearable={!DataAuth?.team?.orgGroupCode}
                     />
                   </Flex>
                 </GridItem>
@@ -1252,4 +1280,4 @@ function DivisionPerformancePage() {
   );
 }
 
-export default DivisionPerformancePage;
+export default GroupPerformancePage;
