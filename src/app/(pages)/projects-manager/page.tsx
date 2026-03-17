@@ -356,10 +356,18 @@ const ProjectManagerPage = () => {
             ? null
             : null,
         teamId: DataAuth.team?.id,
-        requirementType: "", // Remove backend filtering completely
+        requirementType: requirementType === "RFC" ? "RFC" : requirementType === "BRD" ? "BRD" : null,
         limit: pageSize,
         page: pageIndex,
-        filterWhere: filterWhere,
+        filterWhere: [
+          ...filterWhere,
+          // Add explicit filter to ensure projects have requirement data
+          ...(requirementType === "RFC" || requirementType === "BRD" ? [{
+            field: "requirementType",
+            operator: "=" as const,
+            value: requirementType,
+          }] : [])
+        ],
         fieldOrder: ["createdAt"],
         orderDir: "desc",
       };
@@ -399,31 +407,10 @@ const ProjectManagerPage = () => {
               ? Math.ceil(totalData / pageSize)
               : -1;
 
-          // Client-side filtering based on URL reqType parameter
-          
-          const filteredData = itemsData.filter(project => {
-            const projectReqType = project.requirementData?.requirementType;
-            
-            if (requirementType === "RFC") {
-              // Allow both INTERNAL_DEVELOPMENT and PROCUREMENT for RFC
-              // INTERNAL_DEVELOPMENT must have RFC requirement type
-              // PROCUREMENT projects can have RFC or no requirement type
-              return (projectReqType === "RFC" && project.projectType === "INTERNAL DEVELOPMENT") ||
-                     (project.projectType === "PROCUREMENT");
-            } else if (requirementType === "BRD") {
-              // Keep BRD as INTERNAL_DEVELOPMENT only
-              return projectReqType === "BRD" && project.projectType === "INTERNAL DEVELOPMENT";
-            } else {
-              // Show all projects when no specific requirement type
-              return true;
-            }
-          });
-          
-
-          // Calculate total active projects from complete filtered dataset
-          const totalActiveCount = filteredData.filter(p => p.projectStatus === "ACTIVE").length;
-          setDataProjects(filteredData);
-          setTotalProjectsCount(filteredData.length); // Use filtered count instead of API total
+          // Backend already filtered the data, use it directly
+          const totalActiveCount = itemsData.filter(p => p.projectStatus === "ACTIVE").length;
+          setDataProjects(itemsData);
+          setTotalProjectsCount(totalData); // Use backend total count
           setTotalActiveProjectsCount(totalActiveCount);
           setTotalPageData(totalPages);
           setIsLoadingProcess(false);
