@@ -114,6 +114,17 @@ export const GENERAL_STATUS_INACTIVE: string = "INACTIVE";
 // MODULE CODES
 export const MODULE_CODE_REQUIREMENT: string = "SYS_REQUIREMENT";
 
+// PROJECT STATUSES
+export const PROJECT_STATUSES_LIST: string[] = [
+  "INITIATING",
+  "RUNNING",
+  "TEMPORARY CLOSED",
+  "CLOSED",
+  "ON HOLD",
+  "CANCELED",
+  "COMPLETED",
+];
+
 export const OptionChangeLogsCategory: OptionListProps[] = [
   {
     label: "INFO",

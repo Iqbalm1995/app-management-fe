@@ -973,20 +973,38 @@ export default function ProjectRegisterView({
         const ProjectManageOrg: UserOrganizationResponse | null =
           await GetUserOrganizationServices(itemsData.assignedFromId);
         if (ProjectManageOrg) {
-          formik.setFieldValue(
-            `proManageByDivisionId`,
-            ProjectManageOrg.division.id,
+          // Set division
+          const divisionId = ProjectManageOrg.division.id;
+          formik.setFieldValue(`proManageByDivisionId`, divisionId);
+          
+          // Find directorat from OrganizationData by looking up division's parent
+          const divisionData = OrganizationData.find(
+            (org) => org.id === divisionId && org.orgType === ORG_CATEGORY_KEY_DIVISION
           );
+          const directoratId = divisionData?.parentId || DIRECTORATE_ID_IT_BJB;
+          formik.setFieldValue(`proManageByDirectorateId`, directoratId);
+          
+          // Set group if exists
           if (ProjectManageOrg.group) {
             formik.setFieldValue(
               `proManageByGroupId`,
               ProjectManageOrg.group.id,
             );
           }
+          
+          // Set team if exists
           if (ProjectManageOrg.team) {
             formik.setFieldValue(`proManageByTeamId`, ProjectManageOrg.team.id);
           }
+        } else {
+          // No user org data: use defaults
+          formik.setFieldValue(`proManageByDirectorateId`, DIRECTORATE_ID_IT_BJB);
+          formik.setFieldValue(`proManageByDivisionId`, DIVISION_ID_IT_BJB);
         }
+      } else {
+        // No user assign: use defaults
+        formik.setFieldValue(`proManageByDirectorateId`, DIRECTORATE_ID_IT_BJB);
+        formik.setFieldValue(`proManageByDivisionId`, DIVISION_ID_IT_BJB);
       }
 
       // get user org project manage

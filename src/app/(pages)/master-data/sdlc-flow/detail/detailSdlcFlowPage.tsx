@@ -9,6 +9,7 @@ import {
     RES_CODE_OK,
     RES_GENERIC_ERROR_MSG,
     PROJECT_TYPES,
+    PROJECT_STATUSES_LIST,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
@@ -46,6 +47,7 @@ import {
     ModalHeader,
     ModalOverlay,
     Select,
+    Switch,
     Text,
     Textarea,
     useColorMode,
@@ -785,10 +787,25 @@ function SdlcFlowDetailView() {
                                                                                 Required
                                                                             </Badge>
                                                                         )}
+                                                                        {stage.stageTriggerStatus === "Y" && (
+                                                                            <Badge colorScheme="blue" variant="solid" fontSize="xs">
+                                                                                Trigger
+                                                                            </Badge>
+                                                                        )}
                                                                     </HStack>
                                                                     <Text fontSize="xs" color="gray.500">
                                                                         {stage.stageCode}
                                                                     </Text>
+                                                                    {stage.stageTriggerStatus === "Y" && (
+                                                                        <VStack spacing={0} align="start" fontSize="xs" mt={1}>
+                                                                            <Text color="gray.600">
+                                                                                <Text as="span" fontWeight="semibold">Before:</Text> {stage.stageStatusBeforeTiggerChange || "-"}
+                                                                            </Text>
+                                                                            <Text color="gray.600">
+                                                                                <Text as="span" fontWeight="semibold">After:</Text> {stage.stageStatusAfterTriggerChange || "-"}
+                                                                            </Text>
+                                                                        </VStack>
+                                                                    )}
                                                                 </VStack>
                                                             </HStack>
                                                             <HStack spacing={1}>
@@ -935,6 +952,66 @@ function SdlcFlowDetailView() {
                                     <option value="N">No</option>
                                 </Select>
                             </FormControl>
+
+                            <FormControl display="flex" alignItems="center">
+                                <FormLabel mb={0}>Enable Trigger Status</FormLabel>
+                                <Switch
+                                    isChecked={stageFormData.stageTriggerStatus === "Y"}
+                                    onChange={(e) =>
+                                        setStageFormData({
+                                            ...stageFormData,
+                                            stageTriggerStatus: e.target.checked ? "Y" : "N",
+                                        })
+                                    }
+                                    ml={3}
+                                />
+                            </FormControl>
+
+                            {stageFormData.stageTriggerStatus === "Y" && (
+                                <>
+                                    <FormControl isRequired>
+                                        <FormLabel>Status Before Trigger Change</FormLabel>
+                                        <Select
+                                            value={stageFormData.stageStatusBeforeTiggerChange}
+                                            onChange={(e) =>
+                                                setStageFormData({
+                                                    ...stageFormData,
+                                                    stageStatusBeforeTiggerChange: e.target.value,
+                                                })
+                                            }
+                                            rounded="xl"
+                                        >
+                                            <option value="">Select Status</option>
+                                            {PROJECT_STATUSES_LIST.map((status) => (
+                                                <option key={status} value={status}>
+                                                    {status}
+                                                </option>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+
+                                    <FormControl isRequired>
+                                        <FormLabel>Status After Trigger Change</FormLabel>
+                                        <Select
+                                            value={stageFormData.stageStatusAfterTriggerChange}
+                                            onChange={(e) =>
+                                                setStageFormData({
+                                                    ...stageFormData,
+                                                    stageStatusAfterTriggerChange: e.target.value,
+                                                })
+                                            }
+                                            rounded="xl"
+                                        >
+                                            <option value="">Select Status</option>
+                                            {PROJECT_STATUSES_LIST.map((status) => (
+                                                <option key={status} value={status}>
+                                                    {status}
+                                                </option>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                </>
+                            )}
                         </VStack>
                     </ModalBody>
                     <ModalFooter>

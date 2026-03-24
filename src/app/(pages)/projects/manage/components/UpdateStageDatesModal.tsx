@@ -30,6 +30,7 @@ import {
 import { radiusStyle, RES_CODE_OK } from "@/app/constants/applicationConstants";
 import { ProjectSdlcStageResponse, ProjectSdlcStageReportResponse } from "@/app/services/useProjects";
 import useProjects from "@/app/services/useProjects";
+import useSdlcFlowStage from "@/app/services/useSdlcFlowStage";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { formatDateWithLabels } from "@/app/helper/MasterHelper";
 import { FiPlus, FiEdit2, FiTrash2, FiFileText, FiCheckCircle, FiAlertTriangle, FiInfo, FiX, FiCheck } from "react-icons/fi";
@@ -51,6 +52,7 @@ const UpdateStageDatesModal = ({
   const { colorMode } = useColorMode();
   const showToast = useToastHelper();
   const { UpdateProjectSdlcStageDates, ListProjectSdlcStageReports, DeleteProjectSdlcStageReport } = useProjects();
+  const { ListByFlowId: GetMasterStagesByFlowId } = useSdlcFlowStage();
 
   const [tokenData, setTokenData] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
@@ -68,6 +70,9 @@ const UpdateStageDatesModal = ({
   const [isReportFormOpen, setIsReportFormOpen] = useState(false);
   const [editingReportId, setEditingReportId] = useState<string | undefined>();
 
+  const [masterStageData, setMasterStageData] = useState<any>(null);
+  const [isLoadingMasterStage, setIsLoadingMasterStage] = useState(false);
+
   // Track if user manually unlocked end date (via "End Stage" button)
   const hasManuallyUnlocked = useRef(false);
 
@@ -79,7 +84,7 @@ const UpdateStageDatesModal = ({
   }, []);
 
   useEffect(() => {
-    if (isOpen && stage) {
+    if (isOpen && stage && tokenData) {
       setStartDate(stage.startDate ? stage.startDate.split("T")[0] : "");
       setEndDate(stage.endDate ? stage.endDate.split("T")[0] : "");
 
@@ -90,8 +95,27 @@ const UpdateStageDatesModal = ({
 
       setPage(1);
       loadReports(1);
+      loadMasterStageData();
     }
-  }, [isOpen, stage]);
+  }, [isOpen, stage, tokenData]);
+
+  const loadMasterStageData = async () => {
+    if (!tokenData || !stage.sdlcFlowId) return;
+    
+    setIsLoadingMasterStage(true);
+    try {
+      // Get all master stages for this SDLC flow
+      const response = await GetMasterStagesByFlowId(stage.sdlcFlowId, tokenData);
+      if (response && response.statusCode === RES_CODE_OK && response.data) {
+        // Find the matching stage by stage name or code
+        const masterStage = response.data.find((s: any) => s.stageName === stage.stageName || s.stageCode === stage.stageCode);
+        setMasterStageData(masterStage);
+      }
+    } catch (error) {
+      console.error("Error loading master stage data:", error);
+    }
+    setIsLoadingMasterStage(false);
+  };
 
   // Auto-clear end date if start date is changed to be after end date
   useEffect(() => {
@@ -226,7 +250,13 @@ const UpdateStageDatesModal = ({
           description: "Stage dates updated successfully",
           statusToast: "success",
         });
-        onSuccess();
+
+        // Auto-update project status if endDate is set and trigger is enabled
+        if (endDate && masterStageData?.stageTriggerStatus === "Y" && masterStageData?.stageStatusAfterTriggerChange) {
+          await handleUpdateProjectStatus(masterStageData.stageStatusAfterTriggerChange);
+        } else {
+          onSuccess();
+        }
       } else {
         showToast({
           description: response?.message || "Failed to update dates",
@@ -240,6 +270,49 @@ const UpdateStageDatesModal = ({
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateProjectStatus = async (newStatus: string) => {
+    if (!newStatus) return;
+
+    try {
+      const response = await fetch(
+        `https://localhost:2332/v1/Projects/update/status`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${tokenData}`,
+          },
+          body: JSON.stringify({
+            projectId: stage.projectId,
+            projectStatus: newStatus,
+          }),
+        }
+      );
+
+      const data = await response.json();
+      if (response.ok) {
+        showToast({
+          description: `Project status updated to ${newStatus}`,
+          statusToast: "success",
+        });
+        onSuccess();
+        return true;
+      } else {
+        showToast({
+          description: data?.message || "Failed to update project status",
+          statusToast: "error",
+        });
+        return false;
+      }
+    } catch (error) {
+      showToast({
+        description: "An error occurred while updating project status",
+        statusToast: "error",
+      });
+      return false;
     }
   };
 
@@ -413,6 +486,63 @@ const UpdateStageDatesModal = ({
                   >
                     Save Changes
                   </Button>
+                </VStack>
+              </Box>
+
+              <Divider />
+
+              {/* Trigger Status Section */}
+              <Box
+                bg={colorMode === "light" ? "gray.50" : "gray.800"}
+                p={5}
+                rounded={radiusStyle}
+                borderWidth="1px"
+                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+              >
+                <HStack mb={4}>
+                  <Icon as={FiCheckCircle} boxSize={5} color={masterStageData?.stageTriggerStatus === "Y" ? "blue.500" : "gray.400"} />
+                  <Heading size="sm">SDLC Trigger Status</Heading>
+                  {isLoadingMasterStage && <Spinner size="sm" />}
+                </HStack>
+                <VStack spacing={3} align="stretch">
+                  <HStack justify="space-between">
+                    <Text fontSize="sm" color="gray.600">Trigger Status:</Text>
+                    <Badge colorScheme={masterStageData?.stageTriggerStatus === "Y" ? "blue" : "gray"} fontSize="sm">
+                      {masterStageData?.stageTriggerStatus === "Y" ? "ENABLED" : "DISABLED"}
+                    </Badge>
+                  </HStack>
+
+                  {masterStageData?.stageTriggerStatus === "Y" && (
+                    <>
+                      <HStack justify="space-between" align="start">
+                        <Text fontSize="sm" color="gray.600">Status Before Trigger:</Text>
+                        <Badge colorScheme="gray" fontSize="sm">
+                          {masterStageData?.stageStatusBeforeTiggerChange || "Not Set"}
+                        </Badge>
+                      </HStack>
+
+                      <HStack justify="space-between" align="start">
+                        <Text fontSize="sm" color="gray.600">Status After Trigger:</Text>
+                        <Badge colorScheme="green" fontSize="sm">
+                          {masterStageData?.stageStatusAfterTriggerChange || "Not Set"}
+                        </Badge>
+                      </HStack>
+
+                      {masterStageData?.stageStatusAfterTriggerChange && (
+                        <Box
+                          bg={colorMode === "light" ? "blue.50" : "blue.900"}
+                          p={3}
+                          rounded="md"
+                          borderLeft="4px"
+                          borderColor="blue.500"
+                        >
+                          <Text fontSize="xs" color={colorMode === "light" ? "blue.700" : "blue.200"}>
+                            When this stage ends, project status will automatically change to: <Text as="span" fontWeight="bold">{masterStageData?.stageStatusAfterTriggerChange}</Text>
+                          </Text>
+                        </Box>
+                      )}
+                    </>
+                  )}
                 </VStack>
               </Box>
 

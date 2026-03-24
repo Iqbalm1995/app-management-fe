@@ -790,6 +790,15 @@ const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
                 {selectedMemberIds.length} member{selectedMemberIds.length !== 1 ? "s" : ""} selected ({selectedStatus})
               </Text>
               <HStack spacing={2}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  colorScheme="gray"
+                  onClick={() => setSelectedMemberIds([])}
+                  isDisabled={bulkProcessing}
+                >
+                  Unselect All
+                </Button>
                 {selectedStatus === "ACTIVE" ? (
                   <Button
                     size="sm"
@@ -873,6 +882,18 @@ const TeamTab = ({ DataProject, canMake }: TeamTabProps) => {
                     </Button>
                   </>
                 )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  colorScheme="gray"
+                  onClick={() => {
+                    setIsEditMode(false);
+                    setSelectedMemberIds([]);
+                  }}
+                  isDisabled={bulkProcessing}
+                >
+                  Cancel
+                </Button>
               </HStack>
             </HStack>
           );

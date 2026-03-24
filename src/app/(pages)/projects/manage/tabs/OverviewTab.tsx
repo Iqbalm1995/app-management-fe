@@ -361,6 +361,28 @@ const OverviewTab = ({ DataProject, onRefreshProject }: OverviewTabProps) => {
               </Alert>
             )}
 
+            {/* SDLC Progress Not Setup Alert */}
+            {!hasSdlcSetup && (
+              <Alert
+                status="warning"
+                variant="subtle"
+                rounded="xl"
+                bg={colorMode === "light" ? "orange.50" : "orange.900"}
+                borderColor={colorMode === "light" ? "orange.300" : "orange.600"}
+                borderWidth="2px"
+              >
+                <AlertIcon boxSize={5} color="orange.500" />
+                <Box flex="1">
+                  <AlertTitle fontSize="md" fontWeight="bold" mb={1}>
+                    SDLC Progress Not Setup
+                  </AlertTitle>
+                  <AlertDescription fontSize="sm">
+                    Project must setup SDLC progression to make project progression status. Configure SDLC flow to enable automatic status tracking.
+                  </AlertDescription>
+                </Box>
+              </Alert>
+            )}
+
             {/* Quick Stats Section */}
             <Box>
               <Heading size="md" mb={4} color={colorMode === "light" ? "gray.700" : "gray.200"}>

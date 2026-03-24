@@ -187,7 +187,7 @@ export const WorkflowLevel2Box = ({
       "application/x-rar-compressed": [".rar"],
       "application/vnd.rar": [".rar"],
     },
-    maxSize: 20 * 1024 * 1024,
+    maxSize: 120 * 1024 * 1024,
     multiple: false,
     onDrop: (acceptedFiles) => {
       if (acceptedFiles.length > 0) {
@@ -204,7 +204,7 @@ export const WorkflowLevel2Box = ({
       const rejection = fileRejections[0];
       if (rejection.errors[0].code === "file-too-large") {
         showToast({
-          description: "File size exceeds 20MB",
+          description: "File size exceeds 120MB",
           statusToast: "error",
         });
       } else if (rejection.errors[0].code === "file-invalid-type") {
@@ -631,7 +631,7 @@ export const WorkflowLevel2Box = ({
                           </Text>
                           <Text fontSize="sm" color="gray.500">
                             Format: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, ZIP,
-                            RAR (Max 20MB)
+                            RAR (Max 120MB)
                           </Text>
                         </VStack>
                       </Flex>
@@ -1490,7 +1490,7 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
       "application/x-rar-compressed": [".rar"],
       "application/vnd.rar": [".rar"],
     },
-    maxSize: 20 * 1024 * 1024,
+    maxSize: 120 * 1024 * 1024,
     multiple: false,
     onDrop: (acceptedFiles) => {
       if (acceptedFiles.length > 0) {
@@ -1507,7 +1507,7 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
       const rejection = fileRejections[0];
       if (rejection.errors[0].code === "file-too-large") {
         showToast({
-          description: "File size exceeds 20MB",
+          description: "File size exceeds 120MB",
           statusToast: "error",
         });
       } else if (rejection.errors[0].code === "file-invalid-type") {
@@ -1874,7 +1874,7 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
                             : "Seret & letakkan file di sini, atau klik untuk memilih file"}
                         </Text>
                         <Text fontSize="sm" color="gray.500">
-                          Format: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, ZIP, RAR (Max 20MB)
+                          Format: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, ZIP, RAR (Max 120MB)
                         </Text>
                       </VStack>
                     </Flex>
