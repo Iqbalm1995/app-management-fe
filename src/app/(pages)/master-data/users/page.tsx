@@ -14,6 +14,7 @@ import {
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
+  DEFAULT_PWD_SETTINGS,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { formatDateToDDMMYYYY } from "@/app/helper/MasterHelper";
@@ -55,21 +56,25 @@ import {
   ModalBody,
   ModalCloseButton,
   ModalContent,
+  ModalFooter,
   ModalHeader,
   ModalOverlay,
   Text,
   VStack,
   useColorMode,
   useDisclosure,
+  Alert,
+  AlertIcon,
+  Code,
 } from "@chakra-ui/react";
 import { Search2Icon } from "@chakra-ui/icons";
-import { FiEye, FiRefreshCw, FiUser, FiMail, FiPhone, FiUsers, FiEdit } from "react-icons/fi";
-import { useEffect, useMemo, useState } from "react";
+import { FiEye, FiRefreshCw, FiUser, FiMail, FiPhone, FiUsers, FiEdit, FiKey, FiAlertTriangle } from "react-icons/fi";
+import { useEffect, useMemo, useState, useRef } from "react";
 
 export default function MasterDataUsersPage() {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
-  const { List: GetUsersList, UpdateOrgUser, isLoading } = useUsers();
+  const { List: GetUsersList, UpdateOrgUser, EditUserPassword, isLoading } = useUsers();
   const { List: GetOrganizationList } = useOrganization();
 
   // Auth Setup
@@ -110,6 +115,13 @@ export default function MasterDataUsersPage() {
   const [EditUser, setEditUser] = useState<UsersResponse | null>(null);
   const [SelectedOrgCode, setSelectedOrgCode] = useState<string>("");
   const [IsUpdating, setIsUpdating] = useState(false);
+
+  // Reset Password Modal
+  const { isOpen: isResetPwdOpen, onOpen: onResetPwdOpen, onClose: onResetPwdClose } = useDisclosure();
+  const [ResetUser, setResetUser] = useState<UsersResponse | null>(null);
+  const [ResetCountdown, setResetCountdown] = useState<number>(5);
+  const [IsResettingPassword, setIsResettingPassword] = useState(false);
+  const resetCountdownRef = useRef<NodeJS.Timeout | null>(null);
 
   // Auth Effect
   useEffect(() => {
@@ -197,6 +209,23 @@ export default function MasterDataUsersPage() {
 
     fetchOrgData();
   }, [tokenData]);
+
+  // Reset Password Countdown Effect
+  useEffect(() => {
+    if (isResetPwdOpen && ResetCountdown > 0) {
+      resetCountdownRef.current = setTimeout(() => {
+        setResetCountdown(prev => prev - 1);
+      }, 1000);
+    } else if (ResetCountdown === 0 && resetCountdownRef.current) {
+      clearTimeout(resetCountdownRef.current);
+    }
+
+    return () => {
+      if (resetCountdownRef.current) {
+        clearTimeout(resetCountdownRef.current);
+      }
+    };
+  }, [isResetPwdOpen, ResetCountdown]);
 
   // Table Columns
   const columns: ColumnDef<UsersResponse>[] = useMemo(
@@ -337,6 +366,14 @@ export default function MasterDataUsersPage() {
               colorScheme="orange"
               onClick={() => handleEditOrg(row.original)}
             />
+            <IconButton
+              aria-label="Reset Password"
+              icon={<FiKey />}
+              size="sm"
+              variant="ghost"
+              colorScheme="red"
+              onClick={() => handleResetPassword(row.original)}
+            />
           </HStack>
         ),
       },
@@ -427,6 +464,48 @@ export default function MasterDataUsersPage() {
 
   const handlePageChange = (page: number) => {
     setPagination({ pageIndex: page, pageSize });
+  };
+
+  const handleResetPassword = (user: UsersResponse) => {
+    setResetUser(user);
+    setResetCountdown(5);
+    onResetPwdOpen();
+  };
+
+  const handleConfirmResetPassword = async () => {
+    if (!ResetUser) return;
+
+    setIsResettingPassword(true);
+    try {
+      const response = await EditUserPassword(
+        ResetUser.userId,
+        DEFAULT_PWD_SETTINGS,
+        DEFAULT_PWD_SETTINGS
+      );
+
+      if (!response || response.statusCode !== RES_CODE_OK) {
+        showToast({
+          description: response?.message || "Failed to reset password",
+          statusToast: "error",
+        });
+        return;
+      }
+
+      showToast({
+        description: `Password reset to default for ${ResetUser.nama}`,
+        statusToast: "success",
+      });
+
+      onResetPwdClose();
+      setRefreshData(prev => prev + 1);
+    } catch (error) {
+      showToast({
+        description: "Error resetting password",
+        statusToast: "error",
+      });
+    } finally {
+      setIsResettingPassword(false);
+    }
   };
 
   // Header Props
@@ -912,6 +991,83 @@ export default function MasterDataUsersPage() {
               </VStack>
             )}
           </ModalBody>
+        </ModalContent>
+      </Modal>
+
+      {/* Reset Password Modal */}
+      <Modal isOpen={isResetPwdOpen} onClose={onResetPwdClose} isCentered>
+        <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
+        <ModalContent rounded={radiusStyle}>
+          <ModalHeader pb={2}>
+            <HStack spacing={2}>
+              <Box p={2} bg="red.50" color="red.500" rounded="lg">
+                <FiAlertTriangle />
+              </Box>
+              <Text fontWeight={600}>Reset Password to Default</Text>
+            </HStack>
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody py={6}>
+            <VStack spacing={4} align="stretch">
+              {/* Warning Alert */}
+              <Alert status="warning" rounded="lg" bg="orange.50" border="1px solid" borderColor="orange.200">
+                <AlertIcon color="orange.500" />
+                <Box>
+                  <Text fontWeight={600} fontSize="sm" color="orange.800" mb={1}>
+                    ⚠️ Warning: Irreversible Action
+                  </Text>
+                  <Text fontSize="xs" color="orange.700">
+                    This will reset the password to the default value. The user will need to change it after login.
+                  </Text>
+                </Box>
+              </Alert>
+
+              {/* User Information */}
+              <Box p={4} bg="gray.50" rounded="lg" border="1px solid" borderColor="gray.200">
+                <Text fontSize="xs" color="gray.600" mb={1}>User to Reset</Text>
+                <Text fontWeight={600} fontSize="sm">{ResetUser?.nama}</Text>
+                <Text fontSize="xs" color="gray.500">{ResetUser?.userId}</Text>
+              </Box>
+
+              {/* Countdown */}
+              <Box textAlign="center" p={4} bg="red.50" rounded="lg" border="2px solid" borderColor="red.200">
+                <Text fontSize="xs" color="gray.600" mb={2}>Action will be enabled in:</Text>
+                <Text fontSize="3xl" fontWeight={700} color="red.500">
+                  {ResetCountdown}
+                </Text>
+                <Text fontSize="xs" color="gray.600">seconds</Text>
+              </Box>
+
+              {/* Info Message */}
+              <Box p={3} bg="blue.50" rounded="lg" border="1px solid" borderColor="blue.200">
+                <Text fontSize="xs" color="blue.700">
+                  ℹ️ Default password: <Code>{DEFAULT_PWD_SETTINGS}</Code>
+                </Text>
+              </Box>
+            </VStack>
+          </ModalBody>
+          <ModalFooter pt={4}>
+            <HStack spacing={3} w="full">
+              <Button 
+                variant="ghost" 
+                onClick={onResetPwdClose}
+                w="full"
+              >
+                Cancel
+              </Button>
+              <Button
+                colorScheme="red"
+                onClick={handleConfirmResetPassword}
+                isLoading={IsResettingPassword}
+                isDisabled={ResetCountdown > 0}
+                w="full"
+              >
+                {ResetCountdown > 0 
+                  ? `Wait ${ResetCountdown}s` 
+                  : "Reset Password"}
+              </Button>
+            </HStack>
+          </ModalFooter>
         </ModalContent>
       </Modal>
     </LayoutAdmin>

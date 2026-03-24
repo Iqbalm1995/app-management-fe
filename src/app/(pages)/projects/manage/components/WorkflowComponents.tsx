@@ -631,7 +631,7 @@ export const WorkflowLevel2Box = ({
                           </Text>
                           <Text fontSize="sm" color="gray.500">
                             Format: PDF, DOC, DOCX, XLS, XLSX, PPT, PPTX, ZIP,
-                            RAR (Max 120MB)
+                            RAR, CSV (Max 120MB)
                           </Text>
                         </VStack>
                       </Flex>

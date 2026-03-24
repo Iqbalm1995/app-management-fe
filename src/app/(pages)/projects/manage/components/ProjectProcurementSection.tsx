@@ -32,6 +32,10 @@ import {
   CardBody,
   Icon,
   Stack,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
 } from "@chakra-ui/react";
 import { FiRefreshCcw, FiSettings, FiPlus, FiMinus, FiAlertTriangle, FiInfo, FiX, FiCheck } from "react-icons/fi";
 import { BsLightningChargeFill } from "react-icons/bs";
@@ -65,11 +69,13 @@ import { colorProgression } from "@/app/helper/MasterHelper";
 interface ProjectProcurementSectionProps {
   DataProject: ProjectDataResponse | null;
   onAssignSuccess?: () => void;
+  hideHeader?: boolean;
 }
 
 const ProjectProcurementSection = ({
   DataProject,
   onAssignSuccess,
+  hideHeader = false,
 }: ProjectProcurementSectionProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
@@ -114,6 +120,7 @@ const ProjectProcurementSection = ({
   const [isWorkflowModalOpen, setIsWorkflowModalOpen] = useState(false);
   const [workflowGroups, setWorkflowGroups] = useState<WorkflowGroupResponse[]>([]);
   const [selectedWorkflowIds, setSelectedWorkflowIds] = useState<Set<string>>(new Set());
+  const [existingWorkflowIds, setExistingWorkflowIds] = useState<Set<string>>(new Set());
   const [isLoadingWorkflows, setIsLoadingWorkflows] = useState(false);
   const [workflowPresets, setWorkflowPresets] = useState<WorkflowPresetResponse[]>([]);
   const [selectedPreset, setSelectedPreset] = useState<WorkflowPresetResponse | null>(null);
@@ -140,12 +147,47 @@ const ProjectProcurementSection = ({
     setRefreshData((prev) => prev + 1);
   };
 
+  const extractExistingIds = (workflows: ProjectWorkflowResponse[]): Set<string> => {
+    const ids = new Set<string>();
+    workflows.forEach((workflow) => {
+      ids.add(workflow.wfgId);
+      if (workflow.workflowChild?.length > 0) {
+        const childIds = extractExistingIds(workflow.workflowChild);
+        childIds.forEach(id => ids.add(id));
+      }
+    });
+    return ids;
+  };
+
+  const getNewWorkflowIds = (): Set<string> => {
+    const newIds = new Set<string>();
+    selectedWorkflowIds.forEach(id => {
+      if (!existingWorkflowIds.has(id)) {
+        newIds.add(id);
+      }
+    });
+    return newIds;
+  };
+
   // Load workflow groups and presets
   const loadWorkflowData = async () => {
     if (!DataProject) return;
 
     setIsLoadingWorkflows(true);
     try {
+      // Load existing workflows (PROCUREMENT + BACKLOGS)
+      const procurementResponse = await ListProjectWorkflowBacklog(DataProject!.id, tokenData);
+      const backlogResponse = await ListProjectWorkflowBacklog(DataProject!.id, tokenData);
+      
+      const allExisting = [
+        ...(procurementResponse?.data || []),
+        ...(backlogResponse?.data || [])
+      ];
+      
+      const existingIds = extractExistingIds(allExisting);
+      setExistingWorkflowIds(existingIds);
+      setSelectedWorkflowIds(existingIds);
+
       // Load workflow groups
       const workflowPayload: PaggingListPayload = {
         limit: MAX_SIZE_TABLE,
@@ -261,6 +303,8 @@ const ProjectProcurementSection = ({
   };
 
   const toggleWorkflow = (workflowId: string, workflow: WorkflowGroupResponse) => {
+    if (existingWorkflowIds.has(workflowId)) return;
+    
     const newSelected = new Set(selectedWorkflowIds);
     const isCurrentlyChecked = newSelected.has(workflowId);
 
@@ -278,8 +322,9 @@ const ProjectProcurementSection = ({
   };
 
   const handleAssignWorkflows = () => {
-    if (selectedWorkflowIds.size === 0) {
-      showToast({ description: "Please select at least one workflow", statusToast: "warning" });
+    const newWorkflowIds = getNewWorkflowIds();
+    if (newWorkflowIds.size === 0) {
+      showToast({ description: "Please select at least one new workflow", statusToast: "warning" });
       return;
     }
     setIsConfirmWorkflowOpen(true);
@@ -289,8 +334,9 @@ const ProjectProcurementSection = ({
     setIsConfirmWorkflowOpen(false);
     setIsAssigning(true);
     try {
+      const newWorkflowIds = getNewWorkflowIds();
       const response = await AssignProcurementStagesToProject(
-        { projectId: DataProject!.id, workflowIds: Array.from(selectedWorkflowIds) },
+        { projectId: DataProject!.id, workflowIds: Array.from(newWorkflowIds) },
         tokenData
       );
 
@@ -299,7 +345,7 @@ const ProjectProcurementSection = ({
         setIsWorkflowModalOpen(false);
         setSelectedWorkflowIds(new Set());
         setSelectedPreset(null);
-        onAssignSuccess?.();
+        RefreshAction();
       } else {
         showToast({ description: response?.message || "Failed to assign procurement stages", statusToast: "error" });
       }
@@ -319,6 +365,7 @@ const ProjectProcurementSection = ({
           colorScheme="blue"
           size="lg"
           onChange={() => toggleWorkflow(workflow.id, workflow)}
+          isDisabled={existingWorkflowIds.has(workflow.id)}
         >
           <Text fontWeight={level === 0 ? "bold" : "normal"}>{workflow.wfgName}</Text>
         </Checkbox>
@@ -410,6 +457,7 @@ const ProjectProcurementSection = ({
   return (
     <VStack spacing={8} align="stretch">
       {/* Header Section */}
+      {!hideHeader && (
       <HStack justify="space-between" align="center">
         <VStack align="start" spacing={1}>
           <Heading
@@ -423,7 +471,7 @@ const ProjectProcurementSection = ({
           </Text>
         </VStack>
         <HStack spacing={3}>
-          {DataProject?.projectType === PROJECT_TYPE_PROCUREMENT && (!DataWorkflow || DataWorkflow.length === 0) && (
+          {DataProject?.projectType === PROJECT_TYPE_PROCUREMENT && (
             <Button
               size="sm"
               leftIcon={<FiSettings />}
@@ -451,6 +499,7 @@ const ProjectProcurementSection = ({
           </Button>
         </HStack>
       </HStack>
+      )}
 
       {/* Overall Progression */}
       {DataWorkflow && DataWorkflow.length > 0 && (
@@ -530,7 +579,26 @@ const ProjectProcurementSection = ({
                 <LoadingMiniSignature />
               </Flex>
             ) : (
-              <Grid templateColumns="repeat(12, 1fr)" gap={4} w="full">
+              <Flex as={Stack} w="full" spacing={4}>
+                {existingWorkflowIds.size > 0 && (
+                  <Alert
+                    status="info"
+                    variant="subtle"
+                    rounded={radiusStyle}
+                    bg={colorMode === "light" ? "blue.50" : "blue.900"}
+                    borderColor={colorMode === "light" ? "blue.300" : "blue.600"}
+                    borderWidth="1px"
+                  >
+                    <AlertIcon />
+                    <Box>
+                      <AlertTitle fontSize="sm">Work Stages Already Assigned</AlertTitle>
+                      <AlertDescription fontSize="xs" mt={1}>
+                        This project already has work stages assigned. Preset selection is disabled. You can only add new work stages to existing ones.
+                      </AlertDescription>
+                    </Box>
+                  </Alert>
+                )}
+                <Grid templateColumns="repeat(12, 1fr)" gap={4} w="full">
                 {/* Left: Workflow Selection */}
                 <GridItem colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }} w="full">
                   <Flex
@@ -570,7 +638,7 @@ const ProjectProcurementSection = ({
                   >
                     <CardBody>
                       <Flex w="full" as={Stack} minH="500px" spacing={6}>
-                        <HStack spacing={4} align="center">
+                        <HStack spacing={4} align="center" opacity={existingWorkflowIds.size > 0 ? 0.5 : 1}>
                           <Box
                             w={12}
                             h={12}
@@ -602,6 +670,11 @@ const ProjectProcurementSection = ({
                               >
                                 Procurement Stages
                               </Text>
+                              {existingWorkflowIds.size > 0 && (
+                                <Text fontSize="xs" color="gray.500" fontStyle="italic">
+                                  (Disabled - existing work stages assigned)
+                                </Text>
+                              )}
                             </HStack>
                             <Text
                               fontSize="sm"
@@ -687,6 +760,7 @@ const ProjectProcurementSection = ({
                                       onClick={() =>
                                         handlePresetChange(preset.id)
                                       }
+                                      isDisabled={existingWorkflowIds.size > 0}
                                     >
                                       {selectedPreset?.id === preset.id ? (
                                         <FiMinus />
@@ -709,6 +783,7 @@ const ProjectProcurementSection = ({
                   </Card>
                 </GridItem>
               </Grid>
+              </Flex>
             )}
           </ModalBody>
           <ModalFooter>
@@ -719,9 +794,9 @@ const ProjectProcurementSection = ({
               colorScheme="blue"
               onClick={handleAssignWorkflows}
               isLoading={isAssigning}
-              isDisabled={selectedWorkflowIds.size === 0 || isLoadingWorkflows}
+              isDisabled={getNewWorkflowIds().size === 0 || isLoadingWorkflows}
             >
-              Assign ({selectedWorkflowIds.size})
+              Assign ({getNewWorkflowIds().size})
             </Button>
           </ModalFooter>
         </ModalContent>
@@ -744,7 +819,12 @@ const ProjectProcurementSection = ({
                 <Icon as={FiAlertTriangle} color="orange.500" boxSize={5} mt={0.5} />
                 <Box>
                   <Text fontWeight="bold" color="orange.500">WARNING: Assign Work Stages</Text>
-                  <Text mt={2}>Are you sure you want to assign {selectedWorkflowIds.size} work stage(s)?</Text>
+                  <Text mt={2}>Are you sure you want to assign {getNewWorkflowIds().size} new work stage(s)?</Text>
+                  {existingWorkflowIds.size > 0 && (
+                    <Text fontSize="sm" color="gray.500" mt={2}>
+                      ({existingWorkflowIds.size} existing work stage(s) will remain)
+                    </Text>
+                  )}
                 </Box>
               </HStack>
 

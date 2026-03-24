@@ -26,6 +26,16 @@ import useProjects, {
   ProjectWorkflowBacklogInitializePayload,
   ProjectWorkflowResponse,
 } from "@/app/services/useProjects";
+import useWorkflow, {
+  WorkflowGroupResponse,
+} from "@/app/services/useWorkflow";
+import useWorkflowPreset, {
+  WorkflowPresetResponse,
+} from "@/app/services/useWorkflowPreset";
+import {
+  WorkflowProjectProcurementId,
+  WorkStageProcurementId,
+} from "@/app/constants/applicationConstants";
 import { ApiGenericResponse } from "@/app/types/masterTypes";
 import {
   ColumnMetaCustom,
@@ -103,6 +113,11 @@ import {
   AlertDialogHeader,
   AlertDialogContent,
   AlertDialogOverlay,
+  AlertDialogCloseButton,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
   Icon,
 } from "@chakra-ui/react";
 import {
@@ -129,6 +144,7 @@ import {
   FiEye,
   FiMoreVertical,
   FiPlus,
+  FiMinus,
   FiPlusSquare,
   FiRefreshCcw,
   FiSave,
@@ -169,10 +185,12 @@ import useLogActivityUsers from "@/app/services/useLogActivityUsers";
 import useUsers, { UsersResponse } from "@/app/services/useUsers";
 import { TableComponentWithFilterCTX } from "@/app/components/tableComponentV2";
 import { HamburgerIcon } from "@chakra-ui/icons";
-import { BsKanban } from "react-icons/bs";
+import { BsKanban, BsLightningChargeFill } from "react-icons/bs";
+import { FaCircle } from "react-icons/fa";
 import Link from "next/link";
 import WorkflowProgressionContent from "./components/WorkflowProgressionContent";
 import WorkflowDocumentationContent from "./components/WorkflowDocumentationContent";
+import { ProjectProcurementSection } from "./components";
 
 interface ProjectFeatureViewProps {
   DataProject: ProjectDataResponse | null;
@@ -3277,8 +3295,10 @@ const WorkFlowBacklogsView = ({
 }: WorkFlowBacklogsViewProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
-  const { ListProjectWorkflowBacklog, ProjectWorkflowBacklogInitialize } =
+  const { ListProjectWorkflowBacklog, AssignProcurementStagesToProject } =
     useProjects();
+  const { ListWorkflowGroups } = useWorkflow();
+  const { ListWorkflowPreset, GetWorkflowPresetById } = useWorkflowPreset();
 
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -3306,6 +3326,19 @@ const WorkFlowBacklogsView = ({
     ProjectWorkflowResponse[] | null
   >(null);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Modal state for workflow assignment
+  const [workflowGroups, setWorkflowGroups] = useState<WorkflowGroupResponse[]>([]);
+  const [selectedWorkflowIds, setSelectedWorkflowIds] = useState<Set<string>>(new Set());
+  const [existingWorkflowIds, setExistingWorkflowIds] = useState<Set<string>>(new Set());
+  const [isLoadingWorkflows, setIsLoadingWorkflows] = useState(false);
+  const [workflowPresets, setWorkflowPresets] = useState<WorkflowPresetResponse[]>([]);
+  const [selectedPreset, setSelectedPreset] = useState<WorkflowPresetResponse | null>(null);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [isConfirmWorkflowOpen, setIsConfirmWorkflowOpen] = useState(false);
+  const [countdown, setCountdown] = useState(5);
+  const cancelWorkflowRef = React.useRef<any>(null);
 
   // Overall Progression State
   const [OverallProgress, setOverallProgress] = useState<number>(0);
@@ -3436,6 +3469,241 @@ const WorkFlowBacklogsView = ({
     }
   }, [DataAuth, refreshTrigger, DataProject, tokenData]);
 
+  // Countdown timer for confirmation modal
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isConfirmWorkflowOpen) {
+      setCountdown(5);
+      timer = setInterval(() => {
+        setCountdown((prev) => prev <= 1 ? 0 : prev - 1);
+      }, 1000);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isConfirmWorkflowOpen]);
+
+  // Modal functions
+  const loadWorkflowData = async () => {
+    if (!DataProject) return;
+    setIsLoadingWorkflows(true);
+    try {
+      const workflowPayload: PaggingListPayload = {
+        limit: MAX_SIZE_TABLE,
+        page: 0,
+        search: "",
+        filterWhere: [
+          { field: "parentId", operator: "=", value: "" },
+          { field: "wfgLevel", operator: "=", value: "1" },
+          { field: "wfgCategoryId", operator: "=", value: WorkStageProcurementId },
+        ],
+        fieldOrder: ["wfgOrder"],
+        orderDir: "asc",
+      };
+      const workflowResponse = await ListWorkflowGroups(workflowPayload, tokenData);
+      if (workflowResponse?.statusCode === RES_CODE_OK && workflowResponse.data) {
+        setWorkflowGroups(workflowResponse.data);
+      }
+
+      const presetPayload: PaggingListPayload = {
+        limit: MAX_SIZE_TABLE,
+        page: 0,
+        search: "",
+        filterWhere: [
+          { field: "wfCategoryId", operator: "=", value: WorkStageProcurementId },
+        ],
+        fieldOrder: ["wfPresetName"],
+        orderDir: "asc",
+      };
+      const presetResponse = await ListWorkflowPreset(presetPayload, tokenData);
+      if (presetResponse?.statusCode === RES_CODE_OK && presetResponse.data) {
+        setWorkflowPresets(presetResponse.data);
+      }
+
+      const existingIds = DataWorkflow ? extractExistingIds(DataWorkflow) : new Set<string>();
+      setExistingWorkflowIds(existingIds);
+      setSelectedWorkflowIds(new Set(existingIds));
+    } catch (error) {
+      showToast({ description: "Failed to load workflow data", statusToast: "error" });
+    } finally {
+      setIsLoadingWorkflows(false);
+    }
+  };
+
+  const extractExistingIds = (workflows: ProjectWorkflowResponse[]): Set<string> => {
+    const ids = new Set<string>();
+    workflows.forEach((workflow) => {
+      ids.add(workflow.wfgId);
+      if (workflow.workflowChild?.length > 0) {
+        const childIds = extractExistingIds(workflow.workflowChild);
+        childIds.forEach(id => ids.add(id));
+      }
+    });
+    return ids;
+  };
+
+  const getAllChildIds = (wf: WorkflowGroupResponse): string[] => {
+    let ids = [wf.id];
+    if (wf.workflowChild?.length > 0) {
+      wf.workflowChild.forEach((child) => {
+        ids = ids.concat(getAllChildIds(child));
+      });
+    }
+    return ids;
+  };
+
+  const findParent = (
+    targetId: string,
+    workflows: WorkflowGroupResponse[]
+  ): WorkflowGroupResponse | null => {
+    for (const wf of workflows) {
+      if (wf.workflowChild?.some((child) => child.id === targetId)) {
+        return wf;
+      }
+      if (wf.workflowChild?.length > 0) {
+        const found = findParent(targetId, wf.workflowChild);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  const updateParentState = (
+    childId: string,
+    newSelected: Set<string>,
+    allWorkflows: WorkflowGroupResponse[]
+  ) => {
+    const parent = findParent(childId, allWorkflows);
+    if (parent) {
+      const hasAnyChildSelected = parent.workflowChild?.some((child) =>
+        newSelected.has(child.id)
+      );
+      if (hasAnyChildSelected) {
+        newSelected.add(parent.id);
+      } else {
+        newSelected.delete(parent.id);
+      }
+      updateParentState(parent.id, newSelected, allWorkflows);
+    }
+  };
+
+  const toggleWorkflow = (workflowId: string, workflow: WorkflowGroupResponse) => {
+    if (existingWorkflowIds.has(workflowId)) {
+      return;
+    }
+
+    const newSelected = new Set(selectedWorkflowIds);
+    const isCurrentlyChecked = newSelected.has(workflowId);
+
+    if (isCurrentlyChecked) {
+      const allIds = getAllChildIds(workflow);
+      allIds.forEach((id) => newSelected.delete(id));
+      updateParentState(workflowId, newSelected, workflowGroups);
+    } else {
+      const allIds = getAllChildIds(workflow);
+      allIds.forEach((id) => newSelected.add(id));
+      updateParentState(workflowId, newSelected, workflowGroups);
+    }
+
+    setSelectedWorkflowIds(newSelected);
+  };
+
+  const renderWorkflowLevel = (workflows: WorkflowGroupResponse[], level: number = 0) => {
+    if (level >= 3) return [];
+    return workflows.map(workflow => (
+      <Box key={workflow.id} w="full" ml={level * 4}>
+        <Checkbox
+          isChecked={selectedWorkflowIds.has(workflow.id)}
+          colorScheme="blue"
+          size="lg"
+          onChange={() => toggleWorkflow(workflow.id, workflow)}
+          isDisabled={existingWorkflowIds.has(workflow.id)}
+        >
+          <Text fontWeight={level === 0 ? "bold" : "normal"}>{workflow.wfgName}</Text>
+        </Checkbox>
+        {workflow.workflowChild && workflow.workflowChild.length > 0 && (
+          <VStack align="stretch" spacing={2} mt={2}>
+            {renderWorkflowLevel(workflow.workflowChild, level + 1)}
+          </VStack>
+        )}
+      </Box>
+    ));
+  };
+
+  const handlePresetChange = async (presetId: string) => {
+    if (!presetId || selectedPreset?.id === presetId) {
+      setSelectedPreset(null);
+      setSelectedWorkflowIds(new Set());
+      return;
+    }
+
+    try {
+      const requestData = await GetWorkflowPresetById(presetId, tokenData);
+      if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
+        setSelectedPreset(requestData.data);
+
+        const allWorkflowIds = new Set<string>();
+        const extractIds = (workflows: WorkflowGroupResponse[]) => {
+          workflows.forEach((workflow) => {
+            allWorkflowIds.add(workflow.id);
+            if (workflow.workflowChild?.length > 0) {
+              extractIds(workflow.workflowChild);
+            }
+          });
+        };
+        extractIds(requestData.data.workflowData);
+        setSelectedWorkflowIds(allWorkflowIds);
+      }
+    } catch (error) {
+      showToast({ description: "Failed to load preset detail", statusToast: "error" });
+    }
+  };
+
+  const getNewWorkflowIds = (): Set<string> => {
+    const newIds = new Set<string>();
+    selectedWorkflowIds.forEach(id => {
+      if (!existingWorkflowIds.has(id)) {
+        newIds.add(id);
+      }
+    });
+    return newIds;
+  };
+
+  const handleAssignWorkflows = async () => {
+    const newWorkflowIds = getNewWorkflowIds();
+    if (newWorkflowIds.size === 0) {
+      showToast({ description: "Please select at least one new procurement stage", statusToast: "warning" });
+      return;
+    }
+    setIsConfirmWorkflowOpen(true);
+  };
+
+  const confirmAssignWorkflows = async () => {
+    setIsConfirmWorkflowOpen(false);
+    setIsAssigning(true);
+    try {
+      const newWorkflowIds = getNewWorkflowIds();
+      const response = await AssignProcurementStagesToProject(
+        { projectId: DataProject.id, workflowIds: Array.from(newWorkflowIds) },
+        tokenData
+      );
+
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({ description: response.message || "Procurement stages assigned successfully", statusToast: "success" });
+        setIsModalOpen(false);
+        setSelectedWorkflowIds(new Set());
+        setSelectedPreset(null);
+        onRefresh();
+      } else {
+        showToast({ description: response?.message || "Failed to assign procurement stages", statusToast: "error" });
+      }
+    } catch (error) {
+      showToast({ description: "Error assigning procurement stages", statusToast: "error" });
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
   return (
     <VStack spacing={8} align="stretch">
       {/* Header Section */}
@@ -3544,10 +3812,25 @@ const WorkFlowBacklogsView = ({
 
       {/* Tabs Section */}
       <Tabs colorScheme="secondary" w="full">
-        <TabList>
-          <Tab>Progression</Tab>
-          <Tab>Documentations</Tab>
-        </TabList>
+        <HStack justify="space-between" align="center" w="full">
+          <TabList>
+            <Tab>Progression</Tab>
+            <Tab>Documentations</Tab>
+          </TabList>
+          <Button
+            size="sm"
+            leftIcon={<FiSettings />}
+            colorScheme="blue"
+            rounded="full"
+            onClick={() => {
+              setIsModalOpen(true);
+              loadWorkflowData();
+            }}
+            isLoading={IsLoadingProcess}
+          >
+            Set Procurement Stages
+          </Button>
+        </HStack>
 
         <TabPanels>
           {/* Progression Tab */}
@@ -3567,6 +3850,257 @@ const WorkFlowBacklogsView = ({
           </TabPanel>
         </TabPanels>
       </Tabs>
+
+      {/* Modal for setting procurement stages */}
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} size="6xl">
+        <ModalOverlay />
+        <ModalContent maxH="90vh">
+          <ModalHeader>Set Procurement Stages</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody overflowY="auto">
+            {isLoadingWorkflows ? (
+              <Flex justify="center" align="center" minH="200px">
+                <LoadingMiniSignature />
+              </Flex>
+            ) : (
+              <Grid templateColumns="repeat(12, 1fr)" gap={4} w="full">
+                {/* Left: Workflow Selection */}
+                <GridItem colSpan={{ base: 12, sm: 12, md: 8, lg: 8 }} w="full">
+                  <Flex
+                    as={Stack}
+                    p={6}
+                    w="full"
+                    spacing={4}
+                    rounded={radiusStyle}
+                    borderWidth={1}
+                    boxShadow="md"
+                    borderColor={colorMode === "light" ? "gray.100" : "gray.900"}
+                  >
+                    <Flex as={Stack} w="full">
+                      <Heading size="md">Choose Procurement Stages</Heading>
+                      <Text
+                        fontSize="sm"
+                        color={colorMode === "light" ? "gray.500" : "gray.400"}
+                      >
+                        Select procurement workflow stages
+                      </Text>
+                    </Flex>
+                    {workflowGroups.length === 0 ? (
+                      <Text color="gray.500" textAlign="center" py={4}>
+                        No procurement stages available
+                      </Text>
+                    ) : (
+                      <VStack align="stretch" spacing={2}>
+                        {renderWorkflowLevel(workflowGroups)}
+                      </VStack>
+                    )}
+                  </Flex>
+                </GridItem>
+
+                {/* Right: Preset Templates */}
+                <GridItem colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }} w="full">
+                  <Card
+                    rounded={radiusStyle}
+                    bgColor={colorMode === "light" ? "gray.100" : "gray.900"}
+                  >
+                    <CardBody>
+                      <Flex w="full" as={Stack} minH="500px" spacing={6}>
+                        <HStack spacing={4} align="center" opacity={existingWorkflowIds.size > 0 ? 0.5 : 1}>
+                          <Box
+                            w={12}
+                            h={12}
+                            bgColor={colorMode === "light" ? "secondary.500" : "gray.800"}
+                            rounded="lg"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                          >
+                            <Icon as={BsLightningChargeFill} color={colorMode === "light" ? "white" : "secondary.500"} />
+                          </Box>
+                          <VStack align="start" spacing={0} flex={1}>
+                            <HStack spacing={3}>
+                              <Text fontSize="lg" fontWeight="bold" color="secondary.500">
+                                Procurement Presets
+                              </Text>
+                              {existingWorkflowIds.size > 0 && (
+                                <Text fontSize="xs" color="gray.500" fontStyle="italic">
+                                  (Disabled - existing stages assigned)
+                                </Text>
+                              )}
+                            </HStack>
+                            <Text fontSize="sm" color={colorMode === "light" ? "gray.500" : "gray.400"} lineHeight={1.2}>
+                              Select procurement preset
+                            </Text>
+                          </VStack>
+                        </HStack>
+                        {existingWorkflowIds.size > 0 && (
+                          <Alert
+                            status="info"
+                            variant="subtle"
+                            rounded={radiusStyle}
+                            bg={colorMode === "light" ? "blue.50" : "blue.900"}
+                            borderColor={colorMode === "light" ? "blue.300" : "blue.600"}
+                            borderWidth="1px"
+                          >
+                            <AlertIcon />
+                            <Box>
+                              <AlertTitle fontSize="sm">Procurement Stages Already Assigned</AlertTitle>
+                              <AlertDescription fontSize="xs" mt={1}>
+                                This project already has procurement stages assigned. Preset selection is disabled. You can only add new procurement stages to existing ones.
+                              </AlertDescription>
+                            </Box>
+                          </Alert>
+                        )}
+                        <Flex as={Stack} w="full">
+                          {workflowPresets.length > 0 ? (
+                            <VStack align="start" spacing={1}>
+                              {workflowPresets.map((preset) => (
+                                <Flex
+                                  key={preset.id}
+                                  as={HStack}
+                                  w="full"
+                                  justifyContent="space-between"
+                                  alignItems="center"
+                                  bgColor={selectedPreset?.id === preset.id ? "secondary.100" : "transparent"}
+                                  rounded={radiusStyle}
+                                  px={4}
+                                  py={3}
+                                >
+                                  <VStack align="start" spacing={1} flex={1}>
+                                    <HStack spacing={2}>
+                                      <Icon as={FaCircle} color="secondary.500" boxSize={2} />
+                                      <Text fontWeight={selectedPreset?.id === preset.id ? 600 : 500} color={selectedPreset?.id === preset.id ? "gray.900" : colorMode === "light" ? "gray.900" : "white"}>
+                                        {preset.wfPresetName}
+                                      </Text>
+                                    </HStack>
+                                    {preset.wfPresetDesc && (
+                                      <Text fontSize="xs" color="gray.500" pl={4}>
+                                        {preset.wfPresetDesc}
+                                      </Text>
+                                    )}
+                                  </VStack>
+                                  <Flex justifyContent="end" alignItems="center">
+                                    <Button
+                                      variant="solid"
+                                      colorScheme={selectedPreset?.id === preset.id ? "red" : "secondary"}
+                                      size="xs"
+                                      w="full"
+                                      textAlign="left"
+                                      justifyContent="flex-start"
+                                      onClick={() => handlePresetChange(preset.id)}
+                                      isDisabled={existingWorkflowIds.size > 0}
+                                    >
+                                      {selectedPreset?.id === preset.id ? <FiMinus /> : <FiPlus />}
+                                    </Button>
+                                  </Flex>
+                                </Flex>
+                              ))}
+                            </VStack>
+                          ) : (
+                            <Text fontSize="sm" color="gray.500">
+                              No presets available
+                            </Text>
+                          )}
+                        </Flex>
+                      </Flex>
+                    </CardBody>
+                  </Card>
+                </GridItem>
+              </Grid>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="ghost" mr={3} onClick={() => setIsModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              colorScheme="blue"
+              onClick={handleAssignWorkflows}
+              isLoading={isAssigning}
+              isDisabled={getNewWorkflowIds().size === 0 || isLoadingWorkflows}
+            >
+              Assign ({getNewWorkflowIds().size})
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Confirmation Modal */}
+      <AlertDialog isOpen={isConfirmWorkflowOpen} leastDestructiveRef={cancelWorkflowRef} onClose={() => setIsConfirmWorkflowOpen(false)} isCentered>
+        <AlertDialogOverlay bg="blackAlpha.500" backdropFilter="blur(8px)" />
+        <AlertDialogContent rounded={radiusStyle}>
+          <AlertDialogHeader bg="orange.500" color="white" roundedTop={radiusStyle}>
+            <HStack>
+              <Icon as={FiAlertTriangle} boxSize={5} />
+              <Text>Assign Procurement Stages</Text>
+            </HStack>
+          </AlertDialogHeader>
+          <AlertDialogCloseButton color="white" />
+          <AlertDialogBody py={6}>
+            <VStack spacing={4} align="stretch">
+              <HStack spacing={2} align="flex-start">
+                <Icon as={FiAlertTriangle} color="orange.500" boxSize={5} mt={0.5} />
+                <Box>
+                  <Text fontWeight="bold" color="orange.500">WARNING: Assign Procurement Stages</Text>
+                  <Text mt={2}>
+                    Are you sure you want to assign {getNewWorkflowIds().size} new procurement stage(s)?
+                  </Text>
+                  {existingWorkflowIds.size > 0 && (
+                    <Text fontSize="sm" color="gray.500" mt={2}>
+                      ({existingWorkflowIds.size} existing procurement stage(s) will remain)
+                    </Text>
+                  )}
+                </Box>
+              </HStack>
+
+              <Card bg={colorMode === "light" ? "orange.50" : "orange.900"} borderColor="orange.200" borderWidth="1px">
+                <CardBody>
+                  <HStack spacing={2} align="flex-start">
+                    <Icon as={FiAlertTriangle} color="orange.500" boxSize={4} mt={0.5} />
+                    <Box>
+                      <Text fontWeight="bold" fontSize="sm">IMPORTANT:</Text>
+                      <Text fontSize="sm" mt={1}>
+                        This will set up the procurement workflow structure and cannot be easily undone.
+                      </Text>
+                    </Box>
+                  </HStack>
+                </CardBody>
+              </Card>
+
+              <Box>
+                <HStack spacing={2} mb={2}>
+                  <Icon as={FiInfo} color="blue.500" />
+                  <Text fontWeight="bold" fontSize="sm">Assignment Details:</Text>
+                </HStack>
+                <VStack align="stretch" spacing={1} pl={6}>
+                  <Text fontSize="sm">• Project: {DataProject?.projectName}</Text>
+                  <Text fontSize="sm">• Procurement Stages: {selectedWorkflowIds.size} selected</Text>
+                  <Text fontSize="sm">• Type: Procurement Workflow</Text>
+                </VStack>
+              </Box>
+            </VStack>
+          </AlertDialogBody>
+          <AlertDialogFooter>
+            <HStack spacing={3}>
+              <Button ref={cancelWorkflowRef} leftIcon={<FiX />} onClick={() => setIsConfirmWorkflowOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                leftIcon={<FiCheck />}
+                colorScheme="orange"
+                onClick={() => {
+                  setIsConfirmWorkflowOpen(false);
+                  confirmAssignWorkflows();
+                }}
+                isDisabled={countdown > 0}
+              >
+                {countdown > 0 ? `Wait ${countdown}s` : `Yes, Assign Procurement Stages`}
+              </Button>
+            </HStack>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </VStack>
   );
 };

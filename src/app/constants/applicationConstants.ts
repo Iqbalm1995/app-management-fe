@@ -584,3 +584,7 @@ export const ALLOCATION_SECTION_POINTS: AllocationProintProps[] = [
     PercentageWeight: 20,
   },
 ];
+
+//sJTLr62VFATzZr7e3jmwNA==
+// DEFAULT PASSWORD
+export const DEFAULT_PWD_SETTINGS: string = "sJTLr62VFATzZr7e3jmwNA==";

@@ -242,6 +242,7 @@ import useOrganization, {
 } from "@/app/services/useOrganization";
 import useApps, { ApplicationMasterResponse } from "@/app/services/useApps";
 import AppPickerModal from "./AppPickerModal";
+import MemoSelectionModal from "./MemoSelectionModal";
 import { WeekdaySelector } from "@/app/components/inputProps/WeekDaySelector";
 import CoverLockedFeature from "@/app/components/coverLockedFeature";
 
@@ -600,6 +601,11 @@ function RegisterRequirementFormPage({
   const { List: ListOrganization } = useOrganization();
   const [isClient, setIsClient] = useState(false);
   const ModalAppPicker = useDisclosure();
+  const {
+    isOpen: isMemoModalOpen,
+    onOpen: onMemoModalOpen,
+    onClose: onMemoModalClose,
+  } = useDisclosure();
   const {
     isOpen: isApprovalRequestOpen,
     onOpen: onApprovalRequestOpen,
@@ -2833,8 +2839,16 @@ function RegisterRequirementFormPage({
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [], // XLSX
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
         [], // DOCX
+      "text/csv": [], // CSV files
     },
-    onDrop: (acceptedFiles) => {
+    maxSize: 120 * 1024 * 1024, // 120MB
+    onDrop: (acceptedFiles, rejectedFiles) => {
+      if (rejectedFiles.length > 0) {
+        showToast({
+          description: "Some files were rejected. Max file size is 120MB.",
+          statusToast: "error",
+        });
+      }
       setFiles((prevFiles) => [...prevFiles, ...acceptedFiles]);
     },
   });
@@ -3288,6 +3302,17 @@ function RegisterRequirementFormPage({
                                 </Stack>
                               </InputLayout>
                             </FormControl>
+
+                            {formik.values.isHaveMemo === "Y" && (
+                              <Button
+                                onClick={onMemoModalOpen}
+                                colorScheme="blue"
+                                size="sm"
+                                mt={2}
+                              >
+                                Pilih Memo Pengantar
+                              </Button>
+                            )}
                           </Flex>
 
                           {formik.values.isHaveMemo == "N" && (
@@ -3558,7 +3583,9 @@ function RegisterRequirementFormPage({
                                     maxLength={22}
                                     isDisabled={
                                       ActionLoading ||
-                                      formik.values.isHaveMemo === "N"
+                                      formik.values.isHaveMemo === "N" ||
+                                      (formik.values.reffParentId !== null &&
+                                        formik.values.reffParentId !== "")
                                     }
                                   />
 
@@ -3599,7 +3626,9 @@ function RegisterRequirementFormPage({
                                     maxLength={300}
                                     isDisabled={
                                       ActionLoading ||
-                                      formik.values.isHaveMemo == "N"
+                                      formik.values.isHaveMemo == "N" ||
+                                      (formik.values.reffParentId !== null &&
+                                        formik.values.reffParentId !== "")
                                     }
                                   />
                                   <FormErrorMessage>
@@ -3640,7 +3669,9 @@ function RegisterRequirementFormPage({
                                     value={formik.values.reqInititateDate ?? ""}
                                     isDisabled={
                                       ActionLoading ||
-                                      formik.values.isHaveMemo == "N"
+                                      formik.values.isHaveMemo == "N" ||
+                                      (formik.values.reffParentId !== null &&
+                                        formik.values.reffParentId !== "")
                                     }
                                   />
                                   <FormErrorMessage>
@@ -3681,7 +3712,9 @@ function RegisterRequirementFormPage({
                                     value={formik.values.reqAcceptedDate ?? ""}
                                     isDisabled={
                                       ActionLoading ||
-                                      formik.values.isHaveMemo == "N"
+                                      formik.values.isHaveMemo == "N" ||
+                                      (formik.values.reffParentId !== null &&
+                                        formik.values.reffParentId !== "")
                                     }
                                   />
                                   <FormErrorMessage>
@@ -3762,7 +3795,9 @@ function RegisterRequirementFormPage({
                                     }}
                                     isDisabled={
                                       ActionLoading ||
-                                      formik.values.isHaveMemo == "N"
+                                      formik.values.isHaveMemo == "N" ||
+                                      (formik.values.reffParentId !== null &&
+                                        formik.values.reffParentId !== "")
                                     }
                                   />
                                   <FormErrorMessage>
@@ -6361,19 +6396,24 @@ function RegisterRequirementFormPage({
                             color: "primary.400",
                           }}
                           w={"full"}
-                          minH={"200px"} // Set a minimum height for better UX
-                          justifyContent={"center"} // Center the content horizontally
-                          alignItems={"center"} // Center the content vertically
+                          minH={"200px"}
+                          justifyContent={"center"}
+                          alignItems={"center"}
                         >
                           <input {...getInputProps()} />
-                          <Text
-                            fontSize="xl"
-                            fontWeight={"semibold"}
-                            color="gray.600"
-                          >
-                            Seret & letakkan file di sini, atau klik untuk
-                            memilih file
-                          </Text>
+                          <VStack spacing={2}>
+                            <Text
+                              fontSize="xl"
+                              fontWeight={"semibold"}
+                              color="gray.600"
+                            >
+                              Seret & letakkan file di sini, atau klik untuk
+                              memilih file
+                            </Text>
+                            <Text fontSize="sm" color="gray.500">
+                              Format: PDF, DOCX, XLSX, CSV, Images (Max 120MB per file)
+                            </Text>
+                          </VStack>
                         </Flex>
 
                         {/* Table Preview - Only show when there are pending files */}
@@ -6674,6 +6714,24 @@ function RegisterRequirementFormPage({
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* Memo Selection Modal */}
+      <MemoSelectionModal
+        isOpen={isMemoModalOpen}
+        onClose={onMemoModalClose}
+        onSelect={(memo) => {
+          formik.setFieldValue("reffParentId", memo.id);
+          formik.setFieldValue("reqNumber", memo.reqNumber);
+          formik.setFieldValue("reqNarative", memo.reqNarative);
+          formik.setFieldValue("reqInititateDate", memo.reqInititateDate);
+          formik.setFieldValue("reqAcceptedDate", memo.reqAcceptedDate);
+          formik.setFieldValue("senderDivisionId", memo.senderDivisionId);
+          formik.setFieldValue("senderDivisionName", memo.senderDivisionName);
+          formik.setFieldValue("isCarryOver", memo.isCarryOver);
+          onMemoModalClose();
+        }}
+        tokenData={tokenData}
+      />
     </LayoutAdmin>
   )
 }
