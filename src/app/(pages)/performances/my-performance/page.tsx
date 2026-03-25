@@ -93,6 +93,22 @@ function MyPerformancePage() {
         setDataAuth(UserData);
         setCurrentUserId(UserData.userId);
         setUserIdFilter(UserData.userId);
+        
+        // Set ParamFilter with userId in first place
+        setParamFilter([
+          {
+            field: "userId",
+            operator: "=",
+            value: UserData.userId,
+            filterLabel: "User ID Filter"
+          },
+          {
+            field: "projectStatus",
+            operator: "=",
+            value: "PROJECT_CLOSED",
+            filterLabel: "Project Status",
+          },
+        ]);
       }
     }
 
@@ -292,32 +308,31 @@ function MyPerformancePage() {
     };
 
     let updatedFilters = ParamFilter.filter(
-      (f) => f.field !== "yearPeriod" && f.field !== "quartalPeriod" && f.field !== "userId",
+      (f) => f.field !== "yearPeriod" && f.field !== "quartalPeriod",
     );
 
     updatedFilters = addParamFilterUpdate(updatedFilters, yearFilter);
     updatedFilters = addParamFilterUpdate(updatedFilters, quarterFilter);
 
-    // Always add userId back
-    if (UserIdFilter) {
-      updatedFilters = addParamFilterUpdate(updatedFilters, {
+    setParamFilter(updatedFilters);
+  }, [selectedYear, selectedQuarter]);
+
+  useEffect(() => {
+    if (DataAuth && tokenData && UserIdFilter) {
+      // Always ensure userId is in filterWhere
+      let finalFilters = ParamFilter.filter(f => f.field !== "userId");
+      finalFilters.unshift({
         field: "userId",
         operator: "=",
         value: UserIdFilter,
         filterLabel: "User ID Filter"
       });
-    }
 
-    setParamFilter(updatedFilters);
-  }, [selectedYear, selectedQuarter, UserIdFilter]);
-
-  useEffect(() => {
-    if (DataAuth && tokenData && UserIdFilter) {
       const PayloadList: PaggingListPayloadCustom = {
         search: globalFilter,
         limit: 99999,
         page: 0,
-        filterWhere: ParamFilter,
+        filterWhere: finalFilters,
         fieldOrder: ["nama"],
         orderDir: "asc",
       };
