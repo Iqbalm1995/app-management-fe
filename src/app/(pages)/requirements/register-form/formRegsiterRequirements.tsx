@@ -3303,7 +3303,7 @@ function RegisterRequirementFormPage({
                               </InputLayout>
                             </FormControl>
 
-                            {formik.values.isHaveMemo === "Y" && (
+                            {false && (
                               <Button
                                 onClick={onMemoModalOpen}
                                 colorScheme="blue"
