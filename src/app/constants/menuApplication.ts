@@ -466,6 +466,16 @@ export const LinkItems: LinkItemProps[] = [
         menuID: "1",
         children: [],
       },
+      {
+        name: "Master Report Snapshot",
+        icon: TbFileReport,
+        iconName: "TbFileReport",
+        link: "/report/master-report-snapshot",
+        role: ["admin"],
+        isPro: false,
+        menuID: "1",
+        children: [],
+      },
       // {
       //   name: "Application & Feature",
       //   icon: RiApps2AiLine,

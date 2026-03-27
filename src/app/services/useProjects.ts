@@ -825,6 +825,14 @@ export interface ProjectDeadlineStatsResponse {
   additionalDeadlineTasksCount: number;
 }
 
+export interface BulkProgressionUpdateResult {
+  totalProcessed: number;
+  totalUpdated: number;
+  totalErrors: number;
+  totalSkipped: number;
+  processingTimeSeconds: number;
+}
+
 export interface ProjectWorkflowBacklogInitializePayload {
   projectWorkflowId: string;
 }
@@ -890,6 +898,9 @@ interface useProjectsServices {
     projectId: string,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
+  UpdateAllProjectsProgressionSnapshot: (
+    token: string
+  ) => Promise<ApiGenericResponse<BulkProgressionUpdateResult | null> | null>;
   GetProjectCount: (
     token: string
   ) => Promise<ApiGenericResponse<ProjectCountResponse | null> | null>;
@@ -1819,6 +1830,48 @@ const useProjects = (): useProjectsServices => {
       const response = await axiosInstance.post<ApiGenericResponse<string>>(
         `${UrlEndpoint}${PathEndpoint}`,
         { projectId },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const UpdateAllProjectsProgressionSnapshot = async (
+    token: string
+  ): Promise<ApiGenericResponse<BulkProgressionUpdateResult | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Projects/snapshot/progressions-update`;
+    try {
+      const response = await axiosInstance.post<ApiGenericResponse<BulkProgressionUpdateResult>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        {},
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -4491,6 +4544,7 @@ const useProjects = (): useProjectsServices => {
     GetProjectMemberTaskStats,
     GetProjectDeadlineStats,
     UpdateProjectProgressionAndStatus,
+    UpdateAllProjectsProgressionSnapshot,
     GetProjectCount,
     InsertProjects,
     RegisterProjectNew,
