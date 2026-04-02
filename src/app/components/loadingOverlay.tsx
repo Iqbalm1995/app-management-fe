@@ -2,8 +2,10 @@
 
 import { Box, Center, Flex, HStack, Text } from "@chakra-ui/react";
 import { motion } from "framer-motion";
-import Lottie from "lottie-react";
+import dynamic from "next/dynamic";
 import logoBjbFile from "../json/bjb_loading_v01.json";
+
+const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
 
 const MotionCenter = motion(Center);
 

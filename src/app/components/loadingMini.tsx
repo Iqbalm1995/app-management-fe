@@ -1,6 +1,10 @@
+"use client";
+
 import { Flex, HStack, Text, useColorMode } from "@chakra-ui/react";
-import Lottie from "lottie-react";
+import dynamic from "next/dynamic";
 import logoBjbFile from "../json/bjb_loading_v01.json";
+
+const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
 
 const LoadingMiniSignature = () => {
   const { colorMode } = useColorMode();
