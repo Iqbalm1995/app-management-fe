@@ -6,6 +6,7 @@ import {
 } from "@/app/components/headerContent";
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import { radiusStyle } from "@/app/constants/applicationConstants";
+import { PROJECT_ONGOING, PROJECT_DONE, PROJECT_WAITING_APPROVE } from "@/app/constants/masterStatusConstants";
 import {
   Box,
   Button,
@@ -89,9 +90,11 @@ export default function DashboardPortfolioPage() {
   const [divisionData, setDivisionData] = useState<
     DivisionOwnerQuartileDashboardResponse[]
   >([]);
+  const [divisionTotalProjects, setDivisionTotalProjects] = useState<number>(0);
   const [characteristicsData, setCharacteristicsData] = useState<
     ProjectCharacteristicsDashboardResponse[]
   >([]);
+  const [characteristicsTotalProjects, setCharacteristicsTotalProjects] = useState<number>(0);
   const [projectTypeData, setProjectTypeData] = useState<
     ProjectTypeDashboardResponse[]
   >([]);
@@ -101,6 +104,7 @@ export default function DashboardPortfolioPage() {
   const [projectAcquisitionsData, setProjectAcquisitionsData] = useState<
     ProjectAcquisitionsDashboardResponse[]
   >([]);
+  const [acquisitionsTotalProjects, setAcquisitionsTotalProjects] = useState<number>(0);
   const [projectByGroupManageData, setProjectByGroupManageData] = useState<
     ProjectByGroupManageDashboardResponse[]
   >([]);
@@ -389,6 +393,14 @@ export default function DashboardPortfolioPage() {
         ...new Set(apiData.map((item) => item.divisionName)),
       ];
 
+      // Compute actual total from ALL divisions before slicing
+      const allUniqueDivisions = [...uniqueDivisions];
+      const latestMonthPeriod = Math.max(...apiData.map((item) => item.monthPeriod));
+      const actualTotal = apiData
+        .filter((item) => item.monthPeriod === latestMonthPeriod)
+        .reduce((sum, item) => sum + item.projectCount, 0);
+      setDivisionTotalProjects(actualTotal);
+
       // Randomize division order
       uniqueDivisions = uniqueDivisions.sort(() => Math.random() - 0.5);
 
@@ -470,6 +482,10 @@ export default function DashboardPortfolioPage() {
       );
       const apiData = response?.data || [];
 
+      // Compute actual total from ALL characteristics before slicing
+      const actualCharTotal = apiData.reduce((sum, item) => sum + item.projectCount, 0);
+      setCharacteristicsTotalProjects(actualCharTotal);
+
       // Randomize and limit to 7 characteristics
       let randomizedData = [...apiData]
         .sort(() => Math.random() - 0.5)
@@ -549,6 +565,10 @@ export default function DashboardPortfolioPage() {
         tokenData
       );
       const apiData = response?.data || [];
+
+      // Compute actual total from ALL acquisitions before slicing
+      const actualAcqTotal = apiData.reduce((sum, item) => sum + item.projectCount, 0);
+      setAcquisitionsTotalProjects(actualAcqTotal);
 
       // Randomize and limit to 7 acquisitions
       let randomizedData = [...apiData]
@@ -1991,28 +2011,24 @@ export default function DashboardPortfolioPage() {
   ];
 
   // Project Summary Dev Donut Chart Configuration (Active vs Closed)
-  const activeProjects = projectSummaryDevData.filter((item) => {
-    const status = item.projectStatus?.toUpperCase();
-    return (
-      status?.includes("ACTIVE") ||
-      status?.includes("INITIATING") ||
-      status?.includes("PROGRESS") ||
-      status?.includes("PLANNING")
-    );
-  });
-  const closedProjects = projectSummaryDevData.filter((item) => {
-    const status = item.projectStatus?.toUpperCase();
-    return (
-      status?.includes("CLOSED") ||
-      status?.includes("COMPLETED") ||
-      status?.includes("CANCELLED")
-    );
-  });
+  const activeProjects = projectSummaryDevData.filter((item) =>
+    PROJECT_ONGOING.includes(item.projectStatus?.toUpperCase())
+  );
+  const closedProjects = projectSummaryDevData.filter((item) =>
+    PROJECT_DONE.includes(item.projectStatus?.toUpperCase())
+  );
+  const waitingApproveProjects = projectSummaryDevData.filter((item) =>
+    PROJECT_WAITING_APPROVE.includes(item.projectStatus?.toUpperCase())
+  );
   const activeCount = activeProjects.reduce(
     (sum, item) => sum + item.projectCount,
     0
   );
   const closedCount = closedProjects.reduce(
+    (sum, item) => sum + item.projectCount,
+    0
+  );
+  const waitingApproveCount = waitingApproveProjects.reduce(
     (sum, item) => sum + item.projectCount,
     0
   );
@@ -2030,8 +2046,8 @@ export default function DashboardPortfolioPage() {
         show: false,
       },
     },
-    colors: ["#38A169", "#E53E3E"],
-    labels: ["Active", "Closed"],
+    colors: ["#38A169", "#E53E3E", "#D69E2E"],
+    labels: ["Active", "Closed", "Waiting Approve"],
     dataLabels: {
       enabled: true,
       formatter: (val: number) => {
@@ -2046,7 +2062,7 @@ export default function DashboardPortfolioPage() {
             total: {
               show: true,
               label: "Total Projects",
-              formatter: () => `${activeCount + closedCount}`,
+              formatter: () => `${activeCount + closedCount + waitingApproveCount}`,
             },
           },
         },
@@ -2060,7 +2076,7 @@ export default function DashboardPortfolioPage() {
     },
   };
 
-  const projectSummaryDevChartSeries = [activeCount, closedCount];
+  const projectSummaryDevChartSeries = [activeCount, closedCount, waitingApproveCount];
 
   // Dev Staff Project Closed Chart Configuration (same as Division Owner Quartile)
   const devStaffCategories = [
@@ -2745,10 +2761,7 @@ export default function DashboardPortfolioPage() {
                                 Total Projects
                               </StatLabel>
                               <StatNumber color="blue.600" fontSize="lg">
-                                {divisionData.reduce(
-                                  (sum, item) => sum + item.projectCount,
-                                  0
-                                )}
+                                {divisionTotalProjects}
                               </StatNumber>
                             </Stat>
                           </HStack>
@@ -2851,10 +2864,7 @@ export default function DashboardPortfolioPage() {
                                 Total Projects
                               </StatLabel>
                               <StatNumber color="blue.600" fontSize="lg">
-                                {characteristicsData.reduce(
-                                  (sum, item) => sum + item.projectCount,
-                                  0
-                                )}
+                                {characteristicsTotalProjects}
                               </StatNumber>
                             </Stat>
                           </HStack>
@@ -3166,10 +3176,7 @@ export default function DashboardPortfolioPage() {
                                 Total Projects
                               </StatLabel>
                               <StatNumber color="cyan.600" fontSize="lg">
-                                {projectAcquisitionsData.reduce(
-                                  (sum, item) => sum + item.projectCount,
-                                  0
-                                )}
+                                {acquisitionsTotalProjects}
                               </StatNumber>
                             </Stat>
                           </HStack>
@@ -3386,6 +3393,19 @@ export default function DashboardPortfolioPage() {
                               </StatLabel>
                               <StatNumber color="red.600" fontSize="lg">
                                 {closedCount}
+                              </StatNumber>
+                            </Stat>
+                            <Stat textAlign="center" size="sm">
+                              <StatLabel
+                                color={useColorModeValue(
+                                  "gray.600",
+                                  "gray.300"
+                                )}
+                              >
+                                Waiting Approve
+                              </StatLabel>
+                              <StatNumber color="yellow.600" fontSize="lg">
+                                {waitingApproveCount}
                               </StatNumber>
                             </Stat>
                           </HStack>

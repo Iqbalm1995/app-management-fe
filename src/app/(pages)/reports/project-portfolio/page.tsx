@@ -145,6 +145,7 @@ function ProjectPortfolioReportPage() {
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
   const [totalPages, setTotalPageData] = useState<number>(0);
+  const [totalCount, setTotalCount] = useState<number>(0);
   const [globalFilter, setGlobalFilter] = useState<string>("");
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -689,7 +690,7 @@ function ProjectPortfolioReportPage() {
       const PayloadList: PaggingListPayloadCustom = {
         search: globalFilter,
         limit: pageSize,
-        page: pageIndex * pageSize, // Convert to offset
+        page: pageIndex,
         filterWhere: ParamFilter,
         fieldOrder: ["createdAt"],
         orderDir: "desc",
@@ -724,6 +725,7 @@ function ProjectPortfolioReportPage() {
             totalData > 0 ? Math.ceil(totalData / pageSize) : -1;
           setDataReport(itemsData);
           setTotalPageData(totalPages);
+          setTotalCount(totalData);
           setIsLoadingProcess(false);
         }
       };
@@ -983,9 +985,14 @@ function ProjectPortfolioReportPage() {
           >
             <CardHeader>
               <Flex justifyContent="space-between" alignItems="center" w="full">
-                <Heading as="h5" size="md">
-                  Project Portfolio Report Data
-                </Heading>
+                <Flex alignItems="center" gap={3}>
+                  <Heading as="h5" size="md">
+                    Project Portfolio Report Data
+                  </Heading>
+                  <Badge colorScheme="blue" fontSize="sm" px={3} py={1} rounded={radiusStyle}>
+                    {totalCount} Projects
+                  </Badge>
+                </Flex>
                 <Button
                   size={"md"}
                   leftIcon={<FiRefreshCcw />}
