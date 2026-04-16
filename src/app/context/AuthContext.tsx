@@ -12,6 +12,17 @@ import {
 } from "../constants/applicationConstants";
 import { redirect, usePathname } from "next/navigation";
 
+const isTokenExpiredByDate = (expiration: string | null | undefined): boolean => {
+  if (!expiration) return true;
+  try {
+    const tokenDate = new Date(expiration).toDateString();
+    const today = new Date().toDateString();
+    return tokenDate !== today;
+  } catch {
+    return true;
+  }
+};
+
 export interface AuthDataModelInterface {
   dataLogin: object | null;
   dataAuth: loginReturn | null;
@@ -35,6 +46,7 @@ const AuthContext = createContext<AuthContextInterface | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
+  const showToast = useToastHelper();
   const [authData, setAuthData] = useState<AuthDataModelInterface>({
     dataLogin: null,
     dataAuth: null,
@@ -60,6 +72,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (storedData) {
         const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
+
+        // Check token expiration by date (24-hour daily session)
+        if (
+          StorageAuth.statusLogin === STATUS_LOGIN_ON &&
+          isTokenExpiredByDate(StorageAuth.dataAuth?.expiration)
+        ) {
+          const expiredAuth: AuthDataModelInterface = {
+            dataLogin: null,
+            dataAuth: null,
+            statusLogin: STATUS_LOGIN_OFF,
+          };
+          localStorage.setItem("authData", JSON.stringify(expiredAuth));
+          localStorage.setItem("tokenData", "");
+          localStorage.removeItem("accessData");
+          showToast({
+            description: "Sesi Anda telah berakhir. Silakan login kembali.",
+            statusToast: "warning",
+          });
+          setLoading(false);
+          isFirstRender.current = false;
+          redirect(LINK_MENU_ROOT);
+          return;
+        }
+
         setAuthData(StorageAuth);
         if (
           StorageAuth.statusLogin === STATUS_LOGIN_OFF &&
@@ -74,7 +110,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(false); // Set loading to false once data is checked
       isFirstRender.current = false;
     }
-  }, [authData, pathname, isPublicRoute]);
+  }, [authData, pathname, isPublicRoute, showToast]);
 
   const handleLogin = async (data: object, dataAuth: loginReturn) => {
     // const DataLogin: loginReturn = data as loginReturn;
