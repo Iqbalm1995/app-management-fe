@@ -15,9 +15,11 @@ import { redirect, usePathname } from "next/navigation";
 const isTokenExpiredByDate = (expiration: string | null | undefined): boolean => {
   if (!expiration) return true;
   try {
-    const tokenDate = new Date(expiration).toDateString();
-    const today = new Date().toDateString();
-    return tokenDate !== today;
+    const tokenDate = new Date(expiration);
+    tokenDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today > tokenDate;
   } catch {
     return true;
   }

@@ -557,6 +557,19 @@ const ProjectsRelationSection: React.FC<ProjectsRelationSectionProps> = ({
   );
 };
 
+interface BacklogChangesData {
+  backlog: BacklogDataResponse;
+  changes?: ReqBacklogPayload | null;
+  showKondisiEksisting?: boolean;
+  urgency?: string;
+  impact?: string;
+  priority?: string;
+  rfcBacklogChanges?: string;
+  rfcBacklogImportant?: string;
+  rfcBacklogImpactOthers?: string;
+  rfcPriorities?: string;
+}
+
 function RegisterRequirementFormPage({
   type_req_param = "BRD",
 }: {
@@ -2114,6 +2127,7 @@ function RegisterRequirementFormPage({
     loadUserOrgData();
   }, [DataAuth, requirementId, formik.values.assignedFromId]);
   const [DataBackLogs, setDataBackLogs] = useState<ReqBacklogPayload[]>([]);
+  const [RfcBacklogChanges, setRfcBacklogChanges] = useState<BacklogChangesData[]>([]);
 
   const logMissingRequiredFields = (
     values: Record<string, any>,
@@ -6261,6 +6275,8 @@ function RegisterRequirementFormPage({
                             formik={formik}
                             DataBackLogs={DataBackLogs}
                             setDataBackLogs={setDataBackLogs}
+                            BacklogChanges={RfcBacklogChanges}
+                            setBacklogChanges={setRfcBacklogChanges}
                             ModalAppPicker={ModalAppPicker}
                             selectedApp={selectedApp}
                             setSelectedApp={setSelectedApp}
@@ -8666,6 +8682,8 @@ interface Section4RFCProps {
   ActionLoading: boolean;
   DataBackLogs: ReqBacklogPayload[];
   setDataBackLogs: React.Dispatch<React.SetStateAction<ReqBacklogPayload[]>>;
+  BacklogChanges: BacklogChangesData[];
+  setBacklogChanges: React.Dispatch<React.SetStateAction<BacklogChangesData[]>>;
   ModalAppPicker: any;
   selectedApp: ApplicationMasterResponse | null;
   setSelectedApp: React.Dispatch<
@@ -8675,19 +8693,6 @@ interface Section4RFCProps {
   hasProjects: boolean;
   isEditMode: boolean;
   isAppSelectionDisabled: () => boolean;
-}
-
-interface BacklogChangesData {
-  backlog: BacklogDataResponse;
-  changes?: ReqBacklogPayload | null;
-  showKondisiEksisting?: boolean;
-  urgency?: string;
-  impact?: string;
-  priority?: string;
-  rfcBacklogChanges?: string;
-  rfcBacklogImportant?: string;
-  rfcBacklogImpactOthers?: string;
-  rfcPriorities?: string;
 }
 
 const EmptyBacklogChangesData: BacklogChangesData = {
@@ -8745,6 +8750,8 @@ const Section4RFCView = ({
   selectedApp,
   setSelectedApp,
   setDataBackLogs,
+  BacklogChanges,
+  setBacklogChanges,
   tokenData,
   hasProjects,
   isEditMode,
@@ -8798,20 +8805,17 @@ const Section4RFCView = ({
   // Backlog Setup
   // NEW BACKLOG RFC
 
-  const [BacklogChanges, setBacklogChanges] = useState<BacklogChangesData[]>(
-    [],
-  );
   const [BacklogApps, setBacklogApps] = useState<BacklogDataResponse[]>([]);
   const [BacklogAppsOption, setBacklogAppsOption] = useState<OptionListProps[]>(
     [],
   );
 
   // Populate BacklogApps from DataBackLogs when draft is loaded (for RFC)
-  // Only run this when loading a draft, not when selecting a new app
+  // Runs whenever DataBackLogs has data and BacklogChanges is empty (covers both edit and register mode remount)
   useEffect(() => {
     if (
       DataBackLogs.length > 0 &&
-      isEditMode // Only populate when loading draft/edit mode
+      BacklogChanges.length === 0
     ) {
       // Convert DataBackLogs to BacklogDataResponse format
       const backlogAppsData: BacklogDataResponse[] = DataBackLogs.map((b) => ({
@@ -8857,16 +8861,16 @@ const Section4RFCView = ({
       console.log("Populated BacklogApps from DataBackLogs:", backlogAppsData);
       setBacklogApps(backlogAppsData);
     }
-  }, [DataBackLogs, type_req_param, isEditMode]);
+  }, [DataBackLogs, type_req_param, BacklogChanges.length]);
 
-  // Populate BacklogChanges from BacklogApps when loading draft (edit mode only)
+  // Populate BacklogChanges from BacklogApps when loading draft or remounting (edit and register mode)
   useEffect(() => {
     console.log("BacklogChanges useEffect triggered:", {
       BacklogAppsLength: BacklogApps.length,
       BacklogChangesLength: BacklogChanges.length,
       isEditMode: isEditMode,
     });
-    if (BacklogApps.length > 0 && BacklogChanges.length === 0 && isEditMode) {
+    if (BacklogApps.length > 0 && BacklogChanges.length === 0) {
       console.log("Populating BacklogChanges from BacklogApps:", BacklogApps);
       const backlogChangesData: BacklogChangesData[] = BacklogApps.map((b) => {
         // Get latest history as Kondisi Eksisting (last item in array)
@@ -8922,7 +8926,7 @@ const Section4RFCView = ({
       );
       setBacklogChanges(backlogChangesData);
     }
-  }, [BacklogApps, isEditMode]);
+  }, [BacklogApps]);
 
   useEffect(() => {
     console.log("BacklogChanges before conversion:", BacklogChanges);
@@ -9872,8 +9876,9 @@ const Section4RFCView = ({
                                 name={`backlogExisting-${index}`}
                                 type="text"
                                 placeholder="Nama Scope Eksisting"
-                                value={item.backlog.backlogName || ""}
-                                onChange={(e) => {
+                                defaultValue={item.backlog.backlogName || ""}
+                                key={`backlogExisting-${index}-${item.backlog.backlogName}`}
+                                onBlur={(e) => {
                                   const updated = [...BacklogChanges];
                                   updated[index].backlog.backlogName =
                                     e.target.value;
@@ -9892,14 +9897,15 @@ const Section4RFCView = ({
                               <Textarea
                                 id={`backlogExistingDesc-${index}`}
                                 name={`backlogExistingDesc-${index}`}
-                                onChange={(e) => {
+                                defaultValue={item.backlog.backlogDesc || ""}
+                                key={`backlogExistingDesc-${index}-${item.backlog.backlogDesc}`}
+                                onBlur={(e) => {
                                   const updated = [...BacklogChanges];
                                   updated[index].backlog.backlogDesc =
                                     e.target.value;
                                   setBacklogChanges(updated);
                                 }}
                                 placeholder={`Deskripsi Scope Eksisting`}
-                                value={item.backlog.backlogDesc || ""}
                               />
                             </Stack>
                           </InputLayoutFull>
@@ -9952,12 +9958,13 @@ const Section4RFCView = ({
                           </FormLabel>
                           <Stack spacing={0}>
                             <Input
-                              id={`backlogChanges-${1}`}
-                              name={`backlogChanges-${1}`}
+                              id={`backlogChanges-${index}`}
+                              name={`backlogChanges-${index}`}
                               type="text"
                               placeholder={`Nama Scope Perubahan`}
-                              value={item.changes?.backlogName ?? ""}
-                              onChange={(e) => {
+                              defaultValue={item.changes?.backlogName ?? ""}
+                              key={`backlogChanges-${index}-${item.changes?.backlogName}`}
+                              onBlur={(e) => {
                                 const updated = [...BacklogChanges];
                                 if (!updated[index].changes)
                                   updated[index].changes = {
@@ -9985,10 +9992,11 @@ const Section4RFCView = ({
                           </FormLabel>
                           <Stack spacing={0}>
                             <Textarea
-                              id={`backlogChangesDesc-${1}`}
-                              name={`backlogChangesDesc-${1}`}
-                              value={item.changes?.backlogDesc ?? ""}
-                              onChange={(e) => {
+                              id={`backlogChangesDesc-${index}`}
+                              name={`backlogChangesDesc-${index}`}
+                              defaultValue={item.changes?.backlogDesc ?? ""}
+                              key={`backlogChangesDesc-${index}-${item.changes?.backlogDesc}`}
+                              onBlur={(e) => {
                                 const updated = [...BacklogChanges];
                                 if (!updated[index].changes)
                                   updated[index].changes = {
@@ -10004,8 +10012,6 @@ const Section4RFCView = ({
                                 setBacklogChanges(updated);
                               }}
                               placeholder={`Deskripsi Scope Perubahan`}
-                            // maxLength={300}
-                            // isDisabled={ActionLoading}
                             />
                           </Stack>
                         </InputLayoutFull>
@@ -10017,10 +10023,11 @@ const Section4RFCView = ({
                           </FormLabel>
                           <Stack spacing={0}>
                             <Textarea
-                              id={`backlogChangesNote-${1}`}
-                              name={`backlogChangesNote-${1}`}
-                              value={item.changes?.note ?? ""}
-                              onChange={(e) => {
+                              id={`backlogChangesNote-${index}`}
+                              name={`backlogChangesNote-${index}`}
+                              defaultValue={item.changes?.note ?? ""}
+                              key={`backlogChangesNote-${index}-${item.changes?.note}`}
+                              onBlur={(e) => {
                                 const updated = [...BacklogChanges];
                                 if (!updated[index].changes)
                                   updated[index].changes = {
@@ -10035,8 +10042,6 @@ const Section4RFCView = ({
                                 setBacklogChanges(updated);
                               }}
                               placeholder={`Catatan Scope Perubahan`}
-                            // maxLength={300}
-                            // isDisabled={ActionLoading}
                             />
                           </Stack>
                         </InputLayoutFull>
