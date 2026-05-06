@@ -74,10 +74,10 @@ export interface DynamicRoutePattern {
   baseMenu?: string;
   moduleCode?: string;
   permission?:
-  | "make"
-  | "review"
-  | "approve"
-  | ("make" | "review" | "approve")[];
+    | "make"
+    | "review"
+    | "approve"
+    | ("make" | "review" | "approve")[];
 }
 
 export const dynamicRoutePatterns: DynamicRoutePattern[] = [
@@ -177,6 +177,13 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
   {
     pattern: "/projects/doc",
     baseMenu: "/projects",
+  },
+
+  // ===== VENDOR MANAGEMENT =====
+  {
+    pattern: "/vendor-management/register",
+    baseMenu: "/vendor-management",
+    permission: "make",
   },
 
   // ===== MASTER DATA =====

@@ -180,56 +180,42 @@ const WorkspaceProject = () => {
   };
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchInitialData = async () => {
       const token = localStorage.getItem("tokenData");
-      if (token) {
-        setStatsLoading(true);
-        try {
-          console.log("🔄 Fetching workspace stats...");
-          const response = await GetWorkspaceStats(token);
-          console.log("📊 Stats response:", response);
+      if (!token) return;
 
-          if (response?.statusCode === 200 && response.data) {
-            console.log("✅ Stats data:", response.data);
-            setStats(response.data);
-          } else {
-            console.log("❌ Stats API failed:", response);
-          }
-        } catch (error) {
-          console.error("❌ Error fetching workspace stats:", error);
-        } finally {
-          setStatsLoading(false);
-        }
-      } else {
-        console.log("❌ No token found");
-      }
-    };
-
-    const fetchTypeCounts = async () => {
-      const token = localStorage.getItem("tokenData");
-      if (token) {
-        try {
-          const response = await GetProjectTypeCounts(token);
-          if (response?.statusCode === 200 && response.data) {
-            setProjectTypeCounts(response.data);
-          }
-        } catch (error) {
-          console.error("❌ Error fetching project type counts:", error);
-        }
-      }
-    };
-
-    fetchStats();
-    fetchTypeCounts();
-    fetchProjects(); // Initial load
-  }, []);
-
-  // Initialize token
-  useEffect(() => {
-    const token: string = localStorage.getItem("tokenData") as string;
-    if (token) {
       setTokenData(token);
-    }
+      setStatsLoading(true);
+      setQuarterProgressLoading(true);
+      setProjectsLoading(true);
+
+      try {
+        const { quarter: q, year: y } = getCurrentQuarter();
+
+        const [statsRes, typeCountsRes, projectsRes, quarterRes] = await Promise.all([
+          GetWorkspaceStats(token),
+          GetProjectTypeCounts(token),
+          GetAssignedProjects({ search: "", limit: 9, page: 0, projectType: null, filterWhere: [], fieldOrder: ["createdAt"], orderDir: "desc" }, token),
+          GetQuarterProgress(q, y, token),
+        ]);
+
+        if (statsRes?.statusCode === 200 && statsRes.data) setStats(statsRes.data);
+        if (typeCountsRes?.statusCode === 200 && typeCountsRes.data) setProjectTypeCounts(typeCountsRes.data);
+        if (projectsRes?.statusCode === 200 && projectsRes.data) {
+          setProjects(projectsRes.data);
+          setTotalProjectsCount(projectsRes.countTotal || 0);
+        }
+        if (quarterRes?.statusCode === 200) setQuarterProgress(quarterRes.data);
+      } catch (error) {
+        console.error("Error fetching workspace data:", error);
+      } finally {
+        setStatsLoading(false);
+        setQuarterProgressLoading(false);
+        setProjectsLoading(false);
+      }
+    };
+
+    fetchInitialData();
   }, []);
 
   // Get current quarter
@@ -242,29 +228,6 @@ const WorkspaceProject = () => {
   };
 
   const { quarter, year } = getCurrentQuarter();
-
-  // Fetch quarter progress
-  useEffect(() => {
-    const fetchQuarterProgress = async () => {
-      if (tokenData) {
-        setQuarterProgressLoading(true);
-        try {
-          const data = await GetQuarterProgress(quarter, year, tokenData);
-          if (data?.statusCode === 200) {
-            setQuarterProgress(data.data);
-          }
-        } catch (error) {
-          console.error("Error fetching quarter progress:", error);
-        } finally {
-          setQuarterProgressLoading(false);
-        }
-      }
-    };
-
-    if (tokenData) {
-      fetchQuarterProgress();
-    }
-  }, [tokenData, quarter, year]);
 
   // Search effect
   useEffect(() => {
@@ -587,16 +550,12 @@ const WorkspaceProject = () => {
     },
   ];
 
-  // Calculate real-time project status (not quarterly filtered)
-  const activeProjects = projects.filter(
-    (project) =>
-      project.projectStatus === "In Progress" ||
-      project.projectStatus === "Planning"
+  // Calculate real-time project status using correct backend status values
+  const activeProjects = projects.filter((project) =>
+    ["INITIATING", "RUNNING", "TEMPORARY CLOSED", "ON HOLD"].includes(project.projectStatus)
   );
-  const closedProjects = projects.filter(
-    (project) =>
-      project.projectStatus === "Completed" ||
-      project.projectStatus === "Closed"
+  const closedProjects = projects.filter((project) =>
+    ["CANCELED", "COMPLETED"].includes(project.projectStatus)
   );
   const totalProjects = projects.length;
   const activeProjectPercentage =

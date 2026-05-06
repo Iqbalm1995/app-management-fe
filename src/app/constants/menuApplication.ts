@@ -298,31 +298,28 @@ export const LinkItems: LinkItemProps[] = [
     ],
   },
   {
-    name: "Vendor",
+    name: "Vendor Management",
     icon: FiUmbrella,
-    link: "/coming-soon",
-    isPro: true,
+    link: "/vendor-management",
+    isPro: false,
     role: ["admin"],
-
     menuID: "1",
     children: [
+      {
+        name: "Vendor List",
+        icon: LiaFileContractSolid,
+        link: "/vendor-management",
+        isPro: false,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
       {
         name: "Work Program",
         icon: FiUmbrella,
         link: "/coming-soon",
         isPro: true,
         role: ["admin"],
-
-        menuID: "1",
-        children: [],
-      },
-      {
-        name: "Vendor",
-        icon: LiaFileContractSolid,
-        link: "/coming-soon",
-        isPro: true,
-        role: ["admin"],
-
         menuID: "1",
         children: [],
       },
@@ -332,7 +329,6 @@ export const LinkItems: LinkItemProps[] = [
         link: "/coming-soon",
         isPro: true,
         role: ["admin"],
-
         menuID: "1",
         children: [],
       },

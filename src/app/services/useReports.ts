@@ -438,6 +438,16 @@ interface useReportsServices {
     data: UserEvaluationReportListResponse[],
   ) => Promise<Blob | null>;
 
+  GetMyPerformanceSummary: (
+    userId: string, year: number, token: string
+  ) => Promise<ApiGenericResponse<MyPerformanceSummaryResponse | null> | null>;
+  GetMyPerformanceQuartalChart: (
+    userId: string, year: number, token: string
+  ) => Promise<ApiGenericResponse<MyPerformanceQuartalChartResponse | null> | null>;
+  GetMyPerformanceRequirements: (
+    userId: string, payload: PaggingListPayload, token: string
+  ) => Promise<ApiGenericResponse<any[] | null> | null>;
+
   isLoading: boolean;
   error: string | null;
 }
@@ -1631,6 +1641,76 @@ const useReports = (): useReportsServices => {
     }
   };
 
+  const GetMyPerformanceSummary = async (
+    userId: string,
+    year: number,
+    token: string
+  ): Promise<ApiGenericResponse<MyPerformanceSummaryResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    try {
+      const response = await axiosInstance.get<ApiGenericResponse<MyPerformanceSummaryResponse>>(
+        `${UrlEndpoint}/v1/Report/my-performance/summary?userId=${encodeURIComponent(userId)}&year=${year}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) { setError(err.response?.data?.message || "An error occurred."); return handleAxiosError(err); }
+      setError("An unknown error occurred.");
+      return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error connect to api", error: null };
+    }
+  };
+
+  const GetMyPerformanceQuartalChart = async (
+    userId: string,
+    year: number,
+    token: string
+  ): Promise<ApiGenericResponse<MyPerformanceQuartalChartResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    try {
+      const response = await axiosInstance.get<ApiGenericResponse<MyPerformanceQuartalChartResponse>>(
+        `${UrlEndpoint}/v1/Report/my-performance/quartal-chart?userId=${encodeURIComponent(userId)}&year=${year}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) { setError(err.response?.data?.message || "An error occurred."); return handleAxiosError(err); }
+      setError("An unknown error occurred.");
+      return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error connect to api", error: null };
+    }
+  };
+
+  const GetMyPerformanceRequirements = async (
+    userId: string,
+    payload: PaggingListPayload,
+    token: string
+  ): Promise<ApiGenericResponse<any[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    try {
+      const response = await axiosInstance.post<ApiGenericResponse<any[]>>(
+        `${UrlEndpoint}/v1/Report/my-performance/requirements?userId=${encodeURIComponent(userId)}`,
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) { setError(err.response?.data?.message || "An error occurred."); return handleAxiosError(err); }
+      setError("An unknown error occurred.");
+      return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error connect to api", error: null };
+    }
+  };
+
   return {
     ListReportProjectPortofolio,
     ExportProjectPortofolioExcel,
@@ -1646,10 +1726,51 @@ const useReports = (): useReportsServices => {
     GetUserEvaluationReportById,
     ListUserEvaluationReportLogs,
     ExportUserEvaluationReportExcel,
-
+    GetMyPerformanceSummary,
+    GetMyPerformanceQuartalChart,
+    GetMyPerformanceRequirements,
     isLoading,
     error,
   };
 };
+
+export interface QuartalChartPoint {
+  quarter: string;
+  activeCount: number;
+  closedCount: number;
+}
+
+export interface MyPerformanceQuartalChartResponse {
+  year: number;
+  chart: QuartalChartPoint[];
+}
+
+export interface MyPerformanceSummaryResponse {
+  totalProjects: number;
+  projectActive: number;
+  projectClose: number;
+  projectInternalDev: number;
+  projectInternalDevClose: number;
+  projectProcurement: number;
+  projectProcurementClose: number;
+  projectRfc: number;
+  projectRfcClose: number;
+  projectDeployment: number;
+  projectDeploymentClose: number;
+  totalRequirements: number;
+  requirementBrd: number;
+  requirementRfc: number;
+  totalTaskAssigned: number;
+  totalTaskCompleted: number;
+  taskPriorityHigh: number;
+  taskPriorityMedium: number;
+  taskPriorityLow: number;
+  totalTaskItemCompleted: number;
+  taskTodo: number;
+  taskInProgress: number;
+  taskInReview: number;
+  taskDone: number;
+  totalTaskItems: number;
+}
 
 export default useReports;
