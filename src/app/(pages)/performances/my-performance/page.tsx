@@ -23,6 +23,7 @@ import useReports, {
   MyPerformanceQuartalChartResponse,
 } from "@/app/services/useReports";
 import { RequirementsResponse } from "@/app/services/useRequirements";
+import useWorkspace from "@/app/services/useWorkspace";
 import useOrganization, {
   OrganizationResponse,
 } from "@/app/services/useOrganization";
@@ -57,7 +58,7 @@ import {
 } from "@chakra-ui/react";
 import { Select } from "chakra-react-select";
 import dynamic from "next/dynamic";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   FiRefreshCcw,
   FiDownload,
@@ -81,6 +82,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { TableComponentFull } from "@/app/components/tableComponents";
+import { exportMyPerformancePDF } from "@/app/helper/MyPerformancePdfExport";
 import { motion } from "framer-motion";
 import EvaluationAdjustModal from "../shared/EvaluationAdjustModal";
 
@@ -148,8 +150,37 @@ function MyPerformancePage() {
     GetMyPerformanceQuartalChart,
     GetMyPerformanceRequirements,
   } = useReports();
+  const { GetAssignedProjects } = useWorkspace();
   const { List: ListOrganization } = useOrganization();
   const { List: ListTeams } = useTeams();
+
+  const lineChartRef = useRef<HTMLDivElement>(null);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+
+  const handleExportPDF = async () => {
+    if (!DataAuth || !tokenData) return;
+    setIsExportingPdf(true);
+    try {
+      const projRes = await GetAssignedProjects(
+        { search: "", limit: 9999, page: 0, projectType: null, filterWhere: [], fieldOrder: ["createdAt"], orderDir: "desc" },
+        tokenData
+      );
+      const allProjects = projRes?.statusCode === RES_CODE_OK && projRes.data ? projRes.data : [];
+      await exportMyPerformancePDF({
+        auth: DataAuth,
+        summary: Summary,
+        quartalChart: QuartalChart,
+        projects: allProjects,
+        evaluations: DataReport,
+        selectedYear,
+        selectedQuarters,
+      });
+    } catch {
+      showToast({ description: "Failed to export PDF", statusToast: "error" });
+    } finally {
+      setIsExportingPdf(false);
+    }
+  };
 
   const [DataReport, setDataReport] = useState<
     UserEvaluationReportListResponse[]
@@ -506,6 +537,7 @@ function MyPerformancePage() {
   const lineChartOptions: any = {
     chart: {
       type: "line",
+      id: "my-performance-line-chart",
       toolbar: { show: false },
       background: "transparent",
     },
@@ -911,6 +943,7 @@ function MyPerformancePage() {
                   </HStack>
                 </HStack>
                 {isMounted && (
+                  <Box ref={lineChartRef}>
                   <Chart
                     options={lineChartOptions}
                     series={[
@@ -930,6 +963,7 @@ function MyPerformancePage() {
                     type="line"
                     height={220}
                   />
+                  </Box>
                 )}
               </CardBody>
             </Card>
@@ -1136,7 +1170,19 @@ function MyPerformancePage() {
                     variant="outline"
                     rounded="lg"
                   >
-                    Export
+                    Export Excel
+                  </Button>
+                  <Button
+                    size="sm"
+                    leftIcon={<FiDownload />}
+                    onClick={handleExportPDF}
+                    isLoading={isExportingPdf}
+                    loadingText="Generating..."
+                    colorScheme="red"
+                    variant="outline"
+                    rounded="lg"
+                  >
+                    Export PDF
                   </Button>
                 </HStack>
               </Flex>
