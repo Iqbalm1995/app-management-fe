@@ -634,11 +634,12 @@ export function ControlTableAlternate1({ table }: any) {
               table.setPageSize(Number(e.target.value));
             }}
           >
-            {[5, 10, 20, 30, 40, 50].map((pageSize) => (
-              <option key={pageSize} value={pageSize}>
-                {pageSize}
+            {[5, 10, 20, 30, 40, 50].map((pSize) => (
+              <option key={pSize} value={pSize}>
+                {pSize}
               </option>
             ))}
+            <option value={99999}>All</option>
           </Select>
         </Flex>
       </Flex>
@@ -679,11 +680,12 @@ export function TableInputShowPage({ table }: any) {
         color={"secondary.500"}
         fontWeight={600}
       >
-        {[5, 10, 20, 30, 40, 50].map((pageSize) => (
-          <option key={pageSize} value={pageSize}>
-            {pageSize}
+        {[5, 10, 20, 30, 40, 50].map((pSize) => (
+          <option key={pSize} value={pSize}>
+            {pSize}
           </option>
         ))}
+        <option value={99999}>All</option>
       </Select>
     </Flex>
   );
@@ -1167,11 +1169,12 @@ export function TableInputShowPageSm({ table }: any) {
           table.setPageSize(Number(e.target.value));
         }}
       >
-        {[5, 10, 20, 30, 40, 50].map((pageSize) => (
-          <option key={pageSize} value={pageSize}>
-            {pageSize}
+        {[5, 10, 20, 30, 40, 50].map((pSize) => (
+          <option key={pSize} value={pSize}>
+            {pSize}
           </option>
         ))}
+        <option value={99999}>All</option>
       </Select>
     </Flex>
   );

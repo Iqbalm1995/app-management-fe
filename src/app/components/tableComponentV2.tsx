@@ -309,6 +309,7 @@ export function TableInputShowPageCTX({ table }: any) {
             {pageSize}
           </option>
         ))}
+        <option value={99999}>All</option>
       </SelectC>
     </Flex>
   );
@@ -328,7 +329,7 @@ export function TableComponentWithFilterCTXNoBorder({
               table.getRowModel().rows.map((row: any, index: any) => {
                 const startingNumber = index + 1;
                 return (
-                  <Tr key={row.id}>
+                  <Tr key={row.id} onClick={() => table.options.meta?.onRowClick?.(row.original)} cursor={table.options.meta?.onRowClick ? "pointer" : undefined} _hover={table.options.meta?.onRowClick ? { bg: "blue.50" } : undefined}>
                     {row.getVisibleCells().map((cell: any) => {
                       return (
                         <Td key={cell.id}>

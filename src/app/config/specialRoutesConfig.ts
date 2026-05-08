@@ -179,11 +179,24 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
     baseMenu: "/projects",
   },
 
+  //performances
+  {
+    pattern: "/projects/doc",
+    baseMenu: "/projects",
+  },
+
   // ===== VENDOR MANAGEMENT =====
   {
-    pattern: "/vendor-management/register",
-    baseMenu: "/vendor-management",
-    permission: "make",
+    pattern: "/performances/divisions/detail",
+    baseMenu: "/performances",
+  },
+  {
+    pattern: "/performances/groups/detail",
+    baseMenu: "/performances",
+  },
+  {
+    pattern: "/performances/teams/detail",
+    baseMenu: "/performances",
   },
 
   // ===== MASTER DATA =====
