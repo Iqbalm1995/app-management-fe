@@ -85,13 +85,27 @@ interface PerformanceReportViewProps {
 
 const getHeaderContent = (mode: PerformanceReportMode): HeaderContentProps => {
   switch (mode) {
-    case "division": return { titleName: "Division Performance Report", breadCrumb: ["Home", "Performances", "Divisions"] };
-    case "group": return { titleName: "Group Performance Report", breadCrumb: ["Home", "Performances", "Groups"] };
-    case "team": return { titleName: "Team Performance Report", breadCrumb: ["Home", "Performances", "Teams"] };
+    case "division":
+      return {
+        titleName: "Division Performance Report",
+        breadCrumb: ["Home", "Performances", "Divisions"],
+      };
+    case "group":
+      return {
+        titleName: "Group Performance Report",
+        breadCrumb: ["Home", "Performances", "Groups"],
+      };
+    case "team":
+      return {
+        titleName: "Team Performance Report",
+        breadCrumb: ["Home", "Performances", "Teams"],
+      };
   }
 };
 
-export default function PerformanceReportView({ mode }: PerformanceReportViewProps) {
+export default function PerformanceReportView({
+  mode,
+}: PerformanceReportViewProps) {
   const HeaderDataContent = getHeaderContent(mode);
   // SetUp auth data on current page
   const showToast = useToastHelper();
@@ -119,9 +133,13 @@ export default function PerformanceReportView({ mode }: PerformanceReportViewPro
           StorageAuth.dataLogin as AuthDataResponse;
 
         // Auth validation per mode
-        if ((mode === "group" || mode === "team") && !UserData.team?.orgGroupCode) {
+        if (
+          (mode === "group" || mode === "team") &&
+          !UserData.team?.orgGroupCode
+        ) {
           showToast({
-            description: "Current user login does not have the required team assignment to access this page",
+            description:
+              "Current user login does not have the required team assignment to access this page",
             statusToast: "warning",
           });
           redirect("/not-found");
@@ -133,21 +151,47 @@ export default function PerformanceReportView({ mode }: PerformanceReportViewPro
         // Default filters per mode
         if (mode === "group" && UserData.team?.orgGroupCode) {
           const groupCode = UserData.team.orgGroupCode;
-          setParamFilter(prev => {
-            const filtered = prev.filter(f => f.field !== "userOrgGroupCode");
-            return [...filtered, { field: "userOrgGroupCode", operator: "=" as const, value: groupCode, filterLabel: "Group Filter" }];
+          setParamFilter((prev) => {
+            const filtered = prev.filter((f) => f.field !== "userOrgGroupCode");
+            return [
+              ...filtered,
+              {
+                field: "userOrgGroupCode",
+                operator: "=" as const,
+                value: groupCode,
+                filterLabel: "Group Filter",
+              },
+            ];
           });
           setFilterManageGroup(groupCode);
         }
 
-        if (mode === "team" && UserData.team?.orgGroupCode && UserData.team?.teamCode) {
+        if (
+          mode === "team" &&
+          UserData.team?.orgGroupCode &&
+          UserData.team?.teamCode
+        ) {
           const groupCode = UserData.team.orgGroupCode;
           const teamCode = UserData.team.teamCode;
-          setParamFilter(prev => {
-            let filtered = prev.filter(f => f.field !== "userOrgGroupCode" && f.field !== "userTeamCode");
-            return [...filtered,
-              { field: "userOrgGroupCode", operator: "=" as const, value: groupCode, filterLabel: "Group Filter" },
-              { field: "userTeamCode", operator: "=" as const, value: teamCode, filterLabel: "Team Filter" },
+          setParamFilter((prev) => {
+            let filtered = prev.filter(
+              (f) =>
+                f.field !== "userOrgGroupCode" && f.field !== "userTeamCode",
+            );
+            return [
+              ...filtered,
+              {
+                field: "userOrgGroupCode",
+                operator: "=" as const,
+                value: groupCode,
+                filterLabel: "Group Filter",
+              },
+              {
+                field: "userTeamCode",
+                operator: "=" as const,
+                value: teamCode,
+                filterLabel: "Team Filter",
+              },
             ];
           });
           setFilterManageGroup(groupCode);
@@ -304,7 +348,9 @@ export default function PerformanceReportView({ mode }: PerformanceReportViewPro
   const currentYear = new Date().getFullYear();
   const currentQuarter = getCurrentQuarter();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
-  const [selectedQuarters, setSelectedQuarters] = useState<number[]>([currentQuarter]);
+  const [selectedQuarters, setSelectedQuarters] = useState<number[]>([
+    currentQuarter,
+  ]);
 
   const years = Array.from({ length: 8 }, (_, i) => currentYear - 5 + i);
 
@@ -386,10 +432,14 @@ export default function PerformanceReportView({ mode }: PerformanceReportViewPro
         fieldOrder: [sortField],
         orderDir: sortOrder as "asc" | "desc",
       };
-      const allDataRes = await ListUserEvaluationReport(exportPayload, tokenData);
-      const allData = (allDataRes?.statusCode === RES_CODE_OK && allDataRes.data)
-        ? allDataRes.data as UserEvaluationReportListResponse[]
-        : DataReport;
+      const allDataRes = await ListUserEvaluationReport(
+        exportPayload,
+        tokenData,
+      );
+      const allData =
+        allDataRes?.statusCode === RES_CODE_OK && allDataRes.data
+          ? (allDataRes.data as UserEvaluationReportListResponse[])
+          : DataReport;
 
       const blob = await ExportUserEvaluationReportExcel(allData);
 
@@ -544,8 +594,8 @@ export default function PerformanceReportView({ mode }: PerformanceReportViewPro
       {
         accessorKey: "numbData",
         cell: (info) => (
-          <Flex justifyContent={"center"} alignItems="flex-start" h={"full"}>
-            <Text fontSize="sm">
+          <Flex justifyContent={"center"} alignItems="start" h={"full"}>
+            <Text fontSize="md">
               {pageIndex * pageSize + info.row.index + 1}.
             </Text>
           </Flex>
@@ -561,10 +611,18 @@ export default function PerformanceReportView({ mode }: PerformanceReportViewPro
         id: "period",
         cell: (info) => (
           <Flex justifyContent="center" alignItems="center">
-            <Badge colorScheme="teal" variant="subtle" rounded="full" px={2} fontSize="xs">
+            <Badge
+              colorScheme="teal"
+              variant="subtle"
+              rounded="full"
+              px={2}
+              fontSize="xs"
+            >
               Q{info.row.original.quartalPeriod}
             </Badge>
-            <Text fontSize="xs" color="gray.500" ml={1}>{info.row.original.yearPeriod}</Text>
+            <Text fontSize="xs" color="gray.500" ml={1}>
+              {info.row.original.yearPeriod}
+            </Text>
           </Flex>
         ),
         header: () => <span>Period</span>,
@@ -586,9 +644,16 @@ export default function PerformanceReportView({ mode }: PerformanceReportViewPro
             spacing={1}
             minW="200px"
           >
-            <Link href={`/performances/${mode === "division" ? "divisions" : mode === "group" ? "groups" : "teams"}/detail?userId=${info.row.original.userId}`}>
+            <Link
+              href={`/performances/${mode === "division" ? "divisions" : mode === "group" ? "groups" : "teams"}/detail?userId=${info.row.original.userId}`}
+            >
               <Tooltip label="View user portfolio" placement="top" hasArrow>
-                <Text fontWeight={600} fontSize="sm" color="blue.600" _hover={{ textDecoration: "underline" }}>
+                <Text
+                  fontWeight={600}
+                  fontSize="sm"
+                  color="blue.600"
+                  _hover={{ textDecoration: "underline" }}
+                >
                   {info.row.original.nama}
                 </Text>
               </Tooltip>
@@ -938,7 +1003,8 @@ export default function PerformanceReportView({ mode }: PerformanceReportViewPro
     manualPagination: true,
     debugTable: false,
     meta: {
-      onRowClick: (row: UserEvaluationReportListResponse) => handleOpenEvaluationModal(row),
+      onRowClick: (row: UserEvaluationReportListResponse) =>
+        handleOpenEvaluationModal(row),
     },
     manualFiltering: true,
   });
@@ -996,19 +1062,26 @@ export default function PerformanceReportView({ mode }: PerformanceReportViewPro
                       ))}
                     </ChakraSelect>
                     <HStack spacing={1}>
-                      {[1,2,3,4].map(q => {
+                      {[1, 2, 3, 4].map((q) => {
                         const isActive = selectedQuarters.includes(q);
                         return (
-                          <Button key={q} size="sm" rounded="lg" px={3}
+                          <Button
+                            key={q}
+                            size="sm"
+                            rounded="lg"
+                            px={3}
                             variant={isActive ? "solid" : "outline"}
                             colorScheme={isActive ? "blue" : "gray"}
                             onClick={() => {
-                              setSelectedQuarters(prev =>
+                              setSelectedQuarters((prev) =>
                                 prev.includes(q)
-                                  ? prev.length > 1 ? prev.filter(x => x !== q) : prev
-                                  : [...prev, q].sort()
+                                  ? prev.length > 1
+                                    ? prev.filter((x) => x !== q)
+                                    : prev
+                                  : [...prev, q].sort(),
                               );
-                            }}>
+                            }}
+                          >
                             Q{q}
                           </Button>
                         );

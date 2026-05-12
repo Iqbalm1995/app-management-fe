@@ -885,8 +885,9 @@ function RegisterRequirementFormPage({
 
     if (isErrorResponse || !requestData) {
       showToast({
-        description: `Upload File Failed : ${requestData?.message || RES_GENERIC_ERROR_MSG
-          }`,
+        description: `Upload File Failed : ${
+          requestData?.message || RES_GENERIC_ERROR_MSG
+        }`,
         statusToast: "error",
       });
       return false;
@@ -909,67 +910,67 @@ function RegisterRequirementFormPage({
       ...data,
       backlogFeatures:
         data.requirementType === "RFC" &&
-          data.backlogFeatures &&
-          data.backlogFeatures.length > 0
+        data.backlogFeatures &&
+        data.backlogFeatures.length > 0
           ? data.backlogFeatures.map((b: any) => ({
-            Id: b.id || null,
-            ParentBacklogId: b.parentBacklogId,
-            BacklogName: b.backlogName,
-            BacklogDesc: b.backlogDesc,
-            Note: b.note,
-            PosOrder: b.posOrder,
-            Urgency: b.urgency || "LOW",
-            Impact: b.impact || "LOW",
-            Priority: b.priority || "LOW",
-            RfcBacklogChanges: b.rfcBacklogChanges ?? "MAJOR",
-            RfcBacklogImportant: b.rfcBacklogImportant ?? "NORMAL",
-            RfcBacklogImpactOthers: b.rfcBacklogImpactOthers ?? "SMALL",
-            RfcPriorities: b.rfcPriorities ?? "LOW",
-            RfcPrioritiesIndex: b.rfcPrioritiesIndex ?? null,
-            BacklogHistories: b.backlogHistories || [],
-            parentBacklogId: b.parentBacklogId,
-            backlogName: b.backlogName,
-            backlogDesc: b.backlogDesc,
-            note: b.note,
-            posOrder: b.posOrder,
-            urgency: b.urgency || "LOW",
-            impact: b.impact || "LOW",
-            priority: b.priority || "LOW",
-            rfcBacklogChanges: b.rfcBacklogChanges ?? "MAJOR",
-            rfcBacklogImportant: b.rfcBacklogImportant ?? "NORMAL",
-            rfcBacklogImpactOthers: b.rfcBacklogImpactOthers ?? "SMALL",
-            rfcPriorities: b.rfcPriorities ?? "LOW",
-            rfcPrioritiesIndex: b.rfcPrioritiesIndex ?? null,
-            backlogHistories: b.backlogHistories || [],
-          }))
+              Id: b.id || null,
+              ParentBacklogId: b.parentBacklogId,
+              BacklogName: b.backlogName,
+              BacklogDesc: b.backlogDesc,
+              Note: b.note,
+              PosOrder: b.posOrder,
+              Urgency: b.urgency || "LOW",
+              Impact: b.impact || "LOW",
+              Priority: b.priority || "LOW",
+              RfcBacklogChanges: b.rfcBacklogChanges ?? "MAJOR",
+              RfcBacklogImportant: b.rfcBacklogImportant ?? "NORMAL",
+              RfcBacklogImpactOthers: b.rfcBacklogImpactOthers ?? "SMALL",
+              RfcPriorities: b.rfcPriorities ?? "LOW",
+              RfcPrioritiesIndex: b.rfcPrioritiesIndex ?? null,
+              BacklogHistories: b.backlogHistories || [],
+              parentBacklogId: b.parentBacklogId,
+              backlogName: b.backlogName,
+              backlogDesc: b.backlogDesc,
+              note: b.note,
+              posOrder: b.posOrder,
+              urgency: b.urgency || "LOW",
+              impact: b.impact || "LOW",
+              priority: b.priority || "LOW",
+              rfcBacklogChanges: b.rfcBacklogChanges ?? "MAJOR",
+              rfcBacklogImportant: b.rfcBacklogImportant ?? "NORMAL",
+              rfcBacklogImpactOthers: b.rfcBacklogImpactOthers ?? "SMALL",
+              rfcPriorities: b.rfcPriorities ?? "LOW",
+              rfcPrioritiesIndex: b.rfcPrioritiesIndex ?? null,
+              backlogHistories: b.backlogHistories || [],
+            }))
           : DataBackLogs.map((b) => ({
-            ParentBacklogId: b.parentBacklogId,
-            BacklogName: b.backlogName,
-            BacklogDesc: b.backlogDesc,
-            Note: b.note,
-            PosOrder: b.posOrder,
-            Urgency: b.urgency || "LOW",
-            Impact: b.impact || "LOW",
-            Priority: b.priority || "LOW",
-            RfcBacklogChanges: b.rfcBacklogChanges ?? null,
-            RfcBacklogImportant: b.rfcBacklogImportant ?? null,
-            RfcBacklogImpactOthers: b.rfcBacklogImpactOthers ?? null,
-            RfcPriorities: b.rfcPriorities ?? null,
-            RfcPrioritiesIndex: b.rfcPrioritiesIndex ?? null,
-            parentBacklogId: b.parentBacklogId,
-            backlogName: b.backlogName,
-            backlogDesc: b.backlogDesc,
-            note: b.note,
-            posOrder: b.posOrder,
-            urgency: b.urgency || "LOW",
-            impact: b.impact || "LOW",
-            priority: b.priority || "LOW",
-            rfcBacklogChanges: b.rfcBacklogChanges ?? null,
-            rfcBacklogImportant: b.rfcBacklogImportant ?? null,
-            rfcBacklogImpactOthers: b.rfcBacklogImpactOthers ?? null,
-            rfcPriorities: b.rfcPriorities ?? null,
-            rfcPrioritiesIndex: b.rfcPrioritiesIndex ?? null,
-          })),
+              ParentBacklogId: b.parentBacklogId,
+              BacklogName: b.backlogName,
+              BacklogDesc: b.backlogDesc,
+              Note: b.note,
+              PosOrder: b.posOrder,
+              Urgency: b.urgency || "LOW",
+              Impact: b.impact || "LOW",
+              Priority: b.priority || "LOW",
+              RfcBacklogChanges: b.rfcBacklogChanges ?? null,
+              RfcBacklogImportant: b.rfcBacklogImportant ?? null,
+              RfcBacklogImpactOthers: b.rfcBacklogImpactOthers ?? null,
+              RfcPriorities: b.rfcPriorities ?? null,
+              RfcPrioritiesIndex: b.rfcPrioritiesIndex ?? null,
+              parentBacklogId: b.parentBacklogId,
+              backlogName: b.backlogName,
+              backlogDesc: b.backlogDesc,
+              note: b.note,
+              posOrder: b.posOrder,
+              urgency: b.urgency || "LOW",
+              impact: b.impact || "LOW",
+              priority: b.priority || "LOW",
+              rfcBacklogChanges: b.rfcBacklogChanges ?? null,
+              rfcBacklogImportant: b.rfcBacklogImportant ?? null,
+              rfcBacklogImpactOthers: b.rfcBacklogImpactOthers ?? null,
+              rfcPriorities: b.rfcPriorities ?? null,
+              rfcPrioritiesIndex: b.rfcPrioritiesIndex ?? null,
+            })),
       picAssignUsers: ChoosedMemberProjects.map((m) => ({
         UserId: m.userId,
         userId: m.userId,
@@ -1102,8 +1103,9 @@ function RegisterRequirementFormPage({
           reqData.isHaveMemo !== "N"
         ) {
           showToast({
-            description: `Cannot edit requirement with status: ${reqData.reqStatus
-              }. Only ${REQ_STATUS_CAN_EDIT.join(", ")} can be edited.`,
+            description: `Cannot edit requirement with status: ${
+              reqData.reqStatus
+            }. Only ${REQ_STATUS_CAN_EDIT.join(", ")} can be edited.`,
             statusToast: "warning",
           });
           const reqType = reqData.requirementType?.toLowerCase() || "brd";
@@ -1369,9 +1371,9 @@ function RegisterRequirementFormPage({
             const divisionOption =
               divisionData.length > 0
                 ? {
-                  label: `${divisionData[0].orgName}`,
-                  value: divisionData[0].id,
-                }
+                    label: `${divisionData[0].orgName}`,
+                    value: divisionData[0].id,
+                  }
                 : { label: "", value: "" };
 
             // Load group data if groupId exists
@@ -1584,25 +1586,25 @@ function RegisterRequirementFormPage({
       ...(data.requirementType === "RFC"
         ? {}
         : {
-          backlogFeatures: DataBackLogs.map((b) => ({
-            ParentBacklogId: b.parentBacklogId,
-            BacklogName: b.backlogName,
-            BacklogDesc: b.backlogDesc,
-            Note: b.note,
-            PosOrder: b.posOrder,
-            Urgency: b.urgency || "LOW",
-            Impact: b.impact || "LOW",
-            Priority: b.priority || "LOW",
-            parentBacklogId: b.parentBacklogId,
-            backlogName: b.backlogName,
-            backlogDesc: b.backlogDesc,
-            note: b.note,
-            posOrder: b.posOrder,
-            urgency: b.urgency || "LOW",
-            impact: b.impact || "LOW",
-            priority: b.priority || "LOW",
-          })),
-        }),
+            backlogFeatures: DataBackLogs.map((b) => ({
+              ParentBacklogId: b.parentBacklogId,
+              BacklogName: b.backlogName,
+              BacklogDesc: b.backlogDesc,
+              Note: b.note,
+              PosOrder: b.posOrder,
+              Urgency: b.urgency || "LOW",
+              Impact: b.impact || "LOW",
+              Priority: b.priority || "LOW",
+              parentBacklogId: b.parentBacklogId,
+              backlogName: b.backlogName,
+              backlogDesc: b.backlogDesc,
+              note: b.note,
+              posOrder: b.posOrder,
+              urgency: b.urgency || "LOW",
+              impact: b.impact || "LOW",
+              priority: b.priority || "LOW",
+            })),
+          }),
       picAssignUsers: ChoosedMemberProjects.map((m) => ({
         UserId: m.userId,
         userId: m.userId,
@@ -1702,71 +1704,74 @@ function RegisterRequirementFormPage({
       requirementId: requirementId!,
       isSubmitSave: false,
       ...data,
-      backlogFeatures: data.requirementType === "RFC" && data.backlogFeatures && data.backlogFeatures.length > 0
-        ? data.backlogFeatures.map((b: any) => ({
-          Id: b.backlogId || null,
-          ParentBacklogId: b.parentBacklogId,
-          BacklogName: b.backlogName,
-          BacklogDesc: b.backlogDesc,
-          Note: b.note,
-          PosOrder: b.posOrder,
-          Urgency: b.urgency || "LOW",
-          Impact: b.impact || "LOW",
-          Priority: b.priority || "LOW",
-          RfcBacklogChanges: b.rfcBacklogChanges || null,
-          RfcBacklogImportant: b.rfcBacklogImportant || null,
-          RfcBacklogImpactOthers: b.rfcBacklogImpactOthers || null,
-          RfcPriorities: b.rfcPriorities || null,
-          RfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
-          BacklogHistories: b.backlogHistories || [],
-          backlogId: b.backlogId || null,
-          parentBacklogId: b.parentBacklogId,
-          backlogName: b.backlogName,
-          backlogDesc: b.backlogDesc,
-          note: b.note,
-          posOrder: b.posOrder,
-          urgency: b.urgency || "LOW",
-          impact: b.impact || "LOW",
-          priority: b.priority || "LOW",
-          rfcBacklogChanges: b.rfcBacklogChanges || null,
-          rfcBacklogImportant: b.rfcBacklogImportant || null,
-          rfcBacklogImpactOthers: b.rfcBacklogImpactOthers || null,
-          rfcPriorities: b.rfcPriorities || null,
-          rfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
-          backlogHistories: b.backlogHistories || [],
-        }))
-        : DataBackLogs.map((b) => ({
-          Id: b.backlogId || null,
-          ParentBacklogId: b.parentBacklogId,
-          BacklogName: b.backlogName,
-          BacklogDesc: b.backlogDesc,
-          Note: b.note,
-          PosOrder: b.posOrder,
-          Urgency: b.urgency || "LOW",
-          Impact: b.impact || "LOW",
-          Priority: b.priority || "LOW",
-          RfcBacklogChanges: b.rfcBacklogChanges || null,
-          RfcBacklogImportant: b.rfcBacklogImportant || null,
-          RfcBacklogImpactOthers: b.rfcBacklogImpactOthers || null,
-          RfcPriorities: b.rfcPriorities || null,
-          RfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
-          BacklogHistories: b.backlogHistories || [],
-          backlogId: b.backlogId || null,
-          parentBacklogId: b.parentBacklogId,
-          backlogName: b.backlogName,
-          backlogDesc: b.backlogDesc,
-          note: b.note,
-          posOrder: b.posOrder,
-          urgency: b.urgency || "LOW",
-          impact: b.impact || "LOW",
-          priority: b.priority || "LOW",
-          rfcBacklogChanges: b.rfcBacklogChanges || null,
-          rfcBacklogImportant: b.rfcBacklogImportant || null,
-          rfcBacklogImpactOthers: b.rfcBacklogImpactOthers || null,
-          rfcPriorities: b.rfcPriorities || null,
-          rfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
-          backlogHistories: b.backlogHistories || [],
-        })),
+      backlogFeatures:
+        data.requirementType === "RFC" &&
+        data.backlogFeatures &&
+        data.backlogFeatures.length > 0
+          ? data.backlogFeatures.map((b: any) => ({
+              Id: b.backlogId || null,
+              ParentBacklogId: b.parentBacklogId,
+              BacklogName: b.backlogName,
+              BacklogDesc: b.backlogDesc,
+              Note: b.note,
+              PosOrder: b.posOrder,
+              Urgency: b.urgency || "LOW",
+              Impact: b.impact || "LOW",
+              Priority: b.priority || "LOW",
+              RfcBacklogChanges: b.rfcBacklogChanges || null,
+              RfcBacklogImportant: b.rfcBacklogImportant || null,
+              RfcBacklogImpactOthers: b.rfcBacklogImpactOthers || null,
+              RfcPriorities: b.rfcPriorities || null,
+              RfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
+              BacklogHistories: b.backlogHistories || [],
+              backlogId: b.backlogId || null,
+              parentBacklogId: b.parentBacklogId,
+              backlogName: b.backlogName,
+              backlogDesc: b.backlogDesc,
+              note: b.note,
+              posOrder: b.posOrder,
+              urgency: b.urgency || "LOW",
+              impact: b.impact || "LOW",
+              priority: b.priority || "LOW",
+              rfcBacklogChanges: b.rfcBacklogChanges || null,
+              rfcBacklogImportant: b.rfcBacklogImportant || null,
+              rfcBacklogImpactOthers: b.rfcBacklogImpactOthers || null,
+              rfcPriorities: b.rfcPriorities || null,
+              rfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
+              backlogHistories: b.backlogHistories || [],
+            }))
+          : DataBackLogs.map((b) => ({
+              Id: b.backlogId || null,
+              ParentBacklogId: b.parentBacklogId,
+              BacklogName: b.backlogName,
+              BacklogDesc: b.backlogDesc,
+              Note: b.note,
+              PosOrder: b.posOrder,
+              Urgency: b.urgency || "LOW",
+              Impact: b.impact || "LOW",
+              Priority: b.priority || "LOW",
+              RfcBacklogChanges: b.rfcBacklogChanges || null,
+              RfcBacklogImportant: b.rfcBacklogImportant || null,
+              RfcBacklogImpactOthers: b.rfcBacklogImpactOthers || null,
+              RfcPriorities: b.rfcPriorities || null,
+              RfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
+              BacklogHistories: b.backlogHistories || [],
+              backlogId: b.backlogId || null,
+              parentBacklogId: b.parentBacklogId,
+              backlogName: b.backlogName,
+              backlogDesc: b.backlogDesc,
+              note: b.note,
+              posOrder: b.posOrder,
+              urgency: b.urgency || "LOW",
+              impact: b.impact || "LOW",
+              priority: b.priority || "LOW",
+              rfcBacklogChanges: b.rfcBacklogChanges || null,
+              rfcBacklogImportant: b.rfcBacklogImportant || null,
+              rfcBacklogImpactOthers: b.rfcBacklogImpactOthers || null,
+              rfcPriorities: b.rfcPriorities || null,
+              rfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
+              backlogHistories: b.backlogHistories || [],
+            })),
       picAssignUsers: ChoosedMemberProjects.map((m) => ({
         Id: m.id || null,
         UserId: m.userId,
@@ -1889,71 +1894,74 @@ function RegisterRequirementFormPage({
       requirementId: requirementId!,
       isSubmitSave: true,
       ...data,
-      backlogFeatures: data.requirementType === "RFC" && data.backlogFeatures && data.backlogFeatures.length > 0
-        ? data.backlogFeatures.map((b: any) => ({
-          Id: b.backlogId || null,
-          ParentBacklogId: b.parentBacklogId,
-          BacklogName: b.backlogName,
-          BacklogDesc: b.backlogDesc,
-          Note: b.note,
-          PosOrder: b.posOrder,
-          Urgency: b.urgency || "LOW",
-          Impact: b.impact || "LOW",
-          Priority: b.priority || "LOW",
-          RfcBacklogChanges: b.rfcBacklogChanges || null,
-          RfcBacklogImportant: b.rfcBacklogImportant || null,
-          RfcBacklogImpactOthers: b.rfcBacklogImpactOthers || null,
-          RfcPriorities: b.rfcPriorities || null,
-          RfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
-          BacklogHistories: b.backlogHistories || [],
-          backlogId: b.backlogId || null,
-          parentBacklogId: b.parentBacklogId,
-          backlogName: b.backlogName,
-          backlogDesc: b.backlogDesc,
-          note: b.note,
-          posOrder: b.posOrder,
-          urgency: b.urgency || "LOW",
-          impact: b.impact || "LOW",
-          priority: b.priority || "LOW",
-          rfcBacklogChanges: b.rfcBacklogChanges || null,
-          rfcBacklogImportant: b.rfcBacklogImportant || null,
-          rfcBacklogImpactOthers: b.rfcBacklogImpactOthers || null,
-          rfcPriorities: b.rfcPriorities || null,
-          rfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
-          backlogHistories: b.backlogHistories || [],
-        }))
-        : DataBackLogs.map((b) => ({
-          Id: b.backlogId || null,
-          ParentBacklogId: b.parentBacklogId,
-          BacklogName: b.backlogName,
-          BacklogDesc: b.backlogDesc,
-          Note: b.note,
-          PosOrder: b.posOrder,
-          Urgency: b.urgency || "LOW",
-          Impact: b.impact || "LOW",
-          Priority: b.priority || "LOW",
-          RfcBacklogChanges: b.rfcBacklogChanges || null,
-          RfcBacklogImportant: b.rfcBacklogImportant || null,
-          RfcBacklogImpactOthers: b.rfcBacklogImpactOthers || null,
-          RfcPriorities: b.rfcPriorities || null,
-          RfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
-          BacklogHistories: b.backlogHistories || [],
-          backlogId: b.backlogId || null,
-          parentBacklogId: b.parentBacklogId,
-          backlogName: b.backlogName,
-          backlogDesc: b.backlogDesc,
-          note: b.note,
-          posOrder: b.posOrder,
-          urgency: b.urgency || "LOW",
-          impact: b.impact || "LOW",
-          priority: b.priority || "LOW",
-          rfcBacklogChanges: b.rfcBacklogChanges || null,
-          rfcBacklogImportant: b.rfcBacklogImportant || null,
-          rfcBacklogImpactOthers: b.rfcBacklogImpactOthers || null,
-          rfcPriorities: b.rfcPriorities || null,
-          rfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
-          backlogHistories: b.backlogHistories || [],
-        })),
+      backlogFeatures:
+        data.requirementType === "RFC" &&
+        data.backlogFeatures &&
+        data.backlogFeatures.length > 0
+          ? data.backlogFeatures.map((b: any) => ({
+              Id: b.backlogId || null,
+              ParentBacklogId: b.parentBacklogId,
+              BacklogName: b.backlogName,
+              BacklogDesc: b.backlogDesc,
+              Note: b.note,
+              PosOrder: b.posOrder,
+              Urgency: b.urgency || "LOW",
+              Impact: b.impact || "LOW",
+              Priority: b.priority || "LOW",
+              RfcBacklogChanges: b.rfcBacklogChanges || null,
+              RfcBacklogImportant: b.rfcBacklogImportant || null,
+              RfcBacklogImpactOthers: b.rfcBacklogImpactOthers || null,
+              RfcPriorities: b.rfcPriorities || null,
+              RfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
+              BacklogHistories: b.backlogHistories || [],
+              backlogId: b.backlogId || null,
+              parentBacklogId: b.parentBacklogId,
+              backlogName: b.backlogName,
+              backlogDesc: b.backlogDesc,
+              note: b.note,
+              posOrder: b.posOrder,
+              urgency: b.urgency || "LOW",
+              impact: b.impact || "LOW",
+              priority: b.priority || "LOW",
+              rfcBacklogChanges: b.rfcBacklogChanges || null,
+              rfcBacklogImportant: b.rfcBacklogImportant || null,
+              rfcBacklogImpactOthers: b.rfcBacklogImpactOthers || null,
+              rfcPriorities: b.rfcPriorities || null,
+              rfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
+              backlogHistories: b.backlogHistories || [],
+            }))
+          : DataBackLogs.map((b) => ({
+              Id: b.backlogId || null,
+              ParentBacklogId: b.parentBacklogId,
+              BacklogName: b.backlogName,
+              BacklogDesc: b.backlogDesc,
+              Note: b.note,
+              PosOrder: b.posOrder,
+              Urgency: b.urgency || "LOW",
+              Impact: b.impact || "LOW",
+              Priority: b.priority || "LOW",
+              RfcBacklogChanges: b.rfcBacklogChanges || null,
+              RfcBacklogImportant: b.rfcBacklogImportant || null,
+              RfcBacklogImpactOthers: b.rfcBacklogImpactOthers || null,
+              RfcPriorities: b.rfcPriorities || null,
+              RfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
+              BacklogHistories: b.backlogHistories || [],
+              backlogId: b.backlogId || null,
+              parentBacklogId: b.parentBacklogId,
+              backlogName: b.backlogName,
+              backlogDesc: b.backlogDesc,
+              note: b.note,
+              posOrder: b.posOrder,
+              urgency: b.urgency || "LOW",
+              impact: b.impact || "LOW",
+              priority: b.priority || "LOW",
+              rfcBacklogChanges: b.rfcBacklogChanges || null,
+              rfcBacklogImportant: b.rfcBacklogImportant || null,
+              rfcBacklogImpactOthers: b.rfcBacklogImpactOthers || null,
+              rfcPriorities: b.rfcPriorities || null,
+              rfcPrioritiesIndex: b.rfcPrioritiesIndex || null,
+              backlogHistories: b.backlogHistories || [],
+            })),
       picAssignUsers: ChoosedMemberProjects.map((m) => ({
         Id: m.id || null,
         UserId: m.userId,
@@ -2127,7 +2135,9 @@ function RegisterRequirementFormPage({
     loadUserOrgData();
   }, [DataAuth, requirementId, formik.values.assignedFromId]);
   const [DataBackLogs, setDataBackLogs] = useState<ReqBacklogPayload[]>([]);
-  const [RfcBacklogChanges, setRfcBacklogChanges] = useState<BacklogChangesData[]>([]);
+  const [RfcBacklogChanges, setRfcBacklogChanges] = useState<
+    BacklogChangesData[]
+  >([]);
 
   const logMissingRequiredFields = (
     values: Record<string, any>,
@@ -2179,9 +2189,10 @@ function RegisterRequirementFormPage({
 
     setCaptionDialog("Konfirmasi Submit");
     setQuestionMsgDialog(
-      `Apakah ada yakin akan submit data "${formik.values.isHaveMemo == "Y"
-        ? formik.values.reqNumber
-        : formik.values.reqNarative || type_req_param + " Tanpa Memo"
+      `Apakah ada yakin akan submit data "${
+        formik.values.isHaveMemo == "Y"
+          ? formik.values.reqNumber
+          : formik.values.reqNarative || type_req_param + " Tanpa Memo"
       }"?`,
     );
     setOpenConfirmSaveDialog(true);
@@ -3743,9 +3754,9 @@ function RegisterRequirementFormPage({
                               isInvalid={
                                 calculateDurationInDays(
                                   formik.values.reqInititateDate ||
-                                  new Date().toISOString(),
+                                    new Date().toISOString(),
                                   formik.values.reqAcceptedDate ||
-                                  new Date().toISOString(),
+                                    new Date().toISOString(),
                                 ) < 0
                               }
                             >
@@ -3757,18 +3768,18 @@ function RegisterRequirementFormPage({
                                   <Text px={2} fontWeight={600}>
                                     {calculateDurationInDays(
                                       formik.values.reqInititateDate ||
-                                      new Date().toISOString(),
+                                        new Date().toISOString(),
                                       formik.values.reqAcceptedDate ||
-                                      new Date().toISOString(),
+                                        new Date().toISOString(),
                                     )}{" "}
                                     Hari Kalendar
                                   </Text>
                                   <FormErrorMessage>
                                     {calculateDurationInDays(
                                       formik.values.reqInititateDate ||
-                                      new Date().toISOString(),
+                                        new Date().toISOString(),
                                       formik.values.reqAcceptedDate ||
-                                      new Date().toISOString(),
+                                        new Date().toISOString(),
                                     ) < 0 && "Durasi tidak boleh negatif"}
                                   </FormErrorMessage>
                                 </Stack>
@@ -4191,7 +4202,7 @@ function RegisterRequirementFormPage({
                                                           <Text
                                                             color={
                                                               colorMode ==
-                                                                "light"
+                                                              "light"
                                                                 ? "gray.900"
                                                                 : "gray.100"
                                                             }
@@ -4204,7 +4215,7 @@ function RegisterRequirementFormPage({
                                                             fontSize={"small"}
                                                             color={
                                                               colorMode ==
-                                                                "light"
+                                                              "light"
                                                                 ? "secondary.700"
                                                                 : "secondary.200"
                                                             }
@@ -4334,10 +4345,10 @@ function RegisterRequirementFormPage({
                                         value={OrganizationData.filter(
                                           (f) =>
                                             f.orgType ==
-                                            ORG_CATEGORY_KEY_DIRECTORATE &&
+                                              ORG_CATEGORY_KEY_DIRECTORATE &&
                                             f.id ==
-                                            formik.values
-                                              .reqManageByDirectorateId,
+                                              formik.values
+                                                .reqManageByDirectorateId,
                                         ).map((d) => ({
                                           label: d.orgName,
                                           value: d.id,
@@ -4417,10 +4428,10 @@ function RegisterRequirementFormPage({
                                         value={OrganizationData.filter(
                                           (f) =>
                                             f.orgType ==
-                                            ORG_CATEGORY_KEY_DIVISION &&
+                                              ORG_CATEGORY_KEY_DIVISION &&
                                             f.id ==
-                                            formik.values
-                                              .reqManageByDivisionId,
+                                              formik.values
+                                                .reqManageByDivisionId,
                                         ).map((d) => ({
                                           label: d.orgName,
                                           value: d.id,
@@ -4456,10 +4467,10 @@ function RegisterRequirementFormPage({
                                         options={OrganizationData.filter(
                                           (f) =>
                                             f.orgType ==
-                                            ORG_CATEGORY_KEY_GROUP &&
+                                              ORG_CATEGORY_KEY_GROUP &&
                                             f.parentId ==
-                                            formik.values
-                                              .reqManageByDivisionId,
+                                              formik.values
+                                                .reqManageByDivisionId,
                                         ).map((d) => ({
                                           label: d.orgName,
                                           value: d.id,
@@ -4483,9 +4494,9 @@ function RegisterRequirementFormPage({
                                         value={OrganizationData.filter(
                                           (f) =>
                                             f.orgType ==
-                                            ORG_CATEGORY_KEY_GROUP &&
+                                              ORG_CATEGORY_KEY_GROUP &&
                                             f.id ==
-                                            formik.values.reqManageByGroupId,
+                                              formik.values.reqManageByGroupId,
                                         ).map((d) => ({
                                           label: d.orgName,
                                           value: d.id,
@@ -4881,7 +4892,7 @@ function RegisterRequirementFormPage({
                                           setOptionGroupDivision([]);
                                           await LoadDataGroupOrgCustom(
                                             formik.values.userPicDivisionId ||
-                                            "",
+                                              "",
                                           );
                                         }}
                                         onChange={(e) => {
@@ -4996,9 +5007,9 @@ function RegisterRequirementFormPage({
                                               typeof formik.errors
                                                 .workPrograms?.[index] ===
                                                 "object" &&
-                                                formik.errors.workPrograms?.[
-                                                  index
-                                                ]?.directorateId
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.directorateId
                                                 ? true
                                                 : false
                                             }
@@ -5035,9 +5046,9 @@ function RegisterRequirementFormPage({
                                               typeof formik.errors
                                                 .workPrograms?.[index] ===
                                                 "object" &&
-                                                formik.errors.workPrograms?.[
-                                                  index
-                                                ]?.divisionId
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.divisionId
                                                 ? true
                                                 : false
                                             }
@@ -5187,9 +5198,9 @@ function RegisterRequirementFormPage({
                                               typeof formik.errors
                                                 .workPrograms?.[index] ===
                                                 "object" &&
-                                                formik.errors.workPrograms?.[
-                                                  index
-                                                ]?.groupId
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.groupId
                                                 ? true
                                                 : false
                                             }
@@ -5282,8 +5293,8 @@ function RegisterRequirementFormPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                          formik.errors.workPrograms?.[index]
-                                            ?.workProgramCode
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramCode
                                           ? true
                                           : false
                                       }
@@ -5332,8 +5343,8 @@ function RegisterRequirementFormPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                          formik.errors.workPrograms?.[index]
-                                            ?.workProgramName
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramName
                                           ? true
                                           : false
                                       }
@@ -5381,8 +5392,8 @@ function RegisterRequirementFormPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                          formik.errors.workPrograms?.[index]
-                                            ?.workProgramAccName
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccName
                                           ? true
                                           : false
                                       }
@@ -5431,8 +5442,8 @@ function RegisterRequirementFormPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                          formik.errors.workPrograms?.[index]
-                                            ?.workProgramAccNumber
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccNumber
                                           ? true
                                           : false
                                       }
@@ -5484,8 +5495,8 @@ function RegisterRequirementFormPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                          formik.errors.workPrograms?.[index]
-                                            ?.workProgramAccCc
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccCc
                                           ? true
                                           : false
                                       }
@@ -5537,8 +5548,8 @@ function RegisterRequirementFormPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                          formik.errors.workPrograms?.[index]
-                                            ?.workProgramBudget
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramBudget
                                           ? true
                                           : false
                                       }
@@ -5575,8 +5586,8 @@ function RegisterRequirementFormPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                          formik.errors.workPrograms?.[index]
-                                            ?.workProgramReal
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramReal
                                           ? true
                                           : false
                                       }
@@ -5714,9 +5725,9 @@ function RegisterRequirementFormPage({
                                               typeof formik.errors
                                                 .workPrograms?.[index] ===
                                                 "object" &&
-                                                formik.errors.workPrograms?.[
-                                                  index
-                                                ]?.directorateId
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.directorateId
                                                 ? true
                                                 : false
                                             }
@@ -5753,9 +5764,9 @@ function RegisterRequirementFormPage({
                                               typeof formik.errors
                                                 .workPrograms?.[index] ===
                                                 "object" &&
-                                                formik.errors.workPrograms?.[
-                                                  index
-                                                ]?.divisionId
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.divisionId
                                                 ? true
                                                 : false
                                             }
@@ -5794,9 +5805,9 @@ function RegisterRequirementFormPage({
                                               typeof formik.errors
                                                 .workPrograms?.[index] ===
                                                 "object" &&
-                                                formik.errors.workPrograms?.[
-                                                  index
-                                                ]?.groupId
+                                              formik.errors.workPrograms?.[
+                                                index
+                                              ]?.groupId
                                                 ? true
                                                 : false
                                             }
@@ -5888,8 +5899,8 @@ function RegisterRequirementFormPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                          formik.errors.workPrograms?.[index]
-                                            ?.workProgramCode
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramCode
                                           ? true
                                           : false
                                       }
@@ -5937,8 +5948,8 @@ function RegisterRequirementFormPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                          formik.errors.workPrograms?.[index]
-                                            ?.workProgramName
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramName
                                           ? true
                                           : false
                                       }
@@ -5986,8 +5997,8 @@ function RegisterRequirementFormPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                          formik.errors.workPrograms?.[index]
-                                            ?.workProgramAccName
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccName
                                           ? true
                                           : false
                                       }
@@ -6036,8 +6047,8 @@ function RegisterRequirementFormPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                          formik.errors.workPrograms?.[index]
-                                            ?.workProgramAccNumber
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccNumber
                                           ? true
                                           : false
                                       }
@@ -6089,8 +6100,8 @@ function RegisterRequirementFormPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                          formik.errors.workPrograms?.[index]
-                                            ?.workProgramAccCc
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramAccCc
                                           ? true
                                           : false
                                       }
@@ -6142,8 +6153,8 @@ function RegisterRequirementFormPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                          formik.errors.workPrograms?.[index]
-                                            ?.workProgramBudget
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramBudget
                                           ? true
                                           : false
                                       }
@@ -6180,8 +6191,8 @@ function RegisterRequirementFormPage({
                                         typeof formik.errors.workPrograms?.[
                                           index
                                         ] === "object" &&
-                                          formik.errors.workPrograms?.[index]
-                                            ?.workProgramReal
+                                        formik.errors.workPrograms?.[index]
+                                          ?.workProgramReal
                                           ? true
                                           : false
                                       }
@@ -6427,7 +6438,8 @@ function RegisterRequirementFormPage({
                               memilih file
                             </Text>
                             <Text fontSize="sm" color="gray.500">
-                              Format: PDF, DOCX, XLSX, CSV, Images (Max 120MB per file)
+                              Format: PDF, DOCX, XLSX, CSV, Images (Max 120MB
+                              per file)
                             </Text>
                           </VStack>
                         </Flex>
@@ -6681,21 +6693,42 @@ function RegisterRequirementFormPage({
           <ModalBody py={6}>
             <VStack spacing={4} align="stretch">
               <HStack spacing={2} align="flex-start">
-                <Icon as={FiAlertTriangle} color="orange.500" boxSize={5} mt={0.5} />
+                <Icon
+                  as={FiAlertTriangle}
+                  color="orange.500"
+                  boxSize={5}
+                  mt={0.5}
+                />
                 <Box>
-                  <Text fontWeight="bold" color="orange.500">WARNING: Approval Request Action</Text>
-                  <Text mt={2}>Are you sure you want to send this requirement for approval?</Text>
+                  <Text fontWeight="bold" color="orange.500">
+                    WARNING: Approval Request Action
+                  </Text>
+                  <Text mt={2}>
+                    Are you sure you want to send this requirement for approval?
+                  </Text>
                 </Box>
               </HStack>
 
-              <Card bg={colorMode === "light" ? "orange.50" : "orange.900"} borderColor="orange.200" borderWidth="1px">
+              <Card
+                bg={colorMode === "light" ? "orange.50" : "orange.900"}
+                borderColor="orange.200"
+                borderWidth="1px"
+              >
                 <CardBody>
                   <HStack spacing={2} align="flex-start">
-                    <Icon as={FiAlertTriangle} color="orange.500" boxSize={4} mt={0.5} />
+                    <Icon
+                      as={FiAlertTriangle}
+                      color="orange.500"
+                      boxSize={4}
+                      mt={0.5}
+                    />
                     <Box>
-                      <Text fontWeight="bold" fontSize="sm">IMPORTANT:</Text>
+                      <Text fontWeight="bold" fontSize="sm">
+                        IMPORTANT:
+                      </Text>
                       <Text fontSize="sm" mt={1}>
-                        Once submitted, the <strong>Scope of Work</strong> cannot be edited once it has been approved.
+                        Once submitted, the <strong>Scope of Work</strong>{" "}
+                        cannot be edited once it has been approved.
                       </Text>
                     </Box>
                   </HStack>
@@ -6703,9 +6736,15 @@ function RegisterRequirementFormPage({
               </Card>
 
               <HStack spacing={2} align="flex-start">
-                <Icon as={FiCheckCircle} color="green.500" boxSize={4} mt={0.5} />
+                <Icon
+                  as={FiCheckCircle}
+                  color="green.500"
+                  boxSize={4}
+                  mt={0.5}
+                />
                 <Text fontSize="sm">
-                  This action will initiate the formal approval process for your requirement submission.
+                  This action will initiate the formal approval process for your
+                  requirement submission.
                 </Text>
               </HStack>
             </VStack>
@@ -6724,7 +6763,9 @@ function RegisterRequirementFormPage({
                 }}
                 isDisabled={approvalCountdown > 0}
               >
-                {approvalCountdown > 0 ? `Wait ${approvalCountdown}s` : `Send Request`}
+                {approvalCountdown > 0
+                  ? `Wait ${approvalCountdown}s`
+                  : `Send Request`}
               </Button>
             </HStack>
           </ModalFooter>
@@ -6749,7 +6790,7 @@ function RegisterRequirementFormPage({
         tokenData={tokenData}
       />
     </LayoutAdmin>
-  )
+  );
 }
 
 interface AppicationShowCaseProps {
@@ -7567,8 +7608,9 @@ const Section4BRDView = ({
           m={2}
           bg={colorMode == "light" ? "white" : "gray.900"}
         >
-          <ModalHeader>{`${FormMode == "Add" ? "Tambah" : "Ubah"
-            } Scope of Work`}</ModalHeader>
+          <ModalHeader>{`${
+            FormMode == "Add" ? "Tambah" : "Ubah"
+          } Scope of Work`}</ModalHeader>
           <ModalCloseButton
             color={"red.500"}
             bg={"red.50"}
@@ -7609,7 +7651,8 @@ const Section4BRDView = ({
                       onChange={(e) => setTextBackLogDesc(e.target.value)}
                       value={TextBackLogDesc}
                       placeholder={`Deskripsi Scope of Work`}
-                      maxLength={300}
+                      minH={300}
+                      maxLength={9000}
                       isDisabled={ActionLoading}
                     />
                   </FormControl>
@@ -7642,6 +7685,7 @@ const Section4BRDView = ({
                           return (
                             <Tag
                               key={index}
+                              size={"sm"}
                               borderRadius="full"
                               colorScheme="secondary"
                               variant={"solid"}
@@ -7672,15 +7716,21 @@ const Section4BRDView = ({
                   <Box
                     bg={colorMode === "light" ? "blue.50" : "blue.900"}
                     border="1px"
-                    borderColor={colorMode === "light" ? "blue.200" : "blue.700"}
+                    borderColor={
+                      colorMode === "light" ? "blue.200" : "blue.700"
+                    }
                     rounded={radiusStyle}
                     p={3}
                     mb={3}
                   >
                     <HStack spacing={2}>
                       <Icon as={FiInfo} color="blue.500" boxSize={4} />
-                      <Text fontSize="sm" color={colorMode === "light" ? "blue.700" : "blue.300"}>
-                        Scope of Work akan menjadi <strong>backlog</strong> project
+                      <Text
+                        fontSize="sm"
+                        color={colorMode === "light" ? "blue.700" : "blue.300"}
+                      >
+                        Scope of Work akan menjadi <strong>backlog</strong>{" "}
+                        project
                       </Text>
                     </HStack>
                   </Box>
@@ -8301,81 +8351,81 @@ const Section4BRDView = ({
 
                 {formik.values.appOperational24hrs ==
                   APP_OPERATIONAL_OPTIONS[1] && (
-                    <Flex as={Stack} w={"full"} py={2}>
-                      <Text color={"secondary.500"}>Pilih Hari</Text>
-                      <Box
-                        pointerEvents={
-                          ApplicationExistingChoosed !== null ? "none" : "auto"
-                        }
-                        opacity={ApplicationExistingChoosed !== null ? 0.6 : 1}
+                  <Flex as={Stack} w={"full"} py={2}>
+                    <Text color={"secondary.500"}>Pilih Hari</Text>
+                    <Box
+                      pointerEvents={
+                        ApplicationExistingChoosed !== null ? "none" : "auto"
+                      }
+                      opacity={ApplicationExistingChoosed !== null ? 0.6 : 1}
+                    >
+                      <WeekdaySelector
+                        value={OperationalDays}
+                        onChange={setOperationalDays}
+                      />
+                    </Box>
+                    <Grid templateColumns="repeat(2, 1fr)" gap={4} w={"full"}>
+                      <GridItem
+                        colSpan={{
+                          base: 2,
+                          sm: 2,
+                          md: 1,
+                          lg: 1,
+                        }}
+                        w={"full"}
                       >
-                        <WeekdaySelector
-                          value={OperationalDays}
-                          onChange={setOperationalDays}
-                        />
-                      </Box>
-                      <Grid templateColumns="repeat(2, 1fr)" gap={4} w={"full"}>
-                        <GridItem
-                          colSpan={{
-                            base: 2,
-                            sm: 2,
-                            md: 1,
-                            lg: 1,
-                          }}
-                          w={"full"}
-                        >
-                          <Stack w={"full"}>
-                            <Text color={"secondary.500"}>Operasional Mulai</Text>
-                            <Input
-                              type="time"
-                              id="appOperationalHourOpen"
-                              name="appOperationalHourOpen"
-                              onChange={formik.handleChange}
-                              value={
-                                formik.values.appOperationalHourOpen
-                                  ? formik.values.appOperationalHourOpen.slice(
+                        <Stack w={"full"}>
+                          <Text color={"secondary.500"}>Operasional Mulai</Text>
+                          <Input
+                            type="time"
+                            id="appOperationalHourOpen"
+                            name="appOperationalHourOpen"
+                            onChange={formik.handleChange}
+                            value={
+                              formik.values.appOperationalHourOpen
+                                ? formik.values.appOperationalHourOpen.slice(
                                     0,
                                     5,
                                   ) // ensure HH:mm
-                                  : ""
-                              }
-                              isDisabled={ApplicationExistingChoosed !== null}
-                            />
-                          </Stack>
-                        </GridItem>
-                        <GridItem
-                          colSpan={{
-                            base: 2,
-                            sm: 2,
-                            md: 1,
-                            lg: 1,
-                          }}
-                          w={"full"}
-                        >
-                          <Stack w={"full"}>
-                            <Text color={"secondary.500"}>
-                              Operasional Berakhir
-                            </Text>
-                            <Input
-                              type="time"
-                              id="appOperationalHourClosed"
-                              name="appOperationalHourClosed"
-                              onChange={formik.handleChange}
-                              value={
-                                formik.values.appOperationalHourClosed
-                                  ? formik.values.appOperationalHourClosed.slice(
+                                : ""
+                            }
+                            isDisabled={ApplicationExistingChoosed !== null}
+                          />
+                        </Stack>
+                      </GridItem>
+                      <GridItem
+                        colSpan={{
+                          base: 2,
+                          sm: 2,
+                          md: 1,
+                          lg: 1,
+                        }}
+                        w={"full"}
+                      >
+                        <Stack w={"full"}>
+                          <Text color={"secondary.500"}>
+                            Operasional Berakhir
+                          </Text>
+                          <Input
+                            type="time"
+                            id="appOperationalHourClosed"
+                            name="appOperationalHourClosed"
+                            onChange={formik.handleChange}
+                            value={
+                              formik.values.appOperationalHourClosed
+                                ? formik.values.appOperationalHourClosed.slice(
                                     0,
                                     5,
                                   ) // ensure HH:mm
-                                  : ""
-                              }
-                              isDisabled={ApplicationExistingChoosed !== null}
-                            />
-                          </Stack>
-                        </GridItem>
-                      </Grid>
-                    </Flex>
-                  )}
+                                : ""
+                            }
+                            isDisabled={ApplicationExistingChoosed !== null}
+                          />
+                        </Stack>
+                      </GridItem>
+                    </Grid>
+                  </Flex>
+                )}
 
                 <FormErrorMessage>
                   {formik.errors.appOperational24hrs}
@@ -8813,10 +8863,7 @@ const Section4RFCView = ({
   // Populate BacklogApps from DataBackLogs when draft is loaded (for RFC)
   // Runs whenever DataBackLogs has data and BacklogChanges is empty (covers both edit and register mode remount)
   useEffect(() => {
-    if (
-      DataBackLogs.length > 0 &&
-      BacklogChanges.length === 0
-    ) {
+    if (DataBackLogs.length > 0 && BacklogChanges.length === 0) {
       // Convert DataBackLogs to BacklogDataResponse format
       const backlogAppsData: BacklogDataResponse[] = DataBackLogs.map((b) => ({
         id: b.backlogId || b.localId || "",
@@ -8888,19 +8935,19 @@ const Section4RFCView = ({
         return {
           backlog: latestHistory
             ? {
-              ...b,
-              id: latestHistory.id,
-              backlogName: latestHistory.backlogName,
-              backlogDesc: latestHistory.backlogDesc || "",
-              note: latestHistory.note || "",
-              urgency: latestHistory.urgency || "LOW",
-              impact: latestHistory.impact || "LOW",
-              priority: latestHistory.priority || "LOW",
-            }
+                ...b,
+                id: latestHistory.id,
+                backlogName: latestHistory.backlogName,
+                backlogDesc: latestHistory.backlogDesc || "",
+                note: latestHistory.note || "",
+                urgency: latestHistory.urgency || "LOW",
+                impact: latestHistory.impact || "LOW",
+                priority: latestHistory.priority || "LOW",
+              }
             : {
-              ...b,
-              id: "NEW_SCOPE",
-            },
+                ...b,
+                id: "NEW_SCOPE",
+              },
           changes: {
             localId: b.id.startsWith("local-") ? b.id : undefined,
             backlogId: b.id.startsWith("local-") ? null : b.id,
@@ -8935,27 +8982,27 @@ const Section4RFCView = ({
       const backlogHistories: ReqBacklogPayload[] =
         dt.showKondisiEksisting && dt.backlog.id !== "NEW_SCOPE"
           ? [
-            {
-              localId: undefined,
-              id: undefined,
-              backlogId: null,
-              parentBacklogId: null,
-              backlogName: dt.backlog.backlogName || "",
-              backlogDesc: dt.backlog.backlogDesc || "",
-              note: dt.backlog.note || "",
-              posOrder: 1,
-              urgency: dt.backlog.urgency || "LOW",
-              impact: dt.backlog.impact || "LOW",
-              priority: dt.backlog.priority || "LOW",
-              backlogHistories: [],
-              rfcBacklogChanges: dt.backlog.rfcBacklogChanges || "MAJOR",
-              rfcBacklogImportant: dt.backlog.rfcBacklogImportant || "NORMAL",
-              rfcBacklogImpactOthers:
-                dt.backlog.rfcBacklogImpactOthers || "SMALL",
-              rfcPriorities: dt.backlog.rfcPriorities || "LOW",
-              rfcPrioritiesIndex: dt.backlog.rfcPrioritiesIndex || null,
-            },
-          ]
+              {
+                localId: undefined,
+                id: undefined,
+                backlogId: null,
+                parentBacklogId: null,
+                backlogName: dt.backlog.backlogName || "",
+                backlogDesc: dt.backlog.backlogDesc || "",
+                note: dt.backlog.note || "",
+                posOrder: 1,
+                urgency: dt.backlog.urgency || "LOW",
+                impact: dt.backlog.impact || "LOW",
+                priority: dt.backlog.priority || "LOW",
+                backlogHistories: [],
+                rfcBacklogChanges: dt.backlog.rfcBacklogChanges || "MAJOR",
+                rfcBacklogImportant: dt.backlog.rfcBacklogImportant || "NORMAL",
+                rfcBacklogImpactOthers:
+                  dt.backlog.rfcBacklogImpactOthers || "SMALL",
+                rfcPriorities: dt.backlog.rfcPriorities || "LOW",
+                rfcPrioritiesIndex: dt.backlog.rfcPrioritiesIndex || null,
+              },
+            ]
           : [];
 
       return {
@@ -9419,21 +9466,21 @@ const Section4RFCView = ({
         prev.map((item, i) =>
           i === index
             ? {
-              ...item,
-              backlog: {
-                ...item.backlog,
-                id: "NEW_SCOPE",
-                backlogName: "",
-                backlogDesc: "",
-                note: "",
-              },
-              changes: {
-                localId: item.changes?.localId || generateLocalId(),
-                backlogId: null,
-                backlogName: "",
-                posOrder: 1,
-              },
-            }
+                ...item,
+                backlog: {
+                  ...item.backlog,
+                  id: "NEW_SCOPE",
+                  backlogName: "",
+                  backlogDesc: "",
+                  note: "",
+                },
+                changes: {
+                  localId: item.changes?.localId || generateLocalId(),
+                  backlogId: null,
+                  backlogName: "",
+                  posOrder: 1,
+                },
+              }
             : item,
         ),
       );
@@ -9450,15 +9497,15 @@ const Section4RFCView = ({
       prev.map((item, i) =>
         i === index
           ? {
-            ...item,
-            backlog: choosedFeature,
-            changes: {
-              localId: item.changes?.localId || generateLocalId(),
-              backlogId: null,
-              backlogName: selectedOption.label,
-              posOrder: 1,
-            },
-          }
+              ...item,
+              backlog: choosedFeature,
+              changes: {
+                localId: item.changes?.localId || generateLocalId(),
+                backlogId: null,
+                backlogName: selectedOption.label,
+                posOrder: 1,
+              },
+            }
           : item,
       ),
     );
@@ -9806,9 +9853,9 @@ const Section4RFCView = ({
                               const updated = BacklogChanges.map((item, i) =>
                                 i === index
                                   ? {
-                                    ...item,
-                                    showKondisiEksisting: e.target.checked,
-                                  }
+                                      ...item,
+                                      showKondisiEksisting: e.target.checked,
+                                    }
                                   : item,
                               );
                               setBacklogChanges(updated);
@@ -10097,7 +10144,7 @@ const Section4RFCView = ({
                                 const result = getRfcPriorityWithIndex(
                                   e?.value || "NORMAL",
                                   updated[index].rfcBacklogImpactOthers ||
-                                  "SMALL",
+                                    "SMALL",
                                 );
                                 updated[index].rfcPriorities = result.priority;
 
@@ -10130,7 +10177,7 @@ const Section4RFCView = ({
 
                                 const result = getRfcPriorityWithIndex(
                                   updated[index].rfcBacklogImportant ||
-                                  "NORMAL",
+                                    "NORMAL",
                                   e?.value || "SMALL",
                                 );
                                 updated[index].rfcPriorities = result.priority;
@@ -10546,81 +10593,81 @@ const Section4RFCView = ({
 
                 {formik.values.appOperational24hrs ==
                   APP_OPERATIONAL_OPTIONS[1] && (
-                    <Flex as={Stack} w={"full"} py={2}>
-                      <Text color={"secondary.500"}>Pilih Hari</Text>
-                      <Box
-                        pointerEvents={
-                          ApplicationExistingChoosed !== null ? "none" : "auto"
-                        }
-                        opacity={ApplicationExistingChoosed !== null ? 0.6 : 1}
+                  <Flex as={Stack} w={"full"} py={2}>
+                    <Text color={"secondary.500"}>Pilih Hari</Text>
+                    <Box
+                      pointerEvents={
+                        ApplicationExistingChoosed !== null ? "none" : "auto"
+                      }
+                      opacity={ApplicationExistingChoosed !== null ? 0.6 : 1}
+                    >
+                      <WeekdaySelector
+                        value={OperationalDays}
+                        onChange={setOperationalDays}
+                      />
+                    </Box>
+                    <Grid templateColumns="repeat(2, 1fr)" gap={4} w={"full"}>
+                      <GridItem
+                        colSpan={{
+                          base: 2,
+                          sm: 2,
+                          md: 1,
+                          lg: 1,
+                        }}
+                        w={"full"}
                       >
-                        <WeekdaySelector
-                          value={OperationalDays}
-                          onChange={setOperationalDays}
-                        />
-                      </Box>
-                      <Grid templateColumns="repeat(2, 1fr)" gap={4} w={"full"}>
-                        <GridItem
-                          colSpan={{
-                            base: 2,
-                            sm: 2,
-                            md: 1,
-                            lg: 1,
-                          }}
-                          w={"full"}
-                        >
-                          <Stack w={"full"}>
-                            <Text color={"secondary.500"}>Operasional Mulai</Text>
-                            <Input
-                              type="time"
-                              id="appOperationalHourOpen"
-                              name="appOperationalHourOpen"
-                              onChange={formik.handleChange}
-                              value={
-                                formik.values.appOperationalHourOpen
-                                  ? formik.values.appOperationalHourOpen.slice(
+                        <Stack w={"full"}>
+                          <Text color={"secondary.500"}>Operasional Mulai</Text>
+                          <Input
+                            type="time"
+                            id="appOperationalHourOpen"
+                            name="appOperationalHourOpen"
+                            onChange={formik.handleChange}
+                            value={
+                              formik.values.appOperationalHourOpen
+                                ? formik.values.appOperationalHourOpen.slice(
                                     0,
                                     5,
                                   ) // ensure HH:mm
-                                  : ""
-                              }
-                              isDisabled={ApplicationExistingChoosed !== null}
-                            />
-                          </Stack>
-                        </GridItem>
-                        <GridItem
-                          colSpan={{
-                            base: 2,
-                            sm: 2,
-                            md: 1,
-                            lg: 1,
-                          }}
-                          w={"full"}
-                        >
-                          <Stack w={"full"}>
-                            <Text color={"secondary.500"}>
-                              Operasional Berakhir
-                            </Text>
-                            <Input
-                              type="time"
-                              id="appOperationalHourClosed"
-                              name="appOperationalHourClosed"
-                              onChange={formik.handleChange}
-                              value={
-                                formik.values.appOperationalHourClosed
-                                  ? formik.values.appOperationalHourClosed.slice(
+                                : ""
+                            }
+                            isDisabled={ApplicationExistingChoosed !== null}
+                          />
+                        </Stack>
+                      </GridItem>
+                      <GridItem
+                        colSpan={{
+                          base: 2,
+                          sm: 2,
+                          md: 1,
+                          lg: 1,
+                        }}
+                        w={"full"}
+                      >
+                        <Stack w={"full"}>
+                          <Text color={"secondary.500"}>
+                            Operasional Berakhir
+                          </Text>
+                          <Input
+                            type="time"
+                            id="appOperationalHourClosed"
+                            name="appOperationalHourClosed"
+                            onChange={formik.handleChange}
+                            value={
+                              formik.values.appOperationalHourClosed
+                                ? formik.values.appOperationalHourClosed.slice(
                                     0,
                                     5,
                                   ) // ensure HH:mm
-                                  : ""
-                              }
-                              isDisabled={ApplicationExistingChoosed !== null}
-                            />
-                          </Stack>
-                        </GridItem>
-                      </Grid>
-                    </Flex>
-                  )}
+                                : ""
+                            }
+                            isDisabled={ApplicationExistingChoosed !== null}
+                          />
+                        </Stack>
+                      </GridItem>
+                    </Grid>
+                  </Flex>
+                )}
 
                 <FormErrorMessage>
                   {formik.errors.appOperational24hrs}

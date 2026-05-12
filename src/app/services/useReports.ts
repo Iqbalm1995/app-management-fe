@@ -282,6 +282,13 @@ export interface ReportProjectPortofolioDataResponse {
   projectSubCharasteristicCode?: string | null;
   projectSubCharasteristicName?: string | null;
   projectSubCharasteristicDesc?: string | null;
+  isImported: string;
+  sdlcId: string | null;
+  sdlcCode: string | null;
+  sdlcName: string | null;
+  sdlcStageId: string | null;
+  sdlcStageCode: string | null;
+  sdlcStageName: string | null;
   userAssignment: ProjectUserAssignmentResponse[];
   requirement?: RequirementsResponse | null;
   appsProject?: AppsResponse | null;
@@ -439,13 +446,19 @@ interface useReportsServices {
   ) => Promise<Blob | null>;
 
   GetMyPerformanceSummary: (
-    userId: string, year: number, token: string
+    userId: string, year: number, token: string, orgGroupCode?: string, orgDivisionCode?: string
   ) => Promise<ApiGenericResponse<MyPerformanceSummaryResponse | null> | null>;
   GetMyPerformanceQuartalChart: (
-    userId: string, year: number, token: string
+    userId: string, year: number, token: string, orgGroupCode?: string, orgDivisionCode?: string
   ) => Promise<ApiGenericResponse<MyPerformanceQuartalChartResponse | null> | null>;
+  GetOrgQuartalChart: (
+    year: number, token: string, orgGroupCode?: string, orgDivisionCode?: string
+  ) => Promise<ApiGenericResponse<MyPerformanceQuartalChartResponse | null> | null>;
+  GetOrgUserRankings: (
+    token: string, orgGroupCode?: string, orgDivisionCode?: string
+  ) => Promise<ApiGenericResponse<OrgUserRankingResponse[] | null> | null>;
   GetMyPerformanceRequirements: (
-    userId: string, payload: PaggingListPayload, token: string
+    userId: string, payload: PaggingListPayload, token: string, orgGroupCode?: string, orgDivisionCode?: string
   ) => Promise<ApiGenericResponse<any[] | null> | null>;
 
   isLoading: boolean;
@@ -1644,14 +1657,21 @@ const useReports = (): useReportsServices => {
   const GetMyPerformanceSummary = async (
     userId: string,
     year: number,
-    token: string
+    token: string,
+    orgGroupCode?: string,
+    orgDivisionCode?: string
   ): Promise<ApiGenericResponse<MyPerformanceSummaryResponse | null> | null> => {
     setIsLoading(true);
     setError(null);
     const UrlEndpoint = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const params = new URLSearchParams();
+    if (userId) params.append("userId", userId);
+    params.append("year", year.toString());
+    if (orgGroupCode) params.append("orgGroupCode", orgGroupCode);
+    if (orgDivisionCode) params.append("orgDivisionCode", orgDivisionCode);
     try {
       const response = await axiosInstance.get<ApiGenericResponse<MyPerformanceSummaryResponse>>(
-        `${UrlEndpoint}/v1/Report/my-performance/summary?userId=${encodeURIComponent(userId)}&year=${year}`,
+        `${UrlEndpoint}/v1/Report/my-performance/summary?${params.toString()}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setIsLoading(false);
@@ -1667,14 +1687,75 @@ const useReports = (): useReportsServices => {
   const GetMyPerformanceQuartalChart = async (
     userId: string,
     year: number,
-    token: string
+    token: string,
+    orgGroupCode?: string,
+    orgDivisionCode?: string
   ): Promise<ApiGenericResponse<MyPerformanceQuartalChartResponse | null> | null> => {
     setIsLoading(true);
     setError(null);
     const UrlEndpoint = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const params = new URLSearchParams();
+    if (userId) params.append("userId", userId);
+    params.append("year", year.toString());
+    if (orgGroupCode) params.append("orgGroupCode", orgGroupCode);
+    if (orgDivisionCode) params.append("orgDivisionCode", orgDivisionCode);
     try {
       const response = await axiosInstance.get<ApiGenericResponse<MyPerformanceQuartalChartResponse>>(
-        `${UrlEndpoint}/v1/Report/my-performance/quartal-chart?userId=${encodeURIComponent(userId)}&year=${year}`,
+        `${UrlEndpoint}/v1/Report/my-performance/quartal-chart?${params.toString()}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) { setError(err.response?.data?.message || "An error occurred."); return handleAxiosError(err); }
+      setError("An unknown error occurred.");
+      return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error connect to api", error: null };
+    }
+  };
+
+  const GetOrgQuartalChart = async (
+    year: number,
+    token: string,
+    orgGroupCode?: string,
+    orgDivisionCode?: string
+  ): Promise<ApiGenericResponse<MyPerformanceQuartalChartResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const params = new URLSearchParams();
+    params.append("year", year.toString());
+    if (orgGroupCode) params.append("orgGroupCode", orgGroupCode);
+    if (orgDivisionCode) params.append("orgDivisionCode", orgDivisionCode);
+    try {
+      const response = await axiosInstance.get<ApiGenericResponse<MyPerformanceQuartalChartResponse>>(
+        `${UrlEndpoint}/v1/Report/org-performance/quartal-chart?${params.toString()}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) { setError(err.response?.data?.message || "An error occurred."); return handleAxiosError(err); }
+      setError("An unknown error occurred.");
+      return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error connect to api", error: null };
+    }
+  };
+
+  const GetOrgUserRankings = async (
+    token: string,
+    orgGroupCode?: string,
+    orgDivisionCode?: string
+  ): Promise<ApiGenericResponse<OrgUserRankingResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const params = new URLSearchParams();
+    if (orgGroupCode) params.append("orgGroupCode", orgGroupCode);
+    if (orgDivisionCode) params.append("orgDivisionCode", orgDivisionCode);
+    try {
+      const response = await axiosInstance.get<ApiGenericResponse<OrgUserRankingResponse[]>>(
+        `${UrlEndpoint}/v1/Report/org-performance/user-rankings?${params.toString()}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setIsLoading(false);
@@ -1690,14 +1771,20 @@ const useReports = (): useReportsServices => {
   const GetMyPerformanceRequirements = async (
     userId: string,
     payload: PaggingListPayload,
-    token: string
+    token: string,
+    orgGroupCode?: string,
+    orgDivisionCode?: string
   ): Promise<ApiGenericResponse<any[] | null> | null> => {
     setIsLoading(true);
     setError(null);
     const UrlEndpoint = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const params = new URLSearchParams();
+    if (userId) params.append("userId", userId);
+    if (orgGroupCode) params.append("orgGroupCode", orgGroupCode);
+    if (orgDivisionCode) params.append("orgDivisionCode", orgDivisionCode);
     try {
       const response = await axiosInstance.post<ApiGenericResponse<any[]>>(
-        `${UrlEndpoint}/v1/Report/my-performance/requirements?userId=${encodeURIComponent(userId)}`,
+        `${UrlEndpoint}/v1/Report/my-performance/requirements?${params.toString()}`,
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -1728,6 +1815,8 @@ const useReports = (): useReportsServices => {
     ExportUserEvaluationReportExcel,
     GetMyPerformanceSummary,
     GetMyPerformanceQuartalChart,
+    GetOrgQuartalChart,
+    GetOrgUserRankings,
     GetMyPerformanceRequirements,
     isLoading,
     error,
@@ -1743,6 +1832,26 @@ export interface QuartalChartPoint {
 export interface MyPerformanceQuartalChartResponse {
   year: number;
   chart: QuartalChartPoint[];
+}
+
+export interface OrgUserRankingResponse {
+  userId: string;
+  nama: string;
+  nip: string;
+  jabatan?: string | null;
+  namaUnitKerja?: string | null;
+  userOrgGroupCode?: string | null;
+  userOrgGroupName?: string | null;
+  projectsAssigned: number;
+  projectsActive: number;
+  projectsClosed: number;
+  tasksAssigned: number;
+  tasksTodo: number;
+  tasksInProgress: number;
+  tasksDone: number;
+  taskItemsTotal: number;
+  taskItemsDone: number;
+  taskItemsUnchecked: number;
 }
 
 export interface MyPerformanceSummaryResponse {

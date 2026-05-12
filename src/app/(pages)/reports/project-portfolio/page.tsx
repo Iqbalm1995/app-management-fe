@@ -29,7 +29,9 @@ import useReports, {
   ReportProjectPortofolioDataResponse,
 } from "@/app/services/useReports";
 import { PROJECT_STATUS_OPTIONS } from "@/app/constants/masterStatusConstants";
-import useOrganization, { OrganizationResponse } from "@/app/services/useOrganization";
+import useOrganization, {
+  OrganizationResponse,
+} from "@/app/services/useOrganization";
 import {
   addParamFilterUpdate,
   ColumnMetaCustom,
@@ -81,7 +83,12 @@ function ProjectPortfolioReportPage() {
   const { colorMode } = useColorMode();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
-  const { ListReportProjectPortofolio, ExportProjectPortofolioExcel, ExportProjectPortofolioPDF, isLoading: exportLoading } = useReports();
+  const {
+    ListReportProjectPortofolio,
+    ExportProjectPortofolioExcel,
+    ExportProjectPortofolioPDF,
+    isLoading: exportLoading,
+  } = useReports();
   const { List: ListOrganization } = useOrganization();
 
   useEffect(() => {
@@ -108,25 +115,28 @@ function ProjectPortfolioReportPage() {
       if (!tokenData) return;
 
       try {
-        const response = await ListOrganization({
-          search: "",
-          limit: 1000,
-          page: 0,
-          filterWhere: [
-            {
-              field: "orgType",
-              operator: "=",
-              value: ORG_CATEGORY_KEY_GROUP
-            },
-            {
-              field: "parentId",
-              operator: "=",
-              value: DIVISION_ID_IT_BJB
-            }
-          ],
-          fieldOrder: ["orgName"],
-          orderDir: "asc"
-        } as PaggingListPayload, tokenData);
+        const response = await ListOrganization(
+          {
+            search: "",
+            limit: 1000,
+            page: 0,
+            filterWhere: [
+              {
+                field: "orgType",
+                operator: "=",
+                value: ORG_CATEGORY_KEY_GROUP,
+              },
+              {
+                field: "parentId",
+                operator: "=",
+                value: DIVISION_ID_IT_BJB,
+              },
+            ],
+            fieldOrder: ["orgName"],
+            orderDir: "asc",
+          } as PaggingListPayload,
+          tokenData,
+        );
         if (response?.statusCode === RES_CODE_OK && response.data) {
           // Show all organizations, let user choose GROUP types
           setGroupOptions(response.data);
@@ -140,7 +150,9 @@ function ProjectPortfolioReportPage() {
   }, [tokenData]);
   // End SetUp auth data on current page
 
-  const [DataReport, setDataReport] = useState<ReportProjectPortofolioDataResponse[]>([]);
+  const [DataReport, setDataReport] = useState<
+    ReportProjectPortofolioDataResponse[]
+  >([]);
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
 
@@ -157,7 +169,7 @@ function ProjectPortfolioReportPage() {
       pageIndex,
       pageSize,
     }),
-    [pageIndex, pageSize]
+    [pageIndex, pageSize],
   );
 
   const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([]);
@@ -211,9 +223,9 @@ function ProjectPortfolioReportPage() {
 
       if (blob) {
         const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = url;
-        link.download = `Project_Portfolio_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+        link.download = `Project_Portfolio_Report_${new Date().toISOString().split("T")[0]}.xlsx`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -260,9 +272,9 @@ function ProjectPortfolioReportPage() {
 
       if (blob) {
         const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = url;
-        link.download = `Project_Portfolio_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+        link.download = `Project_Portfolio_Report_${new Date().toISOString().split("T")[0]}.pdf`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -293,7 +305,9 @@ function ProjectPortfolioReportPage() {
         accessorKey: "numbData",
         cell: (info) => (
           <Flex justifyContent={"center"} alignItems="flex-start" h={"full"}>
-            <Text fontSize="sm">{pageIndex * pageSize + info.row.index + 1}.</Text>
+            <Text fontSize="sm">
+              {pageIndex * pageSize + info.row.index + 1}.
+            </Text>
           </Flex>
         ),
         header: () => <Flex justifyContent={"center"}>No.</Flex>,
@@ -315,21 +329,26 @@ function ProjectPortfolioReportPage() {
             spacing={1}
             minW="250px"
           >
-            <Text fontWeight={600} fontSize="sm">{info.row.original.projectNo}</Text>
+            <Text fontWeight={600} fontSize="sm">
+              {info.row.original.projectNo}
+            </Text>
             <Text fontSize="sm">{info.row.original.projectName}</Text>
             <Text fontSize="xs" color="gray.500">
-              {info.row.original.projectCategory} | {info.row.original.projectType}
+              {info.row.original.projectCategory} |{" "}
+              {info.row.original.projectType}
             </Text>
             {info.row.original.requirement?.requirementType && (
               <Text fontSize="xs" color="blue.500">
-                Requirement Type: {info.row.original.requirement.requirementType}
+                Requirement Type:{" "}
+                {info.row.original.requirement.requirementType}
               </Text>
             )}
-            {info.row.original.projectType === "PROCUREMENT" && !info.row.original.requirement && (
-              <Text fontSize="xs" color="orange.500">
-                Pengadaan Internal IT
-              </Text>
-            )}
+            {info.row.original.projectType === "PROCUREMENT" &&
+              !info.row.original.requirement && (
+                <Text fontSize="xs" color="orange.500">
+                  Pengadaan Internal IT
+                </Text>
+              )}
           </Flex>
         ),
         header: () => <span>Project Information</span>,
@@ -366,7 +385,9 @@ function ProjectPortfolioReportPage() {
             </Flex>
             <Flex fontSize={"2xs"} as={Stack} spacing={0}>
               <Text fontWeight={600}>Sub Characteristic:</Text>
-              <Text>{info.row.original.projectSubCharasteristicName || "-"}</Text>
+              <Text>
+                {info.row.original.projectSubCharasteristicName || "-"}
+              </Text>
             </Flex>
             <Flex fontSize={"2xs"} as={Stack} spacing={0}>
               <Text fontWeight={600}>Type:</Text>
@@ -376,7 +397,9 @@ function ProjectPortfolioReportPage() {
               <Flex fontSize={"2xs"} as={Stack} spacing={0}>
                 <Text fontWeight={600}>Target Live Date:</Text>
                 <Text color="blue.500">
-                  {stringToDateFormatedReverse(info.row.original.requirement.appLiveTargetDate)}
+                  {stringToDateFormatedReverse(
+                    info.row.original.requirement.appLiveTargetDate,
+                  )}
                 </Text>
               </Flex>
             )}
@@ -411,20 +434,36 @@ function ProjectPortfolioReportPage() {
             minW="200px"
           >
             <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">Owner Division:</Text>
-              <Text fontSize="2xs" lineHeight="1.2">{info.row.original.proOwnerDivisionName || "-"}</Text>
+              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
+                Owner Division:
+              </Text>
+              <Text fontSize="2xs" lineHeight="1.2">
+                {info.row.original.proOwnerDivisionName || "-"}
+              </Text>
             </Flex>
             <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">Owner Group:</Text>
-              <Text fontSize="2xs" lineHeight="1.2">{info.row.original.proOwnerGroupName || "-"}</Text>
+              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
+                Owner Group:
+              </Text>
+              <Text fontSize="2xs" lineHeight="1.2">
+                {info.row.original.proOwnerGroupName || "-"}
+              </Text>
             </Flex>
             <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">Manage Division:</Text>
-              <Text fontSize="2xs" lineHeight="1.2">{info.row.original.proManageByDivisionName || "-"}</Text>
+              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
+                Manage Division:
+              </Text>
+              <Text fontSize="2xs" lineHeight="1.2">
+                {info.row.original.proManageByDivisionName || "-"}
+              </Text>
             </Flex>
             <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">Manage Group:</Text>
-              <Text fontSize="2xs" lineHeight="1.2">{info.row.original.proManageByGroupName || "-"}</Text>
+              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
+                Manage Group:
+              </Text>
+              <Text fontSize="2xs" lineHeight="1.2">
+                {info.row.original.proManageByGroupName || "-"}
+              </Text>
             </Flex>
           </Flex>
         ),
@@ -462,7 +501,9 @@ function ProjectPortfolioReportPage() {
             </Flex>
             <Flex fontSize={"xs"} as={Stack} spacing={0}>
               <Text fontWeight={600}>Phone:</Text>
-              <Text>{info.row.original.requirement?.userPicContanct || "-"}</Text>
+              <Text>
+                {info.row.original.requirement?.userPicContanct || "-"}
+              </Text>
             </Flex>
             <Flex fontSize={"xs"} as={Stack} spacing={0}>
               <Text fontWeight={600}>Email:</Text>
@@ -489,19 +530,27 @@ function ProjectPortfolioReportPage() {
             spacing={1}
             minW="220px"
           >
-            <Text fontWeight={600} color="blue.500" fontSize="xs">External RBB Programs:</Text>
-            {info.row.original.workPrograms?.filter(wp => wp.workProgramSource === "EXTERNAL").length > 0 ? (
+            <Text fontWeight={600} color="blue.500" fontSize="xs">
+              External RBB Programs:
+            </Text>
+            {info.row.original.workPrograms?.filter(
+              (wp) => wp.workProgramSource === "EXTERNAL",
+            ).length > 0 ? (
               info.row.original.workPrograms
-                .filter(wp => wp.workProgramSource === "EXTERNAL")
+                .filter((wp) => wp.workProgramSource === "EXTERNAL")
                 .map((wp, idx) => (
                   <Flex key={idx} as={Stack} spacing={0} fontSize="xs">
                     <Text fontWeight={600}>{wp.workProgramCode}</Text>
                     <Text>{wp.workProgramName}</Text>
-                    <Text color="green.500">Budget: Rp {wp.workProgramBudget?.toLocaleString() || "0"}</Text>
+                    <Text color="green.500">
+                      Budget: Rp {wp.workProgramBudget?.toLocaleString() || "0"}
+                    </Text>
                   </Flex>
                 ))
             ) : (
-              <Text fontSize={"xs"} color="gray.500">No external programs</Text>
+              <Text fontSize={"xs"} color="gray.500">
+                No external programs
+              </Text>
             )}
           </Flex>
         ),
@@ -524,19 +573,27 @@ function ProjectPortfolioReportPage() {
             spacing={1}
             minW="220px"
           >
-            <Text fontWeight={600} color="green.500" fontSize="xs">Internal RBB Programs:</Text>
-            {info.row.original.workPrograms?.filter(wp => wp.workProgramSource === "INTERNAL").length > 0 ? (
+            <Text fontWeight={600} color="green.500" fontSize="xs">
+              Internal RBB Programs:
+            </Text>
+            {info.row.original.workPrograms?.filter(
+              (wp) => wp.workProgramSource === "INTERNAL",
+            ).length > 0 ? (
               info.row.original.workPrograms
-                .filter(wp => wp.workProgramSource === "INTERNAL")
+                .filter((wp) => wp.workProgramSource === "INTERNAL")
                 .map((wp, idx) => (
                   <Flex key={idx} as={Stack} spacing={0} fontSize="xs">
                     <Text fontWeight={600}>{wp.workProgramCode}</Text>
                     <Text>{wp.workProgramName}</Text>
-                    <Text color="green.500">Budget: Rp {wp.workProgramBudget?.toLocaleString() || "0"}</Text>
+                    <Text color="green.500">
+                      Budget: Rp {wp.workProgramBudget?.toLocaleString() || "0"}
+                    </Text>
                   </Flex>
                 ))
             ) : (
-              <Text fontSize={"xs"} color="gray.500">No internal programs</Text>
+              <Text fontSize={"xs"} color="gray.500">
+                No internal programs
+              </Text>
             )}
           </Flex>
         ),
@@ -574,12 +631,18 @@ function ProjectPortfolioReportPage() {
             </Text>
             {info.row.original.projectRegisterDate && (
               <Text fontSize="xs" color="gray.500">
-                Registered: {stringToDateFormatedReverse(info.row.original.projectRegisterDate)}
+                Registered:{" "}
+                {stringToDateFormatedReverse(
+                  info.row.original.projectRegisterDate,
+                )}
               </Text>
             )}
             {info.row.original.projectClosedDate && (
               <Text fontSize="xs" color="gray.500">
-                Closed: {stringToDateFormatedReverse(info.row.original.projectClosedDate)}
+                Closed:{" "}
+                {stringToDateFormatedReverse(
+                  info.row.original.projectClosedDate,
+                )}
               </Text>
             )}
           </Flex>
@@ -618,7 +681,12 @@ function ProjectPortfolioReportPage() {
             spacing={0}
             minW="180px"
           >
-            <Text fontSize="2xs" fontWeight={600} color="purple.500" lineHeight="1.2">
+            <Text
+              fontSize="2xs"
+              fontWeight={600}
+              color="purple.500"
+              lineHeight="1.2"
+            >
               Team Members ({info.row.original.userAssignment?.length || 0}):
             </Text>
             {info.row.original.userAssignment?.map((user, idx) => (
@@ -627,7 +695,9 @@ function ProjectPortfolioReportPage() {
               </Text>
             ))}
             {(info.row.original.userAssignment?.length || 0) === 0 && (
-              <Text fontSize="2xs" color="gray.500" lineHeight="1.2">No team members assigned</Text>
+              <Text fontSize="2xs" color="gray.500" lineHeight="1.2">
+                No team members assigned
+              </Text>
             )}
           </Flex>
         ),
@@ -638,14 +708,14 @@ function ProjectPortfolioReportPage() {
         } as ColumnMetaCustom,
       },
     ],
-    [pageIndex, pageSize, colorMode]
+    [pageIndex, pageSize, colorMode],
   );
 
   // Quarterly filter effect
   useEffect(() => {
     const { startDate, endDate } = getQuarterDateRange(
       selectedYear,
-      selectedQuarter
+      selectedQuarter,
     );
 
     setStartDateFilter(startDate);
@@ -656,20 +726,20 @@ function ProjectPortfolioReportPage() {
       const startDateFilter: ListSearchByParamProps = {
         field: "projectRegisterDate",
         operator: ">=",
-        value: startDate.toISOString().split('T')[0],
+        value: startDate.toISOString().split("T")[0],
         filterLabel: "Start Date Filter",
       };
 
       const endDateFilter: ListSearchByParamProps = {
         field: "projectRegisterDate",
         operator: "<=",
-        value: endDate.toISOString().split('T')[0],
+        value: endDate.toISOString().split("T")[0],
         filterLabel: "End Date Filter",
       };
 
       // Remove existing date filters and add new ones
       let updatedFilters = ParamFilter.filter(
-        f => f.field !== "projectRegisterDate"
+        (f) => f.field !== "projectRegisterDate",
       );
 
       updatedFilters = addParamFilterUpdate(updatedFilters, startDateFilter);
@@ -679,7 +749,7 @@ function ProjectPortfolioReportPage() {
     } else {
       // Remove date filters when "all" is selected
       const updatedFilters = ParamFilter.filter(
-        f => f.field !== "projectRegisterDate"
+        (f) => f.field !== "projectRegisterDate",
       );
       setParamFilter(updatedFilters);
     }
@@ -698,7 +768,10 @@ function ProjectPortfolioReportPage() {
 
       setIsLoadingProcess(true);
       const GetDataList = async () => {
-        const requestData = await ListReportProjectPortofolio(PayloadList, tokenData);
+        const requestData = await ListReportProjectPortofolio(
+          PayloadList,
+          tokenData,
+        );
         const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 
         if (isErrorResponse || !requestData) {
@@ -830,7 +903,9 @@ function ProjectPortfolioReportPage() {
                       size={"md"}
                       onChange={(e) =>
                         setSelectedQuarter(
-                          e.target.value === "all" ? "all" : Number(e.target.value)
+                          e.target.value === "all"
+                            ? "all"
+                            : Number(e.target.value),
                         )
                       }
                       w="80px"
@@ -844,7 +919,8 @@ function ProjectPortfolioReportPage() {
                     </Select>
                     {selectedQuarter !== "all" && (
                       <Text fontSize={"xs"} color="gray.500" minW="fit-content">
-                        {formatDateToDDMMYYYY(StartDateFilter)} - {formatDateToDDMMYYYY(EndDateFilter)}
+                        {formatDateToDDMMYYYY(StartDateFilter)} -{" "}
+                        {formatDateToDDMMYYYY(EndDateFilter)}
                       </Text>
                     )}
                   </Flex>
@@ -936,7 +1012,9 @@ function ProjectPortfolioReportPage() {
 
                         // First, remove any existing project type filters
                         newFilters = ParamFilter.filter(
-                          f => f.field !== "projectType" && f.field !== "requirementType"
+                          (f) =>
+                            f.field !== "projectType" &&
+                            f.field !== "requirementType",
                         );
 
                         if (e.target.value === "RFC") {
@@ -962,15 +1040,21 @@ function ProjectPortfolioReportPage() {
                       size="md"
                       bgColor={colorMode == "light" ? "white" : "gray.800"}
                     >
-                      <option value="INTERNAL DEVELOPMENT">Internal Development</option>
+                      <option value="INTERNAL DEVELOPMENT">
+                        Internal Development
+                      </option>
                       <option value="PROCUREMENT">Procurement</option>
                       <option value="RFC">RFC</option>
                     </Select>
                   </Flex>
                 </GridItem>
               </Grid>
-              <Grid templateColumns="repeat(12, 1fr)" gap={5} w={"full"} mt={3}>
-              </Grid>
+              <Grid
+                templateColumns="repeat(12, 1fr)"
+                gap={5}
+                w={"full"}
+                mt={3}
+              ></Grid>
             </CardBody>
           </Card>
         </GridItem>
@@ -989,7 +1073,13 @@ function ProjectPortfolioReportPage() {
                   <Heading as="h5" size="md">
                     Project Portfolio Report Data
                   </Heading>
-                  <Badge colorScheme="blue" fontSize="sm" px={3} py={1} rounded={radiusStyle}>
+                  <Badge
+                    colorScheme="blue"
+                    fontSize="sm"
+                    px={3}
+                    py={1}
+                    rounded={radiusStyle}
+                  >
                     {totalCount} Projects
                   </Badge>
                 </Flex>

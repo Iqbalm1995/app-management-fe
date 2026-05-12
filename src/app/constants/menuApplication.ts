@@ -28,6 +28,7 @@ import {
   FiAward,
   FiCheckCircle,
   FiCodepen,
+  FiTrendingUp,
 } from "react-icons/fi";
 import { GrHelpBook } from "react-icons/gr";
 import {
@@ -139,9 +140,27 @@ export const LinkItems: LinkItemProps[] = [
       },
       {
         name: "My Performance",
-        icon: FaTachometerAlt,
+        icon: FiAward,
         iconName: "FaTachometerAlt",
         link: "/performances/my-performance",
+        role: ["admin"],
+        menuID: "1",
+        isPro: false,
+        children: [],
+      },
+      {
+        name: "Division Summary",
+        icon: FiTrendingUp,
+        link: "/performances/divisions/summary",
+        role: ["admin"],
+        menuID: "1",
+        isPro: false,
+        children: [],
+      },
+      {
+        name: "Group Summary",
+        icon: FiTrendingUp,
+        link: "/performances/groups/summary",
         role: ["admin"],
         menuID: "1",
         isPro: false,

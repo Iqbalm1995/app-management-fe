@@ -16,15 +16,6 @@ const LoadingMiniSignature = () => {
       alignItems={"center"}
     >
       <HStack spacing={2}>
-        <Flex alignItems={"center"} h={"8vh"}>
-          <Text
-            fontWeight={500}
-            color={colorMode == "light" ? "gray.800" : "white"}
-            pt={5}
-          >
-            Mohon Tunggu
-          </Text>
-        </Flex>
         <Flex>
           <Lottie
             autoplay

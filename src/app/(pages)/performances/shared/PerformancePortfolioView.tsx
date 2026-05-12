@@ -12,9 +12,13 @@ import {
   RES_GENERIC_ERROR_MSG,
   ORG_CATEGORY_KEY_GROUP,
   DIVISION_ID_IT_BJB,
+  GROUP_CONST_BRD_STATUS,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
-import { getCurrentQuarter } from "@/app/helper/MasterHelper";
+import {
+  getCurrentQuarter,
+  stringToDateFormatedReverse,
+} from "@/app/helper/MasterHelper";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useReports, {
@@ -55,6 +59,7 @@ import {
   Text,
   useColorMode,
   VStack,
+  Stack,
 } from "@chakra-ui/react";
 import { Select } from "chakra-react-select";
 import dynamic from "next/dynamic";
@@ -73,6 +78,7 @@ import {
   FiAward,
   FiBarChart2,
   FiEye,
+  FiAlertTriangle,
 } from "react-icons/fi";
 import {
   ColumnDef,
@@ -84,8 +90,12 @@ import {
 } from "@tanstack/react-table";
 import { TableComponentFull } from "@/app/components/tableComponents";
 import { exportMyPerformancePDF } from "@/app/helper/MyPerformancePdfExport";
+import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
 import { motion } from "framer-motion";
 import EvaluationAdjustModal from "../shared/EvaluationAdjustModal";
+import Link from "next/link";
+import LabelMaster from "@/app/components/labelMasterProps";
+import { StatusBadge } from "@/app/components/StatusBadge";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 const MotionCard = motion(Card);
@@ -140,14 +150,40 @@ interface PerformancePortfolioViewProps {
 
 const getPortfolioConfig = (mode: PortfolioMode) => {
   switch (mode) {
-    case "my": return { title: "My Performance", breadCrumb: ["Home", "Performances", "My Performance"], backUrl: "", backLabel: "" };
-    case "division": return { title: "User Performance Detail", breadCrumb: ["Home", "Performances", "Divisions", "Detail"], backUrl: "/performances/divisions", backLabel: "← Back to Division Performance" };
-    case "group": return { title: "User Performance Detail", breadCrumb: ["Home", "Performances", "Groups", "Detail"], backUrl: "/performances/groups", backLabel: "← Back to Group Performance" };
-    case "team": return { title: "User Performance Detail", breadCrumb: ["Home", "Performances", "Teams", "Detail"], backUrl: "/performances/teams", backLabel: "← Back to Team Performance" };
+    case "my":
+      return {
+        title: "My Performance",
+        breadCrumb: ["Home", "Performances", "My Performance"],
+        backUrl: "",
+        backLabel: "",
+      };
+    case "division":
+      return {
+        title: "User Performance Detail",
+        breadCrumb: ["Home", "Performances", "Divisions", "Detail"],
+        backUrl: "/performances/divisions",
+        backLabel: "← Back to Division Performance",
+      };
+    case "group":
+      return {
+        title: "User Performance Detail",
+        breadCrumb: ["Home", "Performances", "Groups", "Detail"],
+        backUrl: "/performances/groups",
+        backLabel: "← Back to Group Performance",
+      };
+    case "team":
+      return {
+        title: "User Performance Detail",
+        breadCrumb: ["Home", "Performances", "Teams", "Detail"],
+        backUrl: "/performances/teams",
+        backLabel: "← Back to Team Performance",
+      };
   }
 };
 
-export default function PerformancePortfolioView({ mode }: PerformancePortfolioViewProps) {
+export default function PerformancePortfolioView({
+  mode,
+}: PerformancePortfolioViewProps) {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const searchParams = useSearchParams();
@@ -167,6 +203,7 @@ export default function PerformancePortfolioView({ mode }: PerformancePortfolioV
     GetMyPerformanceRequirements,
   } = useReports();
   const { GetAssignedProjects } = useWorkspace();
+  const { GetAssignedProjects: GetAssignedProjectsFull } = useProjects();
   const { List: ListOrganization } = useOrganization();
   const { List: ListTeams } = useTeams();
 
@@ -178,10 +215,19 @@ export default function PerformancePortfolioView({ mode }: PerformancePortfolioV
     setIsExportingPdf(true);
     try {
       const projRes = await GetAssignedProjects(
-        { search: "", limit: 9999, page: 0, projectType: null, filterWhere: [], fieldOrder: ["createdAt"], orderDir: "desc" },
-        tokenData
+        {
+          search: "",
+          limit: 9999,
+          page: 0,
+          projectType: null,
+          filterWhere: [],
+          fieldOrder: ["createdAt"],
+          orderDir: "desc",
+        },
+        tokenData,
       );
-      const allProjects = projRes?.statusCode === RES_CODE_OK && projRes.data ? projRes.data : [];
+      const allProjects =
+        projRes?.statusCode === RES_CODE_OK && projRes.data ? projRes.data : [];
       await exportMyPerformancePDF({
         auth: DataAuth,
         summary: Summary,
@@ -231,7 +277,9 @@ export default function PerformancePortfolioView({ mode }: PerformancePortfolioV
   const [selectedUser, setSelectedUser] =
     useState<UserEvaluationReportListResponse | null>(null);
 
-  const handleOpenEvaluationModal = (user: UserEvaluationReportListResponse) => {
+  const handleOpenEvaluationModal = (
+    user: UserEvaluationReportListResponse,
+  ) => {
     setSelectedUser(user);
     setIsEvaluationModalOpen(true);
   };
@@ -250,7 +298,8 @@ export default function PerformancePortfolioView({ mode }: PerformancePortfolioV
         StorageAuth.dataLogin as AuthDataResponse;
       setDataAuth(UserData);
       setCurrentUserId(UserData.userId);
-      const effectiveUserId = mode === "my" ? UserData.userId : (urlUserId || UserData.userId);
+      const effectiveUserId =
+        mode === "my" ? UserData.userId : urlUserId || UserData.userId;
       setUserIdFilter(effectiveUserId);
       setParamFilter([
         {
@@ -285,11 +334,7 @@ export default function PerformancePortfolioView({ mode }: PerformancePortfolioV
       try {
         const [summaryRes, quartalRes] = await Promise.all([
           GetMyPerformanceSummary(UserIdFilter, selectedYear, tokenData),
-          GetMyPerformanceQuartalChart(
-            UserIdFilter,
-            selectedYear,
-            tokenData,
-          ),
+          GetMyPerformanceQuartalChart(UserIdFilter, selectedYear, tokenData),
         ]);
         if (summaryRes?.statusCode === RES_CODE_OK && summaryRes.data)
           setSummary(summaryRes.data);
@@ -305,14 +350,36 @@ export default function PerformancePortfolioView({ mode }: PerformancePortfolioV
   }, [DataAuth, tokenData, selectedYear, UserIdFilter]);
 
   // Requirements assigned list
-  const [DataRequirements, setDataRequirements] = useState<RequirementsResponse[]>([]);
+  const [DataRequirements, setDataRequirements] = useState<
+    RequirementsResponse[]
+  >([]);
   const [reqTotalCount, setReqTotalCount] = useState(0);
   const [reqTotalPages, setReqTotalPages] = useState(0);
   const [IsReqLoading, setIsReqLoading] = useState(false);
   const REQ_PAGE_SIZE = 5;
   const [{ pageIndex: reqPageIndex, pageSize: reqPageSize }, setReqPagination] =
     useState<PaginationState>({ pageIndex: 0, pageSize: REQ_PAGE_SIZE });
-  const reqPagination = useMemo(() => ({ pageIndex: reqPageIndex, pageSize: reqPageSize }), [reqPageIndex, reqPageSize]);
+  const reqPagination = useMemo(
+    () => ({ pageIndex: reqPageIndex, pageSize: reqPageSize }),
+    [reqPageIndex, reqPageSize],
+  );
+
+  // Assigned projects portfolio
+  const [DataAssignedProjects, setDataAssignedProjects] = useState<
+    ProjectDataResponse[]
+  >([]);
+  const [assignedProjTotal, setAssignedProjTotal] = useState(0);
+  const [assignedProjTotalPages, setAssignedProjTotalPages] = useState(0);
+  const [isAssignedProjLoading, setIsAssignedProjLoading] = useState(false);
+  const PROJ_PAGE_SIZE = 10;
+  const [
+    { pageIndex: projPageIndex, pageSize: projPageSize },
+    setProjPagination,
+  ] = useState<PaginationState>({ pageIndex: 0, pageSize: PROJ_PAGE_SIZE });
+  const projPagination = useMemo(
+    () => ({ pageIndex: projPageIndex, pageSize: projPageSize }),
+    [projPageIndex, projPageSize],
+  );
 
   useEffect(() => {
     if (!DataAuth || !tokenData) return;
@@ -321,89 +388,352 @@ export default function PerformancePortfolioView({ mode }: PerformancePortfolioV
       try {
         const res = await GetMyPerformanceRequirements(
           UserIdFilter,
-          { search: "", limit: reqPageSize, page: reqPageIndex, filterWhere: [], fieldOrder: ["createdAt"], orderDir: "desc" },
-          tokenData
+          {
+            search: "",
+            limit: reqPageSize,
+            page: reqPageIndex,
+            filterWhere: [],
+            fieldOrder: ["createdAt"],
+            orderDir: "desc",
+          },
+          tokenData,
         );
         if (res?.statusCode === RES_CODE_OK && res.data) {
           setDataRequirements(res.data as RequirementsResponse[]);
           setReqTotalCount(res.countTotal ?? 0);
-          setReqTotalPages(res.countTotal ? Math.ceil(res.countTotal / reqPageSize) : 0);
+          setReqTotalPages(
+            res.countTotal ? Math.ceil(res.countTotal / reqPageSize) : 0,
+          );
         }
-      } catch { /* silent */ }
-      finally { setIsReqLoading(false); }
+      } catch {
+        /* silent */
+      } finally {
+        setIsReqLoading(false);
+      }
     };
     fetchReqs();
   }, [DataAuth, tokenData, reqPageIndex]);
 
-  const reqColumns = useMemo<ColumnDef<RequirementsResponse>[]>(() => [
-    {
-      accessorKey: "reqNumber",
-      header: () => <span>Req Number</span>,
-      cell: (info) => (
-        <VStack align="start" spacing={0}>
-          <Text fontSize="sm" fontWeight="semibold" noOfLines={1}>{info.row.original.reqNumber}</Text>
-          <Badge colorScheme={info.row.original.requirementType === "RFC" ? "orange" : "blue"}
-            variant="subtle" fontSize="2xs" rounded="full" px={2}>
-            {info.row.original.requirementType}
-          </Badge>
-        </VStack>
-      ),
-    },
-    {
-      accessorKey: "reqNarative",
-      header: () => <span>Narrative</span>,
-      cell: (info) => (
-        <Text fontSize="sm" noOfLines={2}>{info.getValue() as string}</Text>
-      ),
-    },
-    {
-      accessorKey: "senderDivisionName",
-      header: () => <span>Sender Division</span>,
-      cell: (info) => (
-        <Text fontSize="xs" color={colorMode === "dark" ? "gray.300" : "gray.600"} noOfLines={1}>
-          {(info.getValue() as string) || "—"}
-        </Text>
-      ),
-    },
-    {
-      accessorKey: "reqStatus",
-      header: () => <span>Status</span>,
-      cell: (info) => {
-        const s = info.getValue() as string;
-        return (
-          <Badge fontSize="2xs" rounded="full" px={2}
-            colorScheme={
-              s === "APPROVED" ? "green"
-              : s === "NEEDS REVIEW" || s === "IN PROGRESS REVIEW" ? "blue"
-              : s === "CANCELED" ? "red"
-              : s === "ON HOLD" ? "orange"
-              : "gray"
-            }>
-            {s || "—"}
-          </Badge>
+  useEffect(() => {
+    if (!DataAuth || !tokenData) return;
+    const fetchProjects = async () => {
+      setIsAssignedProjLoading(true);
+      try {
+        const res = await GetAssignedProjectsFull(
+          {
+            search: "",
+            limit: projPageSize,
+            page: projPageIndex,
+            filterWhere: [],
+            fieldOrder: ["projectRegisterDate"],
+            orderDir: "desc",
+          },
+          tokenData,
         );
+        if (res?.statusCode === RES_CODE_OK && res.data) {
+          setDataAssignedProjects(res.data);
+          setAssignedProjTotal((res as any).countTotal ?? 0);
+          setAssignedProjTotalPages(
+            (res as any).countTotal
+              ? Math.ceil((res as any).countTotal / projPageSize)
+              : 0,
+          );
+        }
+      } catch {
+        /* silent */
+      } finally {
+        setIsAssignedProjLoading(false);
+      }
+    };
+    fetchProjects();
+  }, [DataAuth, tokenData, projPageIndex]);
+
+  const reqColumns = useMemo<ColumnDef<RequirementsResponse>[]>(
+    () => [
+      {
+        accessorKey: "numbData",
+        cell: (info) => (
+          <Flex justifyContent={"center"} alignItems="start" h={"full"}>
+            <Text fontSize="md">
+              {reqPageIndex * reqPageSize + info.row.index + 1}.
+            </Text>
+          </Flex>
+        ),
+        header: () => <Flex justifyContent={"center"}>No.</Flex>,
+        footer: (props) => props.column.id,
       },
-    },
-    {
-      accessorKey: "reqInititateDate",
-      header: () => <span>Initiated</span>,
-      cell: (info) => (
-        <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.500"}>
-          {info.getValue() ? new Date(info.getValue() as string).toLocaleDateString("id-ID") : "—"}
-        </Text>
-      ),
-    },
-    {
-      id: "actions",
-      header: () => "",
-      cell: (info) => (
-        <Button as="a" href={`/requirements/detail?reqId=${info.row.original.id}&type=${info.row.original.requirementType}`}
-          size="xs" leftIcon={<Icon as={FiEye} />} colorScheme="purple" variant="ghost" rounded="lg">
-          View
-        </Button>
-      ),
-    },
-  ], [colorMode]);
+
+      {
+        accessorFn: (row) => row.reqNarative,
+        id: "reqNarative",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"center"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={1}
+          >
+            <Flex
+              as={Stack}
+              w="full"
+              spacing={2}
+              display={info.row.original.isHaveMemo === "N" ? "flex" : "none"}
+            >
+              <Flex
+                as={HStack}
+                spacing={2}
+                color="red.500"
+                alignItems="center"
+                fontSize={"x-small"}
+              >
+                <FiAlertTriangle />
+                <Text>
+                  {info.row.original.requirementType} Belum ada Memo Pengantar
+                </Text>
+                <Badge
+                  colorScheme={
+                    info.row.original.requirementType === "RFC"
+                      ? "orange"
+                      : "blue"
+                  }
+                  variant="subtle"
+                  fontSize="2xs"
+                  rounded="sm"
+                  px={2}
+                >
+                  {info.row.original.requirementType}
+                </Badge>
+              </Flex>
+              <Flex as={Stack} spacing={0}>
+                <Text>{info.row.original.reqNarative}</Text>
+              </Flex>
+            </Flex>
+            <Flex
+              as={Stack}
+              spacing={2}
+              display={info.row.original.isHaveMemo == "Y" ? "flex" : "none"}
+            >
+              <Flex as={Stack} spacing={0}>
+                <HStack>
+                  <Text fontWeight={600}>{info.row.original.reqNumber}</Text>
+                  <Badge
+                    colorScheme={
+                      info.row.original.requirementType === "RFC"
+                        ? "orange"
+                        : "blue"
+                    }
+                    variant="subtle"
+                    fontSize="2xs"
+                    rounded="sm"
+                    px={2}
+                  >
+                    {info.row.original.requirementType}
+                  </Badge>
+                </HStack>
+
+                <Text>{info.row.original.reqNarative}</Text>
+              </Flex>
+              <Flex as={Stack} spacing={0}>
+                <Text>Divisi Pengirim :</Text>
+                <Text fontWeight={600}>
+                  {info.row.original.senderDivisionName}
+                </Text>
+              </Flex>
+              <Flex pt={2}>
+                {info.row.original.isCarryOver == "Y" && (
+                  <Badge
+                    variant="solid"
+                    colorScheme="purple"
+                    fontSize={"small"}
+                    rounded={radiusStyle}
+                    px={4}
+                  >
+                    CARRYOVER
+                  </Badge>
+                )}
+              </Flex>
+            </Flex>
+          </Flex>
+        ),
+        header: () => <span>Perihal</span>,
+        footer: (props) => props.column.id,
+      },
+
+      {
+        accessorFn: (row) => row.reqInititateDate,
+        id: "reqInititateDate",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"center"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={1}
+          >
+            <Flex fontSize={"small"} as={Stack} spacing={0}>
+              <Text fontSize={"x-small"}>Memo Dibuat :</Text>
+              <Text fontWeight={600}>
+                {info.row.original.reqInititateDate
+                  ? stringToDateFormatedReverse(
+                      info.row.original.reqInititateDate,
+                    )
+                  : "-"}
+              </Text>
+            </Flex>
+            <Flex fontSize={"small"} as={Stack} spacing={0}>
+              <Text fontSize={"x-small"}>Memo Diterima :</Text>
+              <Text fontWeight={600}>
+                {info.row.original.reqAcceptedDate
+                  ? stringToDateFormatedReverse(
+                      info.row.original.reqAcceptedDate,
+                    )
+                  : "-"}
+              </Text>
+            </Flex>
+            <Flex fontSize={"small"} as={Stack} spacing={0}>
+              <Text fontSize={"x-small"}>Ditugaskan Pada :</Text>
+              <Text fontWeight={600}>
+                {info.row.original.assignedToDate
+                  ? stringToDateFormatedReverse(
+                      info.row.original.assignedToDate,
+                    )
+                  : "-"}
+              </Text>
+            </Flex>
+          </Flex>
+        ),
+        header: () => <span>Tanggal</span>,
+        footer: (props) => props.column.id,
+      },
+
+      {
+        accessorFn: (row) => row.appInitialName,
+        id: "appInitialName",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"center"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={1}
+          >
+            <Flex as={Stack} spacing={2}>
+              <Flex as={Stack} spacing={0}>
+                {info?.row?.original?.appInitialCode &&
+                info.row.original.appInitialCode.trim() !== "" ? (
+                  <>
+                    <Text fontWeight={600}>
+                      ({info.row.original.appInitialCode})
+                    </Text>
+                    <Text fontWeight={600}>
+                      {info.row.original.appInitialName}
+                    </Text>
+                  </>
+                ) : (
+                  <Text
+                    color="gray.500"
+                    fontStyle="italic"
+                    fontSize={"x-small"}
+                  >
+                    Product Belum Disematkan
+                  </Text>
+                )}
+              </Flex>
+            </Flex>
+          </Flex>
+        ),
+        header: () => <span>PRODUK</span>,
+        footer: (props) => props.column.id,
+      },
+
+      {
+        accessorFn: (row) => row.reqStatus,
+        id: "reqStatus",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"center"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={1}
+          >
+            <Flex fontSize={"small"} as={Stack} spacing={1}>
+              {info.row.original.reqStatus ? (
+                <LabelMaster
+                  groupLabel={GROUP_CONST_BRD_STATUS}
+                  labelName={info.row.original.reqStatus}
+                />
+              ) : (
+                "-"
+              )}
+            </Flex>
+            <Text>
+              Next Step :
+              <Text as="span" fontWeight="bold" pl={1}>
+                {info.row.original.nextStep}
+              </Text>
+            </Text>
+          </Flex>
+        ),
+        header: () => <span>Status</span>,
+        footer: (props) => props.column.id,
+      },
+
+      {
+        accessorFn: (row) => row.id,
+        id: "actions",
+        cell: (info) => {
+          const status = info.row.original.reqStatus;
+          const isHaveMemo = info.row.original.isHaveMemo;
+
+          return (
+            <Flex w={"full"} justifyContent={"center"}>
+              <VStack spacing={1} w="full">
+                {/* Preview - All access for all statuses */}
+                <Link
+                  href={`/requirements/detail?reqId=${info.row.original.id}&type=${info.row.original.requirementType}`}
+                  style={{ width: "100%" }}
+                  target="_blank"
+                >
+                  <Button
+                    leftIcon={<FiEye />}
+                    bg="purple.50"
+                    color="purple.700"
+                    size="xs"
+                    py={4}
+                    fontSize="sm"
+                    w="full"
+                    _hover={{
+                      bg: "purple.300",
+                      transform: "translateY(-2px)",
+                      boxShadow: "md",
+                    }}
+                    transition="all 0.2s"
+                  >
+                    Preview
+                  </Button>
+                </Link>
+
+                {/* CANCEL: Only Preview (already shown above) */}
+              </VStack>
+            </Flex>
+          );
+        },
+        header: () => "",
+        footer: (props) => props.column.id,
+        // Custom variable
+        meta: {
+          isFilterable: false,
+        },
+      },
+    ],
+    [colorMode, reqPageIndex, reqPageSize],
+  );
 
   const reqTable = useReactTable({
     data: DataRequirements,
@@ -411,6 +741,240 @@ export default function PerformancePortfolioView({ mode }: PerformancePortfolioV
     pageCount: reqTotalPages,
     state: { pagination: reqPagination },
     onPaginationChange: setReqPagination,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    manualPagination: true,
+    manualFiltering: true,
+    debugTable: false,
+  });
+
+  const projColumns = useMemo<ColumnDef<ProjectDataResponse>[]>(
+    () => [
+      {
+        accessorKey: "numbData",
+        cell: (info) => (
+          <Flex justifyContent="center">
+            <Text fontSize="sm">
+              {projPageIndex * projPageSize + info.row.index + 1}.
+            </Text>
+          </Flex>
+        ),
+        header: () => <Flex justifyContent="center">No.</Flex>,
+        footer: (props) => props.column.id,
+      },
+
+      {
+        accessorFn: (row) => row.projectName,
+        id: "projectInfo",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"start"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={1}
+            minW="250px"
+          >
+            <Text fontWeight={600} fontSize="sm">
+              {info.row.original.projectNo}
+            </Text>
+            <Text fontSize="sm">{info.row.original.projectName}</Text>
+            <Text fontSize="xs" color="gray.500">
+              {info.row.original.projectCategory} |{" "}
+              {info.row.original.projectType}
+            </Text>
+            {info.row.original.requirementData?.requirementType && (
+              <Text fontSize="xs" color="blue.500">
+                Requirement Type:{" "}
+                {info.row.original.requirementData.requirementType}
+              </Text>
+            )}
+            {info.row.original.projectType === "PROCUREMENT" &&
+              !info.row.original.requirementData && (
+                <Text fontSize="xs" color="orange.500">
+                  Pengadaan Internal IT
+                </Text>
+              )}
+          </Flex>
+        ),
+        header: () => <span>Project Information</span>,
+        footer: (props) => props.column.id,
+      },
+
+      {
+        accessorFn: (row) => row.proOwnerDivisionName,
+        id: "organization",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"start"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={0}
+            minW="200px"
+          >
+            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
+                Project Owner Division:
+              </Text>
+              <Text fontSize="2xs" lineHeight="1.2">
+                {info.row.original.proOwnerDivisionName || "-"}
+              </Text>
+            </Flex>
+
+            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
+                Manage Group In Division IT:
+              </Text>
+              <Text fontSize="2xs" lineHeight="1.2">
+                {info.row.original.proManageByGroupName || "-"}
+              </Text>
+            </Flex>
+          </Flex>
+        ),
+        header: () => <span>Organization Structure</span>,
+        footer: (props) => props.column.id,
+      },
+
+      {
+        accessorFn: (row) => row.projectStatus,
+        id: "projectStatus",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"start"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={1}
+            minW="160px"
+          >
+            <StatusBadge
+              status={info.row.original.projectStatus}
+              variant="solid"
+              rounded={radiusStyle}
+              px={3}
+              py={1}
+            />
+            <Text fontSize="xs">
+              Progress: {info.row.original.projectStatusPercentage}%
+            </Text>
+            <Text fontSize="xs">
+              Duration: {info.row.original.projectDurationDays} days
+            </Text>
+            {info.row.original.projectRegisterDate && (
+              <Text fontSize="xs" color="gray.500">
+                Registered:{" "}
+                {stringToDateFormatedReverse(
+                  info.row.original.projectRegisterDate,
+                )}
+              </Text>
+            )}
+            {info.row.original.projectClosedDate && (
+              <Text fontSize="xs" color="gray.500">
+                Closed:{" "}
+                {stringToDateFormatedReverse(
+                  info.row.original.projectClosedDate,
+                )}
+              </Text>
+            )}
+          </Flex>
+        ),
+        header: () => <span>Status & Timeline</span>,
+        footer: (props) => props.column.id,
+      },
+
+      {
+        accessorFn: (row) => row.sdlcId,
+        id: "sdlcStatus",
+        cell: (info) => (
+          <Flex
+            w={"full"}
+            h={"full"}
+            justifyContent={"start"}
+            alignItems={"start"}
+            as={Stack}
+            spacing={1}
+            minW="150px"
+          >
+            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
+                SDLC Stage:
+              </Text>
+              <Text fontSize="2xs" lineHeight="1.2">
+                {info.row.original.sdlcStageName || "-"}
+              </Text>
+            </Flex>
+            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
+                App Short Name (Initial):
+              </Text>
+              <Text fontSize="2xs" lineHeight="1.2">
+                {info.row.original.appsProject?.appShortName || "-"}
+              </Text>
+            </Flex>
+            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
+              <Text fontWeight={600} fontSize="2xs" lineHeight="1.2">
+                App Name:
+              </Text>
+              <Text fontSize="2xs" lineHeight="1.2">
+                {info.row.original.appsProject?.appName || "-"}
+              </Text>
+            </Flex>
+          </Flex>
+        ),
+        header: () => <span>SDLC & Application</span>,
+        size: 150,
+      },
+
+      {
+        id: "actions",
+        header: () => "",
+        cell: (info) => (
+          <a
+            href={`/projects/preview?projectId=${info.row.original.id}`}
+            target="_blank"
+          >
+            <Badge
+              colorScheme="blue"
+              variant="ghost"
+              cursor="pointer"
+              fontSize="xs"
+            >
+              <Button
+                leftIcon={<FiEye />}
+                bg="purple.50"
+                color="purple.700"
+                size="xs"
+                py={4}
+                fontSize="sm"
+                w="full"
+                _hover={{
+                  bg: "purple.300",
+                  transform: "translateY(-2px)",
+                  boxShadow: "md",
+                }}
+                transition="all 0.2s"
+              >
+                Preview
+              </Button>
+            </Badge>
+          </a>
+        ),
+      },
+    ],
+    [colorMode, projPageIndex, projPageSize],
+  );
+
+  const projTable = useReactTable({
+    data: DataAssignedProjects,
+    columns: projColumns,
+    pageCount: assignedProjTotalPages,
+    state: { pagination: projPagination },
+    onPaginationChange: setProjPagination,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -553,9 +1117,21 @@ export default function PerformancePortfolioView({ mode }: PerformancePortfolioV
   const profileInfo = useMemo(() => {
     if (isViewingOther && DataReport.length > 0) {
       const r = DataReport[0];
-      return { nama: r.nama, nip: r.nip, jabatan: r.jabatan || "—", namaUnitKerja: r.namaUnitKerja || "—", profilePict: null };
+      return {
+        nama: r.nama,
+        nip: r.nip,
+        jabatan: r.jabatan || "—",
+        namaUnitKerja: r.namaUnitKerja || "—",
+        profilePict: null,
+      };
     }
-    return { nama: DataAuth?.nama || "—", nip: DataAuth?.nip || "—", jabatan: DataAuth?.jabatan || "—", namaUnitKerja: DataAuth?.namaUnitKerja || "—", profilePict: DataAuth?.profilePict || null };
+    return {
+      nama: DataAuth?.nama || "—",
+      nip: DataAuth?.nip || "—",
+      jabatan: DataAuth?.jabatan || "—",
+      namaUnitKerja: DataAuth?.namaUnitKerja || "—",
+      profilePict: DataAuth?.profilePict || null,
+    };
   }, [isViewingOther, DataReport, DataAuth]);
   const cardBg = isDark ? "gray.800" : "white";
   const borderCol = isDark ? "gray.700" : "gray.200";
@@ -655,8 +1231,14 @@ export default function PerformancePortfolioView({ mode }: PerformancePortfolioV
           {/* Back button when viewing another user */}
           {isViewingOther && portfolioConfig.backUrl && (
             <HStack spacing={2}>
-              <Button size="sm" variant="ghost" colorScheme="blue" rounded="lg"
-                as="a" href={portfolioConfig.backUrl}>
+              <Button
+                size="sm"
+                variant="ghost"
+                colorScheme="blue"
+                rounded="lg"
+                as="a"
+                href={portfolioConfig.backUrl}
+              >
                 {portfolioConfig.backLabel}
               </Button>
               <Badge colorScheme="blue" variant="subtle" rounded="full" px={3}>
@@ -977,32 +1559,29 @@ export default function PerformancePortfolioView({ mode }: PerformancePortfolioV
                         </option>
                       ))}
                     </ChakraSelect>
-                    <Badge colorScheme="gray" variant="subtle" fontSize="xs">
-                      // TODO: API
-                    </Badge>
                   </HStack>
                 </HStack>
                 {isMounted && (
                   <Box ref={lineChartRef}>
-                  <Chart
-                    options={lineChartOptions}
-                    series={[
-                      {
-                        name: "Active Projects",
-                        data: QuartalChart.chart.map((p) =>
-                          Number(p.activeCount),
-                        ),
-                      },
-                      {
-                        name: "Closed Projects",
-                        data: QuartalChart.chart.map((p) =>
-                          Number(p.closedCount),
-                        ),
-                      },
-                    ]}
-                    type="line"
-                    height={220}
-                  />
+                    <Chart
+                      options={lineChartOptions}
+                      series={[
+                        {
+                          name: "Active Projects",
+                          data: QuartalChart.chart.map((p) =>
+                            Number(p.activeCount),
+                          ),
+                        },
+                        {
+                          name: "Closed Projects",
+                          data: QuartalChart.chart.map((p) =>
+                            Number(p.closedCount),
+                          ),
+                        },
+                      ]}
+                      type="line"
+                      height={220}
+                    />
                   </Box>
                 )}
               </CardBody>
@@ -1045,120 +1624,315 @@ export default function PerformancePortfolioView({ mode }: PerformancePortfolioV
           </Grid>
 
           {/* ── Task Stats ── */}
-          <Card bg={cardBg} border="1px" borderColor={borderCol} rounded={radiusStyle} shadow="sm">
+          <Card
+            bg={cardBg}
+            border="1px"
+            borderColor={borderCol}
+            rounded={radiusStyle}
+            shadow="sm"
+          >
             <CardBody p={5}>
               <HStack mb={4} spacing={2}>
                 <Icon as={FiBriefcase} color="orange.500" />
-                <Heading size="sm" color={isDark ? "white" : "gray.700"}>Task Overview</Heading>
+                <Heading size="sm" color={isDark ? "white" : "gray.700"}>
+                  Task Overview
+                </Heading>
               </HStack>
 
-              <Grid templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }} gap={5}>
-
+              <Grid
+                templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }}
+                gap={5}
+              >
                 {/* Assigned + Board Positions */}
-                <Box p={4} bg={isDark ? "gray.700" : "blue.50"} rounded="xl"
-                  border="1px" borderColor={isDark ? "gray.600" : "blue.100"}>
+                <Box
+                  p={4}
+                  bg={isDark ? "gray.700" : "blue.50"}
+                  rounded="xl"
+                  border="1px"
+                  borderColor={isDark ? "gray.600" : "blue.100"}
+                >
                   <HStack justify="space-between" mb={3}>
-                    <Text fontSize="xs" fontWeight="bold" color={textMuted} textTransform="uppercase">Assigned</Text>
-                    <Text fontSize="2xl" fontWeight="bold" color="blue.500">{Summary.totalTaskAssigned}</Text>
+                    <Text
+                      fontSize="xs"
+                      fontWeight="bold"
+                      color={textMuted}
+                      textTransform="uppercase"
+                    >
+                      Assigned
+                    </Text>
+                    <Text fontSize="2xl" fontWeight="bold" color="blue.500">
+                      {Summary.totalTaskAssigned}
+                    </Text>
                   </HStack>
                   <VStack spacing={2} align="stretch">
                     {[
-                      { label: "To Do", value: Summary.taskTodo, color: "gray" },
-                      { label: "In Progress", value: Summary.taskInProgress, color: "blue" },
-                      { label: "In Review", value: Summary.taskInReview, color: "purple" },
-                      { label: "Done", value: Summary.taskDone, color: "green" },
+                      {
+                        label: "To Do",
+                        value: Summary.taskTodo,
+                        color: "gray",
+                      },
+                      {
+                        label: "In Progress",
+                        value: Summary.taskInProgress,
+                        color: "blue",
+                      },
+                      {
+                        label: "In Review",
+                        value: Summary.taskInReview,
+                        color: "purple",
+                      },
+                      {
+                        label: "Done",
+                        value: Summary.taskDone,
+                        color: "green",
+                      },
                     ].map(({ label, value, color }) => (
                       <Box key={label}>
                         <HStack justify="space-between" mb="2px">
-                          <Text fontSize="2xs" color={textMuted}>{label}</Text>
-                          <Text fontSize="2xs" fontWeight="bold" color={`${color}.500`}>{value}</Text>
+                          <Text fontSize="2xs" color={textMuted}>
+                            {label}
+                          </Text>
+                          <Text
+                            fontSize="2xs"
+                            fontWeight="bold"
+                            color={`${color}.500`}
+                          >
+                            {value}
+                          </Text>
                         </HStack>
-                        <Progress value={Summary.totalTaskAssigned > 0 ? (value / Summary.totalTaskAssigned) * 100 : 0}
-                          colorScheme={color} size="xs" rounded="full" />
+                        <Progress
+                          value={
+                            Summary.totalTaskAssigned > 0
+                              ? (value / Summary.totalTaskAssigned) * 100
+                              : 0
+                          }
+                          colorScheme={color}
+                          size="xs"
+                          rounded="full"
+                        />
                       </Box>
                     ))}
                   </VStack>
                 </Box>
 
                 {/* Priority Breakdown */}
-                <Box p={4} bg={isDark ? "gray.700" : "red.50"} rounded="xl"
-                  border="1px" borderColor={isDark ? "gray.600" : "red.100"}>
-                  <Text fontSize="xs" fontWeight="bold" color={textMuted} textTransform="uppercase" mb={3}>Priority</Text>
+                <Box
+                  p={4}
+                  bg={isDark ? "gray.700" : "red.50"}
+                  rounded="xl"
+                  border="1px"
+                  borderColor={isDark ? "gray.600" : "red.100"}
+                >
+                  <Text
+                    fontSize="xs"
+                    fontWeight="bold"
+                    color={textMuted}
+                    textTransform="uppercase"
+                    mb={3}
+                  >
+                    Priority
+                  </Text>
                   <VStack spacing={3} align="stretch">
                     {[
-                      { label: "HIGH", value: Summary.taskPriorityHigh, color: "red" },
-                      { label: "MEDIUM", value: Summary.taskPriorityMedium, color: "orange" },
-                      { label: "LOW", value: Summary.taskPriorityLow, color: "green" },
+                      {
+                        label: "HIGH",
+                        value: Summary.taskPriorityHigh,
+                        color: "red",
+                      },
+                      {
+                        label: "MEDIUM",
+                        value: Summary.taskPriorityMedium,
+                        color: "orange",
+                      },
+                      {
+                        label: "LOW",
+                        value: Summary.taskPriorityLow,
+                        color: "green",
+                      },
                     ].map(({ label, value, color }) => (
                       <Box key={label}>
                         <HStack justify="space-between" mb="2px">
                           <HStack spacing={1}>
-                            <Box w={2} h={2} bg={`${color}.500`} rounded="full" />
-                            <Text fontSize="xs" color={textMuted}>{label}</Text>
+                            <Box
+                              w={2}
+                              h={2}
+                              bg={`${color}.500`}
+                              rounded="full"
+                            />
+                            <Text fontSize="xs" color={textMuted}>
+                              {label}
+                            </Text>
                           </HStack>
-                          <Text fontSize="sm" fontWeight="bold" color={`${color}.500`}>{value}</Text>
+                          <Text
+                            fontSize="sm"
+                            fontWeight="bold"
+                            color={`${color}.500`}
+                          >
+                            {value}
+                          </Text>
                         </HStack>
-                        <Progress value={Summary.totalTaskAssigned > 0 ? (value / Summary.totalTaskAssigned) * 100 : 0}
-                          colorScheme={color} size="xs" rounded="full" />
+                        <Progress
+                          value={
+                            Summary.totalTaskAssigned > 0
+                              ? (value / Summary.totalTaskAssigned) * 100
+                              : 0
+                          }
+                          colorScheme={color}
+                          size="xs"
+                          rounded="full"
+                        />
                       </Box>
                     ))}
                   </VStack>
                 </Box>
 
                 {/* Sub-tasks */}
-                <Box p={4} bg={isDark ? "gray.700" : "teal.50"} rounded="xl"
-                  border="1px" borderColor={isDark ? "gray.600" : "teal.100"}>
+                <Box
+                  p={4}
+                  bg={isDark ? "gray.700" : "teal.50"}
+                  rounded="xl"
+                  border="1px"
+                  borderColor={isDark ? "gray.600" : "teal.100"}
+                >
                   <HStack justify="space-between" mb={3}>
-                    <Text fontSize="xs" fontWeight="bold" color={textMuted} textTransform="uppercase">Sub-tasks</Text>
-                    <Text fontSize="2xl" fontWeight="bold" color="teal.500">{Summary.totalTaskItems}</Text>
+                    <Text
+                      fontSize="xs"
+                      fontWeight="bold"
+                      color={textMuted}
+                      textTransform="uppercase"
+                    >
+                      Sub-tasks
+                    </Text>
+                    <Text fontSize="2xl" fontWeight="bold" color="teal.500">
+                      {Summary.totalTaskItems}
+                    </Text>
                   </HStack>
                   <VStack spacing={2} align="stretch">
                     <HStack justify="space-between">
                       <HStack spacing={2}>
-                        <Icon as={FiCheckCircle} color="green.500" boxSize={4} />
-                        <Text fontSize="sm" color={textMuted}>Done</Text>
+                        <Icon
+                          as={FiCheckCircle}
+                          color="green.500"
+                          boxSize={4}
+                        />
+                        <Text fontSize="sm" color={textMuted}>
+                          Done
+                        </Text>
                       </HStack>
-                      <Text fontSize="sm" fontWeight="bold" color="green.500">{Summary.totalTaskItemCompleted}</Text>
+                      <Text fontSize="sm" fontWeight="bold" color="green.500">
+                        {Summary.totalTaskItemCompleted}
+                      </Text>
                     </HStack>
                     <HStack justify="space-between">
                       <HStack spacing={2}>
-                        <Box w={4} h={4} border="2px" borderColor={isDark ? "gray.500" : "gray.300"} rounded="sm" />
-                        <Text fontSize="sm" color={textMuted}>Pending</Text>
+                        <Box
+                          w={4}
+                          h={4}
+                          border="2px"
+                          borderColor={isDark ? "gray.500" : "gray.300"}
+                          rounded="sm"
+                        />
+                        <Text fontSize="sm" color={textMuted}>
+                          Pending
+                        </Text>
                       </HStack>
                       <Text fontSize="sm" fontWeight="bold" color={textMuted}>
-                        {Summary.totalTaskItems - Summary.totalTaskItemCompleted}
+                        {Summary.totalTaskItems -
+                          Summary.totalTaskItemCompleted}
                       </Text>
                     </HStack>
-                    <Progress mt={1}
-                      value={Summary.totalTaskItems > 0 ? (Summary.totalTaskItemCompleted / Summary.totalTaskItems) * 100 : 0}
-                      colorScheme="teal" size="sm" rounded="full" />
+                    <Progress
+                      mt={1}
+                      value={
+                        Summary.totalTaskItems > 0
+                          ? (Summary.totalTaskItemCompleted /
+                              Summary.totalTaskItems) *
+                            100
+                          : 0
+                      }
+                      colorScheme="teal"
+                      size="sm"
+                      rounded="full"
+                    />
                     <Text fontSize="2xs" color={textMuted} textAlign="right">
                       {Summary.totalTaskItems > 0
-                        ? Math.round((Summary.totalTaskItemCompleted / Summary.totalTaskItems) * 100)
-                        : 0}% completed
+                        ? Math.round(
+                            (Summary.totalTaskItemCompleted /
+                              Summary.totalTaskItems) *
+                              100,
+                          )
+                        : 0}
+                      % completed
                     </Text>
                   </VStack>
                 </Box>
-
               </Grid>
             </CardBody>
           </Card>
 
           {/* ── Requirements Assigned ── */}
-          <Card bg={cardBg} border="1px" borderColor={borderCol} rounded={radiusStyle} shadow="sm">
+          <Card
+            bg={cardBg}
+            border="1px"
+            borderColor={borderCol}
+            rounded={radiusStyle}
+            shadow="sm"
+          >
             <CardBody p={5}>
               <HStack justify="space-between" mb={4}>
                 <HStack spacing={2}>
                   <Icon as={FiClipboard} color="purple.500" />
-                  <Heading size="sm" color={isDark ? "white" : "gray.700"}>Requirements Assigned</Heading>
-                  <Badge colorScheme="purple" rounded="full">{reqTotalCount}</Badge>
+                  <Heading size="sm" color={isDark ? "white" : "gray.700"}>
+                    Requirements Assigned
+                  </Heading>
+                  <Badge colorScheme="purple" rounded="full">
+                    {reqTotalCount}
+                  </Badge>
                 </HStack>
               </HStack>
 
               {IsReqLoading ? (
-                <VStack py={8}><LoadingMiniSignature /><Text fontSize="sm" color={textMuted}>Loading...</Text></VStack>
+                <VStack py={8}>
+                  <LoadingMiniSignature />
+                  <Text fontSize="sm" color={textMuted}>
+                    Loading...
+                  </Text>
+                </VStack>
               ) : (
                 <TableComponentFull table={reqTable} />
+              )}
+            </CardBody>
+          </Card>
+
+          {/* ── Assigned Projects Portfolio ── */}
+          <Card
+            bg={cardBg}
+            border="1px"
+            borderColor={borderCol}
+            rounded={radiusStyle}
+            shadow="sm"
+          >
+            <CardBody p={5}>
+              <HStack justify="space-between" mb={4}>
+                <HStack spacing={2}>
+                  <Icon as={FiFolder} color="blue.500" />
+                  <Heading size="sm" color={isDark ? "white" : "gray.700"}>
+                    Assigned Projects
+                  </Heading>
+                  <Badge colorScheme="blue" rounded="full">
+                    {assignedProjTotal}
+                  </Badge>
+                </HStack>
+              </HStack>
+              {isAssignedProjLoading ? (
+                <VStack py={8}>
+                  <LoadingMiniSignature />
+                  <Text fontSize="sm" color={textMuted}>
+                    Loading...
+                  </Text>
+                </VStack>
+              ) : (
+                <TableComponentFull table={projTable} />
               )}
             </CardBody>
           </Card>
@@ -1332,7 +2106,8 @@ export default function PerformancePortfolioView({ mode }: PerformancePortfolioV
                   bg={cardBg}
                   borderColor={borderCol}
                 />
-                <HStack spacing={3} display={{ base: "none", md: "flex" }}>
+                {/* Temp hide */}
+                <HStack spacing={3} display={"none"}>
                   <VStack spacing={0} align="center">
                     <Text fontSize="lg" fontWeight="bold" color="green.500">
                       {totalGrandTotal.toFixed(1)}
@@ -1392,7 +2167,11 @@ export default function PerformancePortfolioView({ mode }: PerformancePortfolioV
                 <Box>
                   {/* Header */}
                   <Grid
-                    templateColumns={mode !== "my" ? "30px 2fr 1fr 1fr 1fr 1fr auto" : "30px 2fr 1fr 1fr 1fr 1fr"}
+                    templateColumns={
+                      mode !== "my"
+                        ? "30px 2fr 1fr 1fr 1fr 1fr auto"
+                        : "30px 2fr 1fr 1fr 1fr 1fr"
+                    }
                     px={2}
                     pb={2}
                     borderBottom="2px"
@@ -1424,17 +2203,24 @@ export default function PerformancePortfolioView({ mode }: PerformancePortfolioV
                   {DataReport.map((item, index) => (
                     <Box key={item.id}>
                       <Grid
-                        templateColumns={mode !== "my" ? "30px 2fr 1fr 1fr 1fr 1fr auto" : "30px 2fr 1fr 1fr 1fr 1fr"}
+                        templateColumns={
+                          mode !== "my"
+                            ? "30px 2fr 1fr 1fr 1fr 1fr auto"
+                            : "30px 2fr 1fr 1fr 1fr 1fr"
+                        }
                         px={2}
                         h="64px"
-                        alignItems="center"
+                        alignItems="flex-start"
+                        my={1}
                         _hover={{ bg: isDark ? "whiteAlpha.50" : "blue.50" }}
                         rounded="lg"
                         transition="background 0.15s"
                         cursor="default"
                       >
                         {/* No. */}
-                        <Text fontSize="xs" color={textMuted} textAlign="center">{index + 1}</Text>
+                        <Text fontSize="sm" color={textMuted} textAlign="start">
+                          {index + 1}.
+                        </Text>
 
                         {/* Project Info */}
                         <Box pr={3} overflow="hidden">
@@ -1561,8 +2347,13 @@ export default function PerformancePortfolioView({ mode }: PerformancePortfolioV
 
                         {/* Action - only on detail pages */}
                         {mode !== "my" && (
-                          <Button size="xs" colorScheme="blue" variant="outline" rounded="lg"
-                            onClick={() => handleOpenEvaluationModal(item)}>
+                          <Button
+                            size="xs"
+                            colorScheme="blue"
+                            variant="outline"
+                            rounded="lg"
+                            onClick={() => handleOpenEvaluationModal(item)}
+                          >
                             Adjust
                           </Button>
                         )}

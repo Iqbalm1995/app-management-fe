@@ -165,7 +165,13 @@ import {
 import { Formik, FormikState, useFormik } from "formik";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
-import { redirect, useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  redirect,
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   FiAlertTriangle,
@@ -264,7 +270,7 @@ export default function BRDRFCView() {
   const currentQuarter = getCurrentQuarter();
   const [selectedYear, setSelectedYear] = useState<number>(currentYear);
   const [selectedQuarter, setSelectedQuarter] = useState<number | "all">(
-    currentQuarter
+    currentQuarter,
   );
   const [filteredMonths, setFilteredMonths] = useState<string[]>([]);
   type ViewMode = "BRD" | "RFC" | "MY";
@@ -360,14 +366,14 @@ export default function BRDRFCView() {
       pageIndex,
       pageSize,
     }),
-    [pageIndex, pageSize]
+    [pageIndex, pageSize],
   );
 
   // Division Option setup
 
   const GetDataDivision = async (
     searchValue: string = "",
-    limit: number = 1
+    limit: number = 1,
   ): Promise<OrganizationResponse[]> => {
     setIsLoadingDivisionSelect(true);
     const PayloadList: PaggingListPayload = {
@@ -445,7 +451,7 @@ export default function BRDRFCView() {
     // Use reduce to merge all new filters at once
     const updatedFilters = newFilters.reduce(
       (acc, filter) => addParamFilterUpdate(acc, filter),
-      ParamFilter
+      ParamFilter,
     );
 
     setParamFilter(updatedFilters);
@@ -580,8 +586,8 @@ export default function BRDRFCView() {
               <Text fontWeight={600}>
                 {info.row.original.reqInititateDate
                   ? stringToDateFormatedReverse(
-                    info.row.original.reqInititateDate
-                  )
+                      info.row.original.reqInititateDate,
+                    )
                   : "-"}
               </Text>
             </Flex>
@@ -590,8 +596,8 @@ export default function BRDRFCView() {
               <Text fontWeight={600}>
                 {info.row.original.reqAcceptedDate
                   ? stringToDateFormatedReverse(
-                    info.row.original.reqAcceptedDate
-                  )
+                      info.row.original.reqAcceptedDate,
+                    )
                   : "-"}
               </Text>
             </Flex>
@@ -600,8 +606,8 @@ export default function BRDRFCView() {
               <Text fontWeight={600}>
                 {info.row.original.assignedToDate
                   ? stringToDateFormatedReverse(
-                    info.row.original.assignedToDate
-                  )
+                      info.row.original.assignedToDate,
+                    )
                   : "-"}
               </Text>
             </Flex>
@@ -725,7 +731,7 @@ export default function BRDRFCView() {
             <Flex as={Stack} spacing={2}>
               <Flex as={Stack} spacing={0}>
                 {info?.row?.original?.appInitialCode &&
-                  info.row.original.appInitialCode.trim() !== "" ? (
+                info.row.original.appInitialCode.trim() !== "" ? (
                   <>
                     <Text fontWeight={600}>
                       ({info.row.original.appInitialCode})
@@ -836,9 +842,16 @@ export default function BRDRFCView() {
                     leftIcon={<FiEye />}
                     bg="purple.50"
                     color="purple.700"
-                    size="xs" py={4} fontSize="sm"
+                    size="xs"
+                    py={4}
+                    fontSize="sm"
                     w="full"
-                    _hover={{ bg: "purple.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s"
+                    _hover={{
+                      bg: "purple.300",
+                      transform: "translateY(-2px)",
+                      boxShadow: "md",
+                    }}
+                    transition="all 0.2s"
                   >
                     Preview
                   </Button>
@@ -848,13 +861,23 @@ export default function BRDRFCView() {
                 {status === REQ_STATUS_DRAFT && canMake && (
                   <Button
                     leftIcon={<FiEdit />}
-                    bg="blue.50" color="blue.700" _hover={{ bg: "blue.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s"
-                    size="xs" py={4} fontSize="sm"
+                    bg="blue.50"
+                    color="blue.700"
+                    _hover={{
+                      bg: "blue.300",
+                      transform: "translateY(-2px)",
+                      boxShadow: "md",
+                    }}
+                    transition="all 0.2s"
+                    size="xs"
+                    py={4}
+                    fontSize="sm"
                     w="full"
                     onClick={() =>
                       router.push(
-                        `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id
-                        }`
+                        `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${
+                          info.row.original.id
+                        }`,
                       )
                     }
                   >
@@ -866,8 +889,17 @@ export default function BRDRFCView() {
                 {status === REQ_STATUS_NEED_REVIEW && canReview && (
                   <Button
                     leftIcon={<FiEdit />}
-                    bg="green.50" color="green.700" _hover={{ bg: "green.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s"
-                    size="xs" py={4} fontSize="sm"
+                    bg="green.50"
+                    color="green.700"
+                    _hover={{
+                      bg: "green.300",
+                      transform: "translateY(-2px)",
+                      boxShadow: "md",
+                    }}
+                    transition="all 0.2s"
+                    size="xs"
+                    py={4}
+                    fontSize="sm"
                     w="full"
                     onClick={() => {
                       setStartReviewReqId(info.row.original.id);
@@ -882,13 +914,23 @@ export default function BRDRFCView() {
                 {status === REQ_STATUS_IN_PROGRESS_REVIEW && canReview && (
                   <Button
                     leftIcon={<FiEdit />}
-                    bg="green.50" color="green.700" _hover={{ bg: "green.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s"
-                    size="xs" py={4} fontSize="sm"
+                    bg="green.50"
+                    color="green.700"
+                    _hover={{
+                      bg: "green.300",
+                      transform: "translateY(-2px)",
+                      boxShadow: "md",
+                    }}
+                    transition="all 0.2s"
+                    size="xs"
+                    py={4}
+                    fontSize="sm"
                     w="full"
                     onClick={() =>
                       router.push(
-                        `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id
-                        }&mode=review`
+                        `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${
+                          info.row.original.id
+                        }&mode=review`,
                       )
                     }
                   >
@@ -900,12 +942,21 @@ export default function BRDRFCView() {
                 {status === REQ_WAITING_APPROVAL && canApprove && (
                   <Button
                     leftIcon={<FiCheck />}
-                    bg="green.50" color="green.700" _hover={{ bg: "green.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s"
-                    size="xs" py={4} fontSize="sm"
+                    bg="green.50"
+                    color="green.700"
+                    _hover={{
+                      bg: "green.300",
+                      transform: "translateY(-2px)",
+                      boxShadow: "md",
+                    }}
+                    transition="all 0.2s"
+                    size="xs"
+                    py={4}
+                    fontSize="sm"
                     w="full"
                     onClick={() => {
                       router.push(
-                        `/requirements/detail?reqId=${info.row.original.id}&type=${info.row.original.requirementType}&approvalMode=true`
+                        `/requirements/detail?reqId=${info.row.original.id}&type=${info.row.original.requirementType}&approvalMode=true`,
                       );
                     }}
                   >
@@ -914,33 +965,54 @@ export default function BRDRFCView() {
                 )}
 
                 {/* APPROVED: Edit (Maker, only if isHaveMemo = 'N') */}
-                {status === REQ_STATUS_APPROVED && canMake && isHaveMemo === "N" && (
-                  <Button
-                    leftIcon={<FiEdit />}
-                    bg="blue.50" color="blue.700" _hover={{ bg: "blue.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s"
-                    size="xs" py={4} fontSize="sm"
-                    w="full"
-                    onClick={() =>
-                      router.push(
-                        `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id}`
-                      )
-                    }
-                  >
-                    Edit
-                  </Button>
-                )}
+                {status === REQ_STATUS_APPROVED &&
+                  canMake &&
+                  isHaveMemo === "N" && (
+                    <Button
+                      leftIcon={<FiEdit />}
+                      bg="blue.50"
+                      color="blue.700"
+                      _hover={{
+                        bg: "blue.300",
+                        transform: "translateY(-2px)",
+                        boxShadow: "md",
+                      }}
+                      transition="all 0.2s"
+                      size="xs"
+                      py={4}
+                      fontSize="sm"
+                      w="full"
+                      onClick={() =>
+                        router.push(
+                          `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id}`,
+                        )
+                      }
+                    >
+                      Edit
+                    </Button>
+                  )}
 
                 {/* TEMPORARY APPROVED: Edit (Maker), Start Review (Reviewer) */}
                 {status === REQ_STATUS_TEMPORARY_APPROVED && canMake && (
                   <Button
                     leftIcon={<FiEdit />}
-                    bg="blue.50" color="blue.700" _hover={{ bg: "blue.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s"
-                    size="xs" py={4} fontSize="sm"
+                    bg="blue.50"
+                    color="blue.700"
+                    _hover={{
+                      bg: "blue.300",
+                      transform: "translateY(-2px)",
+                      boxShadow: "md",
+                    }}
+                    transition="all 0.2s"
+                    size="xs"
+                    py={4}
+                    fontSize="sm"
                     w="full"
                     onClick={() =>
                       router.push(
-                        `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id
-                        }`
+                        `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${
+                          info.row.original.id
+                        }`,
                       )
                     }
                   >
@@ -950,13 +1022,22 @@ export default function BRDRFCView() {
                 {status === REQ_STATUS_TEMPORARY_APPROVED && canReview && (
                   <Button
                     leftIcon={<FiEdit />}
-                    bg="green.50" color="green.700" _hover={{ bg: "green.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s"
-                    size="xs" py={4} fontSize="sm"
+                    bg="green.50"
+                    color="green.700"
+                    _hover={{
+                      bg: "green.300",
+                      transform: "translateY(-2px)",
+                      boxShadow: "md",
+                    }}
+                    transition="all 0.2s"
+                    size="xs"
+                    py={4}
+                    fontSize="sm"
                     w="full"
                     onClick={async () => {
                       const result = await StartReview(
                         info.row.original.id,
-                        tokenData
+                        tokenData,
                       );
                       if (result?.statusCode === RES_CODE_OK) {
                         showToast({
@@ -964,8 +1045,9 @@ export default function BRDRFCView() {
                           statusToast: "success",
                         });
                         router.push(
-                          `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id
-                          }&mode=review`
+                          `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${
+                            info.row.original.id
+                          }&mode=review`,
                         );
                       } else {
                         showToast({
@@ -984,13 +1066,23 @@ export default function BRDRFCView() {
                 {status === REQ_STATUS_ON_HOLD && canMake && (
                   <Button
                     leftIcon={<FiEdit />}
-                    bg="blue.50" color="blue.700" _hover={{ bg: "blue.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s"
-                    size="xs" py={4} fontSize="sm"
+                    bg="blue.50"
+                    color="blue.700"
+                    _hover={{
+                      bg: "blue.300",
+                      transform: "translateY(-2px)",
+                      boxShadow: "md",
+                    }}
+                    transition="all 0.2s"
+                    size="xs"
+                    py={4}
+                    fontSize="sm"
                     w="full"
                     onClick={() =>
                       router.push(
-                        `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id
-                        }`
+                        `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${
+                          info.row.original.id
+                        }`,
                       )
                     }
                   >
@@ -1000,13 +1092,22 @@ export default function BRDRFCView() {
                 {status === REQ_STATUS_ON_HOLD && canReview && (
                   <Button
                     leftIcon={<FiEdit />}
-                    bg="green.50" color="green.700" _hover={{ bg: "green.300", transform: "translateY(-2px)", boxShadow: "md" }} transition="all 0.2s"
-                    size="xs" py={4} fontSize="sm"
+                    bg="green.50"
+                    color="green.700"
+                    _hover={{
+                      bg: "green.300",
+                      transform: "translateY(-2px)",
+                      boxShadow: "md",
+                    }}
+                    transition="all 0.2s"
+                    size="xs"
+                    py={4}
+                    fontSize="sm"
                     w="full"
                     onClick={async () => {
                       const result = await StartReview(
                         info.row.original.id,
-                        tokenData
+                        tokenData,
                       );
                       if (result?.statusCode === RES_CODE_OK) {
                         showToast({
@@ -1014,8 +1115,9 @@ export default function BRDRFCView() {
                           statusToast: "success",
                         });
                         router.push(
-                          `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${info.row.original.id
-                          }&mode=review`
+                          `/requirements/${info.row.original.requirementType.toLowerCase()}/register?id=${
+                            info.row.original.id
+                          }&mode=review`,
                         );
                       } else {
                         showToast({
@@ -1043,7 +1145,14 @@ export default function BRDRFCView() {
         },
       },
     ],
-    [ActionLoading, pageIndex, pageSize, colorMode, OptionDivision, ParamFilter]
+    [
+      ActionLoading,
+      pageIndex,
+      pageSize,
+      colorMode,
+      OptionDivision,
+      ParamFilter,
+    ],
   );
 
   const [StartDateFilter, setStartDateFilter] = useState<Date>(new Date());
@@ -1058,7 +1167,7 @@ export default function BRDRFCView() {
   const addFilterData = (data: ListSearchByParamProps) => {
     const filterWhereData: ListSearchByParamProps[] = addParamFilterUpdate(
       ParamFilter,
-      data
+      data,
     );
 
     setParamFilter(filterWhereData);
@@ -1067,7 +1176,7 @@ export default function BRDRFCView() {
   const removeFilterData = (data: ListSearchByParamProps) => {
     const filterWhereData: ListSearchByParamProps[] = removeParamFilter(
       ParamFilter,
-      data
+      data,
     );
 
     setParamFilter(filterWhereData);
@@ -1076,7 +1185,7 @@ export default function BRDRFCView() {
   useEffect(() => {
     const { startDate, endDate } = getQuarterDateRange(
       selectedYear,
-      selectedQuarter
+      selectedQuarter,
     );
     // console.log("Selected Range (ISO):", {
     //   startDate: startDate.toISOString(),
@@ -1404,13 +1513,19 @@ export default function BRDRFCView() {
                     w={"full"}
                   >
                     {/* BUTTON ACTION */}
-                    <Flex as={Wrap} justifyContent={"end"} alignItems={"center"} gap={2} px={0} w={"full"}>
-
-                      <Popover 
+                    <Flex
+                      as={Wrap}
+                      justifyContent={"end"}
+                      alignItems={"center"}
+                      gap={2}
+                      px={0}
+                      w={"full"}
+                    >
+                      <Popover
                         isOpen={isFilterPopoverOpen}
                         onOpen={onFilterPopoverOpen}
                         onClose={onFilterPopoverClose}
-                        closeOnBlur={true} 
+                        closeOnBlur={true}
                         placement={"bottom"}
                       >
                         <PopoverTrigger>
@@ -1419,9 +1534,7 @@ export default function BRDRFCView() {
                             <Flex
                               as={"span"}
                               pl={1}
-                              display={
-                                ParamFilter.length > 0 ? "flex" : "none"
-                              }
+                              display={ParamFilter.length > 0 ? "flex" : "none"}
                               color={"secondary.500"}
                               fontWeight={600}
                             >
@@ -1450,9 +1563,8 @@ export default function BRDRFCView() {
                                         {" "}
                                         {dt.field === "senderDivisionId"
                                           ? OptionDivision.find(
-                                            (opt) =>
-                                              opt.value === dt.value
-                                          )?.label || dt.value
+                                              (opt) => opt.value === dt.value,
+                                            )?.label || dt.value
                                           : dt.value}
                                       </Text>
                                     </Text>
@@ -1539,9 +1651,7 @@ export default function BRDRFCView() {
                   // <TableComponentFull table={table} />
                   // TABLE NEW DESIGN
                   <Box overflowX="auto" w="full">
-                    <Box
-                      minW="1400px"
-                    >
+                    <Box minW="1400px">
                       <TableComponentWithFilterCTX
                         table={table}
                         handleFilterChange={handleFilterChange}
@@ -1590,7 +1700,7 @@ export default function BRDRFCView() {
                   if (startReviewReqId) {
                     const result = await StartReview(
                       startReviewReqId,
-                      tokenData
+                      tokenData,
                     );
                     if (result?.statusCode === RES_CODE_OK) {
                       showToast({
@@ -1600,8 +1710,8 @@ export default function BRDRFCView() {
                       onStartReviewClose();
                       router.push(
                         `/requirements/${DataReq.find(
-                          (r) => r.id === startReviewReqId
-                        )?.requirementType.toLowerCase()}/register?id=${startReviewReqId}&mode=review`
+                          (r) => r.id === startReviewReqId,
+                        )?.requirementType.toLowerCase()}/register?id=${startReviewReqId}&mode=review`,
                       );
                     } else {
                       showToast({
@@ -1623,11 +1733,21 @@ export default function BRDRFCView() {
       </AlertDialog>
 
       {/* Register Type Selection Modal */}
-      <Modal isOpen={isRegisterModalOpen} onClose={onRegisterModalClose} isCentered size="lg">
+      <Modal
+        isOpen={isRegisterModalOpen}
+        onClose={onRegisterModalClose}
+        isCentered
+        size="lg"
+      >
         <ModalOverlay bg="blackAlpha.300" backdropFilter="blur(10px)" />
-        <ModalContent rounded={radiusStyle} bgColor={colorMode == "light" ? "white" : "gray.800"}>
+        <ModalContent
+          rounded={radiusStyle}
+          bgColor={colorMode == "light" ? "white" : "gray.800"}
+        >
           <ModalHeader pb={4}>
-            <Heading as="h4" size="md">Select Registration Type</Heading>
+            <Heading as="h4" size="md">
+              Select Registration Type
+            </Heading>
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody py={6} px={6}>
@@ -1652,17 +1772,23 @@ export default function BRDRFCView() {
                   bg: "secondary.500",
                   borderColor: "secondary.500",
                   transform: "translateY(-4px)",
-                  boxShadow: "0 0 20px 8px rgba(0, 119, 254, 0.4), 0 0 40px 12px rgba(0, 119, 254, 0.2), 0 0 60px 16px rgba(0, 119, 254, 0.1)",
+                  boxShadow:
+                    "0 0 20px 8px rgba(0, 119, 254, 0.4), 0 0 40px 12px rgba(0, 119, 254, 0.2), 0 0 60px 16px rgba(0, 119, 254, 0.1)",
                   "& > *": {
                     color: "white",
                   },
                 }}
                 _active={{
                   transform: "translateY(-2px)",
-                  boxShadow: "0 0 15px 6px rgba(0, 119, 254, 0.3), 0 0 30px 10px rgba(0, 119, 254, 0.15)",
+                  boxShadow:
+                    "0 0 15px 6px rgba(0, 119, 254, 0.3), 0 0 30px 10px rgba(0, 119, 254, 0.15)",
                 }}
               >
-                <Text fontSize="4xl" fontWeight="bold" color={colorMode === "light" ? "gray.700" : "white"}>
+                <Text
+                  fontSize="4xl"
+                  fontWeight="bold"
+                  color={colorMode === "light" ? "gray.700" : "white"}
+                >
                   BRD
                 </Text>
                 <Text fontSize="sm" color="gray.500" textAlign="center" px={2}>
@@ -1690,17 +1816,23 @@ export default function BRDRFCView() {
                   bg: "secondary.500",
                   borderColor: "secondary.500",
                   transform: "translateY(-4px)",
-                  boxShadow: "0 0 20px 8px rgba(0, 119, 254, 0.4), 0 0 40px 12px rgba(0, 119, 254, 0.2), 0 0 60px 16px rgba(0, 119, 254, 0.1)",
+                  boxShadow:
+                    "0 0 20px 8px rgba(0, 119, 254, 0.4), 0 0 40px 12px rgba(0, 119, 254, 0.2), 0 0 60px 16px rgba(0, 119, 254, 0.1)",
                   "& > *": {
                     color: "white",
                   },
                 }}
                 _active={{
                   transform: "translateY(-2px)",
-                  boxShadow: "0 0 15px 6px rgba(0, 119, 254, 0.3), 0 0 30px 10px rgba(0, 119, 254, 0.15)",
+                  boxShadow:
+                    "0 0 15px 6px rgba(0, 119, 254, 0.3), 0 0 30px 10px rgba(0, 119, 254, 0.15)",
                 }}
               >
-                <Text fontSize="4xl" fontWeight="bold" color={colorMode === "light" ? "gray.700" : "white"}>
+                <Text
+                  fontSize="4xl"
+                  fontWeight="bold"
+                  color={colorMode === "light" ? "gray.700" : "white"}
+                >
                   RFC
                 </Text>
                 <Text fontSize="sm" color="gray.500" textAlign="center" px={2}>
