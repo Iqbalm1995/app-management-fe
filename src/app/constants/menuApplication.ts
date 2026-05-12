@@ -201,6 +201,7 @@ export const LinkItems: LinkItemProps[] = [
   {
     name: "Requirements",
     icon: FaDraftingCompass,
+    iconName: "FaDraftingCompass",
     link: "/requirements",
     role: ["admin"],
     menuID: "1",
@@ -224,6 +225,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Pending Approve",
         icon: MdOutlineCircle,
+        iconName: "MdOutlineCircle",
         link: "/requirements/approval-hub",
         role: ["admin"],
         menuID: "1",
@@ -232,6 +234,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "BRD / RFC",
         icon: MdChangeHistory,
+        iconName: "MdChangeHistory",
         link: "/requirements/brd-rfc",
         role: ["admin"],
         menuID: "1",
@@ -241,6 +244,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Prerequisites",
         icon: MdChangeHistory,
+        iconName: "MdChangeHistory",
         isPro: true,
         link: "/coming-soon",
         role: ["admin"],
@@ -261,6 +265,7 @@ export const LinkItems: LinkItemProps[] = [
   {
     name: "Projects",
     icon: FaDiagramProject,
+    iconName: "FaDiagramProject",
     link: "/projects",
     role: ["admin"],
     isPro: false,
@@ -269,6 +274,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Pending Approve",
         icon: MdOutlineCircle,
+        iconName: "MdOutlineCircle",
         link: "/projects/pending-approve",
         role: ["admin"],
         menuID: "1",
@@ -277,6 +283,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Internal Development",
         icon: FaCode,
+        iconName: "FaCode",
         link: "/projects-manager?reqType=brd",
         role: ["admin"],
         menuID: "1",
@@ -285,6 +292,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Procurement",
         icon: TbContract,
+        iconName: "TbContract",
         link: "/projects-procurements",
         role: ["admin"],
         menuID: "1",
@@ -293,6 +301,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "RFC",
         icon: FaCode,
+        iconName: "FaCode",
         link: "/projects-manager?reqType=rfc",
         role: ["admin"],
         menuID: "1",
@@ -301,6 +310,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Deployment",
         icon: BsCloudUpload,
+        iconName: "BsCloudUpload",
         link: "/projects-deployments",
         role: ["admin"],
         isPro: true,
@@ -310,6 +320,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Timeline Simulation",
         icon: TbTimeline,
+        iconName: "TbTimeline",
         link: "/coming-soon",
         role: ["admin"],
         isPro: true,
@@ -321,6 +332,7 @@ export const LinkItems: LinkItemProps[] = [
   {
     name: "Vendor Management",
     icon: FiUmbrella,
+    iconName: "FiUmbrella",
     link: "/vendor-management",
     isPro: false,
     role: ["admin"],
@@ -329,6 +341,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Vendor List",
         icon: LiaFileContractSolid,
+        iconName: "LiaFileContractSolid",
         link: "/vendor-management",
         isPro: false,
         role: ["admin"],
@@ -338,6 +351,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Work Program",
         icon: FiUmbrella,
+        iconName: "FiUmbrella",
         link: "/coming-soon",
         isPro: true,
         role: ["admin"],
@@ -347,6 +361,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Payment Tracking",
         icon: FiLayers,
+        iconName: "FiLayers",
         link: "/coming-soon",
         isPro: true,
         role: ["admin"],
@@ -358,6 +373,7 @@ export const LinkItems: LinkItemProps[] = [
   {
     name: "Resource Management",
     icon: TbUsers,
+    iconName: "TbUsers",
     link: "/resource-monitor",
     role: ["admin"],
     menuID: "1",
@@ -391,6 +407,7 @@ export const LinkItems: LinkItemProps[] = [
   {
     name: "Meeting ",
     icon: AiOutlineVideoCamera,
+    iconName: "AiOutlineVideoCamera",
     link: "/coming-soon",
     isPro: true,
     role: ["admin"],
@@ -400,6 +417,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Meeting Calendar",
         icon: IoCalendarOutline,
+        iconName: "IoCalendarOutline",
         link: "/coming-soon",
         role: ["admin"],
 
@@ -431,6 +449,7 @@ export const LinkItems: LinkItemProps[] = [
   {
     name: "Reports",
     icon: BiSolidReport,
+    iconName: "BiSolidReport",
     link: "/reports",
     role: ["admin"],
     isPro: false,
@@ -439,6 +458,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Dashboard Portfolio",
         icon: BiSolidReport,
+        iconName: "BiSolidReport",
         link: "/reports/dashboard-portfolio",
         role: ["admin"],
         isPro: false,
@@ -457,6 +477,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Portfolio",
         icon: BiSolidReport,
+        iconName: "BiSolidReport",
         link: "/reports/project-portfolio",
         role: ["admin"],
         isPro: false,
@@ -527,6 +548,7 @@ export const LinkItems: LinkItemProps[] = [
   {
     name: "Teams Performances",
     icon: FaRegStar,
+    iconName: "FaRegStar",
     link: "/performances",
     isPro: false,
     role: ["admin"],
@@ -535,6 +557,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Performances Divisions",
         icon: FaRegStar,
+        iconName: "FaRegStar",
         link: "/performances/divisions",
         isPro: false,
         role: ["admin"],
@@ -544,6 +567,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Performances Group",
         icon: FaRegStar,
+        iconName: "FaRegStar",
         link: "/performances/groups",
         isPro: false,
         role: ["admin"],
@@ -553,6 +577,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Performances Teams",
         icon: FaRegStar,
+        iconName: "FaRegStar",
         link: "/performances/teams",
         isPro: false,
         role: ["admin"],
@@ -564,6 +589,7 @@ export const LinkItems: LinkItemProps[] = [
   {
     name: "Assets Management",
     icon: FaRegStar,
+    iconName: "FaRegStar",
     link: "/coming-soon",
     isPro: true,
     role: ["admin"],
@@ -602,6 +628,7 @@ export const LinkItems: LinkItemProps[] = [
   {
     name: "DevOps",
     icon: BsDatabaseGear,
+    iconName: "BsDatabaseGear",
     link: "/coming-soon",
     role: ["admin"],
     isPro: true,
@@ -611,6 +638,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "DevOps ",
         icon: BsDatabaseGear,
+        iconName: "BsDatabaseGear",
         link: "/coming-soon",
         role: ["admin"],
 
@@ -657,6 +685,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Maintenance Report",
         icon: TbFileReport,
+        iconName: "TbFileReport",
         link: "/coming-soon",
         role: ["admin"],
 
@@ -731,6 +760,7 @@ export const LinkItems: LinkItemProps[] = [
   {
     name: "Knowledge Base",
     icon: GrHelpBook,
+    iconName: "GrHelpBook",
     link: "/coming-soon",
     role: ["admin"],
 
@@ -739,6 +769,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Bjb Ask",
         icon: BsChatDots,
+        iconName: "BsChatDots",
         link: "/coming-soon",
         role: ["admin"],
         isPro: true,
@@ -748,6 +779,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Bjb Apps User Guide",
         icon: LuBookHeart,
+        iconName: "LuBookHeart",
         link: "/show-flow",
         role: ["admin"],
 
@@ -757,6 +789,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Document Templates",
         icon: IoMdBookmarks,
+        iconName: "IoMdBookmarks",
         link: "/coming-soon",
         role: ["admin"],
         isPro: true,
@@ -768,6 +801,7 @@ export const LinkItems: LinkItemProps[] = [
   {
     name: "Master Data",
     icon: FiDatabase,
+    iconName: "FiDatabase",
     link: "/master-data",
     role: ["admin"],
     menuID: "1",
@@ -775,6 +809,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Master Organizations",
         icon: RiOrganizationChart,
+        iconName: "RiOrganizationChart",
         link: "/master-data/organizations",
         role: ["admin"],
         menuID: "1",
@@ -783,6 +818,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Master Team",
         icon: FaUsersRays,
+        iconName: "FaUsersRays",
         link: "/teams-center",
         role: ["admin"],
         menuID: "1",
@@ -791,6 +827,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Master Application",
         icon: HiOutlineDesktopComputer,
+        iconName: "HiOutlineDesktopComputer",
         link: "/master-data/Application",
         role: ["admin"],
         menuID: "1",
@@ -799,6 +836,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Master Workflow",
         icon: PiFlowArrow,
+        iconName: "PiFlowArrow",
         link: "/master-data/workflow",
         role: ["admin"],
         menuID: "1",
@@ -816,6 +854,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Master Users",
         icon: FiUsers,
+        iconName: "FiUsers",
         link: "/master-data/users",
         role: ["admin"],
         menuID: "1",
@@ -824,6 +863,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Master User PIC",
         icon: FiKey,
+        iconName: "FiKey",
         link: "/coming-soon",
         role: ["admin"],
         menuID: "1",
@@ -832,6 +872,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Master Specialization",
         icon: FiAward,
+        iconName: "FiAward",
         link: "/master-data/specialization",
         role: ["admin"],
         menuID: "1",
@@ -840,6 +881,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Master Certification",
         icon: TbChartInfographic,
+        iconName: "TbChartInfographic",
         link: "/master-data/certification",
         isPro: true,
         role: ["admin"],
@@ -849,6 +891,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Master Programming Language",
         icon: TbSettingsCog,
+        iconName: "TbSettingsCog",
         link: "/master-data/masterLanguage",
         isPro: true,
         role: ["admin"],
@@ -860,6 +903,7 @@ export const LinkItems: LinkItemProps[] = [
   {
     name: "Access Configurations",
     icon: IoKeyOutline,
+    iconName: "IoKeyOutline",
     link: "/master-data/authorize-groups",
     role: ["admin"],
     isPro: false,
@@ -868,6 +912,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Master Menu",
         icon: TiThMenuOutline,
+        iconName: "TiThMenuOutline",
         link: "/master-data/menus",
         role: ["admin"],
         menuID: "1",
@@ -877,6 +922,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Sys Module Group",
         icon: TbUsersGroup,
+        iconName: "TbUsersGroup",
         link: "/master-data/sys-module-group",
         role: ["admin"],
         isPro: false,
@@ -886,6 +932,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Authorize Group",
         icon: TbUsersGroup,
+        iconName: "TbUsersGroup",
         link: "/master-data/authorize-groups",
         role: ["admin"],
         isPro: false,
@@ -952,6 +999,7 @@ export const LinkItems: LinkItemProps[] = [
   {
     name: "Parameter ",
     icon: TbAdjustmentsCog, // general "settings/parameters" icon
+    iconName: "FTbAdjustmentsCogiKey",
     link: "/coming-soon",
     role: ["admin"],
     isPro: true,
@@ -960,6 +1008,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Parameter Constant",
         icon: FiKey,
+        iconName: "FiKey",
         link: "/master-data/constants-data",
         role: ["admin"],
         menuID: "1",
@@ -1049,6 +1098,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Parameter Language Mapping",
         icon: TbLanguage,
+        iconName: "TbLanguage",
         link: "/coming-soon",
         isPro: true,
         role: ["admin"],
@@ -1058,6 +1108,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Project Codes",
         icon: TbCode,
+        iconName: "TbCode",
         link: "/coming-soon",
         isPro: true,
         role: ["admin"],
@@ -1069,6 +1120,7 @@ export const LinkItems: LinkItemProps[] = [
   {
     name: "System Parameters",
     icon: TbSettingsCog, // general system/settings icon
+    iconName: "TbSettingsCog",
     link: "/coming-soon",
     isPro: false,
 
@@ -1078,6 +1130,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Calender Engine",
         icon: TbCalendarTime,
+        iconName: "TbCalendarTime",
         link: "/coming-soon",
 
         role: ["admin"],
@@ -1088,6 +1141,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Session Timeout",
         icon: TbHourglassHigh,
+        iconName: "TbHourglassHigh",
         link: "/coming-soon",
 
         role: ["admin"],
@@ -1098,6 +1152,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "System Cut-Off Time",
         icon: TbClockExclamation,
+        iconName: "TbClockExclamation",
         link: "/coming-soon",
 
         role: ["admin"],
@@ -1108,6 +1163,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Announcements",
         icon: RiMegaphoneLine,
+        iconName: "RiMegaphoneLine",
         link: "/coming-soon",
 
         role: ["admin"],
@@ -1118,6 +1174,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Time Tracking",
         icon: TbTimeline,
+        iconName: "TbTimeline",
         link: "/coming-soon",
 
         role: ["admin"],
@@ -1128,6 +1185,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Sequences Config",
         icon: TbNumbers,
+        iconName: "TbNumbers",
         link: "/master-data/sequences-config",
 
         role: ["admin"],
@@ -1224,6 +1282,7 @@ export const LinkItems: LinkItemProps[] = [
   {
     name: "Import Data",
     icon: FiUpload,
+    iconName: "FiUpload",
     link: "/projects/import",
     role: ["admin"],
     menuID: "1",
@@ -1231,6 +1290,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Import Data Project",
         icon: FiUpload,
+        iconName: "FiUpload",
         link: "/projects/import",
         role: ["admin"],
         menuID: "1",
@@ -1239,6 +1299,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "Import Legacy Projects",
         icon: BsCloudUpload,
+        iconName: "BsCloudUpload",
         link: "/projects/import-legacy",
         role: ["admin"],
         menuID: "1",
@@ -1257,6 +1318,7 @@ export const LinkItems: LinkItemProps[] = [
   {
     name: "File Archive",
     icon: MdOutlinePermMedia,
+    iconName: "MdOutlinePermMedia",
     link: "/file-archives",
     role: ["admin"],
     menuID: "1",
@@ -1266,6 +1328,7 @@ export const LinkItems: LinkItemProps[] = [
   {
     name: "Audit Trail",
     icon: RxActivityLog,
+    iconName: "RxActivityLog",
     link: "/audit-trail",
     isPro: false,
     role: ["admin"],
