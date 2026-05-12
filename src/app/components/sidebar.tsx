@@ -97,6 +97,10 @@ import {
   FiUmbrella,
   FiLayers,
   FiSearch,
+  FiAward,
+  FiCheckCircle,
+  FiCodepen,
+  FiTrendingUp,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
 import { GoDotFill } from "react-icons/go";
@@ -393,7 +397,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                 aria-label="lite mode"
                 icon={<RiMenu2Line />}
                 size={"lg"}
-              // rounded={"xl"}
+                // rounded={"xl"}
               />
               <SearchMenuButton LiteModeTrigger={LiteMode} />
             </Box>
@@ -414,7 +418,11 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
               <Flex alignItems={"start"}>
                 <Popover>
                   <PopoverTrigger>
-                    <Button variant={"ghost"} position="relative" display={"none"}>
+                    <Button
+                      variant={"ghost"}
+                      position="relative"
+                      display={"none"}
+                    >
                       <RiMegaphoneLine />
                       <Badge
                         colorScheme="orange"
@@ -468,7 +476,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                           borderBottom="1px"
                           borderColor={useColorModeValue(
                             "gray.100",
-                            "gray.600"
+                            "gray.600",
                           )}
                           _hover={{
                             bg: useColorModeValue("orange.50", "orange.900"),
@@ -508,7 +516,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                           borderBottom="1px"
                           borderColor={useColorModeValue(
                             "gray.100",
-                            "gray.600"
+                            "gray.600",
                           )}
                           _hover={{
                             bg: useColorModeValue("blue.50", "blue.900"),
@@ -566,7 +574,11 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                 </Popover>
                 <Popover>
                   <PopoverTrigger>
-                    <Button variant={"ghost"} position="relative" display={"none"}>
+                    <Button
+                      variant={"ghost"}
+                      position="relative"
+                      display={"none"}
+                    >
                       <FaRegBell />
                       <Badge
                         colorScheme="red"
@@ -620,7 +632,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                           borderBottom="1px"
                           borderColor={useColorModeValue(
                             "gray.100",
-                            "gray.600"
+                            "gray.600",
                           )}
                           _hover={{
                             bg: useColorModeValue("blue.50", "blue.900"),
@@ -660,7 +672,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                           borderBottom="1px"
                           borderColor={useColorModeValue(
                             "gray.100",
-                            "gray.600"
+                            "gray.600",
                           )}
                           _hover={{
                             bg: useColorModeValue("green.50", "green.900"),
@@ -700,7 +712,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                           borderBottom="1px"
                           borderColor={useColorModeValue(
                             "gray.100",
-                            "gray.600"
+                            "gray.600",
                           )}
                           _hover={{
                             bg: useColorModeValue("orange.50", "orange.900"),
@@ -864,13 +876,13 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                             <Text
                               color={useColorModeValue(
                                 "secondary.900",
-                                "secondary.200"
+                                "secondary.200",
                               )}
                               fontSize={"sm"}
                               fontWeight={700}
                             >
                               {truncateToTwoWords(
-                                DataAuth ? DataAuth.nama : ""
+                                DataAuth ? DataAuth.nama : "",
                               )}
                             </Text>
                             <Text
@@ -947,7 +959,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                 pb={12}
                 pt={5}
                 minH={"100vh"}
-              // bg={"blue.100"}
+                // bg={"blue.100"}
               >
                 <AnimatePresence mode="wait">
                   <MotionBox
@@ -1000,7 +1012,7 @@ const SidebarContent = ({
 
   useEffect(() => {
     const accessDataStr = localStorage.getItem("accessData");
-    
+
     if (!accessDataStr) {
       setFilteredMenus([]);
       return;
@@ -1009,8 +1021,11 @@ const SidebarContent = ({
     try {
       const accessData = JSON.parse(accessDataStr);
       const accessibleMenus = accessData.accessibleMenus || [];
-      
-      const buildMenuFromAccess = (menus: any[], parentPath: string = ""): LinkItemProps[] => {
+
+      const buildMenuFromAccess = (
+        menus: any[],
+        parentPath: string = "",
+      ): LinkItemProps[] => {
         return menus.map((menu, index) => {
           const uniquePath = parentPath ? `${parentPath}-${index}` : `${index}`;
           return {
@@ -1020,9 +1035,10 @@ const SidebarContent = ({
             role: ["user"],
             menuID: menu.id || uniquePath,
             isPro: menu.isPro === "Y",
-            children: menu.children && menu.children.length > 0 
-              ? buildMenuFromAccess(menu.children, uniquePath) 
-              : [],
+            children:
+              menu.children && menu.children.length > 0
+                ? buildMenuFromAccess(menu.children, uniquePath)
+                : [],
           };
         });
       };
@@ -1082,9 +1098,13 @@ const SidebarContent = ({
           <VStack w={"full"} h={"65vh"} align={"start"} overflowX="auto">
             <HStack w="full" justify="space-between" align="center" pl={2}>
               <Tooltip label="Show Beta" placement="top" hasArrow>
-
                 <FormControl display="flex" alignItems="center">
-                  <FormLabel htmlFor="hide-pro" mb="0" fontSize={"smaller"} display={LiteModeTrigger ? "none" : "flex"}>
+                  <FormLabel
+                    htmlFor="hide-pro"
+                    mb="0"
+                    fontSize={"smaller"}
+                    display={LiteModeTrigger ? "none" : "flex"}
+                  >
                     Coming Soon
                   </FormLabel>
                   <Switch
@@ -1094,15 +1114,19 @@ const SidebarContent = ({
                     onChange={(e) => setHideProMenus(e.target.checked)}
                   />
                 </FormControl>
-
-              </Tooltip >
-            </HStack >
+              </Tooltip>
+            </HStack>
             <Box w={"full"} overflowY={"auto"}>
-              {filteredMenus.filter((link) => hideProMenus || !link.isPro).map(
-                (link) => (
-                  <NavItem key={link.menuID} data={link} mode={LiteModeTrigger} hideProMenus={hideProMenus} />
-                )
-              )}
+              {filteredMenus
+                .filter((link) => hideProMenus || !link.isPro)
+                .map((link) => (
+                  <NavItem
+                    key={link.menuID}
+                    data={link}
+                    mode={LiteModeTrigger}
+                    hideProMenus={hideProMenus}
+                  />
+                ))}
             </Box>
             <Spacer />
             {/* <AdditionalBarAdvertis /> */}
@@ -1317,7 +1341,9 @@ const NavItem = ({
                 display={mode ? "none" : "flex"}
                 as={HStack}
               >
-                {data.isPro && <Icon as={GoDotFill} color="secondary.500" boxSize={3} />}
+                {data.isPro && (
+                  <Icon as={GoDotFill} color="secondary.500" boxSize={3} />
+                )}
                 <Text fontSize={isChild ? "sm" : "md"}>{data.name}</Text>
                 {hasChildren && (
                   <Icon
@@ -1346,15 +1372,17 @@ const NavItem = ({
           exit={{ height: 0, opacity: 0 }}
           overflow="hidden"
         >
-          {data.children.filter((child) => hideProMenus || !child.isPro).map((child) => (
-            <NavItem
-              key={child.name}
-              data={child}
-              mode={mode}
-              hideProMenus={hideProMenus}
-              depth={depth + 1}
-            />
-          ))}
+          {data.children
+            .filter((child) => hideProMenus || !child.isPro)
+            .map((child) => (
+              <NavItem
+                key={child.name}
+                data={child}
+                mode={mode}
+                hideProMenus={hideProMenus}
+                depth={depth + 1}
+              />
+            ))}
         </MotionBox>
       )}
     </Box>
@@ -1570,7 +1598,7 @@ export function AdditionalProfileBar({
                       color={
                         colorMode == "light" ? "primary.500" : "primary.100"
                       }
-                    // color={"secondary.200"}
+                      // color={"secondary.200"}
                     >
                       {(DataAuth && DataAuth.teamRole?.specName) ||
                         (DataAuth && DataAuth.jabatan)}
@@ -1661,7 +1689,7 @@ export function SearchMenuButton({
 
   useEffect(() => {
     const accessDataStr = localStorage.getItem("accessData");
-    
+
     if (!accessDataStr) {
       setAccessibleMenus([]);
       return;
@@ -1670,8 +1698,11 @@ export function SearchMenuButton({
     try {
       const accessData = JSON.parse(accessDataStr);
       const menus = accessData.accessibleMenus || [];
-      
-      const buildMenuFromAccess = (menus: any[], parentPath: string = ""): LinkItemProps[] => {
+
+      const buildMenuFromAccess = (
+        menus: any[],
+        parentPath: string = "",
+      ): LinkItemProps[] => {
         return menus.map((menu, index) => {
           const uniquePath = parentPath ? `${parentPath}-${index}` : `${index}`;
           return {
@@ -1681,9 +1712,10 @@ export function SearchMenuButton({
             role: ["user"],
             menuID: menu.id || uniquePath,
             isPro: menu.isPro === "Y",
-            children: menu.children && menu.children.length > 0 
-              ? buildMenuFromAccess(menu.children, uniquePath) 
-              : [],
+            children:
+              menu.children && menu.children.length > 0
+                ? buildMenuFromAccess(menu.children, uniquePath)
+                : [],
           };
         });
       };
@@ -1714,7 +1746,7 @@ export function SearchMenuButton({
         .filter(
           (item) =>
             item.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-            item.link !== "#"
+            item.link !== "#",
         )
         .slice(0, 5);
       setFilteredMenus(filtered);

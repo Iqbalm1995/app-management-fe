@@ -141,7 +141,7 @@ export const LinkItems: LinkItemProps[] = [
       {
         name: "My Performance",
         icon: FiAward,
-        iconName: "FaTachometerAlt",
+        iconName: "FiAward",
         link: "/performances/my-performance",
         role: ["admin"],
         menuID: "1",
@@ -150,7 +150,8 @@ export const LinkItems: LinkItemProps[] = [
       },
       {
         name: "Division Summary",
-        icon: FiTrendingUp,
+        icon: FiAward,
+        iconName: "FiAward",
         link: "/performances/divisions/summary",
         role: ["admin"],
         menuID: "1",
@@ -159,7 +160,8 @@ export const LinkItems: LinkItemProps[] = [
       },
       {
         name: "Group Summary",
-        icon: FiTrendingUp,
+        icon: FiAward,
+        iconName: "FiAward",
         link: "/performances/groups/summary",
         role: ["admin"],
         menuID: "1",
