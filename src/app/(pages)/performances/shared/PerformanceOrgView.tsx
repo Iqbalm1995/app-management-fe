@@ -202,7 +202,7 @@ export default function PerformanceOrgView({ mode }: PerformanceOrgViewProps) {
   const [rankingGroupOptions, setRankingGroupOptions] = useState<
     { value: string; label: string }[]
   >([]);
-  const [autoRotateProgress, setAutoRotateProgress] = useState<number>(0);
+  const [autoRotateKey, setAutoRotateKey] = useState<number>(0);
 
   // Year
   const currentYear = new Date().getFullYear();
@@ -479,23 +479,13 @@ export default function PerformanceOrgView({ mode }: PerformanceOrgViewProps) {
   // Auto-rotate group selection every 5 seconds (division mode only)
   useEffect(() => {
     if (mode !== "division" || rankingGroupOptions.length < 2) return;
-    const INTERVAL = 5000;
-    const TICK = 100;
-    let elapsed = 0;
-
     const timer = setInterval(() => {
-      elapsed += TICK;
-      setAutoRotateProgress((elapsed / INTERVAL) * 100);
-      if (elapsed >= INTERVAL) {
-        elapsed = 0;
-        setRankingGroupCode((prev) => {
-          const idx = rankingGroupOptions.findIndex((o) => o.value === prev);
-          const next = (idx + 1) % rankingGroupOptions.length;
-          return rankingGroupOptions[next].value;
-        });
-      }
-    }, TICK);
-
+      setAutoRotateKey(k => k + 1);
+      setRankingGroupCode(prev => {
+        const idx = rankingGroupOptions.findIndex(o => o.value === prev);
+        return rankingGroupOptions[(idx + 1) % rankingGroupOptions.length].value;
+      });
+    }, 5000);
     return () => clearInterval(timer);
   }, [mode, rankingGroupOptions]);
 
@@ -2436,15 +2426,11 @@ export default function PerformanceOrgView({ mode }: PerformanceOrgViewProps) {
                               <Card rounded={radiusStyle}>
                                 <CardBody h={"full"} p={6}>
                                   <Box h={"full"}>
-                                    {/* Auto-rotate progress bar */}
-                                    <Progress
-                                      value={autoRotateProgress}
-                                      size="xs"
-                                      colorScheme="purple"
-                                      rounded="full"
-                                      mb={3}
-                                      transition="none"
-                                    />
+                                    {/* CSS-animated progress — no JS re-renders */}
+                                    <Box h="3px" bg={isDark ? "gray.700" : "gray.200"} rounded="full" mb={3} overflow="hidden">
+                                      <Box key={autoRotateKey} h="full" bg="purple.400" rounded="full"
+                                        sx={{ animation: "orgRankFill 5s linear forwards", "@keyframes orgRankFill": { from: { width: "0%" }, to: { width: "100%" } } }} />
+                                    </Box>
                                     <Grid templateColumns="7fr 3fr" gap={3}>
                                       {/* 70% — rank list */}
                                       <Box>
