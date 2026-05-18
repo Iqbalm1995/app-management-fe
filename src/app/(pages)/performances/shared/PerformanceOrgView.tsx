@@ -512,7 +512,7 @@ export default function PerformanceOrgView({ mode }: PerformanceOrgViewProps) {
         const [summaryRes, quartalRes] = await Promise.all([
           GetMyPerformanceSummary(
             "",
-            selectedYear,
+            0,
             tokenData,
             orgGroup,
             orgDivision,

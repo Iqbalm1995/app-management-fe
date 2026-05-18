@@ -1666,7 +1666,7 @@ const useReports = (): useReportsServices => {
     const UrlEndpoint = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
     const params = new URLSearchParams();
     if (userId) params.append("userId", userId);
-    params.append("year", year.toString());
+    if (year > 0) params.append("year", year.toString());
     if (orgGroupCode) params.append("orgGroupCode", orgGroupCode);
     if (orgDivisionCode) params.append("orgDivisionCode", orgDivisionCode);
     try {

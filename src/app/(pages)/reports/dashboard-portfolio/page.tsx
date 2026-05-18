@@ -2047,7 +2047,7 @@ export default function DashboardPortfolioPage() {
       },
     },
     colors: ["#38A169", "#E53E3E", "#D69E2E"],
-    labels: ["Active", "Closed", "Waiting Approve"],
+    labels: ["Active", "Closed"],
     dataLabels: {
       enabled: true,
       formatter: (val: number) => {
@@ -2062,7 +2062,7 @@ export default function DashboardPortfolioPage() {
             total: {
               show: true,
               label: "Total Projects",
-              formatter: () => `${activeCount + closedCount + waitingApproveCount}`,
+              formatter: () => `${activeCount + closedCount}`,
             },
           },
         },
@@ -2076,7 +2076,7 @@ export default function DashboardPortfolioPage() {
     },
   };
 
-  const projectSummaryDevChartSeries = [activeCount, closedCount, waitingApproveCount];
+  const projectSummaryDevChartSeries = [activeCount, closedCount];
 
   // Dev Staff Project Closed Chart Configuration (same as Division Owner Quartile)
   const devStaffCategories = [
@@ -3393,19 +3393,6 @@ export default function DashboardPortfolioPage() {
                               </StatLabel>
                               <StatNumber color="red.600" fontSize="lg">
                                 {closedCount}
-                              </StatNumber>
-                            </Stat>
-                            <Stat textAlign="center" size="sm">
-                              <StatLabel
-                                color={useColorModeValue(
-                                  "gray.600",
-                                  "gray.300"
-                                )}
-                              >
-                                Waiting Approve
-                              </StatLabel>
-                              <StatNumber color="yellow.600" fontSize="lg">
-                                {waitingApproveCount}
                               </StatNumber>
                             </Stat>
                           </HStack>

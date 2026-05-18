@@ -333,7 +333,7 @@ export default function PerformancePortfolioView({
       setIsSummaryLoading(true);
       try {
         const [summaryRes, quartalRes] = await Promise.all([
-          GetMyPerformanceSummary(UserIdFilter, selectedYear, tokenData),
+          GetMyPerformanceSummary(UserIdFilter, 0, tokenData),
           GetMyPerformanceQuartalChart(UserIdFilter, selectedYear, tokenData),
         ]);
         if (summaryRes?.statusCode === RES_CODE_OK && summaryRes.data)
