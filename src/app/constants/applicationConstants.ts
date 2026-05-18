@@ -588,3 +588,7 @@ export const ALLOCATION_SECTION_POINTS: AllocationProintProps[] = [
 //sJTLr62VFATzZr7e3jmwNA==
 // DEFAULT PASSWORD
 export const DEFAULT_PWD_SETTINGS: string = "sJTLr62VFATzZr7e3jmwNA==";
+
+// --------- NTP SERVER FOR GET TIME
+export const TARGET_NTP_IP = "192.168.224.39"; // Your target NTP Server IP Address
+export const NTP_PORT = 80;

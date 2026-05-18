@@ -146,7 +146,9 @@ import {
   FormHelperText,
   Alert,
   AlertIcon,
+  Spinner,
 } from "@chakra-ui/react";
+import { TARGET_NTP_IP, NTP_PORT } from "@/app/constants/applicationConstants";
 import {
   ColumnDef,
   getCoreRowModel,
@@ -181,6 +183,8 @@ import {
   FiTrash2,
   FiUsers,
   FiX,
+  FiRefreshCw,
+  FiWifiOff,
 } from "react-icons/fi";
 import { LiaFileInvoiceDollarSolid } from "react-icons/lia";
 import * as yup from "yup";
@@ -306,6 +310,30 @@ export default function ProjectRegisterView({
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
   const [ActionLoading, setActionLoading] = useState(false);
+  const [ntpStatus, setNtpStatus] = useState<"syncing" | "synced" | "local">("syncing");
+
+  const syncNTP = async (setField?: (date: string) => void) => {
+    setNtpStatus("syncing");
+    const toDateStr = (d: Date) => d.toISOString().split("T")[0];
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+      const res = await fetch(`http://${TARGET_NTP_IP}:${NTP_PORT}/`, {
+        method: "HEAD",
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+      const serverDateStr = res.headers.get("Date");
+      const date = serverDateStr ? new Date(serverDateStr) : new Date();
+      const dateStr = toDateStr(date);
+      setField ? setField(dateStr) : formik.setFieldValue("projectRegisterDate", dateStr);
+      setNtpStatus("synced");
+    } catch {
+      const dateStr = toDateStr(new Date());
+      setField ? setField(dateStr) : formik.setFieldValue("projectRegisterDate", dateStr);
+      setNtpStatus("local");
+    }
+  };
   const [ProjectNoMode, setProjectNoMode] = useState<"auto" | "manual">("auto");
 
   useEffect(() => {
@@ -326,6 +354,9 @@ export default function ProjectRegisterView({
     }
   }, [DataAuth]);
   // End SetUp auth data on current page
+
+  // Auto-sync NTP on mount
+  useEffect(() => { syncNTP(); }, []);
 
   // Services
   const GetUserIDServices = async (
@@ -3754,15 +3785,60 @@ export default function ProjectRegisterView({
                             <FormLabel h={"full"} mt={2}>
                               Tanggal Register Project
                             </FormLabel>
-                            <Stack spacing={0} h={"full"}>
+                            <Stack spacing={1} h={"full"}>
                               <Input
                                 id="projectRegisterDate"
                                 name="projectRegisterDate"
                                 type="date"
-                                onChange={formik.handleChange}
                                 value={formik.values.projectRegisterDate}
-                              // isDisabled={ActionLoading}
+                                isDisabled
+                                onChange={() => {}}
+                                bg={ntpStatus === "synced" ? "green.50" : ntpStatus === "local" ? "yellow.50" : "gray.50"}
+                                _disabled={{ opacity: 1, cursor: "not-allowed" }}
                               />
+                              {/* NTP Sync Row */}
+                              <HStack spacing={2} pt={1}>
+                                <Tooltip
+                                  label={ntpStatus === "synced"
+                                    ? `Synced from NTP Server (${TARGET_NTP_IP}:${NTP_PORT})`
+                                    : ntpStatus === "local"
+                                    ? "NTP Server unreachable — using local device time"
+                                    : "Syncing with NTP Server..."}
+                                  placement="bottom"
+                                  hasArrow
+                                >
+                                  <Button
+                                    size="xs"
+                                    leftIcon={ntpStatus === "syncing" ? <Spinner size="xs" /> : <Icon as={FiRefreshCw} />}
+                                    colorScheme={ntpStatus === "synced" ? "green" : ntpStatus === "local" ? "yellow" : "gray"}
+                                    variant="outline"
+                                    rounded="lg"
+                                    onClick={() => syncNTP()}
+                                    isLoading={ntpStatus === "syncing"}
+                                    loadingText="Syncing..."
+                                  >
+                                    Sync NTP
+                                  </Button>
+                                </Tooltip>
+                                <Badge
+                                  colorScheme={ntpStatus === "synced" ? "green" : ntpStatus === "local" ? "yellow" : "gray"}
+                                  variant="subtle"
+                                  rounded="full"
+                                  px={2}
+                                  fontSize="2xs"
+                                >
+                                  <HStack spacing={1}>
+                                    <Icon as={ntpStatus === "synced" ? FiCheckCircle : ntpStatus === "local" ? FiWifiOff : FiRefreshCw} boxSize={3} />
+                                    <Text>
+                                      {ntpStatus === "synced"
+                                        ? `NTP Server (${TARGET_NTP_IP})`
+                                        : ntpStatus === "local"
+                                        ? "Local Device Time"
+                                        : "Syncing..."}
+                                    </Text>
+                                  </HStack>
+                                </Badge>
+                              </HStack>
                               <FormErrorMessage>
                                 {formik.errors.projectRegisterDate}
                               </FormErrorMessage>
