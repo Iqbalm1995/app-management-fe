@@ -65,7 +65,6 @@ import useRequirements, {
   RequirementsInsertPayload,
   RequirementsResponse,
 } from "@/app/services/useRequirements";
-import useReports from "@/app/services/useReports";
 import useUsers, { UsersResponse } from "@/app/services/useUsers";
 import {
   addParamFilter,
@@ -261,8 +260,7 @@ export default function BRDRFCView() {
   const [canApprove, setCanApprove] = useState<boolean>(false);
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
-  const { List, GetDetailById, InsertReq, StartReview } = useRequirements();
-  const { GetMyPerformanceRequirements } = useReports();
+  const { List, GetDetailById, InsertReq, StartReview, ListMyAssigned } = useRequirements();
   const { ListConstantData } = useConstants();
   const { List: ListUsers } = useUsers();
   const { List: ListOrganization } = useOrganization();
@@ -1262,7 +1260,7 @@ export default function BRDRFCView() {
       setIsLoadingProcess(true);
       const GetDataList = async () => {
         const requestData = viewMode === "MY" && DataAuth?.userId
-          ? await GetMyPerformanceRequirements(DataAuth.userId, PayloadList, tokenData)
+          ? await ListMyAssigned(PayloadList, tokenData)
           : await List(PayloadList, tokenData);
         const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
 

@@ -581,6 +581,10 @@ interface useRequirements {
     payload: PaggingListPayload,
     token: string
   ) => Promise<ApiGenericResponse<RequirementsResponse[] | null> | null>;
+  ListMyAssigned: (
+    payload: PaggingListPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<RequirementsResponse[] | null> | null>;
   ListUnregistProject: (
     payload: PaggingListPayload,
     token: string
@@ -711,6 +715,32 @@ const useRequirements = (): useRequirements => {
           error: null,
         };
       }
+    }
+  };
+
+  const ListMyAssigned = async (
+    payload: PaggingListPayload,
+    token: string
+  ): Promise<ApiGenericResponse<RequirementsResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    try {
+      const response = await axiosInstance.post<ApiGenericResponse<RequirementsResponse[]>>(
+        `${UrlEndpoint}/v1/Requirement/my-assigned`,
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || "An error occurred.");
+        return handleAxiosError(err);
+      }
+      setError("An unknown error occurred. Please try again.");
+      return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error connect to api", error: null };
     }
   };
 
@@ -1577,6 +1607,7 @@ const useRequirements = (): useRequirements => {
 
   return {
     List,
+    ListMyAssigned,
     ListUnregistProject,
     GetDetailById,
     InsertReq,
