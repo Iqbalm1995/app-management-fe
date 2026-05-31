@@ -396,10 +396,11 @@ export default function DashboardPortfolioPage() {
       // Compute actual total from ALL divisions before slicing
       const allUniqueDivisions = [...uniqueDivisions];
       const latestMonthPeriod = Math.max(...apiData.map((item) => item.monthPeriod));
+      const divisionCount = allUniqueDivisions.length || 1;
       const actualTotal = apiData
         .filter((item) => item.monthPeriod === latestMonthPeriod)
         .reduce((sum, item) => sum + item.projectCount, 0);
-      setDivisionTotalProjects(actualTotal);
+      setDivisionTotalProjects(Math.round(actualTotal / divisionCount));
 
       // Randomize division order
       uniqueDivisions = uniqueDivisions.sort(() => Math.random() - 0.5);
@@ -1704,10 +1705,11 @@ export default function DashboardPortfolioPage() {
     yaxis: {
       labels: {
         style: {
-          fontSize: "12px",
+          fontSize: "11px",
           fontWeight: 500,
           colors: ["#4A5568"],
         },
+        maxWidth: 280,
       },
     },
     grid: {
@@ -1761,10 +1763,18 @@ export default function DashboardPortfolioPage() {
 
   const divisionChartSeries = getDivisionChartSeries();
   const divisionCategories = [
-    ...new Set(
-      divisionData.map((item) => shortenDivisionName(item.divisionName))
-    ),
-  ];
+    ...new Set(divisionData.map((item) => item.divisionName)),
+  ].map((name) => {
+    const words = name.split(" ");
+    const lines: string[] = [];
+    let current = "";
+    words.forEach(w => {
+      if ((current + " " + w).trim().length > 22 && current) { lines.push(current.trim()); current = w; }
+      else { current = (current + " " + w).trim(); }
+    });
+    if (current) lines.push(current);
+    return lines;
+  });
   const divisionFullNames = [
     ...new Set(divisionData.map((item) => item.divisionName)),
   ];
@@ -1926,6 +1936,7 @@ export default function DashboardPortfolioPage() {
         distributed: true,
         horizontal: true,
         columnWidth: "60%",
+        barHeight: "60%",
       },
     },
     dataLabels: {
@@ -1934,13 +1945,27 @@ export default function DashboardPortfolioPage() {
     },
     xaxis: {
       title: { text: "Project Count" },
-      categories: projectAcquisitionsData.map(
-        (item) => item.projectAcquisitionName
-      ),
+      categories: projectAcquisitionsData.map((item) => {
+        const name = item.projectAcquisitionName || "Unknown";
+        const words = name.split(" ");
+        const lines: string[] = [];
+        let current = "";
+        words.forEach(w => {
+          if ((current + " " + w).trim().length > 22 && current) {
+            lines.push(current.trim());
+            current = w;
+          } else {
+            current = (current + " " + w).trim();
+          }
+        });
+        if (current) lines.push(current);
+        return lines;
+      }),
     },
     yaxis: {
       labels: {
-        style: { fontSize: "12px" },
+        style: { fontSize: "11px" },
+        maxWidth: 280,
       },
     },
     legend: { show: false },
@@ -1972,6 +1997,7 @@ export default function DashboardPortfolioPage() {
         distributed: true,
         horizontal: true,
         columnWidth: "60%",
+        barHeight: "60%",
       },
     },
     dataLabels: {
@@ -1980,13 +2006,28 @@ export default function DashboardPortfolioPage() {
     },
     xaxis: {
       title: { text: "Project Count" },
-      categories: projectByGroupManageData.map((item) =>
-        formatGroupName(item.projectGroupNameManage)
-      ),
+      categories: projectByGroupManageData.map((item) => {
+        const name = item.projectGroupNameManage || "Unknown";
+        // Split into chunks of ~20 chars at word boundaries for multi-line
+        const words = name.split(" ");
+        const lines: string[] = [];
+        let current = "";
+        words.forEach(w => {
+          if ((current + " " + w).trim().length > 22 && current) {
+            lines.push(current.trim());
+            current = w;
+          } else {
+            current = (current + " " + w).trim();
+          }
+        });
+        if (current) lines.push(current);
+        return lines;
+      }),
     },
     yaxis: {
       labels: {
-        style: { fontSize: "12px" },
+        style: { fontSize: "11px" },
+        maxWidth: 280,
       },
     },
     legend: { show: false },
@@ -2763,6 +2804,7 @@ export default function DashboardPortfolioPage() {
                               <StatNumber color="blue.600" fontSize="lg">
                                 {divisionTotalProjects}
                               </StatNumber>
+                              <StatHelpText fontSize="2xs">avg/division</StatHelpText>
                             </Stat>
                           </HStack>
                         </Box>
@@ -3150,7 +3192,7 @@ export default function DashboardPortfolioPage() {
                             options={projectAcquisitionsChartOptions}
                             series={projectAcquisitionsChartSeries}
                             type="bar"
-                            height={400}
+                            height={Math.max(400, projectAcquisitionsData.length * 65)}
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
@@ -3252,7 +3294,7 @@ export default function DashboardPortfolioPage() {
                             options={projectByGroupManageChartOptions}
                             series={projectByGroupManageChartSeries}
                             type="bar"
-                            height={400}
+                            height={Math.max(400, projectByGroupManageData.length * 65)}
                           />
                           <HStack justify="center" mt={4} spacing={6}>
                             <Stat textAlign="center" size="sm">
@@ -4557,12 +4599,18 @@ export default function DashboardPortfolioPage() {
                         xaxis: {
                           ...divisionChartOptions.xaxis,
                           categories: [
-                            ...new Set(
-                              divisionModalData.map((item) =>
-                                shortenDivisionName(item.divisionName)
-                              )
-                            ),
-                          ],
+                            ...new Set(divisionModalData.map((item) => item.divisionName)),
+                          ].map((name) => {
+                            const words = name.split(" ");
+                            const lines: string[] = [];
+                            let current = "";
+                            words.forEach(w => {
+                              if ((current + " " + w).trim().length > 22 && current) { lines.push(current.trim()); current = w; }
+                              else { current = (current + " " + w).trim(); }
+                            });
+                            if (current) lines.push(current);
+                            return lines;
+                          }),
                         },
                         tooltip: {
                           shared: false,
@@ -4596,16 +4644,10 @@ export default function DashboardPortfolioPage() {
                         ({ monthName }) => ({
                           name: monthName || "",
                           data: [
-                            ...new Set(
-                              divisionModalData.map((item) =>
-                                shortenDivisionName(item.divisionName)
-                              )
-                            ),
+                            ...new Set(divisionModalData.map((item) => item.divisionName)),
                           ].map((division) => {
                             const divisionItem = divisionModalData.find(
-                              (item) =>
-                                shortenDivisionName(item.divisionName) ===
-                                  division && item.monthName === monthName
+                              (item) => item.divisionName === division && item.monthName === monthName
                             );
                             return divisionItem?.projectCount || 0;
                           }),
@@ -5318,21 +5360,23 @@ export default function DashboardPortfolioPage() {
                         ...projectAcquisitionsChartOptions,
                         xaxis: {
                           ...projectAcquisitionsChartOptions.xaxis,
-                          categories: acquisitionsModalData.map(
-                            (item) => item.projectAcquisitionName
-                          ),
+                          categories: acquisitionsModalData.map((item) => {
+                            const name = item.projectAcquisitionName || "Unknown";
+                            const words = name.split(" ");
+                            const lines: string[] = [];
+                            let current = "";
+                            words.forEach(w => {
+                              if ((current + " " + w).trim().length > 22 && current) { lines.push(current.trim()); current = w; }
+                              else { current = (current + " " + w).trim(); }
+                            });
+                            if (current) lines.push(current);
+                            return lines;
+                          }),
                         },
                       }}
-                      series={[
-                        {
-                          name: "Projects",
-                          data: acquisitionsModalData.map(
-                            (item) => item.projectCount
-                          ),
-                        },
-                      ]}
+                      series={[{ name: "Projects", data: acquisitionsModalData.map((item) => item.projectCount) }]}
                       type="bar"
-                      height={Math.max(400, acquisitionsModalData.length * 30)}
+                      height={Math.max(400, acquisitionsModalData.length * 65)}
                     />
                   </Box>
                   <HStack justify="center" mt={4} spacing={6}>
@@ -5451,21 +5495,23 @@ export default function DashboardPortfolioPage() {
                         ...projectByGroupManageChartOptions,
                         xaxis: {
                           ...projectByGroupManageChartOptions.xaxis,
-                          categories: groupManageModalData.map((item) =>
-                            formatGroupName(item.projectGroupNameManage)
-                          ),
+                          categories: groupManageModalData.map((item) => {
+                            const name = item.projectGroupNameManage || "Unknown";
+                            const words = name.split(" ");
+                            const lines: string[] = [];
+                            let current = "";
+                            words.forEach(w => {
+                              if ((current + " " + w).trim().length > 22 && current) { lines.push(current.trim()); current = w; }
+                              else { current = (current + " " + w).trim(); }
+                            });
+                            if (current) lines.push(current);
+                            return lines;
+                          }),
                         },
                       }}
-                      series={[
-                        {
-                          name: "Projects",
-                          data: groupManageModalData.map(
-                            (item) => item.projectCount
-                          ),
-                        },
-                      ]}
+                      series={[{ name: "Projects", data: groupManageModalData.map((item) => item.projectCount) }]}
                       type="bar"
-                      height={Math.max(400, groupManageModalData.length * 30)}
+                      height={Math.max(400, groupManageModalData.length * 65)}
                     />
                   </Box>
                   <HStack justify="center" mt={4} spacing={6}>
