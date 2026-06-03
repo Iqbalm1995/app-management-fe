@@ -43,3 +43,9 @@ out/
 # Prevent Enhanced/Modern components from being restored
 src/app/(pages)/projects-manager/detail/Enhanced*.tsx
 src/app/(pages)/projects-manager/detail/Modern*.tsx
+.next.zip
+src.zip
+
+#Application Constans
+src/app/constants/applicationConstants.ts
+

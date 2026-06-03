@@ -349,7 +349,8 @@ const ProjectEditSection = ({ DataProject, canMake, onRefresh }: ProjectEditSect
               onClick={() => setIsEditing(!isEditing)}
               variant={isEditing ? "outline" : "solid"}
               rounded="full"
-              isDisabled={isSaving || !canMake}
+              // isDisabled={isSaving || !canMake}
+              isDisabled={true}
             >
               {isEditing ? "Cancel" : "Edit Project"}
             </Button>
