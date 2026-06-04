@@ -465,6 +465,16 @@ export const LinkItems: LinkItemProps[] = [
         menuID: "1",
         children: [],
       },
+      {
+        name: "Dashboard Realtime",
+        icon: BiSolidReport,
+        iconName: "BiSolidReport",
+        link: "/reports/dashboard-portfolio-real-time",
+        role: ["admin"],
+        isPro: false,
+        menuID: "1",
+        children: [],
+      },
       // {
       //   name: "Requirement Portfolio",
       //   icon: BiSolidReport,

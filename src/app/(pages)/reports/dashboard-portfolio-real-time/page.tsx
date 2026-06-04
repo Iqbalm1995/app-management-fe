@@ -53,6 +53,7 @@ import {
 } from "@/app/helper/MasterHelper";
 import useSnapshotServices, {
   DashboardFilterRequest,
+  RealtimeDashboardFilterRequest,
   ProjectSummaryDashboardResponse,
   ProjectQuarterlyDashboardResponse,
   DivisionOwnerQuartileDashboardResponse,
@@ -80,7 +81,7 @@ import { SearchIcon } from "@chakra-ui/icons";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
-export default function DashboardPortfolioPage() {
+export default function DashboardPortfolioRealTimePage() {
   const { colorMode } = useColorMode();
   const [selectedYear, setSelectedYear] = useState<string>(
     new Date().getFullYear().toString(),
@@ -231,6 +232,14 @@ export default function DashboardPortfolioPage() {
     getRequirementSummaryDashboard,
     getRequirementDivisionSenderDashboard,
     getRequirementMemoSummaryDashboard,
+    getRealtimeProjectSummary,
+    getRealtimeProjectCharacteristics,
+    getRealtimeProjectType,
+    getRealtimeProcurementWorkProgram,
+    getRealtimeProjectAcquisitions,
+    getRealtimeProjectByGroupManage,
+    getRealtimeDevStaffProjectClosed,
+    getRealtimeDevStaffProjectActive,
     isLoading,
     error,
   } = useSnapshotServices();
@@ -245,8 +254,8 @@ export default function DashboardPortfolioPage() {
   }, []);
 
   const headerProps: HeaderContentProps = {
-    titleName: "Dashboard Portfolio",
-    breadCrumb: ["Home", "Reports", "Dashboard Portfolio"],
+    titleName: "Dashboard Portfolio Realtime",
+    breadCrumb: ["Home", "Reports", "Dashboard Portfolio Realtime"],
   };
 
   const currentYear = new Date().getFullYear();
@@ -337,46 +346,8 @@ export default function DashboardPortfolioPage() {
     };
   };
 
-  // Load quarterly data from RPT_PROJECT_QUARTAL table
-  const loadQuarterlyData = async () => {
-    if (!tokenData) return;
-
-    const dateRange = convertQuarterToDateRange(
-      parseInt(selectedYear),
-      `Q${selectedQuarter}`,
-    );
-    const filterPayload: DashboardFilterRequest = {
-      startDate: dateRange.startDate,
-      endDate: dateRange.endDate,
-    };
-
-    try {
-      const response = await getProjectQuarterlyDashboard(
-        filterPayload,
-        tokenData,
-      );
-      const apiData = response?.data || [];
-
-      // Always show 3 months for the selected quarter
-      const quarterMonths = getQuarterMonths(selectedQuarter);
-      const completeData = quarterMonths.map(({ monthPeriod, monthName }) => {
-        const existingData = apiData.find(
-          (item) => item.monthPeriod === monthPeriod,
-        );
-        return {
-          monthPeriod,
-          monthName,
-          projectCount: existingData?.projectCount || 0,
-          yearPeriod: parseInt(selectedYear),
-          quartalPeriod: parseInt(selectedQuarter),
-        };
-      });
-
-      setQuarterlyData(completeData);
-    } catch (err) {
-      console.error("Failed to load quarterly data:", err);
-    }
-  };
+  // Not used in realtime page
+  const loadQuarterlyData = async () => { return; };
 
   // Load division owner quartile data
   const loadDivisionData = async () => {
@@ -490,10 +461,8 @@ export default function DashboardPortfolioPage() {
     };
 
     try {
-      const response = await getProjectCharacteristicsDashboard(
-        filterPayload,
-        tokenData,
-      );
+      const rti: RealtimeDashboardFilterRequest = {};
+      const response = await getRealtimeProjectCharacteristics(rti, tokenData);
       const apiData = response?.data || [];
 
       // Compute actual total from ALL characteristics before slicing
@@ -528,7 +497,8 @@ export default function DashboardPortfolioPage() {
     };
 
     try {
-      const response = await getProjectTypeDashboard(filterPayload, tokenData);
+      const rt2: RealtimeDashboardFilterRequest = {};
+      const response = await getRealtimeProjectType(rt2, tokenData);
       const apiData = response?.data || [];
 
       setProjectTypeData(apiData);
@@ -551,10 +521,8 @@ export default function DashboardPortfolioPage() {
     };
 
     try {
-      const response = await getProcurementWorkProgramDashboard(
-        filterPayload,
-        tokenData,
-      );
+      const rti: RealtimeDashboardFilterRequest = {};
+      const response = await getRealtimeProcurementWorkProgram(rti, tokenData);
       const apiData = response?.data || [];
 
       setProcurementWorkProgramData(apiData);
@@ -577,10 +545,8 @@ export default function DashboardPortfolioPage() {
     };
 
     try {
-      const response = await getProjectAcquisitionsDashboard(
-        filterPayload,
-        tokenData,
-      );
+      const rti: RealtimeDashboardFilterRequest = {};
+      const response = await getRealtimeProjectAcquisitions(rti, tokenData);
       const apiData = response?.data || [];
 
       // Compute actual total from ALL acquisitions before slicing
@@ -641,10 +607,8 @@ export default function DashboardPortfolioPage() {
     };
 
     try {
-      const response = await getProjectByGroupManageDashboard(
-        filterPayload,
-        tokenData,
-      );
+      const rti: RealtimeDashboardFilterRequest = {};
+      const response = await getRealtimeProjectByGroupManage(rti, tokenData);
       const apiData = response?.data || [];
 
       // Randomize and limit to 5 groups
@@ -662,20 +626,9 @@ export default function DashboardPortfolioPage() {
   const loadProjectSummaryDevData = async () => {
     if (!tokenData) return;
 
-    const dateRange = convertQuarterToDateRange(
-      parseInt(selectedYear),
-      `Q${selectedQuarter}`,
-    );
-    const filterPayload: DashboardFilterRequest = {
-      startDate: dateRange.startDate,
-      endDate: dateRange.endDate,
-    };
-
     try {
-      const response = await getProjectSummaryDashboard(
-        filterPayload,
-        tokenData,
-      );
+      const rtFilter: RealtimeDashboardFilterRequest = {};
+      const response = await getRealtimeProjectSummary(rtFilter, tokenData);
       const apiData = response?.data || [];
 
       setProjectSummaryDevData(apiData);
@@ -698,10 +651,8 @@ export default function DashboardPortfolioPage() {
     };
 
     try {
-      const response = await getDevStaffProjectClosedDashboard(
-        filterPayload,
-        tokenData,
-      );
+      const rti: RealtimeDashboardFilterRequest = {};
+      const response = await getRealtimeDevStaffProjectClosed(rti, tokenData);
       const apiData = response?.data || [];
 
       // Group by users first, then randomize users and limit to 5
@@ -749,10 +700,8 @@ export default function DashboardPortfolioPage() {
     };
 
     try {
-      const response = await getDevStaffProjectClosedDashboard(
-        filterPayload,
-        tokenData,
-      );
+      const rti: RealtimeDashboardFilterRequest = {};
+      const response = await getRealtimeDevStaffProjectClosed(rti, tokenData);
       const apiData = response?.data || [];
 
       setDevStaffModalData(apiData);
@@ -776,10 +725,8 @@ export default function DashboardPortfolioPage() {
     };
 
     try {
-      const response = await getDevStaffProjectActiveDashboard(
-        filterPayload,
-        tokenData,
-      );
+      const rti: RealtimeDashboardFilterRequest = {};
+      const response = await getRealtimeDevStaffProjectActive(rti, tokenData);
       const apiData = response?.data || [];
 
       // Group by users first, then randomize users and limit to 5
@@ -826,10 +773,8 @@ export default function DashboardPortfolioPage() {
     };
 
     try {
-      const response = await getDevStaffProjectActiveDashboard(
-        filterPayload,
-        tokenData,
-      );
+      const rti: RealtimeDashboardFilterRequest = {};
+      const response = await getRealtimeDevStaffProjectActive(rti, tokenData);
       const apiData = response?.data || [];
 
       setDevStaffActiveModalData(apiData);
@@ -933,10 +878,8 @@ export default function DashboardPortfolioPage() {
     };
 
     try {
-      const response = await getProjectCharacteristicsDashboard(
-        filterPayload,
-        tokenData,
-      );
+      const rti: RealtimeDashboardFilterRequest = {};
+      const response = await getRealtimeProjectCharacteristics(rti, tokenData);
       const apiData = response?.data || [];
 
       setCharacteristicsModalData(apiData);
@@ -960,7 +903,8 @@ export default function DashboardPortfolioPage() {
     };
 
     try {
-      const response = await getProjectTypeDashboard(filterPayload, tokenData);
+      const rti: RealtimeDashboardFilterRequest = {};
+      const response = await getRealtimeProjectType(rti, tokenData);
       const apiData = response?.data || [];
 
       setProjectTypeModalData(apiData);
@@ -984,10 +928,8 @@ export default function DashboardPortfolioPage() {
     };
 
     try {
-      const response = await getProcurementWorkProgramDashboard(
-        filterPayload,
-        tokenData,
-      );
+      const rti: RealtimeDashboardFilterRequest = {};
+      const response = await getRealtimeProcurementWorkProgram(rti, tokenData);
       const apiData = response?.data || [];
 
       setProcurementModalData(apiData);
@@ -1011,10 +953,8 @@ export default function DashboardPortfolioPage() {
     };
 
     try {
-      const response = await getProjectAcquisitionsDashboard(
-        filterPayload,
-        tokenData,
-      );
+      const rti: RealtimeDashboardFilterRequest = {};
+      const response = await getRealtimeProjectAcquisitions(rti, tokenData);
       const apiData = response?.data || [];
 
       setAcquisitionsModalData(apiData);
@@ -1038,10 +978,8 @@ export default function DashboardPortfolioPage() {
     };
 
     try {
-      const response = await getProjectByGroupManageDashboard(
-        filterPayload,
-        tokenData,
-      );
+      const rti: RealtimeDashboardFilterRequest = {};
+      const response = await getRealtimeProjectByGroupManage(rti, tokenData);
       const apiData = response?.data || [];
 
       setGroupManageModalData(apiData);
@@ -1065,10 +1003,8 @@ export default function DashboardPortfolioPage() {
     };
 
     try {
-      const response = await getProjectSummaryDashboard(
-        filterPayload,
-        tokenData,
-      );
+      const rti: RealtimeDashboardFilterRequest = {};
+      const response = await getRealtimeProjectSummary(rti, tokenData);
       const apiData = response?.data || [];
 
       setProjectSummaryDevModalData(apiData);
@@ -1427,10 +1363,8 @@ export default function DashboardPortfolioPage() {
     };
 
     try {
-      const response = await getProjectSummaryDashboard(
-        filterPayload,
-        tokenData,
-      );
+      const rti: RealtimeDashboardFilterRequest = {};
+      const response = await getRealtimeProjectSummary(rti, tokenData);
       if (response?.data) {
         setChartData(response.data);
         // Extract last updated from first item (all items have same timestamp)
@@ -2424,13 +2358,6 @@ export default function DashboardPortfolioPage() {
                     <Icon as={FiActivity} mr={2} />
                     Special
                   </Tab>
-                  <Tab
-                    rounded={radiusStyle}
-                    _selected={{ bg: "blue.500", color: "white" }}
-                  >
-                    <Icon as={FiTrendingUp} mr={2} />
-                    Requirement
-                  </Tab>
                 </TabList>
 
                 <HStack
@@ -2440,67 +2367,16 @@ export default function DashboardPortfolioPage() {
                   rounded={radiusStyle}
                 >
                   <VStack spacing={1} align="start">
-                    <Text
-                      fontSize="xs"
-                      color={useColorModeValue("gray.600", "gray.300")}
-                      fontWeight="medium"
-                    >
-                      Year
+                    <Text fontSize="xs" color={useColorModeValue("gray.600", "gray.300")} fontWeight="medium">
+                      Last Updated
                     </Text>
-                    <Select
-                      value={selectedYear}
-                      onChange={(e) => setSelectedYear(e.target.value)}
-                      size="sm"
-                      bg={colorMode === "light" ? "gray.50" : "gray.800"}
-                      rounded={radiusStyle}
-                      border="1px solid"
-                      borderColor="gray.200"
-                      _focus={{
-                        borderColor: "blue.400",
-                        boxShadow: "0 0 0 1px blue.400",
-                      }}
-                    >
-                      {years.map((year) => (
-                        <option key={year} value={year.toString()}>
-                          {year}
-                        </option>
-                      ))}
-                    </Select>
+                    <Text fontSize="sm" fontWeight="semibold" color={useColorModeValue("gray.700", "gray.200")}>
+                      {lastUpdated ? new Date(lastUpdated).toLocaleString("id-ID") : "Never synced"}
+                    </Text>
                   </VStack>
 
                   <VStack spacing={1} align="start">
-                    <Text
-                      fontSize="xs"
-                      color={useColorModeValue("gray.600", "gray.300")}
-                      fontWeight="medium"
-                    >
-                      Quarter
-                    </Text>
-                    <Select
-                      value={selectedQuarter}
-                      onChange={(e) => setSelectedQuarter(e.target.value)}
-                      size="sm"
-                      bg={colorMode === "light" ? "gray.50" : "gray.800"}
-                      rounded={radiusStyle}
-                      border="1px solid"
-                      borderColor="gray.200"
-                      _focus={{
-                        borderColor: "blue.400",
-                        boxShadow: "0 0 0 1px blue.400",
-                      }}
-                    >
-                      {quarters.map((quarter) => (
-                        <option key={quarter.value} value={quarter.value}>
-                          {quarter.label}
-                        </option>
-                      ))}
-                    </Select>
-                  </VStack>
-
-                  <VStack spacing={1} align="start">
-                    <Text fontSize="xs" color="transparent">
-                      Action
-                    </Text>
+                    <Text fontSize="xs" color="transparent">Action</Text>
                     <Button
                       colorScheme="blue"
                       onClick={handleFilter}
@@ -2512,26 +2388,7 @@ export default function DashboardPortfolioPage() {
                       _hover={{ transform: "translateY(-1px)", shadow: "md" }}
                       transition="all 0.2s"
                     >
-                      Filter
-                    </Button>
-                  </VStack>
-
-                  <VStack spacing={1} align="start">
-                    <Text fontSize="xs" color="transparent">
-                      Update
-                    </Text>
-                    <Button
-                      colorScheme="orange"
-                      onClick={() => setIsUpdateConfirmOpen(true)}
-                      isLoading={isUpdating}
-                      loadingText="Updating..."
-                      size="sm"
-                      rounded={radiusStyle}
-                      leftIcon={<FiActivity />}
-                      _hover={{ transform: "translateY(-1px)", shadow: "md" }}
-                      transition="all 0.2s"
-                    >
-                      Update Report
+                      Refresh
                     </Button>
                   </VStack>
                 </HStack>
@@ -2657,238 +2514,8 @@ export default function DashboardPortfolioPage() {
                   </Card>
                 </GridItem>
 
-                {/* Project Quarterly - 4 cols */}
-                <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
-                  <Card
-                    rounded={radiusStyle}
-                    shadow="lg"
-                    h="full"
-                    bg={colorMode === "light" ? "gray.50" : "gray.800"}
-                  >
-                    <CardHeader
-                      bg="green.500"
-                      color="white"
-                      roundedTop={radiusStyle}
-                    >
-                      <Flex justify="space-between" align="center">
-                        <HStack>
-                          <Icon as={FiActivity} />
-                          <Text fontSize="md" fontWeight="bold">
-                            Project Quarterly
-                          </Text>
-                        </HStack>
-                        <HStack spacing={2}>
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            color="white"
-                            onClick={loadQuarterlyData}
-                            isLoading={isLoading}
-                            _hover={{ bg: "whiteAlpha.200" }}
-                          >
-                            <FiRefreshCw />
-                          </Button>
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            color="white"
-                            onClick={loadAllProjectQuarterlyData}
-                            _hover={{ bg: "whiteAlpha.200" }}
-                          >
-                            <SearchIcon />
-                          </Button>
-                        </HStack>
-                      </Flex>
-                    </CardHeader>
-                    <CardBody p={4}>
-                      {quarterlyData.length > 0 ? (
-                        <Box>
-                          <Chart
-                            options={quarterlyChartOptions}
-                            series={quarterlyChartSeries}
-                            type="bar"
-                            height={300}
-                          />
-                          <HStack justify="center" mt={4} spacing={6}>
-                            <Stat textAlign="center" size="sm">
-                              <StatLabel
-                                color={useColorModeValue(
-                                  "gray.600",
-                                  "gray.300",
-                                )}
-                              >
-                                Q{selectedQuarter} Total
-                              </StatLabel>
-                              <StatNumber color="green.600" fontSize="lg">
-                                {quarterlyData.reduce(
-                                  (sum, item) => sum + item.projectCount,
-                                  0,
-                                )}
-                              </StatNumber>
-                            </Stat>
-                            <Stat textAlign="center" size="sm">
-                              <StatLabel
-                                color={useColorModeValue(
-                                  "gray.600",
-                                  "gray.300",
-                                )}
-                              >
-                                Avg per Month
-                              </StatLabel>
-                              <StatNumber color="blue.600" fontSize="lg">
-                                {quarterlyData.length > 0
-                                  ? Math.round(
-                                      quarterlyData.reduce(
-                                        (sum, item) => sum + item.projectCount,
-                                        0,
-                                      ) / quarterlyData.length,
-                                    )
-                                  : 0}
-                              </StatNumber>
-                            </Stat>
-                          </HStack>
-                        </Box>
-                      ) : (
-                        <Flex
-                          justify="center"
-                          align="center"
-                          height="300px"
-                          direction="column"
-                        >
-                          <Icon
-                            as={FiActivity}
-                            size="48px"
-                            color="gray.300"
-                            mb={4}
-                          />
-                          <Text
-                            color="gray.500"
-                            fontSize="sm"
-                            textAlign="center"
-                          >
-                            {isLoading
-                              ? "Loading..."
-                              : "No quarterly data available"}
-                          </Text>
-                        </Flex>
-                      )}
-                    </CardBody>
-                  </Card>
-                </GridItem>
-
-                {/* Project Division Owner Quartile - 4 cols */}
-                <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
-                  <Card
-                    rounded={radiusStyle}
-                    shadow="lg"
-                    h="full"
-                    bg={colorMode === "light" ? "gray.50" : "gray.800"}
-                  >
-                    <CardHeader
-                      bg="purple.500"
-                      color="white"
-                      roundedTop={radiusStyle}
-                    >
-                      <Flex justify="space-between" align="center">
-                        <HStack>
-                          <Icon as={FiTrendingUp} />
-                          <Text fontSize="md" fontWeight="bold">
-                            Division Owner Quartile
-                          </Text>
-                        </HStack>
-                        <HStack spacing={2}>
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            color="white"
-                            onClick={loadDivisionData}
-                            isLoading={isLoading}
-                            _hover={{ bg: "whiteAlpha.200" }}
-                          >
-                            <FiRefreshCw />
-                          </Button>
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            color="white"
-                            onClick={loadAllDivisionData}
-                            _hover={{ bg: "whiteAlpha.200" }}
-                          >
-                            <SearchIcon />
-                          </Button>
-                        </HStack>
-                      </Flex>
-                    </CardHeader>
-                    <CardBody p={4}>
-                      {divisionData.length > 0 ? (
-                        <Box>
-                          <Chart
-                            options={divisionChartOptionsWithCategories}
-                            series={divisionChartSeries}
-                            type="bar"
-                            height={400}
-                          />
-                          <HStack justify="center" mt={4} spacing={6}>
-                            <Stat textAlign="center" size="sm">
-                              <StatLabel
-                                color={useColorModeValue(
-                                  "gray.600",
-                                  "gray.300",
-                                )}
-                              >
-                                Q{selectedQuarter} Divisions
-                              </StatLabel>
-                              <StatNumber color="purple.600" fontSize="lg">
-                                {divisionCategories.length}
-                              </StatNumber>
-                            </Stat>
-                            <Stat textAlign="center" size="sm">
-                              <StatLabel
-                                color={useColorModeValue(
-                                  "gray.600",
-                                  "gray.300",
-                                )}
-                              >
-                                Total Projects
-                              </StatLabel>
-                              <StatNumber color="blue.600" fontSize="lg">
-                                {divisionTotalProjects}
-                              </StatNumber>
-                              <StatHelpText fontSize="2xs">
-                                avg/division
-                              </StatHelpText>
-                            </Stat>
-                          </HStack>
-                        </Box>
-                      ) : (
-                        <Flex
-                          justify="center"
-                          align="center"
-                          height="400px"
-                          direction="column"
-                        >
-                          <Icon
-                            as={FiBarChart}
-                            size="48px"
-                            color="gray.300"
-                            mb={4}
-                          />
-                          <Text
-                            color="gray.500"
-                            fontSize="sm"
-                            textAlign="center"
-                          >
-                            No division data available for Q{selectedQuarter}{" "}
-                            {selectedYear}
-                          </Text>
-                        </Flex>
-                      )}
-                    </CardBody>
-                  </Card>
-                </GridItem>
-
                 {/* Project Characteristics - 6 cols */}
-                <GridItem colSpan={{ base: 12, md: 6 }}>
+                <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
                   <Card
                     rounded={radiusStyle}
                     shadow="lg"
@@ -2995,7 +2622,7 @@ export default function DashboardPortfolioPage() {
                 </GridItem>
 
                 {/* Project Type - 6 cols */}
-                <GridItem colSpan={{ base: 12, md: 6 }}>
+                <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
                   <Card
                     rounded={radiusStyle}
                     shadow="lg"
@@ -3105,7 +2732,7 @@ export default function DashboardPortfolioPage() {
                 </GridItem>
 
                 {/* Project Procurement Work Program Flag - 5 cols */}
-                <GridItem colSpan={{ base: 12, md: 6, lg: 5 }}>
+                <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
                   <Card
                     rounded={radiusStyle}
                     shadow="lg"
@@ -3215,7 +2842,7 @@ export default function DashboardPortfolioPage() {
                 </GridItem>
 
                 {/* Project Acquisitions - 7 cols */}
-                <GridItem colSpan={{ base: 12, md: 6, lg: 7 }}>
+                <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
                   <Card
                     rounded={radiusStyle}
                     shadow="lg"
@@ -3325,7 +2952,7 @@ export default function DashboardPortfolioPage() {
                 </GridItem>
 
                 {/* Project by Group Management - 12 cols */}
-                <GridItem colSpan={12}>
+                <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
                   <Card
                     rounded={radiusStyle}
                     shadow="lg"
@@ -3743,650 +3370,6 @@ export default function DashboardPortfolioPage() {
               </Grid>
             </TabPanel>
 
-            <TabPanel p={0}>
-              {/* Requirement Dashboard */}
-              <Grid
-                templateColumns="repeat(12, 1fr)"
-                gap={6}
-                autoRows="min-content"
-              >
-                {/* 1. Requirement Type (BRD vs RFC) - 4 cols */}
-                <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
-                  <Card
-                    rounded={radiusStyle}
-                    shadow="lg"
-                    bg={colorMode === "light" ? "gray.50" : "gray.800"}
-                    h="full"
-                  >
-                    <CardHeader
-                      bg="blue.500"
-                      color="white"
-                      roundedTop={radiusStyle}
-                    >
-                      <Flex justify="space-between" align="center">
-                        <HStack>
-                          <Icon as={FiTrendingUp} />
-                          <Text fontSize="md" fontWeight="bold">
-                            Requirement Type
-                          </Text>
-                        </HStack>
-                        <HStack spacing={2}>
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            color="white"
-                            onClick={loadRequirementTypeData}
-                            isLoading={isLoading}
-                            _hover={{ bg: "whiteAlpha.200" }}
-                          >
-                            <FiRefreshCw />
-                          </Button>
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            color="white"
-                            onClick={() => setIsRequirementTypeModalOpen(true)}
-                            _hover={{ bg: "whiteAlpha.200" }}
-                          >
-                            <SearchIcon />
-                          </Button>
-                        </HStack>
-                      </Flex>
-                    </CardHeader>
-                    <CardBody p={4}>
-                      {requirementTypeData.length > 0 ? (
-                        <Box
-                          cursor="pointer"
-                          onClick={() => setIsRequirementTypeModalOpen(true)}
-                        >
-                          <Chart
-                            options={{
-                              chart: { type: "pie" },
-                              labels: requirementTypeData.map(
-                                (item: any) => item.requirementType,
-                              ),
-                              colors: ["#3182CE", "#38A169"],
-                              legend: { position: "bottom" },
-                            }}
-                            series={requirementTypeData.map(
-                              (item: any) => item.requirementCount,
-                            )}
-                            type="pie"
-                            height={300}
-                          />
-                        </Box>
-                      ) : (
-                        <Flex justify="center" align="center" height="300px">
-                          <Text
-                            color={useColorModeValue("gray.500", "gray.400")}
-                          >
-                            No data available
-                          </Text>
-                        </Flex>
-                      )}
-                    </CardBody>
-                  </Card>
-                </GridItem>
-
-                {/* 2. BRD Status - 4 cols */}
-                <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
-                  <Card
-                    rounded={radiusStyle}
-                    shadow="lg"
-                    bg={colorMode === "light" ? "gray.50" : "gray.800"}
-                    h="full"
-                  >
-                    <CardHeader
-                      bg="cyan.500"
-                      color="white"
-                      roundedTop={radiusStyle}
-                    >
-                      <Flex justify="space-between" align="center">
-                        <HStack>
-                          <Icon as={FiBarChart} />
-                          <Text fontSize="md" fontWeight="bold">
-                            BRD Status
-                          </Text>
-                        </HStack>
-                        <HStack spacing={2}>
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            color="white"
-                            onClick={loadRequirementSummaryData}
-                            isLoading={isLoading}
-                            _hover={{ bg: "whiteAlpha.200" }}
-                          >
-                            <FiRefreshCw />
-                          </Button>
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            color="white"
-                            onClick={() =>
-                              setIsRequirementSummaryModalOpen(true)
-                            }
-                            _hover={{ bg: "whiteAlpha.200" }}
-                          >
-                            <SearchIcon />
-                          </Button>
-                        </HStack>
-                      </Flex>
-                    </CardHeader>
-                    <CardBody p={4}>
-                      {requirementSummaryData.filter(
-                        (item: any) => item.requirementType === "BRD",
-                      ).length > 0 ? (
-                        <Box
-                          cursor="pointer"
-                          onClick={() => setIsRequirementSummaryModalOpen(true)}
-                        >
-                          <Chart
-                            options={{
-                              chart: { type: "donut" },
-                              labels: requirementSummaryData
-                                .filter(
-                                  (item: any) => item.requirementType === "BRD",
-                                )
-                                .map((item: any) => item.requirementStatus),
-                              colors: [
-                                "#ED8936",
-                                "#38B2AC",
-                                "#3182CE",
-                                "#38A169",
-                                "#D69E2E",
-                                "#E53E3E",
-                              ],
-                              legend: { position: "bottom" },
-                            }}
-                            series={requirementSummaryData
-                              .filter(
-                                (item: any) => item.requirementType === "BRD",
-                              )
-                              .map((item: any) => item.requirementCount)}
-                            type="donut"
-                            height={300}
-                          />
-                        </Box>
-                      ) : (
-                        <Flex justify="center" align="center" height="300px">
-                          <Text
-                            color={useColorModeValue("gray.500", "gray.400")}
-                          >
-                            No BRD data available
-                          </Text>
-                        </Flex>
-                      )}
-                    </CardBody>
-                  </Card>
-                </GridItem>
-
-                {/* 3. RFC Status - 4 cols */}
-                <GridItem colSpan={{ base: 12, md: 6, lg: 4 }}>
-                  <Card
-                    rounded={radiusStyle}
-                    shadow="lg"
-                    bg={colorMode === "light" ? "gray.50" : "gray.800"}
-                    h="full"
-                  >
-                    <CardHeader
-                      bg="teal.500"
-                      color="white"
-                      roundedTop={radiusStyle}
-                    >
-                      <Flex justify="space-between" align="center">
-                        <HStack>
-                          <Icon as={FiBarChart} />
-                          <Text fontSize="md" fontWeight="bold">
-                            RFC Status
-                          </Text>
-                        </HStack>
-                        <HStack spacing={2}>
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            color="white"
-                            onClick={loadRequirementSummaryData}
-                            isLoading={isLoading}
-                            _hover={{ bg: "whiteAlpha.200" }}
-                          >
-                            <FiRefreshCw />
-                          </Button>
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            color="white"
-                            onClick={() =>
-                              setIsRequirementSummaryModalOpen(true)
-                            }
-                            _hover={{ bg: "whiteAlpha.200" }}
-                          >
-                            <SearchIcon />
-                          </Button>
-                        </HStack>
-                      </Flex>
-                    </CardHeader>
-                    <CardBody p={4}>
-                      {requirementSummaryData.filter(
-                        (item: any) => item.requirementType === "RFC",
-                      ).length > 0 ? (
-                        <Box
-                          cursor="pointer"
-                          onClick={() => setIsRequirementSummaryModalOpen(true)}
-                        >
-                          <Chart
-                            options={{
-                              chart: { type: "donut" },
-                              labels: requirementSummaryData
-                                .filter(
-                                  (item: any) => item.requirementType === "RFC",
-                                )
-                                .map((item: any) => item.requirementStatus),
-                              colors: [
-                                "#ED8936",
-                                "#38B2AC",
-                                "#3182CE",
-                                "#38A169",
-                                "#D69E2E",
-                                "#E53E3E",
-                              ],
-                              legend: { position: "bottom" },
-                            }}
-                            series={requirementSummaryData
-                              .filter(
-                                (item: any) => item.requirementType === "RFC",
-                              )
-                              .map((item: any) => item.requirementCount)}
-                            type="donut"
-                            height={300}
-                          />
-                        </Box>
-                      ) : (
-                        <Flex justify="center" align="center" height="300px">
-                          <Text
-                            color={useColorModeValue("gray.500", "gray.400")}
-                          >
-                            No RFC data available
-                          </Text>
-                        </Flex>
-                      )}
-                    </CardBody>
-                  </Card>
-                </GridItem>
-
-                {/* 4. BRD by Division - 6 cols */}
-                <GridItem colSpan={{ base: 12, md: 6 }}>
-                  <Card
-                    rounded={radiusStyle}
-                    shadow="lg"
-                    bg={colorMode === "light" ? "gray.50" : "gray.800"}
-                    h="full"
-                  >
-                    <CardHeader
-                      bg="purple.500"
-                      color="white"
-                      roundedTop={radiusStyle}
-                    >
-                      <Flex justify="space-between" align="center">
-                        <HStack>
-                          <Icon as={FiActivity} />
-                          <Text fontSize="md" fontWeight="bold">
-                            BRD by Division Sender
-                          </Text>
-                        </HStack>
-                        <HStack spacing={2}>
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            color="white"
-                            onClick={loadRequirementDivisionData}
-                            isLoading={isLoading}
-                            _hover={{ bg: "whiteAlpha.200" }}
-                          >
-                            <FiRefreshCw />
-                          </Button>
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            color="white"
-                            onClick={() =>
-                              setIsRequirementDivisionModalOpen(true)
-                            }
-                            _hover={{ bg: "whiteAlpha.200" }}
-                          >
-                            <SearchIcon />
-                          </Button>
-                        </HStack>
-                      </Flex>
-                    </CardHeader>
-                    <CardBody p={4}>
-                      {requirementDivisionData.filter(
-                        (item: any) => item.requirementType === "BRD",
-                      ).length > 0 ? (
-                        <Box
-                          cursor="pointer"
-                          onClick={() =>
-                            setIsRequirementDivisionModalOpen(true)
-                          }
-                        >
-                          <Chart
-                            options={{
-                              chart: { type: "bar" },
-                              plotOptions: {
-                                bar: { horizontal: true, distributed: true },
-                              },
-                              xaxis: {
-                                categories: requirementDivisionData
-                                  .filter(
-                                    (item: any) =>
-                                      item.requirementType === "BRD",
-                                  )
-                                  .slice(0, 10)
-                                  .map((item: any) => item.divisionName),
-                              },
-                              colors: ["#805AD5"],
-                              legend: { show: false },
-                            }}
-                            series={[
-                              {
-                                name: "BRD",
-                                data: requirementDivisionData
-                                  .filter(
-                                    (item: any) =>
-                                      item.requirementType === "BRD",
-                                  )
-                                  .slice(0, 10)
-                                  .map((item: any) => item.requirementCount),
-                              },
-                            ]}
-                            type="bar"
-                            height={400}
-                          />
-                        </Box>
-                      ) : (
-                        <Flex justify="center" align="center" height="400px">
-                          <Text
-                            color={useColorModeValue("gray.500", "gray.400")}
-                          >
-                            No BRD division data available
-                          </Text>
-                        </Flex>
-                      )}
-                    </CardBody>
-                  </Card>
-                </GridItem>
-
-                {/* 5. RFC by Division - 6 cols */}
-                <GridItem colSpan={{ base: 12, md: 6 }}>
-                  <Card
-                    rounded={radiusStyle}
-                    shadow="lg"
-                    bg={colorMode === "light" ? "gray.50" : "gray.800"}
-                    h="full"
-                  >
-                    <CardHeader
-                      bg="orange.500"
-                      color="white"
-                      roundedTop={radiusStyle}
-                    >
-                      <Flex justify="space-between" align="center">
-                        <HStack>
-                          <Icon as={FiActivity} />
-                          <Text fontSize="md" fontWeight="bold">
-                            RFC by Division Sender
-                          </Text>
-                        </HStack>
-                        <HStack spacing={2}>
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            color="white"
-                            onClick={loadRequirementDivisionData}
-                            isLoading={isLoading}
-                            _hover={{ bg: "whiteAlpha.200" }}
-                          >
-                            <FiRefreshCw />
-                          </Button>
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            color="white"
-                            onClick={() =>
-                              setIsRequirementDivisionModalOpen(true)
-                            }
-                            _hover={{ bg: "whiteAlpha.200" }}
-                          >
-                            <SearchIcon />
-                          </Button>
-                        </HStack>
-                      </Flex>
-                    </CardHeader>
-                    <CardBody p={4}>
-                      {requirementDivisionData.filter(
-                        (item: any) => item.requirementType === "RFC",
-                      ).length > 0 ? (
-                        <Box
-                          cursor="pointer"
-                          onClick={() =>
-                            setIsRequirementDivisionModalOpen(true)
-                          }
-                        >
-                          <Chart
-                            options={{
-                              chart: { type: "bar" },
-                              plotOptions: {
-                                bar: { horizontal: true, distributed: true },
-                              },
-                              xaxis: {
-                                categories: requirementDivisionData
-                                  .filter(
-                                    (item: any) =>
-                                      item.requirementType === "RFC",
-                                  )
-                                  .slice(0, 10)
-                                  .map((item: any) => item.divisionName),
-                              },
-                              colors: ["#ED8936"],
-                              legend: { show: false },
-                            }}
-                            series={[
-                              {
-                                name: "RFC",
-                                data: requirementDivisionData
-                                  .filter(
-                                    (item: any) =>
-                                      item.requirementType === "RFC",
-                                  )
-                                  .slice(0, 10)
-                                  .map((item: any) => item.requirementCount),
-                              },
-                            ]}
-                            type="bar"
-                            height={400}
-                          />
-                        </Box>
-                      ) : (
-                        <Flex justify="center" align="center" height="400px">
-                          <Text
-                            color={useColorModeValue("gray.500", "gray.400")}
-                          >
-                            No RFC division data available
-                          </Text>
-                        </Flex>
-                      )}
-                    </CardBody>
-                  </Card>
-                </GridItem>
-
-                {/* 6. With Memo - 6 cols */}
-                <GridItem colSpan={{ base: 12, md: 6 }}>
-                  <Card
-                    rounded={radiusStyle}
-                    shadow="lg"
-                    bg={colorMode === "light" ? "gray.50" : "gray.800"}
-                    h="full"
-                  >
-                    <CardHeader
-                      bg="green.500"
-                      color="white"
-                      roundedTop={radiusStyle}
-                    >
-                      <Flex justify="space-between" align="center">
-                        <HStack>
-                          <Icon as={FiTrendingUp} />
-                          <Text fontSize="md" fontWeight="bold">
-                            Requirements with Memo
-                          </Text>
-                        </HStack>
-                        <HStack spacing={2}>
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            color="white"
-                            onClick={loadRequirementMemoData}
-                            isLoading={isLoading}
-                            _hover={{ bg: "whiteAlpha.200" }}
-                          >
-                            <FiRefreshCw />
-                          </Button>
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            color="white"
-                            onClick={() => setIsRequirementMemoModalOpen(true)}
-                            _hover={{ bg: "whiteAlpha.200" }}
-                          >
-                            <SearchIcon />
-                          </Button>
-                        </HStack>
-                      </Flex>
-                    </CardHeader>
-                    <CardBody p={4}>
-                      {requirementMemoData.filter(
-                        (item: any) => item.isHaveMemo === "Y",
-                      ).length > 0 ? (
-                        <Box
-                          cursor="pointer"
-                          onClick={() => setIsRequirementMemoModalOpen(true)}
-                        >
-                          <Chart
-                            options={{
-                              chart: { type: "bar", stacked: true },
-                              xaxis: {
-                                categories: getMemoChartData("Y").categories,
-                              },
-                              colors: ["#3182CE", "#38A169"],
-                            }}
-                            series={[
-                              {
-                                name: "BRD",
-                                data: getMemoChartData("Y").brdData,
-                              },
-                              {
-                                name: "RFC",
-                                data: getMemoChartData("Y").rfcData,
-                              },
-                            ]}
-                            type="bar"
-                            height={300}
-                          />
-                        </Box>
-                      ) : (
-                        <Flex justify="center" align="center" height="300px">
-                          <Text
-                            color={useColorModeValue("gray.500", "gray.400")}
-                          >
-                            No memo data available
-                          </Text>
-                        </Flex>
-                      )}
-                    </CardBody>
-                  </Card>
-                </GridItem>
-
-                {/* 7. Without Memo - 6 cols */}
-                <GridItem colSpan={{ base: 12, md: 6 }}>
-                  <Card
-                    rounded={radiusStyle}
-                    shadow="lg"
-                    bg={colorMode === "light" ? "gray.50" : "gray.800"}
-                    h="full"
-                  >
-                    <CardHeader
-                      bg="red.500"
-                      color="white"
-                      roundedTop={radiusStyle}
-                    >
-                      <Flex justify="space-between" align="center">
-                        <HStack>
-                          <Icon as={FiTrendingUp} />
-                          <Text fontSize="md" fontWeight="bold">
-                            Requirements without Memo
-                          </Text>
-                        </HStack>
-                        <HStack spacing={2}>
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            color="white"
-                            onClick={loadRequirementMemoData}
-                            isLoading={isLoading}
-                            _hover={{ bg: "whiteAlpha.200" }}
-                          >
-                            <FiRefreshCw />
-                          </Button>
-                          <Button
-                            size="xs"
-                            variant="ghost"
-                            color="white"
-                            onClick={() => setIsRequirementMemoModalOpen(true)}
-                            _hover={{ bg: "whiteAlpha.200" }}
-                          >
-                            <SearchIcon />
-                          </Button>
-                        </HStack>
-                      </Flex>
-                    </CardHeader>
-                    <CardBody p={4}>
-                      {requirementMemoData.filter(
-                        (item: any) => item.isHaveMemo === "N",
-                      ).length > 0 ? (
-                        <Box
-                          cursor="pointer"
-                          onClick={() => setIsRequirementMemoModalOpen(true)}
-                        >
-                          <Chart
-                            options={{
-                              chart: { type: "bar", stacked: true },
-                              xaxis: {
-                                categories: getMemoChartData("N").categories,
-                              },
-                              colors: ["#3182CE", "#38A169"],
-                            }}
-                            series={[
-                              {
-                                name: "BRD",
-                                data: getMemoChartData("N").brdData,
-                              },
-                              {
-                                name: "RFC",
-                                data: getMemoChartData("N").rfcData,
-                              },
-                            ]}
-                            type="bar"
-                            height={300}
-                          />
-                        </Box>
-                      ) : (
-                        <Flex justify="center" align="center" height="300px">
-                          <Text color="gray.500">No memo data available</Text>
-                        </Flex>
-                      )}
-                    </CardBody>
-                  </Card>
-                </GridItem>
-              </Grid>
-            </TabPanel>
           </TabPanels>
         </Tabs>
 

@@ -21,6 +21,14 @@ export interface DashboardFilterRequest {
   endDate: string;
 }
 
+export interface RealtimeDashboardFilterRequest {
+  divisionCode?: string | null;
+  groupCode?: string | null;
+  projectType?: string | null;
+  projectStatus?: string | null;
+  year?: number | null;
+}
+
 export interface ProjectSummaryDashboardResponse {
   projectStatus: string;
   projectCount: number;
@@ -266,6 +274,15 @@ export interface useSnapshotServicesServices {
   // Project active portfolio methods
   projectActivePortofolio: (token: string) => Promise<ApiGenericResponse<SnapshotProjectActivePortofolioResponse> | null>;
   projectClosePortofolio: (token: string) => Promise<ApiGenericResponse<SnapshotProjectClosePortofolioResponse> | null>;
+  // Realtime dashboard methods
+  getRealtimeProjectSummary: (payload: RealtimeDashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProjectSummaryDashboardResponse[]> | null>;
+  getRealtimeProjectCharacteristics: (payload: RealtimeDashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProjectCharacteristicsDashboardResponse[]> | null>;
+  getRealtimeProjectType: (payload: RealtimeDashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProjectTypeDashboardResponse[]> | null>;
+  getRealtimeProcurementWorkProgram: (payload: RealtimeDashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProcurementWorkProgramDashboardResponse[]> | null>;
+  getRealtimeProjectAcquisitions: (payload: RealtimeDashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProjectAcquisitionsDashboardResponse[]> | null>;
+  getRealtimeProjectByGroupManage: (payload: RealtimeDashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProjectByGroupManageDashboardResponse[]> | null>;
+  getRealtimeDevStaffProjectClosed: (payload: RealtimeDashboardFilterRequest, token: string) => Promise<ApiGenericResponse<DevStaffProjectClosedDashboardResponse[]> | null>;
+  getRealtimeDevStaffProjectActive: (payload: RealtimeDashboardFilterRequest, token: string) => Promise<ApiGenericResponse<DevStaffProjectActiveDashboardResponse[]> | null>;
   isLoading: boolean;
   error: string | null;
 }
@@ -379,6 +396,15 @@ const useSnapshotServices = (): useSnapshotServicesServices => {
     // Project active portfolio methods
     projectActivePortofolio: (token: string) => callSnapshot<SnapshotProjectActivePortofolioResponse>('snapshot/project-active-portfolio', token),
     projectClosePortofolio: (token: string) => callSnapshot<SnapshotProjectClosePortofolioResponse>('snapshot/project-close-portfolio', token),
+    // Realtime dashboard methods
+    getRealtimeProjectSummary: (payload: RealtimeDashboardFilterRequest, token: string) => callDashboard<ProjectSummaryDashboardResponse[]>('realtime/project-summary', payload as any, token),
+    getRealtimeProjectCharacteristics: (payload: RealtimeDashboardFilterRequest, token: string) => callDashboard<ProjectCharacteristicsDashboardResponse[]>('realtime/project-characteristics', payload as any, token),
+    getRealtimeProjectType: (payload: RealtimeDashboardFilterRequest, token: string) => callDashboard<ProjectTypeDashboardResponse[]>('realtime/project-type', payload as any, token),
+    getRealtimeProcurementWorkProgram: (payload: RealtimeDashboardFilterRequest, token: string) => callDashboard<ProcurementWorkProgramDashboardResponse[]>('realtime/project-procurement-workprogram', payload as any, token),
+    getRealtimeProjectAcquisitions: (payload: RealtimeDashboardFilterRequest, token: string) => callDashboard<ProjectAcquisitionsDashboardResponse[]>('realtime/project-acquisitions', payload as any, token),
+    getRealtimeProjectByGroupManage: (payload: RealtimeDashboardFilterRequest, token: string) => callDashboard<ProjectByGroupManageDashboardResponse[]>('realtime/project-by-group-manage', payload as any, token),
+    getRealtimeDevStaffProjectClosed: (payload: RealtimeDashboardFilterRequest, token: string) => callDashboard<DevStaffProjectClosedDashboardResponse[]>('realtime/dev-staff-project-closed', payload as any, token),
+    getRealtimeDevStaffProjectActive: (payload: RealtimeDashboardFilterRequest, token: string) => callDashboard<DevStaffProjectActiveDashboardResponse[]>('realtime/dev-staff-project-active', payload as any, token),
     isLoading,
     error,
   };
