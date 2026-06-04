@@ -87,7 +87,7 @@ function TeamsCenterPage() {
   const [totalPages, setTotalPageData] = useState<number>(0);
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 9,
   });
 
   // Refresh state management (following other pages pattern)
@@ -517,14 +517,15 @@ function TeamsCenterPage() {
 
               <Button
                 size="sm"
-                variant="ghost"
                 colorScheme="secondary"
+                leftIcon={<Icon as={FaUserPlus} boxSize={3.5} />}
                 rounded="lg"
-                px={2}
                 as={Link}
                 href="/teams-center/add"
+                flexShrink={0}
+                whiteSpace="nowrap"
               >
-                <Icon as={FaUserPlus} boxSize={4} />
+                Create Team
               </Button>
             </HStack>
           </Flex>
