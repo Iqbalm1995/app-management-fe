@@ -531,14 +531,15 @@ function MasterDataAplikasiPage() {
               </Button>
               <Button
                 size="sm"
-                variant="ghost"
                 colorScheme="secondary"
+                leftIcon={<Icon as={FiPlusSquare} boxSize={3.5} />}
                 onClick={() => ModalForm.onOpen()}
                 isLoading={ActionLoading}
                 rounded="lg"
-                px={2}
+                flexShrink={0}
+                whiteSpace="nowrap"
               >
-                <Icon as={FiPlusSquare} boxSize={4} />
+                Create Application
               </Button>
             </HStack>
           </Flex>
@@ -687,15 +688,15 @@ function MasterDataAplikasiPage() {
                                     w={12}
                                     h={12}
                                     bg="secondary.500"
-                                    rounded="full"
+                                    rounded="xl"
                                     display="flex"
                                     alignItems="center"
                                     justifyContent="center"
                                     color="white"
-                                    fontSize="xl"
+                                    fontSize="xs"
                                     fontWeight="bold"
                                   >
-                                    {(app.appShortName || app.appName || "APP").split(/\s+/).slice(0, 3).map(w => w.charAt(0).toUpperCase()).join("")}
+                                    {(app.appShortName || app.appName || "APP").split(/\s+/).slice(0, 5).map(w => w.charAt(0).toUpperCase()).join("")}
                                   </Box>
                                   <StatusBadge status={app.appsStatus} fontSize="xs" rounded="full" />
                                 </Flex>
@@ -797,7 +798,7 @@ function MasterDataAplikasiPage() {
                                 w={10}
                                 h={10}
                                 bg={colorMode === "light" ? "secondary.50" : "secondary.900"}
-                                rounded="full"
+                                rounded="xl"
                                 display="flex"
                                 alignItems="center"
                                 justifyContent="center"
@@ -806,7 +807,7 @@ function MasterDataAplikasiPage() {
                                 fontWeight="bold"
                                 flexShrink={0}
                               >
-                                {(app.appShortName || app.appName || "APP").split(/\s+/).slice(0, 3).map(w => w.charAt(0).toUpperCase()).join("")}
+                                {(app.appShortName || app.appName || "APP").split(/\s+/).slice(0, 5).map(w => w.charAt(0).toUpperCase()).join("")}
                               </Box>
 
                               {/* App Details */}
@@ -815,13 +816,13 @@ function MasterDataAplikasiPage() {
                                   <Text fontSize="sm" fontWeight="medium" color="secondary.600" noOfLines={1}>
                                     {app.appName}
                                   </Text>
-                                  <StatusBadge status={app.appsStatus} fontSize="xs" rounded="full" />
                                 </HStack>
                                 <Text fontSize="xs" color="gray.500">{app.appCode}</Text>
                               </Box>
 
-                              {/* Project counts */}
+                              {/* Project counts + status */}
                               <HStack spacing={4} display={{ base: "none", md: "flex" }}>
+                                <StatusBadge status={app.appsStatus} fontSize="xs" rounded="full" />
                                 <Text fontSize="xs" color="gray.500">
                                   <Text as="span" fontWeight="semibold" color="secondary.500">{app.countProjectAll || 0}</Text> projects
                                 </Text>

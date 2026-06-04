@@ -98,6 +98,8 @@ export const PROJECT_DEVELOPMENT_STATUSES = [
 
 // STATUS COLOR MAPPINGS
 export const STATUS_COLORS = {
+  ACTIVE: "green",
+  INACTIVE: "red",
   CANCELED: "red",
   ON_HOLD: "orange",
   "ON HOLD": "orange",
