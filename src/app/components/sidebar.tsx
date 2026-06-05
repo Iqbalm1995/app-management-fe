@@ -101,6 +101,7 @@ import {
   FiCheckCircle,
   FiCodepen,
   FiTrendingUp,
+  FiClock,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
 import { GoDotFill } from "react-icons/go";
