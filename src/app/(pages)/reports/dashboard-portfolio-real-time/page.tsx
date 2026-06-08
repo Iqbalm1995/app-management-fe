@@ -47,6 +47,8 @@ import {
   useColorModeValue,
   useColorMode,
 } from "@chakra-ui/react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   getCurrentQuarter,
@@ -2415,9 +2417,16 @@ export default function DashboardPortfolioRealTimePage() {
                         <Icon as={FiActivity} />
                         <Text fontWeight="bold" fontSize="sm">Pending Projects</Text>
                       </HStack>
-                      <Text fontSize="2xl" fontWeight="bold">
-                        {pendingSummary.projectWaiting1 + pendingSummary.projectWaiting2 + pendingSummary.projectWaiting3}
-                      </Text>
+                      <HStack spacing={3}>
+                        <Text fontSize="2xl" fontWeight="bold">
+                          {pendingSummary.projectWaiting1 + pendingSummary.projectWaiting2 + pendingSummary.projectWaiting3}
+                        </Text>
+                        <Link href="/projects/pending-approve">
+                          <Button size="xs" bg="whiteAlpha.900" color="orange.600" _hover={{ bg: "white" }}>
+                            View
+                          </Button>
+                        </Link>
+                      </HStack>
                     </HStack>
                   </CardHeader>
                   <CardBody py={3} px={4}>
@@ -2444,7 +2453,14 @@ export default function DashboardPortfolioRealTimePage() {
                         <Icon as={FiTrendingUp} />
                         <Text fontWeight="bold" fontSize="sm">Pending Requirements</Text>
                       </HStack>
-                      <Text fontSize="2xl" fontWeight="bold">{pendingSummary.requirementWaiting}</Text>
+                      <HStack spacing={3}>
+                        <Text fontSize="2xl" fontWeight="bold">{pendingSummary.requirementWaiting}</Text>
+                        <Link href="/requirements/approval-hub">
+                          <Button size="xs" bg="whiteAlpha.900" color="purple.600" _hover={{ bg: "white" }}>
+                            View
+                          </Button>
+                        </Link>
+                      </HStack>
                     </HStack>
                   </CardHeader>
                   <CardBody py={3} px={4}>
