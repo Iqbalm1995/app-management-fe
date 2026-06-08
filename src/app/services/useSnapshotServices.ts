@@ -21,6 +21,13 @@ export interface DashboardFilterRequest {
   endDate: string;
 }
 
+export interface PendingSummaryResponse {
+  projectWaiting1: number;
+  projectWaiting2: number;
+  projectWaiting3: number;
+  requirementWaiting: number;
+}
+
 export interface RealtimeDashboardFilterRequest {
   divisionCode?: string | null;
   groupCode?: string | null;
@@ -283,6 +290,7 @@ export interface useSnapshotServicesServices {
   getRealtimeProjectByGroupManage: (payload: RealtimeDashboardFilterRequest, token: string) => Promise<ApiGenericResponse<ProjectByGroupManageDashboardResponse[]> | null>;
   getRealtimeDevStaffProjectClosed: (payload: RealtimeDashboardFilterRequest, token: string) => Promise<ApiGenericResponse<DevStaffProjectClosedDashboardResponse[]> | null>;
   getRealtimeDevStaffProjectActive: (payload: RealtimeDashboardFilterRequest, token: string) => Promise<ApiGenericResponse<DevStaffProjectActiveDashboardResponse[]> | null>;
+  getPendingSummary: (token: string) => Promise<ApiGenericResponse<PendingSummaryResponse> | null>;
   isLoading: boolean;
   error: string | null;
 }
@@ -405,6 +413,7 @@ const useSnapshotServices = (): useSnapshotServicesServices => {
     getRealtimeProjectByGroupManage: (payload: RealtimeDashboardFilterRequest, token: string) => callDashboard<ProjectByGroupManageDashboardResponse[]>('realtime/project-by-group-manage', payload as any, token),
     getRealtimeDevStaffProjectClosed: (payload: RealtimeDashboardFilterRequest, token: string) => callDashboard<DevStaffProjectClosedDashboardResponse[]>('realtime/dev-staff-project-closed', payload as any, token),
     getRealtimeDevStaffProjectActive: (payload: RealtimeDashboardFilterRequest, token: string) => callDashboard<DevStaffProjectActiveDashboardResponse[]>('realtime/dev-staff-project-active', payload as any, token),
+    getPendingSummary: (token: string) => callSnapshot<PendingSummaryResponse>('realtime/pending-summary', token),
     isLoading,
     error,
   };

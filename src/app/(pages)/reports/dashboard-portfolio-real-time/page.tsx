@@ -29,6 +29,7 @@ import {
   Text,
   Grid,
   GridItem,
+  SimpleGrid,
   useToast,
   Stat,
   StatLabel,
@@ -54,6 +55,7 @@ import {
 import useSnapshotServices, {
   DashboardFilterRequest,
   RealtimeDashboardFilterRequest,
+  PendingSummaryResponse,
   ProjectSummaryDashboardResponse,
   ProjectQuarterlyDashboardResponse,
   DivisionOwnerQuartileDashboardResponse,
@@ -176,6 +178,7 @@ export default function DashboardPortfolioRealTimePage() {
   const [updateStatus, setUpdateStatus] = useState<string>("");
   const [tokenData, setTokenData] = useState<string>("");
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [pendingSummary, setPendingSummary] = useState<PendingSummaryResponse>({ projectWaiting1: 0, projectWaiting2: 0, projectWaiting3: 0, requirementWaiting: 0 });
 
   // Requirement state variables
   const [requirementTypeData, setRequirementTypeData] = useState<any[]>([]);
@@ -240,6 +243,7 @@ export default function DashboardPortfolioRealTimePage() {
     getRealtimeProjectByGroupManage,
     getRealtimeDevStaffProjectClosed,
     getRealtimeDevStaffProjectActive,
+    getPendingSummary,
     isLoading,
     error,
   } = useSnapshotServices();
@@ -1335,6 +1339,7 @@ export default function DashboardPortfolioRealTimePage() {
         loadCharacteristicsData(),
         loadRequirementTypeData(),
         loadRequirementSummaryData(),
+        getPendingSummary(tokenData).then(res => { if (res?.data) setPendingSummary(res.data); }),
         loadRequirementDivisionData(),
         loadRequirementMemoData(),
       ]);
@@ -1381,6 +1386,7 @@ export default function DashboardPortfolioRealTimePage() {
   useEffect(() => {
     if (tokenData) {
       loadProjectSummaryData();
+      getPendingSummary(tokenData).then(res => { if (res?.data) setPendingSummary(res.data); });
     }
   }, [selectedQuarter, selectedYear, tokenData]);
 
@@ -2398,6 +2404,60 @@ export default function DashboardPortfolioRealTimePage() {
 
           <TabPanels>
             <TabPanel p={0}>
+            {/* Pending Summary Cards */}
+            <Box mb={4}>
+              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                {/* Pending Projects */}
+                <Card rounded={radiusStyle} shadow="md" bg={cardBg} border="1px" borderColor={useColorModeValue("orange.100", "orange.800")}>
+                  <CardHeader bg="orange.500" color="white" roundedTop={radiusStyle} py={3} px={4}>
+                    <HStack justify="space-between">
+                      <HStack spacing={2}>
+                        <Icon as={FiActivity} />
+                        <Text fontWeight="bold" fontSize="sm">Pending Projects</Text>
+                      </HStack>
+                      <Text fontSize="2xl" fontWeight="bold">
+                        {pendingSummary.projectWaiting1 + pendingSummary.projectWaiting2 + pendingSummary.projectWaiting3}
+                      </Text>
+                    </HStack>
+                  </CardHeader>
+                  <CardBody py={3} px={4}>
+                    <SimpleGrid columns={3} spacing={3}>
+                      {[
+                        { label: "W. Approval 1", value: pendingSummary.projectWaiting1, color: "orange" },
+                        { label: "W. Approval 2", value: pendingSummary.projectWaiting2, color: "yellow" },
+                        { label: "W. Approval 3", value: pendingSummary.projectWaiting3, color: "red" },
+                      ].map(({ label, value, color }) => (
+                        <Stat key={label} textAlign="center" size="sm" p={2} bg={useColorModeValue(`${color}.50`, `${color}.900`)} rounded="lg">
+                          <StatLabel fontSize="xs" color={useColorModeValue(`${color}.700`, `${color}.200`)} noOfLines={1}>{label}</StatLabel>
+                          <StatNumber fontSize="xl" color={`${color}.500`}>{value}</StatNumber>
+                        </Stat>
+                      ))}
+                    </SimpleGrid>
+                  </CardBody>
+                </Card>
+
+                {/* Pending Requirements */}
+                <Card rounded={radiusStyle} shadow="md" bg={cardBg} border="1px" borderColor={useColorModeValue("purple.100", "purple.800")}>
+                  <CardHeader bg="purple.500" color="white" roundedTop={radiusStyle} py={3} px={4}>
+                    <HStack justify="space-between">
+                      <HStack spacing={2}>
+                        <Icon as={FiTrendingUp} />
+                        <Text fontWeight="bold" fontSize="sm">Pending Requirements</Text>
+                      </HStack>
+                      <Text fontSize="2xl" fontWeight="bold">{pendingSummary.requirementWaiting}</Text>
+                    </HStack>
+                  </CardHeader>
+                  <CardBody py={3} px={4}>
+                    <Stat textAlign="center" size="sm" p={2} bg={useColorModeValue("purple.50", "purple.900")} rounded="lg">
+                      <StatLabel fontSize="xs" color={useColorModeValue("purple.700", "purple.200")}>Waiting Approval</StatLabel>
+                      <StatNumber fontSize="2xl" color="purple.500">{pendingSummary.requirementWaiting}</StatNumber>
+                      <StatHelpText fontSize="xs" mb={0}>Pending review</StatHelpText>
+                    </Stat>
+                  </CardBody>
+                </Card>
+              </SimpleGrid>
+            </Box>
+
               {/* 12-Column Grid Layout */}
               <Grid
                 templateColumns="repeat(12, 1fr)"
