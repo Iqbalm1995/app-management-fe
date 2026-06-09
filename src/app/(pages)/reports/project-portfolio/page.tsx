@@ -181,15 +181,20 @@ function ProjectPortfolioReportPage() {
   // Quarterly filter
   const currentYear = new Date().getFullYear();
   const currentQuarter = getCurrentQuarter();
-  const [selectedYear, setSelectedYear] = useState<number>(currentYear);
+  const [selectedYear, setSelectedYear] = useState<number | "all">(currentYear);
   const [selectedQuarter, setSelectedQuarter] = useState<number | "all">("all");
   const [StartDateFilter, setStartDateFilter] = useState<Date>(new Date());
   const [EndDateFilter, setEndDateFilter] = useState<Date>(new Date());
 
-  const years = Array.from({ length: 8 }, (_, i) => currentYear - 5 + i);
+  const years = Array.from({ length: currentYear - 2012 + 1 }, (_, i) => currentYear - i);
 
   const handleFilterChange = (newFilters: ListSearchByParamProps[]) => {
-    setParamFilter(newFilters);
+    // Preserve quarterly date filters when updating other filters
+    const dateFilters = ParamFilter.filter(
+      (f) => f.field === "projectRegisterDate",
+    );
+    const combinedFilters = [...newFilters, ...dateFilters];
+    setParamFilter(combinedFilters);
   };
 
   const RefreshAction = () => {
@@ -713,6 +718,7 @@ function ProjectPortfolioReportPage() {
 
   // Quarterly filter effect
   useEffect(() => {
+    if (selectedYear === "all") return;
     const { startDate, endDate } = getQuarterDateRange(
       selectedYear,
       selectedQuarter,
@@ -720,52 +726,44 @@ function ProjectPortfolioReportPage() {
 
     setStartDateFilter(startDate);
     setEndDateFilter(endDate);
-
-    // Add date range filters to ParamFilter
-    if (selectedQuarter !== "all") {
-      const startDateFilter: ListSearchByParamProps = {
-        field: "projectRegisterDate",
-        operator: ">=",
-        value: startDate.toISOString().split("T")[0],
-        filterLabel: "Start Date Filter",
-      };
-
-      const endDateFilter: ListSearchByParamProps = {
-        field: "projectRegisterDate",
-        operator: "<=",
-        value: endDate.toISOString().split("T")[0],
-        filterLabel: "End Date Filter",
-      };
-
-      // Remove existing date filters and add new ones
-      let updatedFilters = ParamFilter.filter(
-        (f) => f.field !== "projectRegisterDate",
-      );
-
-      updatedFilters = addParamFilterUpdate(updatedFilters, startDateFilter);
-      updatedFilters = addParamFilterUpdate(updatedFilters, endDateFilter);
-
-      setParamFilter(updatedFilters);
-    } else {
-      // Remove date filters when "all" is selected
-      const updatedFilters = ParamFilter.filter(
-        (f) => f.field !== "projectRegisterDate",
-      );
-      setParamFilter(updatedFilters);
-    }
   }, [selectedYear, selectedQuarter]);
 
   useEffect(() => {
     if (DataAuth && tokenData) {
+      // Build date range filters directly from selectedYear/selectedQuarter
+      let activeFilters = ParamFilter.filter(
+        (f) => f.field !== "projectRegisterDate",
+      );
+
+      if (selectedYear !== "all") {
+        const { startDate, endDate } = getQuarterDateRange(selectedYear as number, selectedQuarter);
+        activeFilters = [
+          ...activeFilters,
+          {
+            field: "projectRegisterDate",
+            operator: ">=",
+            value: startDate.toISOString().split("T")[0],
+            filterLabel: "Start Date Filter",
+          },
+          {
+            field: "projectRegisterDate",
+            operator: "<=",
+            value: endDate.toISOString().split("T")[0],
+            filterLabel: "End Date Filter",
+          },
+        ];
+      }
+
       const PayloadList: PaggingListPayloadCustom = {
         search: globalFilter,
         limit: pageSize,
         page: pageIndex,
-        filterWhere: ParamFilter,
+        filterWhere: activeFilters,
         fieldOrder: ["createdAt"],
         orderDir: "desc",
       };
 
+      console.log("[DEBUG] API Payload - filterWhere:", activeFilters);
       setIsLoadingProcess(true);
       const GetDataList = async () => {
         const requestData = await ListReportProjectPortofolio(
@@ -812,6 +810,8 @@ function ProjectPortfolioReportPage() {
     globalFilter,
     ParamFilter,
     tokenData,
+    selectedYear,
+    selectedQuarter,
   ]);
 
   const table = useReactTable({
@@ -888,10 +888,15 @@ function ProjectPortfolioReportPage() {
                     <Select
                       value={selectedYear}
                       size={"md"}
-                      onChange={(e) => setSelectedYear(Number(e.target.value))}
+                      onChange={(e) => {
+                        const val = e.target.value === "all" ? "all" : Number(e.target.value);
+                        setSelectedYear(val);
+                        if (val === "all") setSelectedQuarter("all");
+                      }}
                       w="100px"
                       bgColor={colorMode == "light" ? "white" : "gray.800"}
                     >
+                      <option value="all">All</option>
                       {years.map((year) => (
                         <option key={year} value={year}>
                           {year}
@@ -910,6 +915,7 @@ function ProjectPortfolioReportPage() {
                       }
                       w="80px"
                       bgColor={colorMode == "light" ? "white" : "gray.800"}
+                      isDisabled={selectedYear === "all"}
                     >
                       <option value="all">All</option>
                       <option value="1">Q1</option>

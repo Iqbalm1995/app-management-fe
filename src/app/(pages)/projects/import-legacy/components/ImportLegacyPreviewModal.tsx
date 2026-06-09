@@ -85,6 +85,7 @@ export default function ImportLegacyPreviewModal({
     'PROJECT_NUMBER': 'ProjectNumber',
     'PROJECT_NAME': 'ProjectName',
     'DIVISION_CODE_INITIATION': 'DivisionCodeInitiation',
+    'GROUP_CODE_INVOLVED': 'GroupCodeInvolved',
     'PROJET_TYPE': 'ProjetType',
     'PROJECT_CURRENT_STATUS': 'ProjectCurrentStatus',
     'PROJECT_START_DATE': 'ProjectStartDate',

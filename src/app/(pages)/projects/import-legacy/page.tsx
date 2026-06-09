@@ -115,8 +115,8 @@ export default function ProjectImportLegacyPage() {
       const workbook = XLSX.read(fileBuffer);
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
 
-      // Extract field keys from row 3 (A3:I3)
-      const keysRange = XLSX.utils.decode_range("A3:I3");
+      // Extract field keys from row 3 (A3:J3)
+      const keysRange = XLSX.utils.decode_range("A3:J3");
       const fieldKeys: Record<string, string> = {};
       for (let col = keysRange.s.c; col <= keysRange.e.c; col++) {
         const cellAddress = XLSX.utils.encode_cell({ r: 2, c: col }); // row 3 = index 2
@@ -132,6 +132,7 @@ export default function ProjectImportLegacyPage() {
         'PROJECT_NUMBER',
         'PROJECT_NAME', 
         'DIVISION_CODE_INITIATION',
+        'GROUP_CODE_INVOLVED',
         'PROJET_TYPE',
         'PROJECT_CURRENT_STATUS',
         'PROJECT_START_DATE',
@@ -438,6 +439,7 @@ export default function ProjectImportLegacyPage() {
                       <Text fontSize="sm" color="gray.600">• PROJECT_NUMBER (unique)</Text>
                       <Text fontSize="sm" color="gray.600">• PROJECT_NAME</Text>
                       <Text fontSize="sm" color="gray.600">• DIVISION_CODE_INITIATION</Text>
+                      <Text fontSize="sm" color="gray.600">• GROUP_CODE_INVOLVED</Text>
                       <Text fontSize="sm" color="gray.600">• PROJET_TYPE</Text>
                     </Box>
 
