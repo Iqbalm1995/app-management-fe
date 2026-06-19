@@ -191,6 +191,7 @@ import {
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { FaCheckCircle } from "react-icons/fa";
+import { Select as ChakraReactSelect } from "chakra-react-select";
 
 // Complete auth data structure interfaces
 interface AuthTokenResponse {
@@ -4955,6 +4956,14 @@ function ProjectWorkspaceView({
         );
       }
 
+      // Apply assignee filter
+      if (filterAssignee) {
+        const selectedIds = filterAssignee.split(",").filter(Boolean);
+        filteredTasks = filteredTasks.filter((task) =>
+          task.assignUsers?.some((user) => selectedIds.includes(user.id)),
+        );
+      }
+
       // Apply "My Tasks Only" filter
       if (showMyTasksOnly && DataAuth) {
         filteredTasks = filteredTasks.filter((task) =>
@@ -4973,7 +4982,7 @@ function ProjectWorkspaceView({
     });
     
     return result;
-  }, [DataTasks, DataBoard, searchTerm, filterPriority, filterBacklog, showMyTasksOnly, showCompletedTasks, DataAuth]);
+  }, [DataTasks, DataBoard, searchTerm, filterPriority, filterBacklog, filterAssignee, showMyTasksOnly, showCompletedTasks, DataAuth]);
 
   const getTasksForBoard = (boardName: string) => {
     return filteredTasksByBoard[boardName] || [];
@@ -5638,6 +5647,50 @@ function ProjectWorkspaceView({
                     />
                   </InputGroup>
 
+                  <Box minW="200px" maxW="300px">
+                    <ChakraReactSelect
+                      placeholder="Member"
+                      value={
+                        filterAssignee
+                          ? filterAssignee.split(",").filter(Boolean).map((id) => ({
+                              value: id,
+                              label: DataProject?.userAssignment?.find(
+                                (a) => a.userData.id === id,
+                              )?.userData.nama || id,
+                            }))
+                          : []
+                      }
+                      onChange={(options) =>
+                        setFilterAssignee(
+                          options?.map((o: any) => o.value).join(",") || ""
+                        )
+                      }
+                      options={
+                        DataProject?.userAssignment?.map((a) => ({
+                          value: a.userData.id,
+                          label: a.userData.nama,
+                        })) || []
+                      }
+                      size="sm"
+                      isMulti
+                      isClearable
+                      isSearchable
+                      controlShouldRenderValue={false}
+                      chakraStyles={{
+                        control: (provided) => ({
+                          ...provided,
+                          borderRadius: "9999px",
+                          minHeight: "32px",
+                          height: "32px",
+                        }),
+                        valueContainer: (provided) => ({
+                          ...provided,
+                          padding: "0 8px",
+                        }),
+                      }}
+                    />
+                  </Box>
+
                   <Select
                     placeholder="Priority"
                     value={filterPriority}
@@ -5709,6 +5762,55 @@ function ProjectWorkspaceView({
                   </Checkbox>
                 </HStack>
 
+                {filterAssignee && (
+                  <HStack spacing={-1}>
+                    {filterAssignee
+                      .split(",")
+                      .filter(Boolean)
+                      .slice(0, 4)
+                      .map((id) => {
+                        const user = DataProject?.userAssignment?.find(
+                          (a) => a.userData.id === id,
+                        )?.userData;
+                        return (
+                          <Tooltip key={id} label={user?.nama || id} hasArrow>
+                            <Box
+                              position="relative"
+                              cursor="pointer"
+                              sx={{
+                                "&:hover .remove-overlay": { opacity: 1 },
+                              }}
+                              onClick={() => {
+                                const updated = filterAssignee
+                                  .split(",")
+                                  .filter((i) => i !== id)
+                                  .join(",");
+                                setFilterAssignee(updated);
+                              }}
+                            >
+                              <Avatar name={user?.nama || ""} size="xs" />
+                              <Flex
+                                className="remove-overlay"
+                                position="absolute"
+                                top={0}
+                                left={0}
+                                right={0}
+                                bottom={0}
+                                align="center"
+                                justify="center"
+                                bg="blackAlpha.700"
+                                rounded="full"
+                                opacity={0}
+                                transition="opacity 0.15s"
+                              >
+                                <Icon as={FiX} color="white" boxSize={3} />
+                              </Flex>
+                            </Box>
+                          </Tooltip>
+                        );
+                      })}
+                  </HStack>
+                )}
                 <Button
                   leftIcon={<FiPlusCircle />}
                   colorScheme="blue"

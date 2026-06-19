@@ -142,6 +142,22 @@ export const WorkflowLevel2Box = ({
     ENDPOINT_API_BASEURL_OBJECT,
     ENDPOINT_PORT_BASIC_OBJECT
   );
+
+  const handleDownloadFile = async (url: string, fileName: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    } catch {
+      window.open(url, "_blank");
+    }
+  };
   const { InsertProjectWorkflowValue, ListProjectWorkflowValue } =
     useProjects();
 
@@ -1000,9 +1016,9 @@ export const WorkflowLevel2Box = ({
                                         if (
                                           item.mediaObjectData?.objectFullPath
                                         ) {
-                                          window.open(
+                                          handleDownloadFile(
                                             item.mediaObjectData.objectFullPath,
-                                            "_blank",
+                                            item.mediaObjectData.objectRawName || item.mediaObjectData.objectName,
                                           );
                                         }
                                       }}
@@ -1473,6 +1489,22 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
     ENDPOINT_API_BASEURL_OBJECT,
     ENDPOINT_PORT_BASIC_OBJECT
   );
+
+  const handleDownloadFile = async (url: string, fileName: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+    } catch {
+      window.open(url, "_blank");
+    }
+  };
   const { InsertProjectWorkflowValue, ListProjectWorkflowValue } =
     useProjects();
 
@@ -2146,7 +2178,10 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
                                     leftIcon={<FiDownload />}
                                     onClick={() => {
                                       if (item.mediaObjectData?.objectFullPath) {
-                                        window.open(item.mediaObjectData.objectFullPath, "_blank");
+                                        handleDownloadFile(
+                                          item.mediaObjectData.objectFullPath,
+                                          item.mediaObjectData.objectRawName || item.mediaObjectData.objectName,
+                                        );
                                       }
                                     }}
                                     flexShrink={0}
