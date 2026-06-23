@@ -618,11 +618,15 @@ const useReports = (): useReportsServices => {
       const excelData = nonRfcData.map(toExcelRow);
       const rfcExcelData = rfcData.map(toExcelRow);
 
-      // Calculate fit-to-content column widths from data
+      // Calculate fit-to-content column widths with wrap text for Project Name
       const calcColWidths = (data: Record<string, unknown>[]) => {
         if (data.length === 0) return [];
         const keys = Object.keys(data[0]);
-        return keys.map((key) => {
+        return keys.map((key, idx) => {
+          if (idx === 2) {
+            // Column C (Project Name): fixed narrower width to force wrap
+            return { wch: 35 };
+          }
           const maxDataLen = data.reduce((max, row) => {
             const val = String(row[key] ?? "");
             return Math.max(max, val.length);
@@ -634,20 +638,52 @@ const useReports = (): useReportsServices => {
       // Create workbook
       const wb = XLSX.utils.book_new();
 
+      // Helper to apply wrap text to column C
+      const applyWrapText = (ws: Record<string, unknown>, rowCount: number) => {
+        // Set column C width
+        const cols = (ws["!cols"] as { wch: number }[]) || [];
+        if (cols[2]) cols[2] = { wch: 35 };
+        ws["!cols"] = cols;
+
+        // Apply wrapText to each cell in column C, preserving existing cell data
+        for (let r = 0; r <= rowCount; r++) {
+          const cellAddr = XLSX.utils.encode_cell({ r, c: 2 });
+          const existingCell = ws[cellAddr] as { t?: string; v?: string; s?: Record<string, unknown> } | undefined;
+          if (existingCell) {
+            ws[cellAddr] = {
+              t: existingCell.t,
+              v: existingCell.v,
+              s: { ...existingCell.s, alignment: { wrapText: true } }
+            };
+          } else {
+            ws[cellAddr] = { t: "s", v: "", s: { alignment: { wrapText: true } } };
+          }
+        }
+
+        // Set row heights to auto for wrapped text
+        const rows: { hpx?: number }[] = [];
+        for (let r = 0; r <= rowCount; r++) {
+          rows[r] = { hpx: undefined }; // auto height
+        }
+        ws["!rows"] = rows;
+      };
+
       // Sheet 1: Project Portfolio Report (non-RFC)
       const ws = XLSX.utils.json_to_sheet(excelData.length > 0 ? excelData : [{}]);
       ws["!cols"] = calcColWidths(excelData);
+      applyWrapText(ws, excelData.length || 1);
       XLSX.utils.book_append_sheet(wb, ws, "Project Portfolio Report");
 
       // Sheet 2: RFC Projects
       if (rfcExcelData.length > 0) {
         const wsRfc = XLSX.utils.json_to_sheet(rfcExcelData);
         wsRfc["!cols"] = calcColWidths(rfcExcelData);
+        applyWrapText(wsRfc, rfcExcelData.length || 1);
         XLSX.utils.book_append_sheet(wb, wsRfc, "RFC Projects");
       }
 
       // Generate Excel file as blob
-      const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array", cellStyles: true });
       const blob = new Blob([excelBuffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
