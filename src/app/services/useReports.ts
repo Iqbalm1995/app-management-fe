@@ -539,65 +539,112 @@ const useReports = (): useReportsServices => {
       // Import xlsx dynamically
       const XLSX = await import("xlsx");
 
-      // Transform data for Excel export
-      const excelData = response.data.map(
-        (item: ReportProjectPortofolioDataResponse, index: number) => ({
-          "No.": index + 1,
-          "Project No": item.projectNo || "-",
-          "Project Name": item.projectName || "-",
-          "Project Category": item.projectCategory || "-",
-          "Project Type": item.projectType || "-",
-          "Project Characteristic": item.projectCharasteristicName || "-",
-          "Project Sub Characteristic":
-            item.projectSubCharasteristicName || "-",
-          "Project Description": item.projectDesc || "-",
-          "Owner Division": item.proOwnerDivisionName || "-",
-          "Owner Group": item.proOwnerGroupName || "-",
-          "Manage Division": item.proManageByDivisionName || "-",
-          "Manage Group": item.proManageByGroupName || "-",
-          "PIC Name": item.requirement?.userPicName || "-",
-          "PIC Contact": item.requirement?.userPicContanct || "-",
-          "PIC Email": item.requirement?.userPicEmail || "-",
-          "Target Live Date": item.requirement?.appLiveTargetDate
-            ? new Date(item.requirement.appLiveTargetDate).toLocaleDateString()
-            : "-",
-          "Project Status": item.projectStatus || "-",
-          "Progress (%)": item.projectStatusPercentage || 0,
-          "Duration (Days)": item.projectDurationDays || 0,
-          "Register Date": item.projectRegisterDate
-            ? new Date(item.projectRegisterDate).toLocaleDateString()
-            : "-",
-          "Closed Date": item.projectClosedDate
-            ? new Date(item.projectClosedDate).toLocaleDateString()
-            : "-",
-          "External Programs":
-            item.workPrograms
-              ?.filter((wp) => wp.workProgramSource === "EXTERNAL")
-              .map((wp) => `${wp.workProgramCode}: ${wp.workProgramName}`)
-              .join("; ") || "-",
-          "Internal Programs":
-            item.workPrograms
-              ?.filter((wp) => wp.workProgramSource === "INTERNAL")
-              .map((wp) => `${wp.workProgramCode}: ${wp.workProgramName}`)
-              .join("; ") || "-",
-          "Team Members":
-            item.userAssignment
-              ?.map((ua) => ua.userData?.nama || ua.userId)
-              .join("; ") || "-",
-        }),
+      // Split data into non-RFC and RFC
+      const nonRfcData = response.data.filter(
+        (item: ReportProjectPortofolioDataResponse) => !item.projectNo?.includes("/RFC/")
+      );
+      const rfcData = response.data.filter(
+        (item: ReportProjectPortofolioDataResponse) => item.projectNo?.includes("/RFC/")
       );
 
-      // Create workbook and worksheet
+      // Sort non-RFC: null projectNo on top, then by first segment (sequence number)
+      nonRfcData.sort((a: ReportProjectPortofolioDataResponse, b: ReportProjectPortofolioDataResponse) => {
+        if (!a.projectNo) return -1;
+        if (!b.projectNo) return 1;
+        const seqA = parseInt(a.projectNo.split("/")[0]) || 0;
+        const seqB = parseInt(b.projectNo.split("/")[0]) || 0;
+        return seqA - seqB;
+      });
+
+      // Sort RFC: by month (3rd segment) then by sequence (1st segment)
+      rfcData.sort((a: ReportProjectPortofolioDataResponse, b: ReportProjectPortofolioDataResponse) => {
+        if (!a.projectNo) return -1;
+        if (!b.projectNo) return 1;
+        const partsA = a.projectNo.split("/");
+        const partsB = b.projectNo.split("/");
+        const monthA = parseInt(partsA[2]) || 0;
+        const monthB = parseInt(partsB[2]) || 0;
+        if (monthA !== monthB) return monthA - monthB;
+        const seqA = parseInt(partsA[0]) || 0;
+        const seqB = parseInt(partsB[0]) || 0;
+        return seqA - seqB;
+      });
+
+      // Transform function for Excel rows
+      const toExcelRow = (item: ReportProjectPortofolioDataResponse, index: number) => ({
+        "No.": index + 1,
+        "Project No": item.projectNo || "-",
+        "Project Name": item.projectName || "-",
+        "Project Category": item.projectCategory || "-",
+        "Project Type": item.projectType || "-",
+        "Project Characteristic": item.projectCharasteristicName || "-",
+        "Project Sub Characteristic": item.projectSubCharasteristicName || "-",
+        "Project Description": item.projectDesc || "-",
+        "Owner Division": item.proOwnerDivisionName || "-",
+        "Owner Group": item.proOwnerGroupName || "-",
+        "Manage Division": item.proManageByDivisionName || "-",
+        "Manage Group": item.proManageByGroupName || "-",
+        "PIC Name": item.requirement?.userPicName || "-",
+        "PIC Contact": item.requirement?.userPicContanct || "-",
+        "PIC Email": item.requirement?.userPicEmail || "-",
+        "Target Live Date": item.requirement?.appLiveTargetDate
+          ? new Date(item.requirement.appLiveTargetDate).toLocaleDateString()
+          : "-",
+        "Project Status": item.projectStatus || "-",
+        "Progress (%)": item.projectStatusPercentage || 0,
+        "Duration (Days)": item.projectDurationDays || 0,
+        "Register Date": item.projectRegisterDate
+          ? new Date(item.projectRegisterDate).toLocaleDateString()
+          : "-",
+        "Closed Date": item.projectClosedDate
+          ? new Date(item.projectClosedDate).toLocaleDateString()
+          : "-",
+        "External Programs":
+          item.workPrograms
+            ?.filter((wp) => wp.workProgramSource === "EXTERNAL")
+            .map((wp) => `${wp.workProgramCode}: ${wp.workProgramName}`)
+            .join("; ") || "-",
+        "Internal Programs":
+          item.workPrograms
+            ?.filter((wp) => wp.workProgramSource === "INTERNAL")
+            .map((wp) => `${wp.workProgramCode}: ${wp.workProgramName}`)
+            .join("; ") || "-",
+        "Team Members":
+          item.userAssignment
+            ?.map((ua) => ua.userData?.nama || ua.userId)
+            .join("; ") || "-",
+      });
+
+      const excelData = nonRfcData.map(toExcelRow);
+      const rfcExcelData = rfcData.map(toExcelRow);
+
+      // Calculate fit-to-content column widths from data
+      const calcColWidths = (data: Record<string, unknown>[]) => {
+        if (data.length === 0) return [];
+        const keys = Object.keys(data[0]);
+        return keys.map((key) => {
+          const maxDataLen = data.reduce((max, row) => {
+            const val = String(row[key] ?? "");
+            return Math.max(max, val.length);
+          }, key.length);
+          return { wch: Math.min(maxDataLen + 2, 50) };
+        });
+      };
+
+      // Create workbook
       const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(excelData);
 
-      // Auto-size columns
-      const colWidths = Object.keys(excelData[0] || {}).map((key) => ({
-        wch: Math.max(key.length, 15),
-      }));
-      ws["!cols"] = colWidths;
-
+      // Sheet 1: Project Portfolio Report (non-RFC)
+      const ws = XLSX.utils.json_to_sheet(excelData.length > 0 ? excelData : [{}]);
+      ws["!cols"] = calcColWidths(excelData);
       XLSX.utils.book_append_sheet(wb, ws, "Project Portfolio Report");
+
+      // Sheet 2: RFC Projects
+      if (rfcExcelData.length > 0) {
+        const wsRfc = XLSX.utils.json_to_sheet(rfcExcelData);
+        wsRfc["!cols"] = calcColWidths(rfcExcelData);
+        XLSX.utils.book_append_sheet(wb, wsRfc, "RFC Projects");
+      }
 
       // Generate Excel file as blob
       const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });

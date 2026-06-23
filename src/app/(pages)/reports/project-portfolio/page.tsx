@@ -339,8 +339,7 @@ function ProjectPortfolioReportPage() {
             </Text>
             <Text fontSize="sm">{info.row.original.projectName}</Text>
             <Text fontSize="xs" color="gray.500">
-              {info.row.original.projectCategory} |{" "}
-              {info.row.original.projectType}
+              {info.row.original.projectCategory}
             </Text>
             {info.row.original.requirement?.requirementType && (
               <Text fontSize="xs" color="blue.500">
@@ -372,7 +371,7 @@ function ProjectPortfolioReportPage() {
         } as ColumnMetaCustom,
       },
       {
-        accessorFn: (row) => row.projectCharasteristicName,
+        accessorFn: (row) => row.projectType,
         id: "projectCharacteristics",
         cell: (info) => (
           <Flex
@@ -382,47 +381,18 @@ function ProjectPortfolioReportPage() {
             alignItems={"start"}
             as={Stack}
             spacing={0}
-            minW="200px"
+            minW="150px"
           >
-            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600}>Characteristic:</Text>
-              <Text>{info.row.original.projectCharasteristicName || "-"}</Text>
-            </Flex>
-            <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-              <Text fontWeight={600}>Sub Characteristic:</Text>
-              <Text>
-                {info.row.original.projectSubCharasteristicName || "-"}
-              </Text>
-            </Flex>
             <Flex fontSize={"2xs"} as={Stack} spacing={0}>
               <Text fontWeight={600}>Type:</Text>
               <Text>{info.row.original.projectType || "-"}</Text>
             </Flex>
-            {info.row.original.requirement?.appLiveTargetDate && (
-              <Flex fontSize={"2xs"} as={Stack} spacing={0}>
-                <Text fontWeight={600}>Target Live Date:</Text>
-                <Text color="blue.500">
-                  {stringToDateFormatedReverse(
-                    info.row.original.requirement.appLiveTargetDate,
-                  )}
-                </Text>
-              </Flex>
-            )}
           </Flex>
         ),
         header: () => <span>Project Details</span>,
         footer: (props) => props.column.id,
         meta: {
-          isFilterable: true,
-          filterData: [
-            {
-              field: "projectCharasteristicName",
-              operator: "like",
-              value: "",
-              filterType: "text",
-              filterLabel: "Characteristic",
-            },
-          ],
+          isFilterable: false,
         } as ColumnMetaCustom,
       },
       {
@@ -650,6 +620,14 @@ function ProjectPortfolioReportPage() {
                 )}
               </Text>
             )}
+            {info.row.original.requirement?.appLiveTargetDate && (
+              <Text fontSize="xs" color="blue.500">
+                Target Live:{" "}
+                {stringToDateFormatedReverse(
+                  info.row.original.requirement.appLiveTargetDate,
+                )}
+              </Text>
+            )}
           </Flex>
         ),
         header: () => <span>Status & Timeline</span>,
@@ -821,6 +799,12 @@ function ProjectPortfolioReportPage() {
     state: {
       globalFilter,
       pagination,
+      columnVisibility: {
+        picInfo: false,
+        externalPrograms: false,
+        internalPrograms: false,
+        teamInfo: false,
+      },
     },
     onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
