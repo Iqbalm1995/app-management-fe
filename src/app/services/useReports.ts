@@ -537,7 +537,7 @@ const useReports = (): useReportsServices => {
       }
 
       // Import xlsx dynamically
-      const XLSX = await import("xlsx");
+      const XLSX = await import("xlsx-js-style");
 
       // Split data into non-RFC and RFC
       const nonRfcData = response.data.filter(
@@ -570,116 +570,230 @@ const useReports = (): useReportsServices => {
         return seqA - seqB;
       });
 
+      // Date formatter: dd-mmm-yy
+      const formatDateDDMMMYY = (dateStr: string | null | undefined) => {
+        if (!dateStr) return "-";
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return "-";
+        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const day = String(d.getDate()).padStart(2, "0");
+        const mon = months[d.getMonth()];
+        const yr = String(d.getFullYear()).slice(-2);
+        return `${day}-${mon}-${yr}`;
+      };
+
       // Transform function for Excel rows
       const toExcelRow = (item: ReportProjectPortofolioDataResponse, index: number) => ({
-        "No.": index + 1,
-        "Project No": item.projectNo || "-",
-        "Project Name": item.projectName || "-",
-        "Project Category": item.projectCategory || "-",
-        "Project Type": item.projectType || "-",
-        "Project Characteristic": item.projectCharasteristicName || "-",
-        "Project Sub Characteristic": item.projectSubCharasteristicName || "-",
-        "Project Description": item.projectDesc || "-",
-        "Owner Division": item.proOwnerDivisionName || "-",
-        "Owner Group": item.proOwnerGroupName || "-",
-        "Manage Division": item.proManageByDivisionName || "-",
-        "Manage Group": item.proManageByGroupName || "-",
-        "PIC Name": item.requirement?.userPicName || "-",
-        "PIC Contact": item.requirement?.userPicContanct || "-",
-        "PIC Email": item.requirement?.userPicEmail || "-",
-        "Target Live Date": item.requirement?.appLiveTargetDate
-          ? new Date(item.requirement.appLiveTargetDate).toLocaleDateString()
-          : "-",
-        "Project Status": item.projectStatus || "-",
-        "Progress (%)": item.projectStatusPercentage || 0,
-        "Duration (Days)": item.projectDurationDays || 0,
-        "Register Date": item.projectRegisterDate
-          ? new Date(item.projectRegisterDate).toLocaleDateString()
-          : "-",
-        "Closed Date": item.projectClosedDate
-          ? new Date(item.projectClosedDate).toLocaleDateString()
-          : "-",
-        "External Programs":
-          item.workPrograms
-            ?.filter((wp) => wp.workProgramSource === "EXTERNAL")
-            .map((wp) => `${wp.workProgramCode}: ${wp.workProgramName}`)
-            .join("; ") || "-",
-        "Internal Programs":
-          item.workPrograms
-            ?.filter((wp) => wp.workProgramSource === "INTERNAL")
-            .map((wp) => `${wp.workProgramCode}: ${wp.workProgramName}`)
-            .join("; ") || "-",
-        "Team Members":
-          item.userAssignment
-            ?.map((ua) => ua.userData?.nama || ua.userId)
-            .join("; ") || "-",
+        "NO.": index + 1,
+        "PROJECT NO": item.projectNo || "-",
+        "PROJECT NAME": item.projectName || "-",
+        "PROJECT CATEGORY": item.projectCategory || "-",
+        "PROJECT TYPE": item.projectType || "-",
+        "PROJECT CHARACTERISTIC": item.projectCharasteristicName || "-",
+        "PROJECT SUB CHARACTERISTIC": item.projectSubCharasteristicName || "-",
+        "PROJECT DESCRIPTION": item.projectDesc || "-",
+        "OWNER DIVISION": item.proOwnerDivisionName || "-",
+        "OWNER GROUP": item.proOwnerGroupName || "-",
+        "MANAGE DIVISION": item.proManageByDivisionName || "-",
+        "MANAGE GROUP": item.proManageByGroupName || "-",
+        "PIC NAME": item.requirement?.userPicName || "-",
+        "PIC CONTACT": item.requirement?.userPicContanct || "-",
+        "PIC EMAIL": item.requirement?.userPicEmail || "-",
+        "TARGET LIVE DATE": formatDateDDMMMYY(item.requirement?.appLiveTargetDate),
+        "PROJECT STATUS": item.projectStatus || "-",
+        "PROGRESS (%)": item.projectStatusPercentage || 0,
+        "DURATION (DAYS)": item.projectDurationDays || 0,
+        "REGISTER DATE": formatDateDDMMMYY(item.projectRegisterDate),
+        "CLOSED DATE": formatDateDDMMMYY(item.projectClosedDate),
+        "EXTERNAL PROGRAMS": item.workPrograms
+          ?.filter((wp) => wp.workProgramSource === "EXTERNAL")
+          .map((wp) => `${wp.workProgramCode}: ${wp.workProgramName}`)
+          .join("; ") || "-",
+        "INTERNAL PROGRAMS": item.workPrograms
+          ?.filter((wp) => wp.workProgramSource === "INTERNAL")
+          .map((wp) => `${wp.workProgramCode}: ${wp.workProgramName}`)
+          .join("; ") || "-",
+        "TEAM MEMBERS": item.userAssignment
+          ?.map((ua) => ua.userData?.nama || ua.userId)
+          .join("; ") || "-",
       });
 
       const excelData = nonRfcData.map(toExcelRow);
       const rfcExcelData = rfcData.map(toExcelRow);
 
-      // Calculate fit-to-content column widths with wrap text for Project Name
-      const calcColWidths = (data: Record<string, unknown>[]) => {
-        if (data.length === 0) return [];
-        const keys = Object.keys(data[0]);
-        return keys.map((key, idx) => {
-          if (idx === 2) {
-            // Column C (Project Name): fixed narrower width to force wrap
-            return { wch: 35 };
+      // Style definitions
+      const baseFont = { name: "Calibri", sz: 11 };
+      const headerStyle = {
+        font: { ...baseFont, bold: true, color: { rgb: "FFFFFF" } },
+        fill: { fgColor: { rgb: "000000" } },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
+        border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } },
+      };
+      const cellStyleLeft = {
+        font: baseFont,
+        alignment: { horizontal: "left", vertical: "top", wrapText: false },
+        border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } },
+      };
+      const cellStyleCenter = {
+        font: baseFont,
+        alignment: { horizontal: "center", vertical: "top", wrapText: false },
+        border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } },
+      };
+      const cellStyleWrap = {
+        font: baseFont,
+        alignment: { horizontal: "left", vertical: "top", wrapText: true },
+        border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } },
+      };
+
+      // Wrap text column indices: Project Name(2), Project Description(7), External Programs(21), Internal Programs(22), Team Members(23)
+      const wrapCols = [2, 7, 21, 22, 23];
+
+      // Status legend colors
+      const statusColors: Record<string, string> = {
+        "CANCELED": "C00000",
+        "CLOSED": "00B050",
+        "COMPLETED": "92D050",
+        "DECLINED": "FF0000",
+        "INITIATING": "FFFF00",
+        "RUNNING": "00B0F0",
+        "TEMPORARY CLOSED": "FFC000",
+        "WAITING APPROVAL 1": "FFFFFF",
+        "WAITING APPROVAL 2": "FFFFFF",
+        "WAITING APPROVAL 3": "FFFFFF",
+      };
+
+      // Status column index (PROJECT STATUS = index 16)
+      const statusColIdx = 16;
+
+      // Build formatted worksheet
+      const buildSheet = (data: Record<string, unknown>[], title: string, sheetStatusColors: Record<string, string>) => {
+        // Row layout: 0-2=blank, 3=title, 4=date, 5=time, 6=blank, 7=header, 8+=data
+        // Column A is left empty as spacer, data starts from column B
+        const headers = data.length > 0 ? Object.keys(data[0]) : [];
+        const dataStartRow = 7; // header row index
+        const now = new Date();
+        const dateStr = `${String(now.getDate()).padStart(2,"0")}-${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][now.getMonth()]}-${now.getFullYear()}`;
+        const timeStr = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}:${String(now.getSeconds()).padStart(2,"0")}`;
+
+        // Create array of arrays with empty column A prefix
+        const aoa: unknown[][] = [
+          [], // row 0 blank
+          [], // row 1 blank
+          [], // row 2 blank
+          ["", title], // row 3 title (col B)
+          ["", `Date: ${dateStr}`], // row 4 date (col B)
+          ["", `Time: ${timeStr}`], // row 5 time (col B)
+          [], // row 6 blank
+          ["", ...headers], // row 7 header (col B onwards)
+          ...data.map((row) => ["", ...headers.map((h) => row[h])]), // row 8+ data
+        ];
+
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+        // Get range
+        const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
+
+        // Apply styles to all cells (column A=spacer, data columns start at C=1)
+        for (let R = range.s.r; R <= range.e.r; R++) {
+          for (let C = range.s.c; C <= range.e.c; C++) {
+            const addr = XLSX.utils.encode_cell({ r: R, c: C });
+            if (!ws[addr]) ws[addr] = { t: "s", v: "" };
+
+            if (C === 0) {
+              // Column A - empty spacer, no style
+              continue;
+            } else if (R === 3) {
+              // Title row
+              (ws[addr] as Record<string, unknown>).s = { font: { ...baseFont, sz: 14, bold: true }, alignment: { horizontal: "left", vertical: "center" } };
+            } else if (R === 4 || R === 5) {
+              // Date/Time row
+              (ws[addr] as Record<string, unknown>).s = { font: { ...baseFont, italic: true }, alignment: { horizontal: "left", vertical: "center" } };
+            } else if (R === dataStartRow) {
+              // Header row
+              (ws[addr] as Record<string, unknown>).s = headerStyle;
+            } else if (R > dataStartRow) {
+              // Data rows - adjust column index (C-1 because col A is spacer)
+              const dataCol = C - 1;
+              if (dataCol === 0) {
+                // No. column - center align
+                (ws[addr] as Record<string, unknown>).s = cellStyleCenter;
+              } else if (wrapCols.includes(dataCol)) {
+                // Wrap text columns
+                (ws[addr] as Record<string, unknown>).s = cellStyleWrap;
+              } else if (dataCol === statusColIdx) {
+                // Status column - apply color
+                const val = String((ws[addr] as Record<string, unknown>).v || "");
+                const color = sheetStatusColors[val];
+                (ws[addr] as Record<string, unknown>).s = {
+                  ...cellStyleLeft,
+                  fill: color ? { fgColor: { rgb: color } } : undefined,
+                  font: { ...baseFont, color: color && color !== "FFFFFF" && color !== "FFFF00" ? { rgb: "FFFFFF" } : { rgb: "000000" } },
+                };
+              } else {
+                (ws[addr] as Record<string, unknown>).s = cellStyleLeft;
+              }
+            }
           }
-          const maxDataLen = data.reduce((max, row) => {
-            const val = String(row[key] ?? "");
-            return Math.max(max, val.length);
-          }, key.length);
-          return { wch: Math.min(maxDataLen + 2, 50) };
+        }
+
+        // Column widths: col A = spacer (3), then data columns
+        const colWidths: { wch: number }[] = [{ wch: 3 }]; // Column A spacer
+        headers.forEach((key, idx) => {
+          if (wrapCols.includes(idx)) { colWidths.push({ wch: 35 }); return; }
+          if (idx === 0) { colWidths.push({ wch: 5 }); return; } // No.
+          const maxLen = data.reduce((max, row) => Math.max(max, String(row[key] ?? "").length), key.length);
+          colWidths.push({ wch: Math.min(maxLen + 2, 40) });
         });
+        ws["!cols"] = colWidths;
+
+        // Row heights: header row = 50px
+        const rows: { hpx?: number }[] = [];
+        rows[dataStartRow] = { hpx: 50 };
+        ws["!rows"] = rows;
+
+        // Merge title, date, time cells across all data columns (col B to last)
+        if (!ws["!merges"]) ws["!merges"] = [];
+        ws["!merges"].push({ s: { r: 3, c: 1 }, e: { r: 3, c: headers.length } });
+        ws["!merges"].push({ s: { r: 4, c: 1 }, e: { r: 4, c: headers.length } });
+        ws["!merges"].push({ s: { r: 5, c: 1 }, e: { r: 5, c: headers.length } });
+
+        // Sheet protection
+        (ws as Record<string, unknown>)["!protect"] = {
+          password: "P@ssw0rd",
+          sheet: true,
+          objects: true,
+          scenarios: true,
+          formatCells: false,
+          sort: false,
+          autoFilter: false,
+        };
+
+        return ws;
+      };
+
+      // Status colors for each sheet
+      const projectStatusColors = { ...statusColors };
+      const rfcStatusColors: Record<string, string> = {
+        "CANCELED": "C00000",
+        "CLOSED": "00B050",
+        "COMPLETED": "92D050",
+        "DECLINED": "FF0000",
+        "INITIATING": "FFFF00",
+        "RUNNING": "00B0F0",
+        "TEMPORARY CLOSED": "FFC000",
       };
 
       // Create workbook
       const wb = XLSX.utils.book_new();
 
-      // Helper to apply wrap text to column C
-      const applyWrapText = (ws: Record<string, unknown>, rowCount: number) => {
-        // Set column C width
-        const cols = (ws["!cols"] as { wch: number }[]) || [];
-        if (cols[2]) cols[2] = { wch: 35 };
-        ws["!cols"] = cols;
+      // Sheet 1
+      const ws = buildSheet(excelData, "IT PROJECT PORTFOLIO", projectStatusColors);
+      XLSX.utils.book_append_sheet(wb, ws, "IT Project Portfolio Report");
 
-        // Apply wrapText to each cell in column C, preserving existing cell data
-        for (let r = 0; r <= rowCount; r++) {
-          const cellAddr = XLSX.utils.encode_cell({ r, c: 2 });
-          const existingCell = ws[cellAddr] as { t?: string; v?: string; s?: Record<string, unknown> } | undefined;
-          if (existingCell) {
-            ws[cellAddr] = {
-              t: existingCell.t,
-              v: existingCell.v,
-              s: { ...existingCell.s, alignment: { wrapText: true } }
-            };
-          } else {
-            ws[cellAddr] = { t: "s", v: "", s: { alignment: { wrapText: true } } };
-          }
-        }
-
-        // Set row heights to auto for wrapped text
-        const rows: { hpx?: number }[] = [];
-        for (let r = 0; r <= rowCount; r++) {
-          rows[r] = { hpx: undefined }; // auto height
-        }
-        ws["!rows"] = rows;
-      };
-
-      // Sheet 1: Project Portfolio Report (non-RFC)
-      const ws = XLSX.utils.json_to_sheet(excelData.length > 0 ? excelData : [{}]);
-      ws["!cols"] = calcColWidths(excelData);
-      applyWrapText(ws, excelData.length || 1);
-      XLSX.utils.book_append_sheet(wb, ws, "Project Portfolio Report");
-
-      // Sheet 2: RFC Projects
+      // Sheet 2
       if (rfcExcelData.length > 0) {
-        const wsRfc = XLSX.utils.json_to_sheet(rfcExcelData);
-        wsRfc["!cols"] = calcColWidths(rfcExcelData);
-        applyWrapText(wsRfc, rfcExcelData.length || 1);
-        XLSX.utils.book_append_sheet(wb, wsRfc, "RFC Projects");
+        const wsRfc = buildSheet(rfcExcelData, "IT RFC PORTFOLIO", rfcStatusColors);
+        XLSX.utils.book_append_sheet(wb, wsRfc, "IT RFC Portfolio Report");
       }
 
       // Generate Excel file as blob
@@ -907,7 +1021,7 @@ const useReports = (): useReportsServices => {
       }
 
       // Import xlsx dynamically
-      const XLSX = await import("xlsx");
+      const XLSX = await import("xlsx-js-style");
 
       // Transform data for Excel export with group headers
       const excelData = response.data.map(
@@ -1036,7 +1150,7 @@ const useReports = (): useReportsServices => {
 
       if (data.statusCode === 200 && data.data) {
         // Create Excel file using xlsx
-        const XLSX = await import("xlsx");
+        const XLSX = await import("xlsx-js-style");
         const workbook = XLSX.utils.book_new();
 
         // Transform data for Excel export with proper column structure
@@ -1303,7 +1417,7 @@ const useReports = (): useReportsServices => {
 
       if (data.statusCode === 200 && data.data) {
         // Create Excel file using xlsx - same structure as active portfolio
-        const XLSX = await import("xlsx");
+        const XLSX = await import("xlsx-js-style");
         const workbook = XLSX.utils.book_new();
 
         // Transform data for Excel export with proper column structure
@@ -1649,7 +1763,7 @@ const useReports = (): useReportsServices => {
 
     try {
       // Import xlsx dynamically
-      const XLSX = await import("xlsx");
+      const XLSX = await import("xlsx-js-style");
 
       // Transform data for Excel export with all required columns
       const excelData = data.map((item: UserEvaluationReportListResponse, index: number) => ({

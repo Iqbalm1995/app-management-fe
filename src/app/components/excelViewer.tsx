@@ -1,6 +1,6 @@
 "use client";
 
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
 import { useEffect, useState } from "react";
 
 export default function ExcelViewer({ fileUrl }: { fileUrl: string }) {
