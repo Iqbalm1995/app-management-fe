@@ -102,6 +102,7 @@ import {
   FiCodepen,
   FiTrendingUp,
   FiClock,
+  FiList,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
 import { GoDotFill } from "react-icons/go";
@@ -151,6 +152,10 @@ import {
   FaUserPlus,
   FaUsersGear,
   FaUsersRays,
+  FaDiceD20,
+  FaDiceD6,
+  FaRegRectangleList,
+  FaRegFileCode,
 } from "react-icons/fa6";
 import { FooterAdminPanel } from "./layoutLanding";
 import SignatureLineColor from "./signatureStyle";

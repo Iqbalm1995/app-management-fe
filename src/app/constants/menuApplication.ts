@@ -16,8 +16,16 @@ import {
   FaRegStar,
   FaVial,
   FaTachometerAlt,
+  FaDiceD20,
+  FaDiceD6,
+  FaRegFileCode,
 } from "react-icons/fa";
-import { FaDiagramProject, FaO, FaUsersRays } from "react-icons/fa6";
+import {
+  FaDiagramProject,
+  FaO,
+  FaRegRectangleList,
+  FaUsersRays,
+} from "react-icons/fa6";
 import {
   FiDatabase,
   FiKey,
@@ -31,6 +39,7 @@ import {
   FiTrendingUp,
   FiClock,
   FiZap,
+  FiList,
 } from "react-icons/fi";
 import { GrHelpBook } from "react-icons/gr";
 import {
@@ -226,8 +235,8 @@ export const LinkItems: LinkItemProps[] = [
       // },
       {
         name: "Pending Approve",
-        icon: MdOutlineCircle,
-        iconName: "MdOutlineCircle",
+        icon: FiClock,
+        iconName: "FiClock",
         link: "/requirements/approval-hub",
         role: ["admin"],
         menuID: "1",
@@ -275,8 +284,8 @@ export const LinkItems: LinkItemProps[] = [
     children: [
       {
         name: "Pending Approve",
-        icon: MdOutlineCircle,
-        iconName: "MdOutlineCircle",
+        icon: FiClock,
+        iconName: "FiClock",
         link: "/projects/pending-approve",
         role: ["admin"],
         menuID: "1",
@@ -404,6 +413,62 @@ export const LinkItems: LinkItemProps[] = [
       //   menuID: "1",
       //   children: [],
       // },
+    ],
+  },
+
+  {
+    name: "Management Apps",
+    icon: FaDiceD20,
+    iconName: "FaDiceD20",
+    link: "/master-data/Application",
+    role: ["admin"],
+    menuID: "1",
+    children: [
+      {
+        name: "Data Applications",
+        icon: FaDiceD6,
+        iconName: "FaDiceD6",
+        link: "/master-data/Application",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Matrix & Criteria",
+        icon: FiList,
+        iconName: "FiList",
+        link: "/master-data/conf-matrix-criteria-apps",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Assessment of Critical Apps",
+        icon: FaRegRectangleList,
+        iconName: "FaRegRectangleList",
+        link: "/report/apps-assessments",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Pending Approve Assessment Apps",
+        icon: FiClock,
+        iconName: "FiClock",
+        link: "/report/apps-assessments-pending-approve",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
+      {
+        name: "Upload Report Apps",
+        icon: FaRegFileCode,
+        iconName: "FaRegFileCode",
+        link: "/report/upload-report-assessments-apps",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+      },
     ],
   },
   {
@@ -857,15 +922,6 @@ export const LinkItems: LinkItemProps[] = [
         icon: FaUsersRays,
         iconName: "FaUsersRays",
         link: "/teams-center",
-        role: ["admin"],
-        menuID: "1",
-        children: [],
-      },
-      {
-        name: "Master Application",
-        icon: HiOutlineDesktopComputer,
-        iconName: "HiOutlineDesktopComputer",
-        link: "/master-data/Application",
         role: ["admin"],
         menuID: "1",
         children: [],

@@ -221,6 +221,25 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
     pattern: "/master-data/workflow/preset-workflow-detail",
     baseMenu: "/master-data/workflow",
   },
+  {
+    pattern: "/master-data/conf-matrix-criteria-apps/criteria/new",
+    baseMenu: "/master-data/conf-matrix-criteria-apps",
+  },
+  {
+    pattern: "/master-data/conf-matrix-criteria-apps/criteria/detail",
+    baseMenu: "/master-data/conf-matrix-criteria-apps",
+  },
+
+  // report
+
+  {
+    pattern: "/report/apps-assessments/detail",
+    baseMenu: "/report/apps-assessments",
+  },
+  {
+    pattern: "/report/apps-assessments/assessment",
+    baseMenu: "/report/apps-assessments",
+  },
 
   // Menus
   {

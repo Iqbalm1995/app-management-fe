@@ -6,10 +6,7 @@ import {
 } from "@/app/components/headerContent";
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import LoadingMiniSignature from "@/app/components/loadingMini";
-import {
-  radiusStyle,
-  RES_CODE_OK,
-} from "@/app/constants/applicationConstants";
+import { radiusStyle, RES_CODE_OK } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
@@ -40,11 +37,7 @@ import {
   SimpleGrid,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import {
-  FiChevronRight,
-  FiChevronDown,
-  FiRefreshCcw,
-} from "react-icons/fi";
+import { FiChevronRight, FiChevronDown, FiRefreshCcw } from "react-icons/fi";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Master Menu",
@@ -111,13 +104,14 @@ function MenusManagementPage() {
 
     try {
       let menuCodeCounter = 1;
-      
+
       const buildMenuHierarchy = (items: typeof LinkItems): any[] => {
         return items.map((item, index) => {
-          const menuCode = item.menuID && item.menuID !== "1" 
-            ? item.menuID 
-            : `MN${String(menuCodeCounter++).padStart(4, "0")}`;
-          
+          const menuCode =
+            item.menuID && item.menuID !== "1"
+              ? item.menuID
+              : `MN${String(menuCodeCounter++).padStart(4, "0")}`;
+
           // Use explicit iconName if provided, otherwise fallback to function name
           let iconName = "FiCircle";
           if (item.iconName) {
@@ -127,7 +121,7 @@ function MenusManagementPage() {
           } else if (typeof item.icon === "function") {
             iconName = item.icon.name || "FiCircle"; // Fallback (works in dev only)
           }
-          
+
           return {
             menuCode: menuCode,
             menuName: item.name,
@@ -138,15 +132,16 @@ function MenusManagementPage() {
             isPro: item.isPro ? "Y" : "N",
             isOperations: "N",
             menuPos: index + 1,
-            children: item.children && item.children.length > 0 
-              ? buildMenuHierarchy(item.children) 
-              : []
+            children:
+              item.children && item.children.length > 0
+                ? buildMenuHierarchy(item.children)
+                : [],
           };
         });
       };
 
       const payload = {
-        menus: buildMenuHierarchy(LinkItems)
+        menus: buildMenuHierarchy(LinkItems),
       };
 
       const result = await SynchronizeMenus(payload, tokenData);
@@ -365,7 +360,9 @@ function MenusManagementPage() {
             <Box>
               <AlertTitle>Read-Only View</AlertTitle>
               <AlertDescription>
-                This page displays the current menu structure. Use the "Synchronize Menus" button to sync with the frontend menu constants.
+                This page displays the current menu structure. Use the
+                "Synchronize Menus" button to sync with the frontend menu
+                constants.
               </AlertDescription>
             </Box>
           </Alert>
@@ -375,7 +372,8 @@ function MenusManagementPage() {
               MenuTree.map((item) => renderMenuItem(item))
             ) : (
               <Text color="gray.500" textAlign="center" py={8}>
-                No menus found. Click "Synchronize Menus" to import from constants.
+                No menus found. Click "Synchronize Menus" to import from
+                constants.
               </Text>
             )}
           </VStack>
@@ -412,7 +410,8 @@ function MenusManagementPage() {
                 <Box>
                   <AlertTitle fontSize="sm">Icon Registry System</AlertTitle>
                   <AlertDescription fontSize="xs">
-                    Icons are stored as strings in the database and converted to React components at runtime using the Icon Registry.
+                    Icons are stored as strings in the database and converted to
+                    React components at runtime using the Icon Registry.
                   </AlertDescription>
                 </Box>
               </Alert>
@@ -448,7 +447,7 @@ function MenusManagementPage() {
                 <Text fontSize="sm" color="gray.600" mb={2}>
                   Open <Badge>/src/app/utils/iconRegistry.ts</Badge>
                 </Text>
-                
+
                 <Text fontSize="sm" fontWeight="semibold" mt={3} mb={1}>
                   A. Add to imports:
                 </Text>
@@ -462,7 +461,9 @@ function MenusManagementPage() {
                 >
                   <Text color="gray.500">// Feather Icons</Text>
                   <Text>
-                    <Text as="span" color="purple.500">import</Text>{" "}
+                    <Text as="span" color="purple.500">
+                      import
+                    </Text>{" "}
                     {"{"}
                   </Text>
                   <Text pl={4}>FiAward,</Text>
@@ -474,8 +475,14 @@ function MenusManagementPage() {
                   <Text pl={4}>FiKey,</Text>
                   <Text pl={4}>{"// ..."}</Text>
                   <Text>
-                    {"}"} <Text as="span" color="purple.500">from</Text>{" "}
-                    <Text as="span" color="orange.500">"react-icons/fi"</Text>;
+                    {"}"}{" "}
+                    <Text as="span" color="purple.500">
+                      from
+                    </Text>{" "}
+                    <Text as="span" color="orange.500">
+                      "react-icons/fi"
+                    </Text>
+                    ;
                   </Text>
                 </Box>
 
@@ -491,7 +498,10 @@ function MenusManagementPage() {
                   overflowX="auto"
                 >
                   <Text>
-                    <Text as="span" color="purple.500">const</Text> iconRegistry: Record{"<"}string, IconType{">"} = {"{"}
+                    <Text as="span" color="purple.500">
+                      const
+                    </Text>{" "}
+                    iconRegistry: Record{"<"}string, IconType{">"} = {"{"}
                   </Text>
                   <Text pl={4} color="gray.500">
                     // Feather Icons (Fi)
@@ -515,7 +525,8 @@ function MenusManagementPage() {
                   Step 3: Use in Menu
                 </Text>
                 <Text fontSize="sm" color="gray.600" mb={2}>
-                  When creating or editing a menu, set the icon field to the exact icon name:
+                  When creating or editing a menu, set the icon field to the
+                  exact icon name:
                 </Text>
                 <Box
                   bg={colorMode === "light" ? "gray.100" : "gray.900"}
@@ -524,7 +535,12 @@ function MenusManagementPage() {
                   fontSize="xs"
                   fontFamily="mono"
                 >
-                  <Text>menuIcon: <Text as="span" color="orange.500">"FiFolder"</Text></Text>
+                  <Text>
+                    menuIcon:{" "}
+                    <Text as="span" color="orange.500">
+                      "FiFolder"
+                    </Text>
+                  </Text>
                 </Box>
               </Box>
 
@@ -562,7 +578,8 @@ function MenusManagementPage() {
                   <Badge colorScheme="teal">Ri - Remix</Badge>
                 </SimpleGrid>
                 <Text fontSize="xs" color="gray.500" mt={2}>
-                  And 12 more libraries. See full documentation for complete list.
+                  And 12 more libraries. See full documentation for complete
+                  list.
                 </Text>
               </Box>
 
@@ -572,10 +589,21 @@ function MenusManagementPage() {
                   <AlertTitle fontSize="sm">Important Notes</AlertTitle>
                   <AlertDescription fontSize="xs">
                     <VStack align="start" spacing={1}>
-                      <Text>• Icon names are case-sensitive (use exact name from react-icons)</Text>
-                      <Text>• Missing icons will fallback to FiCircle with a console warning</Text>
-                      <Text>• Application rebuild is required after adding new icons</Text>
-                      <Text>• Only add icons that are actually used to maintain small bundle size</Text>
+                      <Text>
+                        • Icon names are case-sensitive (use exact name from
+                        react-icons)
+                      </Text>
+                      <Text>
+                        • Missing icons will fallback to FiCircle with a console
+                        warning
+                      </Text>
+                      <Text>
+                        • Application rebuild is required after adding new icons
+                      </Text>
+                      <Text>
+                        • Only add icons that are actually used to maintain
+                        small bundle size
+                      </Text>
                     </VStack>
                   </AlertDescription>
                 </Box>

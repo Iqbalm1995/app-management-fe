@@ -592,3 +592,13 @@ export const DEFAULT_PWD_SETTINGS: string = "sJTLr62VFATzZr7e3jmwNA==";
 // --------- NTP SERVER FOR GET TIME
 export const TARGET_NTP_IP = "192.168.224.39"; // Your target NTP Server IP Address
 export const NTP_PORT = 80;
+
+// --------- CRITERIA VALUE OPERATORS
+export const CRITERIA_VALUE_OPERATORS = [
+  { value: "=", label: "= (Equal)" },
+  { value: ">", label: "> (Greater Than)" },
+  { value: "<", label: "< (Less Than)" },
+  { value: "!=", label: "!= (Not Equal)" },
+  { value: ">=", label: ">= (Greater or Equal)" },
+  { value: "<=", label: "<= (Less or Equal)" },
+];
