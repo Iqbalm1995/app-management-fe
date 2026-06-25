@@ -227,17 +227,12 @@ function ProjectPortfolioReportPage() {
       console.log("Export response:", blob);
 
       if (blob) {
-        const { BlobWriter, BlobReader, ZipWriter } = await import("@zip.js/zip.js");
         const now = new Date();
         const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}_${String(now.getHours()).padStart(2,"0")}-${String(now.getMinutes()).padStart(2,"0")}-${String(now.getSeconds()).padStart(2,"0")}`;
-        const fileName = `Project_Portfolio_Report_${ts}.xlsx`;
-        const zipWriter = new ZipWriter(new BlobWriter("application/zip"), { password: "P@ssw0rd" });
-        await zipWriter.add(fileName, new BlobReader(blob));
-        const zipBlob = await zipWriter.close();
-        const url = window.URL.createObjectURL(zipBlob);
+        const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `Project_Portfolio_Report_${ts}.zip`;
+        link.download = `Project_Portfolio_Report_${ts}.xlsx`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -283,17 +278,12 @@ function ProjectPortfolioReportPage() {
       const blob = await ExportProjectPortofolioPDF(exportPayload, tokenData);
 
       if (blob) {
-        const { BlobWriter, BlobReader, ZipWriter } = await import("@zip.js/zip.js");
         const now = new Date();
         const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}_${String(now.getHours()).padStart(2,"0")}-${String(now.getMinutes()).padStart(2,"0")}-${String(now.getSeconds()).padStart(2,"0")}`;
-        const fileName = `Project_Portfolio_Report_${ts}.pdf`;
-        const zipWriter = new ZipWriter(new BlobWriter("application/zip"), { password: "P@ssw0rd" });
-        await zipWriter.add(fileName, new BlobReader(blob));
-        const zipBlob = await zipWriter.close();
-        const url = window.URL.createObjectURL(zipBlob);
+        const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `Project_Portfolio_Report_${ts}.zip`;
+        link.download = `Project_Portfolio_Report_${ts}.pdf`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

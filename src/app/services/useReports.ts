@@ -570,28 +570,26 @@ const useReports = (): useReportsServices => {
         return seqA - seqB;
       });
 
-      // Date formatter: dd-mmm-yy
-      const formatDateDDMMMYY = (dateStr: string | null | undefined) => {
+      // Parse date to Excel serial number or null
+      const toExcelDate = (dateStr: string | null | undefined): Date | string => {
         if (!dateStr) return "-";
         const d = new Date(dateStr);
         if (isNaN(d.getTime())) return "-";
-        const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        const day = String(d.getDate()).padStart(2, "0");
-        const mon = months[d.getMonth()];
-        const yr = String(d.getFullYear()).slice(-2);
-        return `${day}-${mon}-${yr}`;
+        return d;
       };
 
-      // Transform function for Excel rows
+      // Transform function for Excel rows (new column order)
       const toExcelRow = (item: ReportProjectPortofolioDataResponse, index: number) => ({
         "NO.": index + 1,
         "PROJECT NO": item.projectNo || "-",
         "PROJECT NAME": item.projectName || "-",
-        "PROJECT CATEGORY": item.projectCategory || "-",
         "PROJECT TYPE": item.projectType || "-",
-        "PROJECT CHARACTERISTIC": item.projectCharasteristicName || "-",
-        "PROJECT SUB CHARACTERISTIC": item.projectSubCharasteristicName || "-",
-        "PROJECT DESCRIPTION": item.projectDesc || "-",
+        "TARGET LIVE DATE": toExcelDate(item.requirement?.appLiveTargetDate),
+        "PROJECT STATUS": item.projectStatus || "-",
+        "PROGRESS (%)": item.projectStatusPercentage || 0,
+        "DURATION (DAYS)": item.projectDurationDays || 0,
+        "REGISTER DATE": toExcelDate(item.projectRegisterDate),
+        "CLOSED DATE": toExcelDate(item.projectClosedDate),
         "OWNER DIVISION": item.proOwnerDivisionName || "-",
         "OWNER GROUP": item.proOwnerGroupName || "-",
         "MANAGE DIVISION": item.proManageByDivisionName || "-",
@@ -599,12 +597,6 @@ const useReports = (): useReportsServices => {
         "PIC NAME": item.requirement?.userPicName || "-",
         "PIC CONTACT": item.requirement?.userPicContanct || "-",
         "PIC EMAIL": item.requirement?.userPicEmail || "-",
-        "TARGET LIVE DATE": formatDateDDMMMYY(item.requirement?.appLiveTargetDate),
-        "PROJECT STATUS": item.projectStatus || "-",
-        "PROGRESS (%)": item.projectStatusPercentage || 0,
-        "DURATION (DAYS)": item.projectDurationDays || 0,
-        "REGISTER DATE": formatDateDDMMMYY(item.projectRegisterDate),
-        "CLOSED DATE": formatDateDDMMMYY(item.projectClosedDate),
         "EXTERNAL PROGRAMS": item.workPrograms
           ?.filter((wp) => wp.workProgramSource === "EXTERNAL")
           .map((wp) => `${wp.workProgramCode}: ${wp.workProgramName}`)
@@ -613,6 +605,10 @@ const useReports = (): useReportsServices => {
           ?.filter((wp) => wp.workProgramSource === "INTERNAL")
           .map((wp) => `${wp.workProgramCode}: ${wp.workProgramName}`)
           .join("; ") || "-",
+        "PROJECT CATEGORY": item.projectCategory || "-",
+        "PROJECT CHARACTERISTIC": item.projectCharasteristicName || "-",
+        "PROJECT SUB CHARACTERISTIC": item.projectSubCharasteristicName || "-",
+        "PROJECT DESCRIPTION": item.projectDesc || "-",
         "TEAM MEMBERS": item.userAssignment
           ?.map((ua) => ua.userData?.nama || ua.userId)
           .join("; ") || "-",
@@ -645,8 +641,8 @@ const useReports = (): useReportsServices => {
         border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } },
       };
 
-      // Wrap text column indices: Project Name(2), Project Description(7), External Programs(21), Internal Programs(22), Team Members(23)
-      const wrapCols = [2, 7, 21, 22, 23];
+      // Wrap text column indices: PROJECT NO(1), PROJECT NAME(2), EXTERNAL PROGRAMS(17), INTERNAL PROGRAMS(18), PROJECT DESCRIPTION(22), TEAM MEMBERS(23)
+      const wrapCols = [1, 2, 17, 18, 22, 23];
 
       // Status legend colors
       const statusColors: Record<string, string> = {
@@ -662,11 +658,13 @@ const useReports = (): useReportsServices => {
         "WAITING APPROVAL 3": "FFFFFF",
       };
 
-      // Status column index (PROJECT STATUS = index 16)
-      const statusColIdx = 16;
+      // Status column index (PROJECT STATUS = index 5)
+      const statusColIdx = 5;
+      // Date column indices (TARGET LIVE DATE=4, REGISTER DATE=8, CLOSED DATE=9)
+      const dateCols = [4, 8, 9];
 
       // Build formatted worksheet
-      const buildSheet = (data: Record<string, unknown>[], title: string, sheetStatusColors: Record<string, string>) => {
+      const buildSheet = (data: Record<string, unknown>[], title: string, sheetStatusColors: Record<string, string>, projectNoWidth: number = 32) => {
         // Row layout: 0-2=blank, 3=title, 4=date, 5=time, 6=blank, 7=header, 8+=data
         // Column A is left empty as spacer, data starts from column B
         const headers = data.length > 0 ? Object.keys(data[0]) : [];
@@ -688,7 +686,7 @@ const useReports = (): useReportsServices => {
           ...data.map((row) => ["", ...headers.map((h) => row[h])]), // row 8+ data
         ];
 
-        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        const ws = XLSX.utils.aoa_to_sheet(aoa, { cellDates: true });
 
         // Get range
         const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
@@ -717,6 +715,16 @@ const useReports = (): useReportsServices => {
               if (dataCol === 0) {
                 // No. column - center align
                 (ws[addr] as Record<string, unknown>).s = cellStyleCenter;
+              } else if (dateCols.includes(dataCol)) {
+                // Date columns - apply date format (d-mmm-yy, English US)
+                const cell = ws[addr] as Record<string, unknown>;
+                if (cell.v instanceof Date) {
+                  cell.t = "d";
+                  cell.z = "D-MMM-YY";
+                  cell.s = { ...cellStyleLeft, numFmt: "D-MMM-YY" };
+                } else {
+                  cell.s = cellStyleLeft;
+                }
               } else if (wrapCols.includes(dataCol)) {
                 // Wrap text columns
                 (ws[addr] as Record<string, unknown>).s = cellStyleWrap;
@@ -736,13 +744,39 @@ const useReports = (): useReportsServices => {
           }
         }
 
-        // Column widths: col A = spacer (3), then data columns
-        const colWidths: { wch: number }[] = [{ wch: 3 }]; // Column A spacer
+        // Column widths: col A = spacer, then data columns B onwards
+        // Specific widths: C(PROJECT NO)=50, D(PROJECT NAME)=270, E(PROJECT TYPE)=85, F(TARGET LIVE)=25
+        // M(OWNER GROUP)=55, N(MANAGE DIV)=32, O(MANAGE GROUP)=55
+        // S(EXTERNAL)=85, T(INTERNAL)=85, V(CHARACTERISTIC)=55, X(DESCRIPTION)=55, Y(TEAM)=55
+        const specificWidths: Record<number, number> = {
+          1: 40,   // PROJECT NO
+          2: 85,   // PROJECT NAME
+          3: 25,   // PROJECT TYPE
+          4: 20,   // TARGET LIVE DATE
+          5: 25,   // PROJECT STATUS
+          6: 15,   // PROGRESS (%)
+          7: 17,   // DURATION (DAYS)
+          8: 15,   // REGISTER DATE
+          9: 15,   // CLOSED DATE
+          11: 55,  // OWNER GROUP
+          12: 32,  // MANAGE DIVISION
+          13: 55,  // MANAGE GROUP
+          17: 85,  // EXTERNAL PROGRAMS
+          18: 85,  // INTERNAL PROGRAMS
+          20: 55,  // PROJECT CHARACTERISTIC
+          22: 55,  // PROJECT DESCRIPTION
+          23: 55,  // TEAM MEMBERS
+        };
+        const colWidths: { wpx?: number; wch?: number }[] = [{ wch: 3 }]; // Column A spacer
         headers.forEach((key, idx) => {
-          if (wrapCols.includes(idx)) { colWidths.push({ wch: 35 }); return; }
-          if (idx === 0) { colWidths.push({ wch: 5 }); return; } // No.
-          const maxLen = data.reduce((max, row) => Math.max(max, String(row[key] ?? "").length), key.length);
-          colWidths.push({ wch: Math.min(maxLen + 2, 40) });
+          if (specificWidths[idx] !== undefined) {
+            colWidths.push({ wch: specificWidths[idx] });
+          } else if (idx === 0) {
+            colWidths.push({ wch: 5 }); // No.
+          } else {
+            const maxLen = data.reduce((max, row) => Math.max(max, String(row[key] ?? "").length), key.length);
+            colWidths.push({ wch: Math.min(maxLen + 2, 40) });
+          }
         });
         ws["!cols"] = colWidths;
 
@@ -756,17 +790,6 @@ const useReports = (): useReportsServices => {
         ws["!merges"].push({ s: { r: 3, c: 1 }, e: { r: 3, c: headers.length } });
         ws["!merges"].push({ s: { r: 4, c: 1 }, e: { r: 4, c: headers.length } });
         ws["!merges"].push({ s: { r: 5, c: 1 }, e: { r: 5, c: headers.length } });
-
-        // Sheet protection
-        (ws as Record<string, unknown>)["!protect"] = {
-          password: "P@ssw0rd",
-          sheet: true,
-          objects: true,
-          scenarios: true,
-          formatCells: false,
-          sort: false,
-          autoFilter: false,
-        };
 
         return ws;
       };
@@ -787,12 +810,12 @@ const useReports = (): useReportsServices => {
       const wb = XLSX.utils.book_new();
 
       // Sheet 1
-      const ws = buildSheet(excelData, "IT PROJECT PORTFOLIO", projectStatusColors);
+      const ws = buildSheet(excelData, "IT PROJECT PORTFOLIO", projectStatusColors, 32);
       XLSX.utils.book_append_sheet(wb, ws, "IT Project Portfolio Report");
 
       // Sheet 2
       if (rfcExcelData.length > 0) {
-        const wsRfc = buildSheet(rfcExcelData, "IT RFC PORTFOLIO", rfcStatusColors);
+        const wsRfc = buildSheet(rfcExcelData, "IT RFC PORTFOLIO", rfcStatusColors, 24);
         XLSX.utils.book_append_sheet(wb, wsRfc, "IT RFC Portfolio Report");
       }
 
