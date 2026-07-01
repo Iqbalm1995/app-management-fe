@@ -537,70 +537,290 @@ const useReports = (): useReportsServices => {
       }
 
       // Import xlsx dynamically
-      const XLSX = await import("xlsx");
+      const XLSX = await import("xlsx-js-style");
 
-      // Transform data for Excel export
-      const excelData = response.data.map(
-        (item: ReportProjectPortofolioDataResponse, index: number) => ({
-          "No.": index + 1,
-          "Project No": item.projectNo || "-",
-          "Project Name": item.projectName || "-",
-          "Project Category": item.projectCategory || "-",
-          "Project Type": item.projectType || "-",
-          "Project Characteristic": item.projectCharasteristicName || "-",
-          "Project Sub Characteristic":
-            item.projectSubCharasteristicName || "-",
-          "Project Description": item.projectDesc || "-",
-          "Owner Division": item.proOwnerDivisionName || "-",
-          "Owner Group": item.proOwnerGroupName || "-",
-          "Manage Division": item.proManageByDivisionName || "-",
-          "Manage Group": item.proManageByGroupName || "-",
-          "PIC Name": item.requirement?.userPicName || "-",
-          "PIC Contact": item.requirement?.userPicContanct || "-",
-          "PIC Email": item.requirement?.userPicEmail || "-",
-          "Target Live Date": item.requirement?.appLiveTargetDate
-            ? new Date(item.requirement.appLiveTargetDate).toLocaleDateString()
-            : "-",
-          "Project Status": item.projectStatus || "-",
-          "Progress (%)": item.projectStatusPercentage || 0,
-          "Duration (Days)": item.projectDurationDays || 0,
-          "Register Date": item.projectRegisterDate
-            ? new Date(item.projectRegisterDate).toLocaleDateString()
-            : "-",
-          "Closed Date": item.projectClosedDate
-            ? new Date(item.projectClosedDate).toLocaleDateString()
-            : "-",
-          "External Programs":
-            item.workPrograms
-              ?.filter((wp) => wp.workProgramSource === "EXTERNAL")
-              .map((wp) => `${wp.workProgramCode}: ${wp.workProgramName}`)
-              .join("; ") || "-",
-          "Internal Programs":
-            item.workPrograms
-              ?.filter((wp) => wp.workProgramSource === "INTERNAL")
-              .map((wp) => `${wp.workProgramCode}: ${wp.workProgramName}`)
-              .join("; ") || "-",
-          "Team Members":
-            item.userAssignment
-              ?.map((ua) => ua.userData?.nama || ua.userId)
-              .join("; ") || "-",
-        }),
+      // Split data into non-RFC and RFC
+      const nonRfcData = response.data.filter(
+        (item: ReportProjectPortofolioDataResponse) => !item.projectNo?.includes("/RFC/")
+      );
+      const rfcData = response.data.filter(
+        (item: ReportProjectPortofolioDataResponse) => item.projectNo?.includes("/RFC/")
       );
 
-      // Create workbook and worksheet
+      // Sort non-RFC: null projectNo on top, then by first segment (sequence number)
+      nonRfcData.sort((a: ReportProjectPortofolioDataResponse, b: ReportProjectPortofolioDataResponse) => {
+        if (!a.projectNo) return -1;
+        if (!b.projectNo) return 1;
+        const seqA = parseInt(a.projectNo.split("/")[0]) || 0;
+        const seqB = parseInt(b.projectNo.split("/")[0]) || 0;
+        return seqA - seqB;
+      });
+
+      // Sort RFC: by month (3rd segment) then by sequence (1st segment)
+      rfcData.sort((a: ReportProjectPortofolioDataResponse, b: ReportProjectPortofolioDataResponse) => {
+        if (!a.projectNo) return -1;
+        if (!b.projectNo) return 1;
+        const partsA = a.projectNo.split("/");
+        const partsB = b.projectNo.split("/");
+        const monthA = parseInt(partsA[2]) || 0;
+        const monthB = parseInt(partsB[2]) || 0;
+        if (monthA !== monthB) return monthA - monthB;
+        const seqA = parseInt(partsA[0]) || 0;
+        const seqB = parseInt(partsB[0]) || 0;
+        return seqA - seqB;
+      });
+
+      // Parse date to Excel serial number or null
+      const toExcelDate = (dateStr: string | null | undefined): Date | string => {
+        if (!dateStr) return "-";
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return "-";
+        return d;
+      };
+
+      // Transform function for Excel rows (new column order)
+      const toExcelRow = (item: ReportProjectPortofolioDataResponse, index: number) => ({
+        "NO.": index + 1,
+        "PROJECT NO": item.projectNo || "-",
+        "PROJECT NAME": item.projectName || "-",
+        "PROJECT TYPE": item.projectType || "-",
+        "TARGET LIVE DATE": toExcelDate(item.requirement?.appLiveTargetDate),
+        "PROJECT STATUS": item.projectStatus || "-",
+        "PROGRESS (%)": item.projectStatusPercentage || 0,
+        "DURATION (DAYS)": item.projectDurationDays || 0,
+        "REGISTER DATE": toExcelDate(item.projectRegisterDate),
+        "CLOSED DATE": toExcelDate(item.projectClosedDate),
+        "OWNER DIVISION": item.proOwnerDivisionName || "-",
+        "OWNER GROUP": item.proOwnerGroupName || "-",
+        "MANAGE DIVISION": item.proManageByDivisionName || "-",
+        "MANAGE GROUP": item.proManageByGroupName || "-",
+        "PIC NAME": item.requirement?.userPicName || "-",
+        "PIC CONTACT": item.requirement?.userPicContanct || "-",
+        "PIC EMAIL": item.requirement?.userPicEmail || "-",
+        "EXTERNAL PROGRAMS": item.workPrograms
+          ?.filter((wp) => wp.workProgramSource === "EXTERNAL")
+          .map((wp) => `${wp.workProgramCode}: ${wp.workProgramName}`)
+          .join("; ") || "-",
+        "INTERNAL PROGRAMS": item.workPrograms
+          ?.filter((wp) => wp.workProgramSource === "INTERNAL")
+          .map((wp) => `${wp.workProgramCode}: ${wp.workProgramName}`)
+          .join("; ") || "-",
+        "PROJECT CATEGORY": item.projectCategory || "-",
+        "PROJECT CHARACTERISTIC": item.projectCharasteristicName || "-",
+        "PROJECT SUB CHARACTERISTIC": item.projectSubCharasteristicName || "-",
+        "PROJECT DESCRIPTION": item.projectDesc || "-",
+        "TEAM MEMBERS": item.userAssignment
+          ?.map((ua) => ua.userData?.nama || ua.userId)
+          .join("; ") || "-",
+      });
+
+      const excelData = nonRfcData.map(toExcelRow);
+      const rfcExcelData = rfcData.map(toExcelRow);
+
+      // Style definitions
+      const baseFont = { name: "Calibri", sz: 11 };
+      const headerStyle = {
+        font: { ...baseFont, bold: true, color: { rgb: "FFFFFF" } },
+        fill: { fgColor: { rgb: "000000" } },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
+        border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } },
+      };
+      const cellStyleLeft = {
+        font: baseFont,
+        alignment: { horizontal: "left", vertical: "top", wrapText: false },
+        border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } },
+      };
+      const cellStyleCenter = {
+        font: baseFont,
+        alignment: { horizontal: "center", vertical: "top", wrapText: false },
+        border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } },
+      };
+      const cellStyleWrap = {
+        font: baseFont,
+        alignment: { horizontal: "left", vertical: "top", wrapText: true },
+        border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } },
+      };
+
+      // Wrap text column indices: PROJECT NO(1), PROJECT NAME(2), EXTERNAL PROGRAMS(17), INTERNAL PROGRAMS(18), PROJECT DESCRIPTION(22), TEAM MEMBERS(23)
+      const wrapCols = [1, 2, 17, 18, 22, 23];
+
+      // Status legend colors
+      const statusColors: Record<string, string> = {
+        "CANCELED": "C00000",
+        "CLOSED": "00B050",
+        "COMPLETED": "92D050",
+        "DECLINED": "FF0000",
+        "INITIATING": "FFFF00",
+        "RUNNING": "00B0F0",
+        "TEMPORARY CLOSED": "FFC000",
+        "WAITING APPROVAL 1": "FFFFFF",
+        "WAITING APPROVAL 2": "FFFFFF",
+        "WAITING APPROVAL 3": "FFFFFF",
+      };
+
+      // Status column index (PROJECT STATUS = index 5)
+      const statusColIdx = 5;
+      // Date column indices (TARGET LIVE DATE=4, REGISTER DATE=8, CLOSED DATE=9)
+      const dateCols = [4, 8, 9];
+
+      // Build formatted worksheet
+      const buildSheet = (data: Record<string, unknown>[], title: string, sheetStatusColors: Record<string, string>, projectNoWidth: number = 32) => {
+        // Row layout: 0-2=blank, 3=title, 4=date, 5=time, 6=blank, 7=header, 8+=data
+        // Column A is left empty as spacer, data starts from column B
+        const headers = data.length > 0 ? Object.keys(data[0]) : [];
+        const dataStartRow = 7; // header row index
+        const now = new Date();
+        const dateStr = `${String(now.getDate()).padStart(2,"0")}-${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][now.getMonth()]}-${now.getFullYear()}`;
+        const timeStr = `${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}:${String(now.getSeconds()).padStart(2,"0")}`;
+
+        // Create array of arrays with empty column A prefix
+        const aoa: unknown[][] = [
+          [], // row 0 blank
+          [], // row 1 blank
+          [], // row 2 blank
+          ["", title], // row 3 title (col B)
+          ["", `Date: ${dateStr}`], // row 4 date (col B)
+          ["", `Time: ${timeStr}`], // row 5 time (col B)
+          [], // row 6 blank
+          ["", ...headers], // row 7 header (col B onwards)
+          ...data.map((row) => ["", ...headers.map((h) => row[h])]), // row 8+ data
+        ];
+
+        const ws = XLSX.utils.aoa_to_sheet(aoa, { cellDates: true });
+
+        // Get range
+        const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
+
+        // Apply styles to all cells (column A=spacer, data columns start at C=1)
+        for (let R = range.s.r; R <= range.e.r; R++) {
+          for (let C = range.s.c; C <= range.e.c; C++) {
+            const addr = XLSX.utils.encode_cell({ r: R, c: C });
+            if (!ws[addr]) ws[addr] = { t: "s", v: "" };
+
+            if (C === 0) {
+              // Column A - empty spacer, no style
+              continue;
+            } else if (R === 3) {
+              // Title row
+              (ws[addr] as Record<string, unknown>).s = { font: { ...baseFont, sz: 14, bold: true }, alignment: { horizontal: "left", vertical: "center" } };
+            } else if (R === 4 || R === 5) {
+              // Date/Time row
+              (ws[addr] as Record<string, unknown>).s = { font: { ...baseFont, italic: true }, alignment: { horizontal: "left", vertical: "center" } };
+            } else if (R === dataStartRow) {
+              // Header row
+              (ws[addr] as Record<string, unknown>).s = headerStyle;
+            } else if (R > dataStartRow) {
+              // Data rows - adjust column index (C-1 because col A is spacer)
+              const dataCol = C - 1;
+              if (dataCol === 0) {
+                // No. column - center align
+                (ws[addr] as Record<string, unknown>).s = cellStyleCenter;
+              } else if (dateCols.includes(dataCol)) {
+                // Date columns - apply date format (d-mmm-yy, English US)
+                const cell = ws[addr] as Record<string, unknown>;
+                if (cell.v instanceof Date) {
+                  cell.t = "d";
+                  cell.z = "D-MMM-YY";
+                  cell.s = { ...cellStyleLeft, numFmt: "D-MMM-YY" };
+                } else {
+                  cell.s = cellStyleLeft;
+                }
+              } else if (wrapCols.includes(dataCol)) {
+                // Wrap text columns
+                (ws[addr] as Record<string, unknown>).s = cellStyleWrap;
+              } else if (dataCol === statusColIdx) {
+                // Status column - apply color
+                const val = String((ws[addr] as Record<string, unknown>).v || "");
+                const color = sheetStatusColors[val];
+                (ws[addr] as Record<string, unknown>).s = {
+                  ...cellStyleLeft,
+                  fill: color ? { fgColor: { rgb: color } } : undefined,
+                  font: { ...baseFont, color: color && color !== "FFFFFF" && color !== "FFFF00" ? { rgb: "FFFFFF" } : { rgb: "000000" } },
+                };
+              } else {
+                (ws[addr] as Record<string, unknown>).s = cellStyleLeft;
+              }
+            }
+          }
+        }
+
+        // Column widths: col A = spacer, then data columns B onwards
+        // Specific widths: C(PROJECT NO)=50, D(PROJECT NAME)=270, E(PROJECT TYPE)=85, F(TARGET LIVE)=25
+        // M(OWNER GROUP)=55, N(MANAGE DIV)=32, O(MANAGE GROUP)=55
+        // S(EXTERNAL)=85, T(INTERNAL)=85, V(CHARACTERISTIC)=55, X(DESCRIPTION)=55, Y(TEAM)=55
+        const specificWidths: Record<number, number> = {
+          1: 40,   // PROJECT NO
+          2: 85,   // PROJECT NAME
+          3: 25,   // PROJECT TYPE
+          4: 20,   // TARGET LIVE DATE
+          5: 25,   // PROJECT STATUS
+          6: 15,   // PROGRESS (%)
+          7: 17,   // DURATION (DAYS)
+          8: 15,   // REGISTER DATE
+          9: 15,   // CLOSED DATE
+          11: 55,  // OWNER GROUP
+          12: 32,  // MANAGE DIVISION
+          13: 55,  // MANAGE GROUP
+          17: 85,  // EXTERNAL PROGRAMS
+          18: 85,  // INTERNAL PROGRAMS
+          20: 55,  // PROJECT CHARACTERISTIC
+          22: 55,  // PROJECT DESCRIPTION
+          23: 55,  // TEAM MEMBERS
+        };
+        const colWidths: { wpx?: number; wch?: number }[] = [{ wch: 3 }]; // Column A spacer
+        headers.forEach((key, idx) => {
+          if (specificWidths[idx] !== undefined) {
+            colWidths.push({ wch: specificWidths[idx] });
+          } else if (idx === 0) {
+            colWidths.push({ wch: 5 }); // No.
+          } else {
+            const maxLen = data.reduce((max, row) => Math.max(max, String(row[key] ?? "").length), key.length);
+            colWidths.push({ wch: Math.min(maxLen + 2, 40) });
+          }
+        });
+        ws["!cols"] = colWidths;
+
+        // Row heights: header row = 50px
+        const rows: { hpx?: number }[] = [];
+        rows[dataStartRow] = { hpx: 50 };
+        ws["!rows"] = rows;
+
+        // Merge title, date, time cells across all data columns (col B to last)
+        if (!ws["!merges"]) ws["!merges"] = [];
+        ws["!merges"].push({ s: { r: 3, c: 1 }, e: { r: 3, c: headers.length } });
+        ws["!merges"].push({ s: { r: 4, c: 1 }, e: { r: 4, c: headers.length } });
+        ws["!merges"].push({ s: { r: 5, c: 1 }, e: { r: 5, c: headers.length } });
+
+        return ws;
+      };
+
+      // Status colors for each sheet
+      const projectStatusColors = { ...statusColors };
+      const rfcStatusColors: Record<string, string> = {
+        "CANCELED": "C00000",
+        "CLOSED": "00B050",
+        "COMPLETED": "92D050",
+        "DECLINED": "FF0000",
+        "INITIATING": "FFFF00",
+        "RUNNING": "00B0F0",
+        "TEMPORARY CLOSED": "FFC000",
+      };
+
+      // Create workbook
       const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(excelData);
 
-      // Auto-size columns
-      const colWidths = Object.keys(excelData[0] || {}).map((key) => ({
-        wch: Math.max(key.length, 15),
-      }));
-      ws["!cols"] = colWidths;
+      // Sheet 1
+      const ws = buildSheet(excelData, "IT PROJECT PORTFOLIO", projectStatusColors, 32);
+      XLSX.utils.book_append_sheet(wb, ws, "IT Project Portfolio Report");
 
-      XLSX.utils.book_append_sheet(wb, ws, "Project Portfolio Report");
+      // Sheet 2
+      if (rfcExcelData.length > 0) {
+        const wsRfc = buildSheet(rfcExcelData, "IT RFC PORTFOLIO", rfcStatusColors, 24);
+        XLSX.utils.book_append_sheet(wb, wsRfc, "IT RFC Portfolio Report");
+      }
 
       // Generate Excel file as blob
-      const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array", cellStyles: true });
       const blob = new Blob([excelBuffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
@@ -824,7 +1044,7 @@ const useReports = (): useReportsServices => {
       }
 
       // Import xlsx dynamically
-      const XLSX = await import("xlsx");
+      const XLSX = await import("xlsx-js-style");
 
       // Transform data for Excel export with group headers
       const excelData = response.data.map(
@@ -953,7 +1173,7 @@ const useReports = (): useReportsServices => {
 
       if (data.statusCode === 200 && data.data) {
         // Create Excel file using xlsx
-        const XLSX = await import("xlsx");
+        const XLSX = await import("xlsx-js-style");
         const workbook = XLSX.utils.book_new();
 
         // Transform data for Excel export with proper column structure
@@ -1220,7 +1440,7 @@ const useReports = (): useReportsServices => {
 
       if (data.statusCode === 200 && data.data) {
         // Create Excel file using xlsx - same structure as active portfolio
-        const XLSX = await import("xlsx");
+        const XLSX = await import("xlsx-js-style");
         const workbook = XLSX.utils.book_new();
 
         // Transform data for Excel export with proper column structure
@@ -1566,7 +1786,7 @@ const useReports = (): useReportsServices => {
 
     try {
       // Import xlsx dynamically
-      const XLSX = await import("xlsx");
+      const XLSX = await import("xlsx-js-style");
 
       // Transform data for Excel export with all required columns
       const excelData = data.map((item: UserEvaluationReportListResponse, index: number) => ({

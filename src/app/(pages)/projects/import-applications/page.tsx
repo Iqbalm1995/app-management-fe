@@ -38,7 +38,7 @@ import useOrganization from "@/app/services/useOrganization";
 import useApps, { ApplicationMasterInsertDataPayload } from "@/app/services/useApps";
 import { PaggingListPayload } from "@/app/types/masterTypes";
 import ImportPreviewModal from "./components/ImportPreviewModal";
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 
 import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
 
@@ -128,7 +128,7 @@ export default function ProjectApplicationImportPage() {
       }, 100);
 
       // Dynamic import of xlsx library
-      const XLSX = await import('xlsx');
+      const XLSX = await import('xlsx-js-style');
 
       const fileBuffer = await file.arrayBuffer();
       const workbook = XLSX.read(fileBuffer);

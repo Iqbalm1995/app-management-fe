@@ -32,7 +32,7 @@ import { radiusStyle } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import ImportLegacyPreviewModal from "./components/ImportLegacyPreviewModal";
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
 
 interface ImportedLegacyData {
@@ -110,7 +110,7 @@ export default function ProjectImportLegacyPage() {
         });
       }, 100);
 
-      const XLSX = await import('xlsx');
+      const XLSX = await import('xlsx-js-style');
       const fileBuffer = await file.arrayBuffer();
       const workbook = XLSX.read(fileBuffer);
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
