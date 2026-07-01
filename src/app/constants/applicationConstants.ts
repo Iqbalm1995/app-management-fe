@@ -91,14 +91,14 @@ export const BASE_URL_MAIN: string = "https://localhost";
 export const BASE_PORT_MAIN: string = "8998";
 
 // Base Url Endpoint API
-export const ENDPOINT_API_BASEURL: string = "http://192.168.231.181";
-// export const ENDPOINT_API_BASEURL: string = "https://localhost";
-export const ENDPOINT_PORT_BASIC: string = "80";
+// export const ENDPOINT_API_BASEURL: string = "http://192.168.231.181";
+export const ENDPOINT_API_BASEURL: string = "https://localhost";
+export const ENDPOINT_PORT_BASIC: string = "2332";
 
 // Base Url Endpoint API
-export const ENDPOINT_API_BASEURL_OBJECT: string = "http://192.168.239.181";
-// export const ENDPOINT_API_BASEURL_OBJECT: string = "https://localhost";
-export const ENDPOINT_PORT_BASIC_OBJECT: string = "80";
+// export const ENDPOINT_API_BASEURL_OBJECT: string = "http://192.168.239.181";
+export const ENDPOINT_API_BASEURL_OBJECT: string = "https://localhost";
+export const ENDPOINT_PORT_BASIC_OBJECT: string = "2332";
 
 // generic response error
 export const RES_GENERIC_ERROR_MSG: string = "Internal server error";
