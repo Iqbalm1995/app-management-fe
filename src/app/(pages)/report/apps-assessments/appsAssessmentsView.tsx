@@ -8,12 +8,14 @@ import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useAppsCriticalReport, { AppsCriticalReportBatchSummary } from "@/app/services/useAppsCriticalReport";
+import useApps from "@/app/services/useApps";
 import { PaggingListPayload } from "@/app/types/masterTypes";
 import { Search2Icon } from "@chakra-ui/icons";
 import {
-  Badge, Box, Button, Card, CardBody, Flex, Heading, HStack, Icon,
-  IconButton, Input, InputGroup, InputLeftElement, Select, Spacer,
-  Spinner, Text, useColorMode, VStack,
+  Badge, Box, Button, Card, CardBody, Divider, Flex, Heading, HStack, Icon,
+  IconButton, Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalCloseButton,
+  ModalContent, ModalFooter, ModalHeader, ModalOverlay, Select, SimpleGrid, Spacer,
+  Spinner, Text, useColorMode, useDisclosure, VStack,
 } from "@chakra-ui/react";
 import {
   ColumnDef, getCoreRowModel, getFilteredRowModel,
@@ -21,7 +23,7 @@ import {
 } from "@tanstack/react-table";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FiActivity, FiEye, FiRefreshCw, FiZap, FiX } from "react-icons/fi";
+import { FiActivity, FiAlertCircle, FiEye, FiRefreshCw, FiZap, FiX } from "react-icons/fi";
 
 const QUARTERS = ["Q1", "Q2", "Q3", "Q4"];
 const YEARS = Array.from({ length: 5 }, (_, i) => String(new Date().getFullYear() - i));
@@ -34,6 +36,7 @@ export default function AppsAssessmentsView() {
   const showToast = useToastHelper();
   const router = useRouter();
   const { Generate, List } = useAppsCriticalReport();
+  const { List: ListApps } = useApps();
 
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState("");
@@ -41,6 +44,14 @@ export default function AppsAssessmentsView() {
   const [refresh, setRefresh] = useState(0);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [appCount, setAppCount] = useState<number | null>(null);
+  const { isOpen: isConfirmOpen, onOpen: onConfirmOpen, onClose: onConfirmClose } = useDisclosure();
+
+  // Compute current period for confirmation display
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentQuarter = Math.ceil((now.getMonth() + 1) / 3);
+  const currentPeriodLabel = `Q${currentQuarter} ${currentYear}`;
   const [search, setSearch] = useState("");
   const [filterQ, setFilterQ] = useState("");
   const [filterYear, setFilterYear] = useState("");
@@ -76,6 +87,15 @@ export default function AppsAssessmentsView() {
     };
     fetchData();
   }, [DataAuth, tokenData, refresh, pageIndex, pageSize, search, filterQ, filterYear, filterStatus]);
+
+  const handleOpenConfirm = async () => {
+    setAppCount(null);
+    onConfirmOpen();
+    if (tokenData) {
+      const res = await ListApps({ search: "", limit: 1, page: 0, filterWhere: [], fieldOrder: [], orderDir: "asc" }, tokenData);
+      if (res?.statusCode === RES_CODE_OK) setAppCount(res.countTotal ?? 0);
+    }
+  };
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -178,7 +198,7 @@ export default function AppsAssessmentsView() {
                   </VStack>
                 </HStack>
                 <Button colorScheme="purple" leftIcon={generating ? <Spinner size="xs" /> : <FiZap />}
-                  isLoading={generating} onClick={handleGenerate} size="sm">
+                  isLoading={generating} onClick={handleOpenConfirm} size="sm">
                   Generate Report
                 </Button>
               </HStack>
@@ -218,6 +238,66 @@ export default function AppsAssessmentsView() {
           </CardBody>
         </Card>
       </Box>
+
+      {/* Generate Confirmation Modal */}
+      <Modal isOpen={isConfirmOpen} onClose={onConfirmClose} size="md" isCentered>
+        <ModalOverlay />
+        <ModalContent rounded={radiusStyle}>
+          <ModalHeader>
+            <HStack spacing={3}>
+              <Box w={8} h={8} bg="purple.500" rounded="md" display="flex" alignItems="center" justifyContent="center" color="white">
+                <Icon as={FiZap} boxSize={4} />
+              </Box>
+              <Text fontWeight="bold">Generate Assessment Report</Text>
+            </HStack>
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={2}>
+            <VStack spacing={4} align="stretch">
+              <HStack p={4} bg={isDark ? "purple.900" : "purple.50"} rounded="lg"
+                border="1px" borderColor={isDark ? "purple.700" : "purple.200"}>
+                <Icon as={FiAlertCircle} color="purple.500" boxSize={5} flexShrink={0} />
+                <VStack align="start" spacing={0}>
+                  <Text fontSize="sm" fontWeight="semibold" color={isDark ? "purple.200" : "purple.700"}>
+                    Period: {currentPeriodLabel}
+                  </Text>
+                  <Text fontSize="xs" color={isDark ? "purple.300" : "purple.600"}>
+                    This will generate a new assessment batch for the current quarter and year.
+                  </Text>
+                </VStack>
+              </HStack>
+              <Divider />
+              <SimpleGrid columns={2} spacing={3}>
+                {[
+                  { label: "Quarter", value: `Q${currentQuarter}` },
+                  { label: "Year", value: String(currentYear) },
+                  { label: "Batch Code", value: `RPQ${currentQuarter}${currentYear}-APPS????` },
+                  { label: "Status", value: "DRAFT" },
+                  { label: "Applications", value: appCount === null ? "Loading..." : `${appCount} apps` },
+                ].map(({ label, value }) => (
+                  <Box key={label} p={3} bg={isDark ? "gray.700" : "gray.50"} rounded="md">
+                    <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"} mb={1}>{label}</Text>
+                    <Text fontSize="sm" fontWeight="semibold" fontFamily={label === "Batch Code" ? "mono" : "inherit"}>{value}</Text>
+                  </Box>
+                ))}
+              </SimpleGrid>
+              <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"}>
+                A new batch will be created for ALL active applications. Each app will get an assessment record with all criteria to be filled in.
+              </Text>
+            </VStack>
+          </ModalBody>
+          <ModalFooter gap={2}>
+            <Button variant="ghost" onClick={onConfirmClose}>Cancel</Button>
+            <Button colorScheme="purple" leftIcon={<FiZap />} isLoading={generating}
+              onClick={async () => {
+                onConfirmClose();
+                await handleGenerate();
+              }}>
+              Confirm Generate
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </LayoutAdmin>
   );
 }

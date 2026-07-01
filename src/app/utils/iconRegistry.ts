@@ -29,7 +29,10 @@ import {
   FaChess,
   FaCode,
   FaDraftingCompass,
+  FaDiceD20,
+  FaDiceD6,
   FaFire,
+  FaRegFileCode,
   FaRegFolderOpen,
   FaRegHeart,
   FaRegStar,
@@ -38,21 +41,24 @@ import {
 } from "react-icons/fa";
 
 // Font Awesome 6
-import { FaDiagramProject, FaO, FaUsersRays } from "react-icons/fa6";
+import { FaDiagramProject, FaO, FaRegRectangleList, FaUsersRays } from "react-icons/fa6";
 
 // Feather Icons
 import {
   FiAward,
   FiCircle,
+  FiClock,
   FiDatabase,
   FiDollarSign,
   FiKey,
   FiLayers,
+  FiList,
   FiSettings,
   FiUmbrella,
   FiUpload,
   FiUser,
   FiUsers,
+  FiZap,
 } from "react-icons/fi";
 
 // Grommet Icons
@@ -131,6 +137,7 @@ import {
   TbListDetails,
   TbMoodShare,
   TbNavigationShare,
+  TbNumbers,
   TbProgressCheck,
   TbServerCog,
   TbSettingsCog,
@@ -175,7 +182,10 @@ const iconRegistry: Record<string, IconType> = {
   FaChess,
   FaCode,
   FaDraftingCompass,
+  FaDiceD20,
+  FaDiceD6,
   FaFire,
+  FaRegFileCode,
   FaRegFolderOpen,
   FaRegHeart,
   FaRegStar,
@@ -185,11 +195,13 @@ const iconRegistry: Record<string, IconType> = {
   // Font Awesome 6 (Fa6)
   FaDiagramProject,
   FaO,
+  FaRegRectangleList,
   FaUsersRays,
 
   // Feather Icons (Fi)
   FiAward,
   FiCircle,
+  FiClock,
   FiDatabase,
   FiDollarSign,
   FiKey,
@@ -199,6 +211,8 @@ const iconRegistry: Record<string, IconType> = {
   FiUpload,
   FiUser,
   FiUsers,
+  FiList,
+  FiZap,
 
   // Grommet Icons (Gr)
   GrHelpBook,
@@ -270,6 +284,7 @@ const iconRegistry: Record<string, IconType> = {
   TbListDetails,
   TbMoodShare,
   TbNavigationShare,
+  TbNumbers,
   TbProgressCheck,
   TbServerCog,
   TbSettingsCog,

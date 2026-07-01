@@ -1092,7 +1092,7 @@ export const LinkItems: LinkItemProps[] = [
   {
     name: "Parameter ",
     icon: TbAdjustmentsCog, // general "settings/parameters" icon
-    iconName: "FTbAdjustmentsCogiKey",
+    iconName: "TbAdjustmentsCog",
     link: "/coming-soon",
     role: ["admin"],
     isPro: false,

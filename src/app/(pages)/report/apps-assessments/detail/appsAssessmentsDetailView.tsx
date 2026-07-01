@@ -9,10 +9,12 @@ import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useAppsCriticalReport, { AppsCriticalReportAssessmentViewModel, AppsCriticalReportBatchDetailViewModel } from "@/app/services/useAppsCriticalReport";
 import { ConfirmationDialog } from "@/app/components/confirmationDialog";
+import { Search2Icon } from "@chakra-ui/icons";
 import {
   Badge, Box, Button, Card, CardBody, CardHeader, Divider, Flex,
-  Heading, HStack, Icon, IconButton, Modal, ModalBody, ModalCloseButton,
-  ModalContent, ModalHeader, ModalOverlay, SimpleGrid, Spinner, Stack, Text,
+  Heading, HStack, Icon, IconButton, Input, InputGroup, InputLeftElement,
+  Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay,
+  Select, SimpleGrid, Spacer, Spinner, Stack, Text,
   useColorMode, useDisclosure, VStack,
 } from "@chakra-ui/react";
 import {
@@ -22,7 +24,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { FaArrowLeft } from "react-icons/fa6";
-import { FiActivity, FiEye, FiInfo } from "react-icons/fi";
+import { FiActivity, FiEye, FiInfo, FiX } from "react-icons/fi";
 
 const boolBadge = (v: string) => <Badge colorScheme={v === "TRUE" ? "green" : "gray"} variant="subtle" fontSize="xs">{v}</Badge>;
 const statusColor = (s: string) => ({ DRAFT: "gray", PUBLISHED: "green", APPROVED: "blue", ARCHIVED: "orange" }[s] || "gray");
@@ -46,6 +48,12 @@ export default function AppsAssessmentsDetailView() {
   const [selectedAssessment, setSelectedAssessment] = useState<AppsCriticalReportAssessmentViewModel | null>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
+  // Filter states
+  const [search, setSearch] = useState("");
+  const [filterGroup, setFilterGroup] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterReview, setFilterReview] = useState<"" | "reviewed" | "pending">("");
+
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
     const token = localStorage.getItem("tokenData") as string;
@@ -65,6 +73,34 @@ export default function AppsAssessmentsDetailView() {
     load();
   }, [tokenData, batchCode]);
 
+  // Unique group options from loaded data
+  const groupOptions = useMemo(() => {
+    const names = (batchData?.assessments || [])
+      .map(a => a.appManageByGroupName)
+      .filter((v): v is string => !!v);
+    return [...new Set(names)].sort();
+  }, [batchData]);
+
+  // Client-side filtered data
+  const filteredAssessments = useMemo(() => {
+    const all = batchData?.assessments || [];
+    return all.filter(a => {
+      const q = search.toLowerCase();
+      if (q && !(
+        a.appShortName?.toLowerCase().includes(q) ||
+        a.appName?.toLowerCase().includes(q) ||
+        a.appManageByGroupName?.toLowerCase().includes(q)
+      )) return false;
+      if (filterGroup && a.appManageByGroupName !== filterGroup) return false;
+      if (filterStatus && a.statusReport !== filterStatus) return false;
+      if (filterReview === "reviewed" && !a.isFullyReviewed) return false;
+      if (filterReview === "pending" && a.isFullyReviewed) return false;
+      return true;
+    });
+  }, [batchData, search, filterGroup, filterStatus, filterReview]);
+
+  const clearFilters = () => { setSearch(""); setFilterGroup(""); setFilterStatus(""); setFilterReview(""); };
+
   const assessmentColumns = useMemo<ColumnDef<AppsCriticalReportAssessmentViewModel>[]>(() => [
     {
       accessorKey: "numbData",
@@ -74,13 +110,14 @@ export default function AppsAssessmentsDetailView() {
     },
     {
       accessorKey: "appShortName",
-      cell: (info) => (
-        <VStack align="start" spacing={0}>
-          <Text fontSize="sm" fontWeight="semibold">{info.getValue() as string}</Text>
-          <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"}>{info.row.original.appName || "-"}</Text>
-        </VStack>
-      ),
-      header: () => <Text>App</Text>,
+      cell: (info) => <Text fontSize="sm" fontWeight="semibold">{info.getValue() as string}</Text>,
+      header: () => <Text>App Short Name</Text>,
+      footer: (p) => p.column.id,
+    },
+    {
+      accessorKey: "appName",
+      cell: (info) => <Text fontSize="sm" color={isDark ? "gray.300" : "gray.700"} noOfLines={2}>{(info.getValue() as string) || "-"}</Text>,
+      header: () => <Text>App Name</Text>,
       footer: (p) => p.column.id,
     },
     {
@@ -172,7 +209,7 @@ export default function AppsAssessmentsDetailView() {
   ], [isDark]);
 
   const table = useReactTable({
-    data: batchData?.assessments || [],
+    data: filteredAssessments,
     columns: assessmentColumns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -266,15 +303,45 @@ export default function AppsAssessmentsDetailView() {
           {/* Assessments Table */}
           <Card rounded={radiusStyle} shadow="md" border="1px" borderColor={isDark ? "gray.700" : "gray.200"} bg={isDark ? "gray.800" : "white"}>
             <CardHeader py={4} px={6}>
-              <Heading size="sm" color={isDark ? "gray.100" : "gray.700"}>App Assessments ({batchData?.assessments.length || 0})</Heading>
+              <Heading size="sm" color={isDark ? "gray.100" : "gray.700"}>App Assessments ({filteredAssessments.length}/{batchData?.assessments.length || 0})</Heading>
             </CardHeader>
             <Divider borderColor={isDark ? "gray.700" : "gray.100"} />
             <CardBody>
-              {loading ? (
-                <Flex justify="center" py={10}><Spinner color="purple.500" /></Flex>
-              ) : (
-                <TableComponentFull table={table} />
-              )}
+              {/* Filter Row */}
+              <Flex gap={3} wrap="wrap" mb={4}>
+                <InputGroup maxW="260px">
+                  <InputLeftElement><Search2Icon color="gray.400" /></InputLeftElement>
+                  <Input placeholder="Search app name or group..."
+                    value={search} onChange={e => setSearch(e.target.value)}
+                    bg={isDark ? "gray.700" : "white"} />
+                </InputGroup>
+                <Select placeholder="All Groups" value={filterGroup} onChange={e => setFilterGroup(e.target.value)} maxW="200px" bg={isDark ? "gray.700" : "white"}>
+                  {groupOptions.map(g => <option key={g} value={g}>{g}</option>)}
+                </Select>
+                <Select placeholder="All Status" value={filterStatus} onChange={e => setFilterStatus(e.target.value)} maxW="180px" bg={isDark ? "gray.700" : "white"}>
+                  {["DRAFT", "WAITING APPROVAL 1", "WAITING APPROVAL 2", "APPROVED", "DECLINE"].map(s =>
+                    <option key={s} value={s}>{s}</option>
+                  )}
+                </Select>
+                <Select placeholder="All Review" value={filterReview} onChange={e => setFilterReview(e.target.value as any)} maxW="160px" bg={isDark ? "gray.700" : "white"}>
+                  <option value="reviewed">✓ Reviewed</option>
+                  <option value="pending">⚠ Not Yet</option>
+                </Select>
+                {(search || filterGroup || filterStatus || filterReview) && (
+                  <Button variant="outline" leftIcon={<FiX />} size="md" onClick={clearFilters}>Clear</Button>
+                )}
+                <Spacer />
+                <HStack>
+                  <Text fontSize="sm" color={isDark ? "gray.400" : "gray.500"}>
+                    Showing {filteredAssessments.length} of {batchData?.assessments.length || 0}
+                  </Text>
+                </HStack>
+              </Flex>
+              <Box overflowX="auto" w="full">
+                <Box minW="1800px">
+                  <TableComponentFull table={table} />
+                </Box>
+              </Box>
             </CardBody>
           </Card>
         </VStack>
