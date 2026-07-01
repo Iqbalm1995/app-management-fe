@@ -2,6 +2,7 @@
 
 import { HeaderContent } from "@/app/components/headerContent";
 import LayoutAdmin from "@/app/components/layoutAdmin";
+import { ConfirmationDialog } from "@/app/components/confirmationDialog";
 import { radiusStyle, RES_CODE_OK, RES_GENERIC_ERROR_MSG, CRITERIA_VALUE_OPERATORS } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
@@ -16,7 +17,7 @@ import useMstAppsCriteria, { MstAppsCriteriaResponse, MstAppsCriteriaValueRespon
 import {
   Badge, Box, Button, Card, CardBody, CardHeader, Divider, Flex,
   FormLabel, Grid, Heading, HStack, Icon, IconButton, Input, Select, SimpleGrid,
-  Spinner, Stack, Text, useColorMode, VStack,
+  Spinner, Stack, Switch, Text, useColorMode, useDisclosure, VStack,
 } from "@chakra-ui/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -74,12 +75,14 @@ export default function AppsAssessmentDetailView() {
   const [submitting, setSubmitting] = useState(false);
   const [canApprove, setCanApprove] = useState(false);
   const [approving, setApproving] = useState(false);
+  const [isSaveConfirmOpen, setIsSaveConfirmOpen] = useState(false);
+  const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
 
   const [categories, setCategories] = useState<MstAppsCriteriaCategoryResponse[]>([]);
   const [criteriaList, setCriteriaList] = useState<MstAppsCriteriaResponse[]>([]);
 
   // Editable state
-  const [flags, setFlags] = useState({ isRelationWithCustomers: "FALSE", isTransactionalApp: "FALSE", isStrictCutoffTime: "FALSE", isRelationWithGov: "FALSE" });
+  const [flags, setFlags] = useState({ isRelationWithCustomers: "FALSE", isTransactionalApp: "FALSE", isStrictCutoffTime: "FALSE", isRelationWithGov: "FALSE", isOnDevelopment: "FALSE", isSkipReview: "FALSE" });
   // detailId -> selected valueId
   const [detailSelections, setDetailSelections] = useState<Record<string, string>>({});
   const [rtoRpo, setRtoRpo] = useState({
@@ -117,6 +120,8 @@ export default function AppsAssessmentDetailView() {
         isTransactionalApp: res.data.isTransactionalApp,
         isStrictCutoffTime: res.data.isStrictCutoffTime,
         isRelationWithGov: res.data.isRelationWithGov,
+        isOnDevelopment: res.data.isOnDevelopment,
+        isSkipReview: res.data.isSkipReview,
       });
       setRtoRpo({
         appsRtoSuggestionOperator: res.data.appsRtoSuggestionOperator || "",
@@ -251,8 +256,8 @@ export default function AppsAssessmentDetailView() {
               <Badge colorScheme="gray" variant="subtle">{data?.statusReport}</Badge>
               {/* Save/Submit — only from non-pending source when editable */}
               {isEditable && sourceParam !== "pending" && <>
-                <Button colorScheme="purple" size="sm" leftIcon={<FiSave />} isLoading={saving} onClick={handleSave}>Save Changes</Button>
-                {isDraft && <Button colorScheme="orange" size="sm" isLoading={submitting} onClick={handleSubmitApproval}>Submit for Approval</Button>}
+                <Button colorScheme="purple" size="sm" leftIcon={<FiSave />} isLoading={saving} onClick={() => setIsSaveConfirmOpen(true)}>Save Changes</Button>
+                {isDraft && <Button colorScheme="orange" size="sm" isLoading={submitting} onClick={() => setIsSubmitConfirmOpen(true)}>Submit for Approval</Button>}
                 {isDeclined && <Button colorScheme="yellow" size="sm" isLoading={submitting} onClick={async () => {
                   setSubmitting(true);
                   const res = await ResubmitAssessment(assessmentId!, tokenData);
@@ -280,6 +285,60 @@ export default function AppsAssessmentDetailView() {
               </>}
             </HStack>
           </HStack>
+
+          {/* On Development Section */}
+          <Card rounded={radiusStyle} shadow="md" border="1px" borderColor={flags.isOnDevelopment === "TRUE" ? (isDark ? "yellow.600" : "yellow.300") : (isDark ? "gray.700" : "gray.200")} bg={isDark ? "gray.800" : "white"}>
+            <CardBody py={4} px={5}>
+              <HStack justify="space-between">
+                <VStack align="start" spacing={0}>
+                  <HStack spacing={2}>
+                    <Heading size="sm">Application On Development?</Heading>
+                    {flags.isOnDevelopment === "TRUE" && <Badge colorScheme="yellow" variant="solid" fontSize="xs">ON DEVELOPMENT</Badge>}
+                  </HStack>
+                  <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"}>Indicates this application is currently under active development</Text>
+                </VStack>
+                <HStack spacing={2}>
+                  {(["TRUE", "FALSE"] as const).map(opt => (
+                    <Button key={opt} size="sm" px={5}
+                      variant={flags.isOnDevelopment === opt ? "solid" : "outline"}
+                      colorScheme={opt === "TRUE" ? "yellow" : "gray"}
+                      isDisabled={!isEditable}
+                      onClick={() => isEditable && setFlags(prev => ({ ...prev, isOnDevelopment: opt }))}>
+                      {opt}
+                    </Button>
+                  ))}
+                </HStack>
+              </HStack>
+            </CardBody>
+          </Card>
+
+          {/* Skip Review Section — only relevant when On Development */}
+          {flags.isOnDevelopment === "TRUE" && (
+            <Card rounded={radiusStyle} shadow="md" border="1px" borderColor={flags.isSkipReview === "TRUE" ? (isDark ? "orange.600" : "orange.300") : (isDark ? "gray.700" : "gray.200")} bg={isDark ? "gray.800" : "white"}>
+              <CardBody py={4} px={5}>
+                <HStack justify="space-between">
+                  <VStack align="start" spacing={0}>
+                    <HStack spacing={2}>
+                      <Heading size="sm">Skip Review for this Assessment?</Heading>
+                      {flags.isSkipReview === "TRUE" && <Badge colorScheme="orange" variant="solid" fontSize="xs">SKIP REVIEW</Badge>}
+                    </HStack>
+                    <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"}>If skipped, this assessment will bypass the normal review process</Text>
+                  </VStack>
+                  <HStack spacing={2}>
+                    {(["TRUE", "FALSE"] as const).map(opt => (
+                      <Button key={opt} size="sm" px={5}
+                        variant={flags.isSkipReview === opt ? "solid" : "outline"}
+                        colorScheme={opt === "TRUE" ? "orange" : "gray"}
+                        isDisabled={!isEditable}
+                        onClick={() => isEditable && setFlags(prev => ({ ...prev, isSkipReview: opt }))}>
+                        {opt}
+                      </Button>
+                    ))}
+                  </HStack>
+                </HStack>
+              </CardBody>
+            </Card>
+          )}
 
           {/* App Info + Flags side by side */}
           <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={5}>
@@ -513,6 +572,29 @@ export default function AppsAssessmentDetailView() {
 
         </VStack>
       </Box>
+
+      {/* Save Changes Confirmation */}
+      <ConfirmationDialog
+        isOpenTrigger={isSaveConfirmOpen}
+        trigger={setIsSaveConfirmOpen}
+        action={handleSave}
+        captionMsg="Save Changes"
+        questionMsg="Are you sure you want to save all changes to this assessment? This will update flags, criteria scores, category, and RTO/RPO values."
+      />
+
+      {/* Submit for Approval Confirmation — saves first then submits */}
+      <ConfirmationDialog
+        isOpenTrigger={isSubmitConfirmOpen}
+        trigger={setIsSubmitConfirmOpen}
+        action={async () => {
+          // Save changes first
+          await handleSave();
+          // Then submit to approval
+          await handleSubmitApproval();
+        }}
+        captionMsg="Submit for Approval"
+        questionMsg="This will first save all current changes, then submit this assessment for approval (WAITING APPROVAL 1). Are you sure?"
+      />
     </LayoutAdmin>
   );
 }

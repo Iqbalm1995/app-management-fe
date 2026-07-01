@@ -44,7 +44,8 @@ export interface AppsCriticalReportAssessmentViewModel {
   isRelationWithCustomers: string;
   isTransactionalApp: string;
   isStrictCutoffTime: string;
-  isRelationWithGov: string;
+  isOnDevelopment: string;
+  isSkipReview: string;
   totalIsAdditionalFlag: number;
   countTrueIsAdditionalFlag: number;
   weightTrueIsAdditionalFlag: number;
@@ -89,6 +90,8 @@ export interface UpdateAssessmentRequest {
   isTransactionalApp: string;
   isStrictCutoffTime: string;
   isRelationWithGov: string;
+  isOnDevelopment: string;
+  isSkipReview: string;
   appCrtCategoryId: string | null;
   appCrtCategoryCode: string | null;
   appCrtCategoryName: string | null;
