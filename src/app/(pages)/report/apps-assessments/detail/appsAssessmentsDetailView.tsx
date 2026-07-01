@@ -35,12 +35,14 @@ export default function AppsAssessmentsDetailView() {
   const searchParams = useSearchParams();
   const batchCode = searchParams.get("batchCode");
 
-  const { GetBatchDetail, SubmitBatchForApproval } = useAppsCriticalReport();
+  const { GetBatchDetail, SubmitBatchForApproval, SyncBatchStatus, ReviseBatch } = useAppsCriticalReport();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState("");
   const [batchData, setBatchData] = useState<AppsCriticalReportBatchDetailViewModel | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [isRevising, setIsRevising] = useState(false);
   const [selectedAssessment, setSelectedAssessment] = useState<AppsCriticalReportAssessmentViewModel | null>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
@@ -85,6 +87,12 @@ export default function AppsAssessmentsDetailView() {
       accessorKey: "appManageByGroupName",
       cell: (info) => <Text fontSize="sm" color={isDark ? "gray.400" : "gray.600"} noOfLines={1}>{(info.getValue() as string) || "-"}</Text>,
       header: () => <Text>Manage Group</Text>,
+      footer: (p) => p.column.id,
+    },
+    {
+      accessorKey: "statusReport",
+      cell: (info) => <Badge colorScheme={statusColor(info.getValue() as string)} variant="subtle">{info.getValue() as string}</Badge>,
+      header: () => <Text>Status</Text>,
       footer: (p) => p.column.id,
     },
     {
@@ -194,7 +202,40 @@ export default function AppsAssessmentsDetailView() {
               )}
             </VStack>
             <Box flex={1} />
-            {batchData?.statusReport === "DRAFT" && (
+            {/* Sync button — show when batch is DRAFT or WAITING APPROVAL 1 */}
+            {(batchData?.statusReport === "DRAFT" || batchData?.statusReport === "WAITING APPROVAL 1") && (
+              <Button colorScheme="blue" size="sm" variant="outline" isLoading={isSyncing}
+                onClick={async () => {
+                  setIsSyncing(true);
+                  const res = await SyncBatchStatus(batchCode!, tokenData);
+                  setIsSyncing(false);
+                  if (res?.statusCode === RES_CODE_OK) {
+                    showToast({ description: res.message || "Sync complete", statusToast: "success" });
+                    const reload = await GetBatchDetail(batchCode!, tokenData);
+                    if (reload?.statusCode === RES_CODE_OK && reload.data) setBatchData(reload.data);
+                  } else showToast({ description: res?.message || "Sync failed", statusToast: "error" });
+                }}>
+                Sync Status
+              </Button>
+            )}
+            {/* Revise button — show when batch is DECLINE */}
+            {batchData?.statusReport === "DECLINE" && (
+              <Button colorScheme="yellow" size="sm" isLoading={isRevising}
+                onClick={async () => {
+                  setIsRevising(true);
+                  const res = await ReviseBatch(batchCode!, tokenData);
+                  setIsRevising(false);
+                  if (res?.statusCode === RES_CODE_OK) {
+                    showToast({ description: "Batch reset to revision — all assessments back to WAITING APPROVAL 1", statusToast: "success" });
+                    const reload = await GetBatchDetail(batchCode!, tokenData);
+                    if (reload?.statusCode === RES_CODE_OK && reload.data) setBatchData(reload.data);
+                  } else showToast({ description: res?.message || "Revise failed", statusToast: "error" });
+                }}>
+                Revise Batch
+              </Button>
+            )}
+            {/* Submit for Approval — only when batch is WAITING APPROVAL 2 */}
+            {batchData?.statusReport === "WAITING APPROVAL 2" && (
               <Button colorScheme="orange" size="sm" onClick={() => setIsSubmitConfirmOpen(true)}>
                 Submit for Approval
               </Button>
@@ -293,7 +334,7 @@ export default function AppsAssessmentsDetailView() {
           } else showToast({ description: res?.message || "Submit failed", statusToast: "error" });
         }}
         captionMsg="Submit for Approval"
-        questionMsg={`Are you sure you want to submit batch "${batchCode}" for approval? All ${batchData?.assessments?.length || 0} assessments will be moved to WAITING APPROVAL status.`}
+        questionMsg={`Are you sure you want to submit batch "${batchCode}" for the next approval level? All remaining assessments will be advanced.`}
       />
     </LayoutAdmin>
   );

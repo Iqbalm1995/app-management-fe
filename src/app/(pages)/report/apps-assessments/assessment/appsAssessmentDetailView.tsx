@@ -60,8 +60,9 @@ export default function AppsAssessmentDetailView() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const assessmentId = searchParams.get("id");
+  const sourceParam = searchParams.get("source") || "detail"; // "pending" or "detail"
 
-  const { GetAssessmentDetail, UpdateAssessment, UpdateAssessmentDetail, SubmitForApproval } = useAppsCriticalReport();
+  const { GetAssessmentDetail, UpdateAssessment, UpdateAssessmentDetail, SubmitForApproval, CanApproveAssessment, ApproveAssessment, ResubmitAssessment } = useAppsCriticalReport();
   const { List: ListCategory } = useMstAppsCriteriaCategory();
   const { List: ListCriteria } = useMstAppsCriteria();
 
@@ -71,6 +72,8 @@ export default function AppsAssessmentDetailView() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [canApprove, setCanApprove] = useState(false);
+  const [approving, setApproving] = useState(false);
 
   const [categories, setCategories] = useState<MstAppsCriteriaCategoryResponse[]>([]);
   const [criteriaList, setCriteriaList] = useState<MstAppsCriteriaResponse[]>([]);
@@ -108,9 +111,9 @@ export default function AppsAssessmentDetailView() {
     setLoading(true);
     const res = await GetAssessmentDetail(assessmentId, tokenData);
     if (res?.statusCode === RES_CODE_OK && res.data) {
-      setData(res.data);
-      setFlags({
-        isRelationWithCustomers: res.data.isRelationWithCustomers,
+        setData(res.data);
+        setFlags({
+          isRelationWithCustomers: res.data.isRelationWithCustomers,
         isTransactionalApp: res.data.isTransactionalApp,
         isStrictCutoffTime: res.data.isStrictCutoffTime,
         isRelationWithGov: res.data.isRelationWithGov,
@@ -126,6 +129,11 @@ export default function AppsAssessmentDetailView() {
       const init: Record<string, string> = {};
       res.data.details?.forEach((d: any) => { if (d.appsCriteriaValuesId) init[d.id] = d.appsCriteriaValuesId; });
       setDetailSelections(init);
+      // Check if user can approve this assessment
+      if (assessmentId) {
+        const approveCheck = await CanApproveAssessment(assessmentId, tokenData);
+        setCanApprove(approveCheck?.statusCode === RES_CODE_OK && approveCheck?.data === "true");
+      }
     } else showToast({ description: res?.message || RES_GENERIC_ERROR_MSG, statusToast: "error" });
     setLoading(false);
   };
@@ -134,6 +142,8 @@ export default function AppsAssessmentDetailView() {
 
   // Derived calculations
   const isDraft = data?.statusReport === "DRAFT";
+  const isDeclined = data?.statusReport === "DECLINE";
+  const isEditable = isDraft || isDeclined;
   const trueCount = Object.values(flags).filter(v => v === "TRUE").length;
   const weight = weightMap[trueCount] ?? 0.2;
 
@@ -222,7 +232,11 @@ export default function AppsAssessmentDetailView() {
 
           {/* Page Header */}
           <HStack spacing={3}>
-            <IconButton aria-label="Back" icon={<FaArrowLeft />} variant="ghost" size="sm" onClick={() => router.back()} />
+            <IconButton aria-label="Back" icon={<FaArrowLeft />} variant="ghost" size="sm"
+              onClick={() => {
+                if (sourceParam === "pending") router.push("/report/apps-assessments-pending-approve");
+                else router.back();
+              }} />
             <Box w={10} h={10} bg="purple.500" rounded="lg" display="flex" alignItems="center" justifyContent="center" color="white">
               <Icon as={FiActivity} boxSize={5} />
             </Box>
@@ -235,7 +249,35 @@ export default function AppsAssessmentDetailView() {
               <Badge colorScheme="purple" fontFamily="mono" fontSize="xs">{data?.batchCode}</Badge>
               <Badge colorScheme="blue" variant="outline">{data?.quartalReport} {data?.yearReport}</Badge>
               <Badge colorScheme="gray" variant="subtle">{data?.statusReport}</Badge>
-              <Button colorScheme="purple" size="sm" leftIcon={<FiSave />} isLoading={saving} isDisabled={!isDraft} onClick={handleSave}>Save Changes</Button>
+              {/* Save/Submit — only from non-pending source when editable */}
+              {isEditable && sourceParam !== "pending" && <>
+                <Button colorScheme="purple" size="sm" leftIcon={<FiSave />} isLoading={saving} onClick={handleSave}>Save Changes</Button>
+                {isDraft && <Button colorScheme="orange" size="sm" isLoading={submitting} onClick={handleSubmitApproval}>Submit for Approval</Button>}
+                {isDeclined && <Button colorScheme="yellow" size="sm" isLoading={submitting} onClick={async () => {
+                  setSubmitting(true);
+                  const res = await ResubmitAssessment(assessmentId!, tokenData);
+                  setSubmitting(false);
+                  if (res?.statusCode === RES_CODE_OK) { showToast({ description: "Re-submitted successfully", statusToast: "success" }); loadData(); }
+                  else showToast({ description: res?.message || "Re-submit failed", statusToast: "error" });
+                }}>Re-submit</Button>}
+              </>}
+              {/* Approve/Decline — only for assigned approvers from pending page */}
+              {sourceParam === "pending" && canApprove && (data?.statusReport === "WAITING APPROVAL 1" || data?.statusReport === "WAITING APPROVAL 2") && <>
+                <Button colorScheme="green" size="sm" isLoading={approving} onClick={async () => {
+                  setApproving(true);
+                  const res = await ApproveAssessment({ id: assessmentId!, isApproved: true, note: "Approved" }, tokenData);
+                  setApproving(false);
+                  if (res?.statusCode === RES_CODE_OK) { showToast({ description: "Approved", statusToast: "success" }); loadData(); }
+                  else showToast({ description: res?.message || "Failed", statusToast: "error" });
+                }}>Approve</Button>
+                <Button colorScheme="red" size="sm" variant="outline" isLoading={approving} onClick={async () => {
+                  setApproving(true);
+                  const res = await ApproveAssessment({ id: assessmentId!, isApproved: false, note: "Declined" }, tokenData);
+                  setApproving(false);
+                  if (res?.statusCode === RES_CODE_OK) { showToast({ description: "Declined", statusToast: "warning" }); loadData(); }
+                  else showToast({ description: res?.message || "Failed", statusToast: "error" });
+                }}>Decline</Button>
+              </>}
             </HStack>
           </HStack>
 
@@ -289,8 +331,8 @@ export default function AppsAssessmentDetailView() {
                           <Button key={opt} size="xs" px={4}
                             variant={flags[key] === opt ? "solid" : "outline"}
                             colorScheme={opt === "TRUE" ? "green" : "red"}
-                            isDisabled={!isDraft}
-                            onClick={() => isDraft && setFlags(prev => ({ ...prev, [key]: opt }))}>
+                            isDisabled={!isEditable}
+                            onClick={() => isEditable && setFlags(prev => ({ ...prev, [key]: opt }))}>
                             {opt}
                           </Button>
                         ))}
@@ -341,8 +383,8 @@ export default function AppsAssessmentDetailView() {
                           <Button key={v.id} size="sm" px={4}
                             variant={selId === v.id ? "solid" : "outline"}
                             colorScheme={selId === v.id ? "purple" : "gray"}
-                            isDisabled={!isDraft}
-                            onClick={() => isDraft && setDetailSelections(prev => ({ ...prev, [d.id]: v.id }))}>
+                            isDisabled={!isEditable}
+                            onClick={() => isEditable && setDetailSelections(prev => ({ ...prev, [d.id]: v.id }))}>
                             <VStack spacing={0}>
                               <Text fontSize="xs" fontWeight="bold">{v.scaleValue}</Text>
                               <Text fontSize="2xs">{v.scaleLabel}</Text>
@@ -444,7 +486,7 @@ export default function AppsAssessmentDetailView() {
                           <FormLabel fontSize="xs" mb={1} color={isDark ? "gray.400" : "gray.500"}>Operator</FormLabel>
                           <Select size="sm" value={rtoRpo[opKey] as string || ""}
                             onChange={e => setRtoRpo(prev => ({ ...prev, [opKey]: e.target.value || null }))}
-                            placeholder="Select operator" bg={isDark ? "gray.700" : "white"} isDisabled={!isDraft}>
+                            placeholder="Select operator" bg={isDark ? "gray.700" : "white"} isDisabled={!isEditable}>
                             {CRITERIA_VALUE_OPERATORS.map(op => <option key={op.value} value={op.value}>{op.label}</option>)}
                           </Select>
                         </Box>
@@ -459,7 +501,7 @@ export default function AppsAssessmentDetailView() {
                               if (v === "" || /^\d*\.?\d*$/.test(v))
                                 setRtoRpo(prev => ({ ...prev, [minKey]: v === "" ? null : parseFloat(v) || 0 }));
                             }}
-                            placeholder="e.g. 60.5" bg={isDark ? "gray.700" : "white"} isDisabled={!isDraft} />
+                            placeholder="e.g. 60.5" bg={isDark ? "gray.700" : "white"} isDisabled={!isEditable} />
                         </Box>
                       </Stack>
                     </Box>

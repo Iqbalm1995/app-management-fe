@@ -110,6 +110,25 @@ export interface UpdateAssessmentDetailRequest {
   appsCriteriaScaleDesc: string | null;
 }
 
+export interface ApproveAssessmentRequest {
+  id: string;
+  isApproved: boolean;
+  note?: string;
+}
+
+export interface ApproveBatchRequest {
+  batchCode: string;
+  isApproved: boolean;
+  note?: string;
+}
+
+export interface AppsCriticalReportPendingListRequest {
+  status: string;
+  search?: string;
+  page: number;
+  limit: number;
+}
+
 const useAppsCriticalReport = () => {
   const base = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC) + "/v1/AppsCriticalReport";
 
@@ -174,7 +193,56 @@ const useAppsCriticalReport = () => {
     } catch (e: any) { return handleError(e); }
   };
 
-  return { Generate, List, GetBatchDetail, GetAssessmentDetail, UpdateAssessment, UpdateAssessmentDetail, SubmitForApproval, SubmitBatchForApproval };
+  const SyncBatchStatus = async (batchCode: string, token: string) => {
+    try {
+      const res = await axios.post(`${base}/sync-batch-status/${batchCode}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      return res.data;
+    } catch (e: any) { return handleError(e); }
+  };
+
+  const ListByStatus = async (payload: AppsCriticalReportPendingListRequest, token: string) => {
+    try {
+      const res = await axios.post(`${base}/list-by-status`, payload, { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } });
+      return res.data;
+    } catch (e: any) { return handleError(e); }
+  };
+
+  const CanApproveAssessment = async (id: string, token: string) => {
+    try {
+      const res = await axios.get(`${base}/${id}/can-approve`, { headers: { Authorization: `Bearer ${token}` } });
+      return res.data;
+    } catch (e: any) { return handleError(e); }
+  };
+
+  const ApproveAssessment = async (payload: ApproveAssessmentRequest, token: string) => {
+    try {
+      const res = await axios.post(`${base}/approve`, payload, { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } });
+      return res.data;
+    } catch (e: any) { return handleError(e); }
+  };
+
+  const ApproveBatch = async (payload: ApproveBatchRequest, token: string) => {
+    try {
+      const res = await axios.post(`${base}/approve-batch`, payload, { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } });
+      return res.data;
+    } catch (e: any) { return handleError(e); }
+  };
+
+  const ResubmitAssessment = async (id: string, token: string) => {
+    try {
+      const res = await axios.post(`${base}/resubmit/${id}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      return res.data;
+    } catch (e: any) { return handleError(e); }
+  };
+
+  const ReviseBatch = async (batchCode: string, token: string) => {
+    try {
+      const res = await axios.post(`${base}/revise-batch/${batchCode}`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      return res.data;
+    } catch (e: any) { return handleError(e); }
+  };
+
+  return { Generate, List, GetBatchDetail, GetAssessmentDetail, UpdateAssessment, UpdateAssessmentDetail, SubmitForApproval, SubmitBatchForApproval, SyncBatchStatus, ListByStatus, CanApproveAssessment, ApproveAssessment, ApproveBatch, ResubmitAssessment, ReviseBatch };
 };
 
 export default useAppsCriticalReport;
