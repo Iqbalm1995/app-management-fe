@@ -240,6 +240,10 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
     pattern: "/report/apps-assessments/assessment",
     baseMenu: "/report/apps-assessments",
   },
+  {
+    pattern: "/report/upload-report-assessments-apps/detail",
+    baseMenu: "/report/upload-report-assessments-apps",
+  },
 
   // Menus
   {
