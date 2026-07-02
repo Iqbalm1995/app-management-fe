@@ -44,6 +44,7 @@ export interface AppsCriticalReportAssessmentViewModel {
   isRelationWithCustomers: string;
   isTransactionalApp: string;
   isStrictCutoffTime: string;
+  isRelationWithGov: string;
   isOnDevelopment: string;
   isSkipReview: string;
   totalIsAdditionalFlag: number;

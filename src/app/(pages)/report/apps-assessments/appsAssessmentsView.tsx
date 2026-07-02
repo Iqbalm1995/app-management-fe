@@ -159,8 +159,11 @@ export default function AppsAssessmentsView() {
       id: "actions",
       header: () => <Text>Actions</Text>,
       cell: (info) => (
-        <IconButton aria-label="View" icon={<FiEye />} size="sm" colorScheme="purple" variant="ghost"
-          onClick={() => router.push(`/report/apps-assessments/detail?batchCode=${info.row.original.batchCode}`)} />
+        <Button size="xs" colorScheme="blue" variant="outline"
+          _hover={{ bg: "blue.500", color: "white" }}
+          onClick={() => router.push(`/report/apps-assessments/detail?batchCode=${info.row.original.batchCode}`)}>
+          Show
+        </Button>
       ),
       footer: (p) => p.column.id,
     },
