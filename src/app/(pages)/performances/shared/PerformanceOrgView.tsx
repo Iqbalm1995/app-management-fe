@@ -71,7 +71,7 @@ import {
 } from "@chakra-ui/react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   FiBriefcase,
   FiCheckCircle,
@@ -476,16 +476,21 @@ export default function PerformanceOrgView({ mode }: PerformanceOrgViewProps) {
     }
   }, [GroupOptions, orgFilterCode, mode, tokenData]);
 
-  // Auto-rotate group selection every 5 seconds (division mode only)
+  // Auto-rotate group selection every 20 seconds (division mode only)
+  const [isRankingHovered, setIsRankingHovered] = useState(false);
+  const isRankingHoveredRef = useRef(false);
+  isRankingHoveredRef.current = isRankingHovered;
+
   useEffect(() => {
     if (mode !== "division" || rankingGroupOptions.length < 2) return;
     const timer = setInterval(() => {
+      if (isRankingHoveredRef.current) return;
       setAutoRotateKey(k => k + 1);
       setRankingGroupCode(prev => {
         const idx = rankingGroupOptions.findIndex(o => o.value === prev);
         return rankingGroupOptions[(idx + 1) % rankingGroupOptions.length].value;
       });
-    }, 5000);
+    }, 10000);
     return () => clearInterval(timer);
   }, [mode, rankingGroupOptions]);
 
@@ -2076,6 +2081,8 @@ export default function PerformanceOrgView({ mode }: PerformanceOrgViewProps) {
             borderColor={borderCol}
             rounded={radiusStyle}
             shadow="sm"
+            onMouseEnter={() => setIsRankingHovered(true)}
+            onMouseLeave={() => setIsRankingHovered(false)}
           >
             <CardBody p={5}>
               <HStack mb={4} spacing={2} justify="space-between" wrap="wrap">
@@ -2429,7 +2436,7 @@ export default function PerformanceOrgView({ mode }: PerformanceOrgViewProps) {
                                     {/* CSS-animated progress — no JS re-renders */}
                                     <Box h="3px" bg={isDark ? "gray.700" : "gray.200"} rounded="full" mb={3} overflow="hidden">
                                       <Box key={autoRotateKey} h="full" bg="purple.400" rounded="full"
-                                        sx={{ animation: "orgRankFill 5s linear forwards", "@keyframes orgRankFill": { from: { width: "0%" }, to: { width: "100%" } } }} />
+                                        sx={{ animation: "orgRankFill 10s linear forwards", animationPlayState: isRankingHovered ? "paused" : "running", "@keyframes orgRankFill": { from: { width: "0%" }, to: { width: "100%" } } }} />
                                     </Box>
                                     <Grid templateColumns="7fr 3fr" gap={3}>
                                       {/* 70% — rank list */}

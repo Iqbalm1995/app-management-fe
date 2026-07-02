@@ -17,6 +17,7 @@ import useMstAppsCriteria, { MstAppsCriteriaResponse, MstAppsCriteriaValueRespon
 import {
   Badge, Box, Button, Card, CardBody, CardHeader, Divider, Flex,
   FormLabel, Grid, Heading, HStack, Icon, IconButton, Input, Select, SimpleGrid,
+  Slider, SliderTrack, SliderFilledTrack, SliderThumb,
   Spinner, Stack, Switch, Text, useColorMode, useDisclosure, VStack,
 } from "@chakra-ui/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -236,55 +237,59 @@ export default function AppsAssessmentDetailView() {
         <VStack spacing={5} align="stretch">
 
           {/* Page Header */}
-          <HStack spacing={3}>
-            <IconButton aria-label="Back" icon={<FaArrowLeft />} variant="ghost" size="sm"
-              onClick={() => {
-                if (sourceParam === "pending") router.push("/report/apps-assessments-pending-approve");
-                else router.back();
-              }} />
-            <Box w={10} h={10} bg="purple.500" rounded="lg" display="flex" alignItems="center" justifyContent="center" color="white">
-              <Icon as={FiActivity} boxSize={5} />
+          <Card rounded={radiusStyle} overflow="hidden" shadow="md" border="0">
+            <Box bg="secondary.500" px={6} py={5}>
+              <Flex align="center" justify="space-between" wrap="wrap" gap={3}>
+                <HStack spacing={3}>
+                  <IconButton aria-label="Back" icon={<FaArrowLeft />} variant="ghost" size="sm" color="white" _hover={{ bg: "whiteAlpha.200" }}
+                    onClick={() => {
+                      if (sourceParam === "pending") router.push("/report/apps-assessments-pending-approve");
+                      else router.back();
+                    }} />
+                  <VStack align="start" spacing={0}>
+                    <Heading size="md" color="white">{data?.appShortName}</Heading>
+                    <Text fontSize="xs" color="whiteAlpha.800">{data?.appName}</Text>
+                  </VStack>
+                  <HStack spacing={2} ml={3}>
+                    <Badge bg="whiteAlpha.200" color="white" px={2} py={1} rounded="md" fontSize="xs" fontFamily="mono">{data?.batchCode}</Badge>
+                    <Badge bg="whiteAlpha.200" color="white" px={2} py={1} rounded="md" fontSize="xs">{data?.quartalReport} {data?.yearReport}</Badge>
+                    <Badge colorScheme={data?.statusReport === "APPROVED" ? "green" : "yellow"} variant="solid" fontSize="xs">{data?.statusReport}</Badge>
+                  </HStack>
+                </HStack>
+                <HStack spacing={2} flexWrap="wrap">
+                  {/* Save/Submit — only from non-pending source when editable */}
+                  {isEditable && sourceParam !== "pending" && <>
+                    <Button size="sm" bg="whiteAlpha.200" color="white" _hover={{ bg: "whiteAlpha.300" }} leftIcon={<FiSave />} isLoading={saving} onClick={() => setIsSaveConfirmOpen(true)}>Save Changes</Button>
+                    {isDraft && <Button size="sm" bg="orange.400" color="white" _hover={{ bg: "orange.300" }} isLoading={submitting} onClick={() => setIsSubmitConfirmOpen(true)}>Submit for Approval</Button>}
+                    {isDeclined && <Button size="sm" bg="yellow.400" color="gray.800" _hover={{ bg: "yellow.300" }} isLoading={submitting} onClick={async () => {
+                      setSubmitting(true);
+                      const res = await ResubmitAssessment(assessmentId!, tokenData);
+                      setSubmitting(false);
+                      if (res?.statusCode === RES_CODE_OK) { showToast({ description: "Re-submitted successfully", statusToast: "success" }); loadData(); }
+                      else showToast({ description: res?.message || "Re-submit failed", statusToast: "error" });
+                    }}>Re-submit</Button>}
+                  </>}
+                  {/* Approve/Decline — only for assigned approvers from pending page */}
+                  {sourceParam === "pending" && canApprove && (data?.statusReport === "WAITING APPROVAL 1" || data?.statusReport === "WAITING APPROVAL 2") && <>
+                    <Button size="sm" bg="green.400" color="white" _hover={{ bg: "green.300" }} isLoading={approving} onClick={async () => {
+                      setApproving(true);
+                      const res = await ApproveAssessment({ id: assessmentId!, isApproved: true, note: "Approved" }, tokenData);
+                      setApproving(false);
+                      if (res?.statusCode === RES_CODE_OK) { showToast({ description: "Approved", statusToast: "success" }); loadData(); }
+                      else showToast({ description: res?.message || "Failed", statusToast: "error" });
+                    }}>Approve</Button>
+                    <Button size="sm" bg="whiteAlpha.200" color="white" _hover={{ bg: "red.400" }} isLoading={approving} onClick={async () => {
+                      setApproving(true);
+                      const res = await ApproveAssessment({ id: assessmentId!, isApproved: false, note: "Declined" }, tokenData);
+                      setApproving(false);
+                      if (res?.statusCode === RES_CODE_OK) { showToast({ description: "Declined", statusToast: "warning" }); loadData(); }
+                      else showToast({ description: res?.message || "Failed", statusToast: "error" });
+                    }}>Decline</Button>
+                  </>}
+                </HStack>
+              </Flex>
             </Box>
-            <VStack align="start" spacing={0}>
-              <Heading size="md" color={isDark ? "white" : "gray.800"}>{data?.appShortName}</Heading>
-              <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"}>{data?.appName}</Text>
-            </VStack>
-            <Box flex={1} />
-            <HStack spacing={2}>
-              <Badge colorScheme="purple" fontFamily="mono" fontSize="xs">{data?.batchCode}</Badge>
-              <Badge colorScheme="blue" variant="outline">{data?.quartalReport} {data?.yearReport}</Badge>
-              <Badge colorScheme="gray" variant="subtle">{data?.statusReport}</Badge>
-              {/* Save/Submit — only from non-pending source when editable */}
-              {isEditable && sourceParam !== "pending" && <>
-                <Button colorScheme="purple" size="sm" leftIcon={<FiSave />} isLoading={saving} onClick={() => setIsSaveConfirmOpen(true)}>Save Changes</Button>
-                {isDraft && <Button colorScheme="orange" size="sm" isLoading={submitting} onClick={() => setIsSubmitConfirmOpen(true)}>Submit for Approval</Button>}
-                {isDeclined && <Button colorScheme="yellow" size="sm" isLoading={submitting} onClick={async () => {
-                  setSubmitting(true);
-                  const res = await ResubmitAssessment(assessmentId!, tokenData);
-                  setSubmitting(false);
-                  if (res?.statusCode === RES_CODE_OK) { showToast({ description: "Re-submitted successfully", statusToast: "success" }); loadData(); }
-                  else showToast({ description: res?.message || "Re-submit failed", statusToast: "error" });
-                }}>Re-submit</Button>}
-              </>}
-              {/* Approve/Decline — only for assigned approvers from pending page */}
-              {sourceParam === "pending" && canApprove && (data?.statusReport === "WAITING APPROVAL 1" || data?.statusReport === "WAITING APPROVAL 2") && <>
-                <Button colorScheme="green" size="sm" isLoading={approving} onClick={async () => {
-                  setApproving(true);
-                  const res = await ApproveAssessment({ id: assessmentId!, isApproved: true, note: "Approved" }, tokenData);
-                  setApproving(false);
-                  if (res?.statusCode === RES_CODE_OK) { showToast({ description: "Approved", statusToast: "success" }); loadData(); }
-                  else showToast({ description: res?.message || "Failed", statusToast: "error" });
-                }}>Approve</Button>
-                <Button colorScheme="red" size="sm" variant="outline" isLoading={approving} onClick={async () => {
-                  setApproving(true);
-                  const res = await ApproveAssessment({ id: assessmentId!, isApproved: false, note: "Declined" }, tokenData);
-                  setApproving(false);
-                  if (res?.statusCode === RES_CODE_OK) { showToast({ description: "Declined", statusToast: "warning" }); loadData(); }
-                  else showToast({ description: res?.message || "Failed", statusToast: "error" });
-                }}>Decline</Button>
-              </>}
-            </HStack>
-          </HStack>
+          </Card>
 
           {/* On Development Section */}
           <Card rounded={radiusStyle} shadow="md" border="1px" borderColor={flags.isOnDevelopment === "TRUE" ? (isDark ? "yellow.600" : "yellow.300") : (isDark ? "gray.700" : "gray.200")} bg={isDark ? "gray.800" : "white"}>
@@ -345,7 +350,7 @@ export default function AppsAssessmentDetailView() {
 
             {/* App Info */}
             <Card rounded={radiusStyle} shadow="md" border="1px" borderColor={isDark ? "gray.700" : "gray.200"} bg={isDark ? "gray.800" : "white"}>
-              <CardHeader py={3} px={5}><Heading size="sm">App Information</Heading></CardHeader>
+              <CardHeader py={3} px={5}><HStack spacing={2}><Box w="4px" h="20px" bg="secondary.400" rounded="full" /><Heading size="sm">App Information</Heading></HStack></CardHeader>
               <Divider borderColor={isDark ? "gray.700" : "gray.100"} />
               <CardBody px={5} py={4}>
                 <Stack spacing={3}>
@@ -363,11 +368,14 @@ export default function AppsAssessmentDetailView() {
               </CardBody>
             </Card>
 
-            {/* Additional Flags — radio style */}
-            <Card rounded={radiusStyle} shadow="md" border="1px" borderColor={isDark ? "gray.700" : "gray.200"} bg={isDark ? "gray.800" : "white"}>
+            {/* Additional Flags */}
+            <Card rounded={radiusStyle} shadow="sm" border="1px" borderColor={isDark ? "gray.700" : "gray.200"} bg={isDark ? "gray.800" : "white"}>
               <CardHeader py={3} px={5}>
                 <HStack justify="space-between">
-                  <Heading size="sm">Additional Flags</Heading>
+                  <HStack spacing={2}>
+                    <Box w="4px" h="20px" bg="secondary.400" rounded="full" />
+                    <Heading size="sm">Additional Flags</Heading>
+                  </HStack>
                   <HStack>
                     <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"}>TRUE: {trueCount}/4</Text>
                     <Badge colorScheme="purple">Weight: {weight}</Badge>
@@ -378,23 +386,40 @@ export default function AppsAssessmentDetailView() {
               <CardBody px={5} py={4}>
                 <Stack spacing={3}>
                   {([
-                    ["isRelationWithCustomers", "Relation With Customers"],
-                    ["isTransactionalApp", "Transactional App"],
-                    ["isStrictCutoffTime", "Strict Cutoff Time"],
-                    ["isRelationWithGov", "Relation With Government"],
+                    ["isRelationWithCustomers", "Berhubungan Langsung dengan Nasabah"],
+                    ["isTransactionalApp", "Bersifat Transaksional"],
+                    ["isStrictCutoffTime", "Memiliki Cut Off Time yang Ketat"],
+                    ["isRelationWithGov", "Berhubungan dengan PEMDA"],
                   ] as [keyof typeof flags, string][]).map(([key, label]) => (
                     <HStack key={key} justify="space-between" py={2} borderBottom="1px" borderColor={isDark ? "gray.700" : "gray.100"}>
                       <Text fontSize="sm" fontWeight="medium">{label}</Text>
-                      <HStack spacing={2}>
-                        {(["TRUE", "FALSE"] as const).map(opt => (
-                          <Button key={opt} size="xs" px={4}
-                            variant={flags[key] === opt ? "solid" : "outline"}
-                            colorScheme={opt === "TRUE" ? "green" : "red"}
-                            isDisabled={!isEditable}
-                            onClick={() => isEditable && setFlags(prev => ({ ...prev, [key]: opt }))}>
-                            {opt}
-                          </Button>
-                        ))}
+                      <HStack spacing={0} bg={isDark ? "gray.700" : "gray.100"} rounded="md" p={0.5}>
+                        <Box
+                          as="button"
+                          disabled={!isEditable}
+                          onClick={() => isEditable && setFlags(prev => ({ ...prev, [key]: "TRUE" }))}
+                          px={3} py={1} rounded="md" cursor={isEditable ? "pointer" : "default"}
+                          bg={flags[key] === "TRUE" ? "green.500" : "transparent"}
+                          color={flags[key] === "TRUE" ? "white" : (isDark ? "gray.400" : "gray.500")}
+                          fontWeight="semibold" fontSize="xs"
+                          transition="all 0.15s"
+                          opacity={!isEditable ? 0.6 : 1}
+                        >
+                          Ya
+                        </Box>
+                        <Box
+                          as="button"
+                          disabled={!isEditable}
+                          onClick={() => isEditable && setFlags(prev => ({ ...prev, [key]: "FALSE" }))}
+                          px={3} py={1} rounded="md" cursor={isEditable ? "pointer" : "default"}
+                          bg={flags[key] === "FALSE" ? "red.500" : "transparent"}
+                          color={flags[key] === "FALSE" ? "white" : (isDark ? "gray.400" : "gray.500")}
+                          fontWeight="semibold" fontSize="xs"
+                          transition="all 0.15s"
+                          opacity={!isEditable ? 0.6 : 1}
+                        >
+                          Tidak
+                        </Box>
                       </HStack>
                     </HStack>
                   ))}
@@ -404,57 +429,73 @@ export default function AppsAssessmentDetailView() {
           </Grid>
 
           {/* BSC Criteria Assessment */}
-          <Card rounded={radiusStyle} shadow="md" border="1px" borderColor={isDark ? "gray.700" : "gray.200"} bg={isDark ? "gray.800" : "white"}>
+          <Card rounded={radiusStyle} shadow="sm" border="1px" borderColor={isDark ? "gray.700" : "gray.200"} bg={isDark ? "gray.800" : "white"}>
             <CardHeader py={3} px={5}>
               <HStack justify="space-between">
-                <Heading size="sm">Criteria Assessment ({totalDetails} criteria)</Heading>
+                <HStack spacing={2}>
+                  <Box w="4px" h="20px" bg="secondary.400" rounded="full" />
+                  <Heading size="sm">Criteria Assessment</Heading>
+                  <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"}>({totalDetails} criteria)</Text>
+                </HStack>
                 <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"}>Select scale value per criteria</Text>
               </HStack>
             </CardHeader>
             <Divider borderColor={isDark ? "gray.700" : "gray.100"} />
-            <CardBody px={5} py={4}>
-              <Stack spacing={4}>
-                {data?.details?.map((d, i) => {
-                  const criteria = criteriaList.find(c => c.id === d.appsCriteriaId);
-                  const selId = detailSelections[d.id] || d.appsCriteriaValuesId || "";
-                  const selectedVal = criteria?.values?.find((v: MstAppsCriteriaValueResponse) => v.id === selId);
-                  return (
-                    <Box key={d.id} p={4} bg={isDark ? "gray.750" : "gray.50"} rounded="lg"
-                      border="1px" borderColor={isDark ? "gray.600" : "gray.200"}>
-                      <HStack mb={3} justify="space-between">
-                        <HStack spacing={2}>
-                          <Badge colorScheme="purple" variant="solid">{d.appsCriteriaPos}</Badge>
-                          <Badge colorScheme="blue" variant="subtle" fontSize="xs">{d.appsCriteriaCode}</Badge>
-                          <Text fontSize="sm" fontWeight="semibold">{d.appsCriteriaName}</Text>
-                        </HStack>
-                        {selectedVal ? (
-                          <HStack spacing={2}>
-                            <Text fontSize="xs" color={isDark ? "gray.400" : "gray.600"}>{selectedVal.scaleLabel}</Text>
-                            <Badge colorScheme="green" fontSize="sm" px={3}>{selectedVal.scaleValue}</Badge>
-                          </HStack>
-                        ) : (
-                          <Badge colorScheme="gray" variant="outline" fontSize="xs">Not selected</Badge>
-                        )}
-                      </HStack>
-                      {/* Radio-style value buttons */}
-                      <Flex gap={2} wrap="wrap">
+            <CardBody px={0} py={0}>
+              {data?.details?.map((d, i) => {
+                const criteria = criteriaList.find(c => c.id === d.appsCriteriaId);
+                const selId = detailSelections[d.id] || d.appsCriteriaValuesId || "";
+                const selectedVal = criteria?.values?.find((v: MstAppsCriteriaValueResponse) => v.id === selId);
+                return (
+                  <Box key={d.id} px={5} py={4} borderBottom={i < (data?.details?.length || 0) - 1 ? "1px" : "0"} borderColor={isDark ? "gray.700" : "gray.100"}
+                    _hover={{ bg: isDark ? "gray.750" : "gray.50" }} transition="background 0.1s">
+                    <HStack spacing={2} mb={3}>
+                      <Text fontSize="sm" fontWeight="bold" color="secondary.500" w="24px">{d.appsCriteriaPos}.</Text>
+                      <Text fontSize="sm" fontWeight="medium">{d.appsCriteriaName}</Text>
+                      <Text fontSize="2xs" color={isDark ? "gray.500" : "gray.400"}>{d.appsCriteriaCode}</Text>
+                    </HStack>
+                    <Grid templateColumns="1fr auto 160px" gap={4}>
+                      {/* Left: Point Selection */}
+                      <Grid templateColumns={`repeat(${criteria?.values?.length || 5}, 1fr)`} gap={2}>
                         {criteria?.values?.slice().sort((a, b) => a.scaleValue - b.scaleValue).map((v: MstAppsCriteriaValueResponse) => (
-                          <Button key={v.id} size="sm" px={4}
-                            variant={selId === v.id ? "solid" : "outline"}
-                            colorScheme={selId === v.id ? "purple" : "gray"}
-                            isDisabled={!isEditable}
-                            onClick={() => isEditable && setDetailSelections(prev => ({ ...prev, [d.id]: v.id }))}>
-                            <VStack spacing={0}>
-                              <Text fontSize="xs" fontWeight="bold">{v.scaleValue}</Text>
-                              <Text fontSize="2xs">{v.scaleLabel}</Text>
-                            </VStack>
-                          </Button>
+                          <Box key={v.id}
+                            as="button"
+                            disabled={!isEditable}
+                            onClick={() => isEditable && setDetailSelections(prev => ({ ...prev, [d.id]: v.id }))}
+                            w="100%" py={2} px={2} rounded="md" cursor={isEditable ? "pointer" : "default"}
+                            border="1px" display="flex" flexDirection="column" alignItems="center" justifyContent="center"
+                            borderColor={selId === v.id ? "secondary.400" : (isDark ? "gray.600" : "gray.200")}
+                            bg={selId === v.id ? "secondary.50" : "transparent"}
+                            color={selId === v.id ? "secondary.700" : (isDark ? "gray.300" : "gray.600")}
+                            _hover={isEditable ? { borderColor: "secondary.300", bg: "secondary.50" } : {}}
+                            transition="all 0.15s"
+                            opacity={!isEditable ? 0.6 : 1}
+                          >
+                            <Text fontSize="xs" fontWeight="bold">{v.scaleLabel}</Text>
+                            {v.scaleDesc && <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"} textAlign="center" fontWeight="medium" mt={1}>{v.scaleDesc}</Text>}
+                          </Box>
                         ))}
+                      </Grid>
+                      {/* Separator */}
+                      <Flex align="center" justify="center">
+                        <Text fontSize="xl" fontWeight="bold" color={isDark ? "gray.400" : "gray.500"}>=</Text>
                       </Flex>
-                    </Box>
-                  );
-                })}
-              </Stack>
+                      {/* Right: Result */}
+                      <Flex align="center" justify="center">
+                        {selectedVal ? (
+                          <Text fontWeight="bold" fontSize="4xl" color="purple.500">
+                            {selectedVal.scaleValue}
+                          </Text>
+                        ) : (
+                          <Text fontWeight="bold" fontSize="4xl" color="gray.300">
+                            —
+                          </Text>
+                        )}
+                      </Flex>
+                    </Grid>
+                  </Box>
+                );
+              })}
             </CardBody>
           </Card>
 
@@ -538,29 +579,69 @@ export default function AppsAssessmentDetailView() {
                     { label: "RTO IT", opKey: "appsRtoItOperator", minKey: "appsRtoItMinutes" },
                     { label: "RPO", opKey: "appsRpoOperator", minKey: "appsRpoMinutes" },
                   ] as { label: string; opKey: keyof typeof rtoRpo; minKey: keyof typeof rtoRpo }[]).map(({ label, opKey, minKey }) => (
-                    <Box key={opKey} p={4} bg={isDark ? "gray.750" : "gray.50"} rounded="lg" border="1px" borderColor={isDark ? "gray.600" : "gray.200"}>
-                      <Text fontSize="xs" fontWeight="bold" textTransform="uppercase" color={isDark ? "gray.400" : "gray.500"} mb={3} letterSpacing="wider">{label}</Text>
+                    <Box key={opKey} p={4} bg={isDark ? "secondary.900" : "secondary.50"} rounded="lg" border="1px" borderColor={isDark ? "secondary.700" : "secondary.200"}>
+                      <Text fontSize="xs" fontWeight="bold" textTransform="uppercase" color={isDark ? "secondary.200" : "secondary.700"} mb={3} letterSpacing="wider">{label}</Text>
                       <Stack spacing={3}>
                         <Box>
                           <FormLabel fontSize="xs" mb={1} color={isDark ? "gray.400" : "gray.500"}>Operator</FormLabel>
-                          <Select size="sm" value={rtoRpo[opKey] as string || ""}
-                            onChange={e => setRtoRpo(prev => ({ ...prev, [opKey]: e.target.value || null }))}
-                            placeholder="Select operator" bg={isDark ? "gray.700" : "white"} isDisabled={!isEditable}>
-                            {CRITERIA_VALUE_OPERATORS.map(op => <option key={op.value} value={op.value}>{op.label}</option>)}
-                          </Select>
+                          <HStack spacing={1}>
+                            {CRITERIA_VALUE_OPERATORS.map(op => (
+                              <Box key={op.value}
+                                as="button"
+                                disabled={!isEditable}
+                                onClick={() => isEditable && setRtoRpo(prev => ({ ...prev, [opKey]: rtoRpo[opKey] === op.value ? null : op.value }))}
+                                px={2.5} py={1.5} rounded="md" cursor={isEditable ? "pointer" : "default"}
+                                border="1px"
+                                borderColor={rtoRpo[opKey] === op.value ? "secondary.400" : (isDark ? "gray.600" : "gray.200")}
+                                bg={rtoRpo[opKey] === op.value ? "secondary.50" : (isDark ? "gray.700" : "white")}
+                                color={rtoRpo[opKey] === op.value ? "secondary.700" : (isDark ? "gray.300" : "gray.600")}
+                                _hover={isEditable ? { borderColor: "secondary.300", bg: "secondary.50" } : {}}
+                                transition="all 0.15s"
+                                opacity={!isEditable ? 0.6 : 1}
+                                fontWeight="bold" fontSize="sm"
+                              >
+                                {op.value}
+                              </Box>
+                            ))}
+                          </HStack>
                         </Box>
                         <Box>
-                          <FormLabel fontSize="xs" mb={1} color={isDark ? "gray.400" : "gray.500"}>Minutes (decimal)</FormLabel>
-                          <Input size="sm"
-                            inputMode="decimal"
-                            pattern="[0-9]*[.,]?[0-9]*"
-                            value={rtoRpo[minKey] !== null && rtoRpo[minKey] !== undefined ? String(rtoRpo[minKey]) : ""}
-                            onChange={e => {
-                              const v = e.target.value;
-                              if (v === "" || /^\d*\.?\d*$/.test(v))
-                                setRtoRpo(prev => ({ ...prev, [minKey]: v === "" ? null : parseFloat(v) || 0 }));
-                            }}
-                            placeholder="e.g. 60.5" bg={isDark ? "gray.700" : "white"} isDisabled={!isEditable} />
+                          <FormLabel fontSize="xs" mb={1} color={isDark ? "gray.400" : "gray.500"}>Minutes</FormLabel>
+                          <HStack spacing={3}>
+                            <Slider
+                              flex={1}
+                              min={0}
+                              max={360}
+                              step={1}
+                              value={Math.min(rtoRpo[minKey] !== null && rtoRpo[minKey] !== undefined ? Number(rtoRpo[minKey]) : 0, 360)}
+                              onChange={(val) => isEditable && setRtoRpo(prev => ({ ...prev, [minKey]: val }))}
+                              isDisabled={!isEditable}
+                              colorScheme="secondary"
+                            >
+                              <SliderTrack bg={isDark ? "gray.600" : "gray.200"} rounded="full">
+                                <SliderFilledTrack />
+                              </SliderTrack>
+                              <SliderThumb boxSize={4} />
+                            </Slider>
+                            <Input size="sm" w="80px" flexShrink={0}
+                              inputMode="decimal"
+                              pattern="[0-9]*[.,]?[0-9]*"
+                              defaultValue={rtoRpo[minKey] !== null && rtoRpo[minKey] !== undefined ? String(rtoRpo[minKey]) : ""}
+                              key={`${opKey}-${rtoRpo[minKey]}-slider`}
+                              onBlur={e => {
+                                const v = e.target.value;
+                                if (v === "") setRtoRpo(prev => ({ ...prev, [minKey]: null }));
+                                else if (/^\d*\.?\d*$/.test(v)) setRtoRpo(prev => ({ ...prev, [minKey]: parseFloat(v) || 0 }));
+                              }}
+                              onKeyDown={e => {
+                                if (e.key === "Enter") {
+                                  const v = (e.target as HTMLInputElement).value;
+                                  if (v === "") setRtoRpo(prev => ({ ...prev, [minKey]: null }));
+                                  else if (/^\d*\.?\d*$/.test(v)) setRtoRpo(prev => ({ ...prev, [minKey]: parseFloat(v) || 0 }));
+                                }
+                              }}
+                              placeholder="0" bg={isDark ? "gray.700" : "white"} isDisabled={!isEditable} textAlign="center" />
+                          </HStack>
                         </Box>
                       </Stack>
                     </Box>
