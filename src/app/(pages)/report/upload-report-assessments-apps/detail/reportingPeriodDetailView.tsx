@@ -16,7 +16,7 @@ import {
   FormErrorMessage, FormLabel, Grid, GridItem, HStack, Icon, IconButton,
   Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalCloseButton,
   ModalContent, ModalFooter, ModalHeader, ModalOverlay, Radio, RadioGroup,
-  Spinner, Stack, Text, Textarea, useColorMode, useDisclosure, VStack,
+  Spinner, Stack, Text, Textarea, Heading, useColorMode, useDisclosure, VStack,
 } from "@chakra-ui/react";
 import { useFormik } from "formik";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -70,7 +70,10 @@ export default function ReportingPeriodDetailView() {
     if (!tokenData || !periodId) return;
     setLoading(true);
     const res = await GetDetail(periodId, tokenData);
-    if (res?.statusCode === RES_CODE_OK && res.data) { setData(res.data); setNoteValue(res.data.note || ""); }
+    if (res?.statusCode === RES_CODE_OK && res.data) {
+      setData(res.data);
+      setNoteValue(res.data.note || "");
+    }
     else showToast({ description: res?.message || RES_GENERIC_ERROR_MSG, statusToast: "error" });
     setLoading(false);
   };
@@ -127,7 +130,7 @@ export default function ReportingPeriodDetailView() {
     onEditDocOpen();
   };
 
-  if (loading) return <LayoutAdmin><Box p={10} textAlign="center"><Spinner size="xl" color="teal.500" /></Box></LayoutAdmin>;
+  if (loading) return <LayoutAdmin><Box p={10} textAlign="center"><Spinner size="xl" color="secondary.500" /></Box></LayoutAdmin>;
 
   return (
     <LayoutAdmin>
@@ -137,20 +140,20 @@ export default function ReportingPeriodDetailView() {
 
           {/* Colored Header Card — same as batch detail */}
           <Card rounded={radiusStyle} overflow="hidden" shadow="md" border="0">
-            <Box bg="teal.600" px={6} py={5}>
+            <Box bg="secondary.500" px={6} py={5}>
               <Flex align="center" justify="space-between" wrap="wrap" gap={3}>
                 <HStack spacing={3}>
                   <IconButton aria-label="Back" icon={<FaArrowLeft />} variant="ghost" size="sm" color="white"
                     _hover={{ bg: "whiteAlpha.200" }} onClick={() => router.push("/report/upload-report-assessments-apps")} />
-                  <VStack align="start" spacing={1}>
-                    <HStack spacing={2}>
-                      <Badge bg="whiteAlpha.300" color="white" fontSize="md" px={3} py={1} rounded="md" fontWeight="bold">
+                  <VStack align="start" spacing={2}>
+                    <Box bg="white" px={4} py={1.5} rounded="lg">
+                      <Text fontSize="lg" fontWeight="bold" color="secondary.600" letterSpacing="-0.5px">
                         {data?.reportQuartal} {data?.reportYear}
-                      </Badge>
-                    </HStack>
+                      </Text>
+                    </Box>
                     <HStack spacing={3}>
                       <Badge bg="whiteAlpha.200" color="white" px={2} py={0.5} rounded="md" fontSize="xs">
-                        <Text as="span" color="whiteAlpha.700" mr={1}>Documents:</Text>{data?.documentCount || 0}
+                        <Text as="span" color="whiteAlpha.700" mr={1}>Uploaded:</Text>{data?.documentCount || 0} file(s)
                       </Badge>
                       <Badge bg="whiteAlpha.200" color="white" px={2} py={0.5} rounded="md" fontSize="xs">
                         <Text as="span" color="whiteAlpha.700" mr={1}>Created:</Text>
@@ -169,19 +172,31 @@ export default function ReportingPeriodDetailView() {
 
           {/* Note Card */}
           <Card rounded={radiusStyle} shadow="sm" border="1px" borderColor={isDark ? "gray.700" : "gray.200"} bg={isDark ? "gray.800" : "white"}>
-            <CardBody px={6} py={4}>
-              <HStack justify="space-between" mb={isEditNote ? 3 : 0}>
-                <Text fontSize="sm" fontWeight="semibold" color={isDark ? "gray.300" : "gray.600"}>Note</Text>
+            <CardBody px={6} py={5}>
+              <Flex justify="space-between" align="start" mb={3}>
+                <HStack spacing={2}>
+                  <Box w="4px" h="20px" bg="secondary.400" rounded="full" />
+                  <Text fontSize="sm" fontWeight="bold" color={isDark ? "white" : "gray.700"}>Description / Note</Text>
+                </HStack>
                 {!isEditNote ? (
-                  <Button size="xs" variant="ghost" colorScheme="teal" leftIcon={<FiEdit />} onClick={() => setIsEditNote(true)}>Edit</Button>
+                  <Button size="xs" variant="outline" colorScheme="blue" leftIcon={<FiEdit />} onClick={() => setIsEditNote(true)}>Edit</Button>
                 ) : (
-                  <HStack><Button size="xs" colorScheme="green" leftIcon={<FiSave />} isLoading={actionLoading} onClick={handleSaveNote}>Save</Button><Button size="xs" variant="ghost" leftIcon={<FiX />} onClick={() => { setIsEditNote(false); setNoteValue(data?.note || ""); }}>Cancel</Button></HStack>
+                  <HStack spacing={2}>
+                    <Button size="xs" colorScheme="green" leftIcon={<FiSave />} isLoading={actionLoading} onClick={handleSaveNote}>Save</Button>
+                    <Button size="xs" variant="ghost" leftIcon={<FiX />} onClick={() => { setIsEditNote(false); setNoteValue(data?.note || ""); }}>Cancel</Button>
+                  </HStack>
                 )}
-              </HStack>
+              </Flex>
               {isEditNote ? (
-                <Textarea value={noteValue} onChange={e => setNoteValue(e.target.value)} rows={3} size="sm" bg={isDark ? "gray.700" : "gray.50"} variant="filled" />
+                <Textarea value={noteValue} onChange={e => setNoteValue(e.target.value)} rows={4} size="sm" bg={isDark ? "gray.700" : "gray.50"} rounded="lg" borderColor={isDark ? "gray.600" : "gray.200"} _focus={{ borderColor: "secondary.400", boxShadow: "0 0 0 1px var(--chakra-colors-secondary-400)" }} />
               ) : (
-                <Text fontSize="sm" color={isDark ? "gray.400" : "gray.600"}>{data?.note || <Text as="span" fontStyle="italic" color="gray.400">No note added</Text>}</Text>
+                <Box bg={isDark ? "gray.750" : "secondary.50"} rounded="lg" px={5} py={4}>
+                  {data?.note ? (
+                    <Text fontSize="sm" color={isDark ? "gray.200" : "gray.700"} lineHeight="1.7" whiteSpace="pre-wrap">{data.note}</Text>
+                  ) : (
+                    <Text fontSize="sm" fontStyle="italic" color={isDark ? "gray.500" : "gray.400"}>No note added — click Edit to add a description for this reporting period.</Text>
+                  )}
+                </Box>
               )}
             </CardBody>
           </Card>
@@ -194,50 +209,55 @@ export default function ReportingPeriodDetailView() {
                   <Text fontWeight="semibold" fontSize="md" color={isDark ? "white" : "gray.800"}>Uploaded Documents</Text>
                   <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"}>{data?.documents?.length || 0} document(s) in this period</Text>
                 </VStack>
-                <Button size="sm" colorScheme="teal" variant="outline" leftIcon={<FiPlus />} onClick={onUploadOpen}>Upload</Button>
+                <Button size="sm" colorScheme="blue" variant="outline" leftIcon={<FiPlus />} onClick={onUploadOpen}>Upload</Button>
               </Flex>
 
               {(data?.documents || []).length === 0 ? (
                 <Flex direction="column" align="center" justify="center" py={12} color={isDark ? "gray.500" : "gray.400"}>
                   <Icon as={FiFileText} boxSize={12} mb={3} opacity={0.4} />
                   <Text fontSize="sm">No documents uploaded yet.</Text>
-                  <Button mt={3} size="sm" colorScheme="teal" variant="ghost" leftIcon={<FiPlus />} onClick={onUploadOpen}>Upload First Document</Button>
+                  <Button mt={3} size="sm" colorScheme="blue" variant="ghost" leftIcon={<FiPlus />} onClick={onUploadOpen}>Upload First Document</Button>
                 </Flex>
               ) : (
-                <Stack spacing={0} divider={<Divider borderColor={isDark ? "gray.700" : "gray.100"} />}>
+                <Box px={6} py={4}>
                   {(data?.documents || []).map((doc, i) => (
-                    <Flex key={doc.id} px={6} py={4} align="center" gap={4}
-                      _hover={{ bg: isDark ? "gray.750" : "gray.50" }} transition="background 0.15s">
-                      <Flex w={10} h={10} bg={isDark ? "teal.900" : "teal.50"} rounded="lg"
-                        alignItems="center" justifyContent="center" flexShrink={0}>
-                        <Icon as={FiFile} color="teal.500" boxSize={5} />
+                    <Grid key={doc.id} templateColumns="48px 1fr 130px" gap={0} position="relative"
+                      minH="72px" py={3} alignItems="flex-start"
+                      _hover={{ bg: isDark ? "gray.750" : "gray.50" }} rounded="md" transition="background 0.15s">
+                      {/* Left: Icon column (48px) */}
+                      <Flex direction="column" align="center" h="full" position="relative">
+                        {i < (data?.documents?.length || 0) - 1 && (
+                          <Box position="absolute" top="36px" bottom="-12px" w="2px" bg={isDark ? "gray.600" : "gray.200"} />
+                        )}
+                        <Flex w="32px" h="32px" rounded="full" bg={isDark ? "secondary.900" : "secondary.50"} border="2px" borderColor="secondary.400"
+                          alignItems="center" justifyContent="center" flexShrink={0} zIndex={1}>
+                          <Icon as={FiFile} color="secondary.500" boxSize={3.5} />
+                        </Flex>
                       </Flex>
-                      <VStack align="start" spacing={0.5} flex={1} minW={0}>
-                        <HStack spacing={2}>
-                          <Badge colorScheme="gray" variant="subtle" fontSize="2xs">#{i + 1}</Badge>
-                          <Text fontSize="sm" fontWeight="semibold" noOfLines={1}>{doc.reportName}</Text>
-                        </HStack>
-                        <HStack spacing={3} flexWrap="wrap">
+                      {/* Center: Content column (flex: 1), gap 16px from icon */}
+                      <Box pl={2}>
+                        <Text fontSize="sm" fontWeight="bold" color={isDark ? "white" : "gray.800"}>{doc.reportName}</Text>
+                        <HStack spacing={2} mt={1} flexWrap="wrap">
                           {doc.reportNumber && <HStack spacing={1}><Icon as={FiHash} boxSize={3} color="gray.400" /><Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"}>{doc.reportNumber}</Text></HStack>}
-                          <Badge colorScheme="teal" variant="outline" fontSize="xs">v{doc.reportVersion}</Badge>
+                          <Badge colorScheme="blue" variant="subtle" fontSize="xs">v{doc.reportVersion}</Badge>
                           <HStack spacing={1}><Icon as={FiCalendar} boxSize={3} color="gray.400" /><Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"}>{new Date(doc.reportUploadDate).toLocaleDateString("id-ID")}</Text></HStack>
-                          {doc.reportDesc && <Text fontSize="xs" color={isDark ? "gray.500" : "gray.400"} noOfLines={1} maxW="200px">— {doc.reportDesc}</Text>}
                         </HStack>
-                      </VStack>
-                      <HStack spacing={1} flexShrink={0}>
+                        {doc.reportDesc && <Text fontSize="xs" color={isDark ? "gray.500" : "gray.400"} mt="4px">{doc.reportDesc}</Text>}
+                        {doc.fileName && <Text fontSize="2xs" color={isDark ? "gray.500" : "gray.400"} fontFamily="mono" mt="2px">{doc.fileName}</Text>}
+                      </Box>
+                      {/* Right: Action group (fixed 130px, vertically centered, right-aligned) */}
+                      <HStack spacing="10px" justify="flex-end" align="center" minH="32px" w="130px">
                         {(doc.fileUrl || doc.linkAttachment) && (
-                          <Button size="xs" colorScheme="teal" variant="ghost" leftIcon={<FiDownload />}
-                            onClick={() => window.open(doc.linkAttachment || doc.fileUrl || "", "_blank")}>
-                            Download
-                          </Button>
+                          <IconButton aria-label="Download" icon={<FiDownload />} size="sm" colorScheme="blue" variant="ghost"
+                            onClick={() => window.open(doc.linkAttachment || doc.fileUrl || "", "_blank")} />
                         )}
                         <IconButton aria-label="Edit" icon={<FiEdit />} size="sm" colorScheme="blue" variant="ghost" onClick={() => handleEditDoc(doc)} />
                         <IconButton aria-label="Delete" icon={<FiTrash2 />} size="sm" colorScheme="red" variant="ghost"
                           onClick={() => { setDeletingDocId(doc.id); setIsDeleteDocOpen(true); }} />
                       </HStack>
-                    </Flex>
+                    </Grid>
                   ))}
-                </Stack>
+                </Box>
               )}
             </CardBody>
           </Card>
@@ -274,18 +294,18 @@ export default function ReportingPeriodDetailView() {
                   <FormLabel>Attachment Method</FormLabel>
                   <RadioGroup value={attachMethod} onChange={(v: "file" | "link") => { setAttachMethod(v); if (v === "file") uploadFormik.setFieldValue("linkAttachment", ""); else setUploadFile(null); }}>
                     <Stack direction="row" spacing={6}>
-                      <Radio value="file" colorScheme="teal"><HStack spacing={2}><Icon as={FiUpload} /><Text>Upload File</Text></HStack></Radio>
-                      <Radio value="link" colorScheme="teal"><HStack spacing={2}><Icon as={FiLink} /><Text>External Link</Text></HStack></Radio>
+                      <Radio value="file" colorScheme="blue"><HStack spacing={2}><Icon as={FiUpload} /><Text>Upload File</Text></HStack></Radio>
+                      <Radio value="link" colorScheme="blue"><HStack spacing={2}><Icon as={FiLink} /><Text>External Link</Text></HStack></Radio>
                     </Stack>
                   </RadioGroup>
                 </FormControl>
                 {attachMethod === "file" ? (
                   <FormControl isRequired>
                     <FormLabel>Upload File</FormLabel>
-                    <Flex {...getRootProps()} p={8} border="3px dashed" borderColor={isDragActive ? "teal.400" : isDark ? "gray.600" : "gray.300"}
-                      rounded={radiusStyle} cursor="pointer" bg={isDragActive ? (isDark ? "teal.900" : "teal.50") : (isDark ? "gray.700" : "gray.50")}
-                      textAlign="center" color={isDragActive ? "teal.600" : isDark ? "gray.300" : "gray.600"}
-                      _hover={{ bg: isDark ? "teal.900" : "teal.50", borderColor: "teal.400", color: "teal.600" }}
+                    <Flex {...getRootProps()} p={8} border="3px dashed" borderColor={isDragActive ? "secondary.400" : isDark ? "gray.600" : "gray.300"}
+                      rounded={radiusStyle} cursor="pointer" bg={isDragActive ? (isDark ? "secondary.900" : "secondary.50") : (isDark ? "gray.700" : "gray.50")}
+                      textAlign="center" color={isDragActive ? "secondary.500" : isDark ? "gray.300" : "gray.600"}
+                      _hover={{ bg: isDark ? "secondary.900" : "secondary.50", borderColor: "secondary.400", color: "secondary.500" }}
                       w="full" minH="150px" justifyContent="center" alignItems="center" transition="all 0.2s" direction="column">
                       <input {...getInputProps()} />
                       <VStack spacing={2}>
@@ -295,9 +315,9 @@ export default function ReportingPeriodDetailView() {
                       </VStack>
                     </Flex>
                     {uploadFile && (
-                      <Flex mt={3} p={3} border="1px" borderColor="teal.200" rounded={radiusStyle} bg={isDark ? "teal.900" : "teal.50"} align="center" justify="space-between">
+                      <Flex mt={3} p={3} border="1px" borderColor="secondary.200" rounded={radiusStyle} bg={isDark ? "secondary.900" : "secondary.50"} align="center" justify="space-between">
                         <HStack spacing={3}>
-                          <Icon as={FiFile} boxSize={5} color="teal.500" />
+                          <Icon as={FiFile} boxSize={5} color="secondary.500" />
                           <VStack align="start" spacing={0}>
                             <Text fontWeight="medium" fontSize="sm">{uploadFile.name}</Text>
                             <Text fontSize="xs" color={isDark ? "gray.400" : "gray.600"}>{(uploadFile.size / 1024).toFixed(2)} KB</Text>
@@ -320,7 +340,7 @@ export default function ReportingPeriodDetailView() {
             </ModalBody>
             <ModalFooter gap={2}>
               <Button variant="ghost" onClick={() => { uploadFormik.resetForm(); setUploadFile(null); setAttachMethod("file"); onUploadClose(); }}>Cancel</Button>
-              <Button type="submit" colorScheme="teal" leftIcon={<FiUpload />} isLoading={actionLoading}>Upload</Button>
+              <Button type="submit" colorScheme="blue" leftIcon={<FiUpload />} isLoading={actionLoading}>Upload</Button>
             </ModalFooter>
           </form>
         </ModalContent>
