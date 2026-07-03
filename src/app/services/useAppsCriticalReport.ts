@@ -246,7 +246,16 @@ const useAppsCriticalReport = () => {
     } catch (e: any) { return handleError(e); }
   };
 
-  return { Generate, List, GetBatchDetail, GetAssessmentDetail, UpdateAssessment, UpdateAssessmentDetail, SubmitForApproval, SubmitBatchForApproval, SyncBatchStatus, ListByStatus, CanApproveAssessment, ApproveAssessment, ApproveBatch, ResubmitAssessment, ReviseBatch };
+  const GetListByApp = async (appId: string, token: string, page = 0, limit = 10, search?: string) => {
+    try {
+      const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+      if (search) params.append("search", search);
+      const res = await axios.get(`${base}/app/${appId}?${params.toString()}`, { headers: { Authorization: `Bearer ${token}` } });
+      return res.data;
+    } catch (e: any) { return handleError(e); }
+  };
+
+  return { Generate, List, GetBatchDetail, GetAssessmentDetail, UpdateAssessment, UpdateAssessmentDetail, SubmitForApproval, SubmitBatchForApproval, SyncBatchStatus, ListByStatus, CanApproveAssessment, ApproveAssessment, ApproveBatch, ResubmitAssessment, ReviseBatch, GetListByApp };
 };
 
 export default useAppsCriticalReport;

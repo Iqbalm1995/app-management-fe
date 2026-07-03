@@ -3,18 +3,19 @@
 import { HeaderContent } from "@/app/components/headerContent";
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import { TableComponentFull } from "@/app/components/tableComponents";
-import { radiusStyle, RES_CODE_OK, RES_GENERIC_ERROR_MSG } from "@/app/constants/applicationConstants";
+import { radiusStyle, RES_CODE_OK, RES_GENERIC_ERROR_MSG, ORG_CATEGORY_KEY_GROUP, DIVISION_ID_IT_BJB, ORG_GROUP_WHITELIST_ALL_ACCESS } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useAppsCriticalReport, { AppsCriticalReportAssessmentViewModel, AppsCriticalReportBatchDetailViewModel } from "@/app/services/useAppsCriticalReport";
 import { ConfirmationDialog } from "@/app/components/confirmationDialog";
 import { Search2Icon } from "@chakra-ui/icons";
+import useOrganization, { OrganizationResponse } from "@/app/services/useOrganization";
 import {
   Badge, Box, Button, Card, CardBody, CardHeader, Divider, Flex,
   Heading, HStack, Icon, IconButton, Input, InputGroup, InputLeftElement,
   Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay,
-  SimpleGrid, Spacer, Spinner, Stack, Text,
+  Select, SimpleGrid, Spacer, Spinner, Stack, Text,
   useColorMode, useDisclosure, VStack,
 } from "@chakra-ui/react";
 import { Select as ChakraSelect } from "chakra-react-select";
@@ -24,8 +25,9 @@ import {
 } from "@tanstack/react-table";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { PaggingListPayload } from "@/app/types/masterTypes";
 import { FaArrowLeft } from "react-icons/fa6";
-import { FiActivity, FiEye, FiInfo, FiX } from "react-icons/fi";
+import { FiActivity, FiEye, FiInfo, FiLock, FiX } from "react-icons/fi";
 import { FaFileExcel, FaFilePdf } from "react-icons/fa6";
 
 const boolBadge = (v: string) => <Badge colorScheme={v === "TRUE" ? "green" : "gray"} variant="subtle" fontSize="xs">{v}</Badge>;
@@ -40,6 +42,7 @@ export default function AppsAssessmentsDetailView() {
   const batchCode = searchParams.get("batchCode");
 
   const { GetBatchDetail, SubmitBatchForApproval, SyncBatchStatus, ReviseBatch } = useAppsCriticalReport();
+  const { List: ListOrganization } = useOrganization();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState("");
   const [batchData, setBatchData] = useState<AppsCriticalReportBatchDetailViewModel | null>(null);
@@ -51,6 +54,11 @@ export default function AppsAssessmentsDetailView() {
   const [selectedAssessment, setSelectedAssessment] = useState<AppsCriticalReportAssessmentViewModel | null>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
+  // Group org state
+  const [groupOptions, setGroupOptions] = useState<OrganizationResponse[]>([]);
+  const [userOrgGroupId, setUserOrgGroupId] = useState<string | null>(null);
+  const [isGroupLocked, setIsGroupLocked] = useState(false);
+
   // Filter states
   const [search, setSearch] = useState("");
   const [filterGroup, setFilterGroup] = useState("");
@@ -60,9 +68,48 @@ export default function AppsAssessmentsDetailView() {
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
     const token = localStorage.getItem("tokenData") as string;
-    if (DataAuth == null && storedData) setDataAuth((JSON.parse(storedData) as AuthDataModelInterface).dataLogin as AuthDataResponse);
+    if (DataAuth == null && storedData) {
+      const parsed = (JSON.parse(storedData) as AuthDataModelInterface).dataLogin as AuthDataResponse;
+      setDataAuth(parsed);
+
+      // Determine group filter lock based on orgGroupId
+      const orgGroupId = parsed.team?.orgGroupId || null;
+      setUserOrgGroupId(orgGroupId);
+
+      // Lock group filter if user has orgGroupId AND it's NOT in the whitelist
+      if (orgGroupId && !ORG_GROUP_WHITELIST_ALL_ACCESS.includes(orgGroupId)) {
+        setIsGroupLocked(true);
+        // filterGroup will be set by name once groupOptions load (see org useEffect)
+      }
+    }
     if (token) setTokenData(token);
   }, [DataAuth]);
+
+  // Load group org options + auto-set locked filter by orgName (not ID)
+  useEffect(() => {
+    if (!tokenData) return;
+    const loadGroups = async () => {
+      try {
+        const res = await ListOrganization({
+          search: "", limit: 1000, page: 0,
+          filterWhere: [
+            { field: "orgType", operator: "=", value: ORG_CATEGORY_KEY_GROUP },
+            { field: "parentId", operator: "=", value: DIVISION_ID_IT_BJB },
+          ],
+          fieldOrder: ["orgName"], orderDir: "asc",
+        } as PaggingListPayload, tokenData);
+        if (res?.statusCode === RES_CODE_OK && res.data) {
+          setGroupOptions(res.data);
+          // If locked, find the orgName matching the user's orgGroupId and set as filter
+          if (isGroupLocked && userOrgGroupId) {
+            const matched = res.data.find((g: OrganizationResponse) => g.id === userOrgGroupId);
+            if (matched) setFilterGroup(matched.orgName);
+          }
+        }
+      } catch { /* silent */ }
+    };
+    loadGroups();
+  }, [tokenData, isGroupLocked, userOrgGroupId]);
 
   useEffect(() => {
     if (!tokenData || !batchCode) return;
@@ -76,13 +123,7 @@ export default function AppsAssessmentsDetailView() {
     load();
   }, [tokenData, batchCode]);
 
-  // Unique group options from loaded data
-  const groupOptions = useMemo(() => {
-    const names = (batchData?.assessments || [])
-      .map(a => a.appManageByGroupName)
-      .filter((v): v is string => !!v);
-    return [...new Set(names)].sort();
-  }, [batchData]);
+  // groupOptions loaded from master org data (via useEffect above)
 
   // Client-side filtered data
   const filteredAssessments = useMemo(() => {
@@ -94,7 +135,9 @@ export default function AppsAssessmentsDetailView() {
         a.appName?.toLowerCase().includes(q) ||
         a.appManageByGroupName?.toLowerCase().includes(q)
       )) return false;
-      if (filterGroup && a.appManageByGroupName !== filterGroup) return false;
+      if (filterGroup) {
+        if (a.appManageByGroupName !== filterGroup) return false;
+      }
       if (filterStatus && a.statusReport !== filterStatus) return false;
       if (filterReview === "reviewed" && !a.isFullyReviewed) return false;
       if (filterReview === "pending" && a.isFullyReviewed) return false;
@@ -102,7 +145,13 @@ export default function AppsAssessmentsDetailView() {
     });
   }, [batchData, search, filterGroup, filterStatus, filterReview]);
 
-  const clearFilters = () => { setSearch(""); setFilterGroup(""); setFilterStatus(""); setFilterReview(""); };
+  const clearFilters = () => {
+    setSearch("");
+    // Only clear group filter if not locked
+    if (!isGroupLocked) setFilterGroup("");
+    setFilterStatus("");
+    setFilterReview("");
+  };
 
   const handleExportExcel = async () => {
     if (!batchData || filteredAssessments.length === 0) return;
@@ -468,20 +517,26 @@ export default function AppsAssessmentsDetailView() {
                     bg={isDark ? "gray.700" : "white"} />
                 </InputGroup>
                 <HStack spacing={2}>
-                  <Box minW="160px">
-                    <ChakraSelect
-                      value={filterGroup ? { label: filterGroup, value: filterGroup } : null}
-                      onChange={(option) => setFilterGroup(option?.value || "")}
-                      options={groupOptions.map(g => ({ label: g, value: g }))}
+                  <Box minW="180px">
+                    <Select
                       placeholder="All Groups"
-                      isClearable
+                      value={filterGroup}
+                      onChange={e => { if (!isGroupLocked) setFilterGroup(e.target.value); }}
                       size="sm"
-                      menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
-                      chakraStyles={{
-                        control: (provided) => ({ ...provided, bg: isDark ? "gray.700" : "white", minH: "40px" }),
-                        menu: (provided) => ({ ...provided, bg: isDark ? "gray.700" : "white", zIndex: 9999 }),
-                      }}
-                    />
+                      bg={isDark ? "gray.700" : "white"}
+                      isDisabled={isGroupLocked}
+                      title={isGroupLocked ? "Filtered by your group" : undefined}
+                    >
+                      {groupOptions.map(g => (
+                        <option key={g.id} value={g.orgName}>{g.orgName}</option>
+                      ))}
+                    </Select>
+                    {isGroupLocked && (
+                      <HStack spacing={1} mt={1}>
+                        <Icon as={FiLock} boxSize={2.5} color="orange.400" />
+                        <Text fontSize="2xs" color="orange.400">Filtered by your group</Text>
+                      </HStack>
+                    )}
                   </Box>
                   <Box minW="160px">
                     <ChakraSelect
@@ -500,9 +555,9 @@ export default function AppsAssessmentsDetailView() {
                   </Box>
                   <Box minW="140px">
                     <ChakraSelect
-                      value={filterReview ? { label: filterReview === "reviewed" ? "✓ Reviewed" : "⚠ Not Yet", value: filterReview } : null}
+                      value={filterReview ? { label: filterReview === "reviewed" ? "Reviewed" : "Not Yet", value: filterReview } : null}
                       onChange={(option) => setFilterReview((option?.value || "") as "" | "reviewed" | "pending")}
-                      options={[{ label: "✓ Reviewed", value: "reviewed" }, { label: "⚠ Not Yet", value: "pending" }]}
+                      options={[{ label: "Reviewed", value: "reviewed" }, { label: "Not Yet", value: "pending" }]}
                       placeholder="All Review"
                       isClearable
                       size="sm"

@@ -64,6 +64,7 @@ import {
   Tag,
   TagLabel,
   Wrap,
+  Spinner,
 } from "@chakra-ui/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -75,7 +76,9 @@ import {
   FiFileText,
   FiSettings,
   FiGlobe,
+  FiActivity,
   FiFolder,
+  FiRefreshCw,
   FiPlus,
   FiUsers,
   FiEye,
@@ -103,6 +106,7 @@ import useUsers, { UsersResponse } from "@/app/services/useUsers";
 import useConstants, {
   ConstantDataResponse,
 } from "@/app/services/useConstants";
+import useAppsCriticalReport, { AppsCriticalReportAssessmentViewModel } from "@/app/services/useAppsCriticalReport";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Application Detail",
@@ -121,6 +125,13 @@ function ApplicationDetail() {
 
   // ID State
   const [appId, setAppId] = useState<string | null>(null);
+
+  // Assessment Report state
+  const { GetListByApp } = useAppsCriticalReport();
+  const [assessmentData, setAssessmentData] = useState<AppsCriticalReportAssessmentViewModel[]>([]);
+  const [assessmentLoading, setAssessmentLoading] = useState(false);
+  const [assessmentTotal, setAssessmentTotal] = useState(0);
+  const [assessmentRefresh, setAssessmentRefresh] = useState(0);
 
   // Data State
   const [DataApplication, setDataApplication] =
@@ -636,6 +647,21 @@ function ApplicationDetail() {
       setAppId(id); // Set it to the state
     }
   }, [searchParams]);
+
+  // Fetch assessment reports for this app
+  useEffect(() => {
+    if (!tokenData || !appId) return;
+    const fetchAssessments = async () => {
+      setAssessmentLoading(true);
+      const res = await GetListByApp(appId, tokenData);
+      if (res?.statusCode === 200) {
+        setAssessmentData(res.data || []);
+        setAssessmentTotal(res.countTotal || 0);
+      }
+      setAssessmentLoading(false);
+    };
+    fetchAssessments();
+  }, [tokenData, appId, assessmentRefresh]);
 
   // Auth Effect
   useEffect(() => {
@@ -1213,6 +1239,29 @@ function ApplicationDetail() {
                         <HStack spacing={2}>
                           <Icon as={FiFolder} boxSize={4} />
                           <Text>Projects</Text>
+                        </HStack>
+                      </Tab>
+                      <Tab
+                        fontWeight="semibold"
+                        px={6}
+                        py={3}
+                        rounded="xl"
+                        color={colorMode === "light" ? "gray.600" : "gray.400"}
+                        _selected={{
+                          color: "white",
+                          bg: "secondary.500",
+                          boxShadow: "lg",
+                          transform: "translateY(-2px)",
+                        }}
+                        _hover={{
+                          bg: colorMode === "light" ? "gray.200" : "gray.600",
+                          transform: "translateY(-1px)",
+                        }}
+                        transition="all 0.2s"
+                      >
+                        <HStack spacing={2}>
+                          <Icon as={FiActivity} boxSize={4} />
+                          <Text>Assessment Report</Text>
                         </HStack>
                       </Tab>
                     </TabList>
@@ -4147,6 +4196,73 @@ function ApplicationDetail() {
                               Coming Soon
                             </Badge>
                           </Box>
+                        </VStack>
+                      </TabPanel>
+
+                      {/* Assessment Report Tab */}
+                      <TabPanel p={6}>
+                        <VStack spacing={5} align="stretch">
+                          {/* Header */}
+                          <HStack justify="space-between">
+                            <HStack spacing={3}>
+                              <Box w={9} h={9} bg="purple.500" rounded="lg" display="flex" alignItems="center" justifyContent="center" color="white">
+                                <Icon as={FiActivity} boxSize={4} />
+                              </Box>
+                              <VStack align="start" spacing={0}>
+                                <Text fontWeight="bold" fontSize="md" color={colorMode === "light" ? "gray.800" : "white"}>Assessment Reports</Text>
+                                <Text fontSize="xs" color={colorMode === "light" ? "gray.500" : "gray.400"}>{assessmentTotal} report(s) across all batches</Text>
+                              </VStack>
+                            </HStack>
+                            <Button size="sm" colorScheme="gray" leftIcon={<Icon as={FiRefreshCw} />} isLoading={assessmentLoading} onClick={() => setAssessmentRefresh(p => p + 1)}>Refresh</Button>
+                          </HStack>
+                          <Divider />
+                          {/* Assessment List */}
+                          {assessmentLoading ? (
+                            <Flex justify="center" py={8}><Spinner color="purple.500" /></Flex>
+                          ) : assessmentData.length === 0 ? (
+                            <VStack py={12} spacing={3} textAlign="center">
+                              <Box w={16} h={16} bg={colorMode === "light" ? "gray.100" : "gray.700"} rounded="full" display="flex" alignItems="center" justifyContent="center">
+                                <Icon as={FiActivity} boxSize={8} color={colorMode === "light" ? "gray.400" : "gray.500"} />
+                              </Box>
+                              <Text color={colorMode === "light" ? "gray.500" : "gray.400"} fontSize="sm">No assessment reports found for this application.</Text>
+                            </VStack>
+                          ) : (
+                            <VStack spacing={3} align="stretch">
+                              {assessmentData.map((a) => (
+                                <Box key={a.id} p={4} bg={colorMode === "light" ? "gray.50" : "gray.750"}
+                                  rounded="lg" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                                  _hover={{ shadow: "sm", borderColor: "purple.300" }} transition="all 0.2s">
+                                  <Flex align="center" gap={4}>
+                                    <VStack align="start" spacing={1} flex={1}>
+                                      <HStack spacing={2} flexWrap="wrap">
+                                        <Badge colorScheme="purple" fontFamily="mono" fontSize="xs">{a.batchCode}</Badge>
+                                        <Badge colorScheme="blue" variant="outline" fontSize="xs">{a.quartalReport} {a.yearReport}</Badge>
+                                        <Badge colorScheme={
+                                          a.statusReport === "APPROVED" ? "green" :
+                                          a.statusReport === "DECLINE" ? "red" :
+                                          a.statusReport?.includes("WAITING") ? "orange" : "gray"
+                                        } variant="subtle" fontSize="xs">{a.statusReport}</Badge>
+                                        {a.isFullyReviewed
+                                          ? <Badge colorScheme="green" variant="subtle" fontSize="xs">Reviewed ({a.filledCount}/{a.totalCount})</Badge>
+                                          : <Badge colorScheme="orange" variant="subtle" fontSize="xs">Pending ({a.filledCount}/{a.totalCount})</Badge>
+                                        }
+                                      </HStack>
+                                      <HStack spacing={4}>
+                                        {a.appCrtCategoryName && <Badge colorScheme="teal" variant="outline" fontSize="xs">{a.appCrtCategoryName}</Badge>}
+                                        <Text fontSize="xs" color={colorMode === "light" ? "gray.500" : "gray.400"}>
+                                          Final Score: <Text as="span" fontWeight="bold" color="purple.500">{Number(a.crtAssessmentFinalScore).toFixed(3)}</Text>
+                                        </Text>
+                                      </HStack>
+                                    </VStack>
+                                    <Button size="xs" colorScheme="purple" variant="outline"
+                                      onClick={() => router.push(`/report/apps-assessments/assessment?id=${a.id}&source=detail`)}>
+                                      View Detail
+                                    </Button>
+                                  </Flex>
+                                </Box>
+                              ))}
+                            </VStack>
+                          )}
                         </VStack>
                       </TabPanel>
                     </TabPanels>

@@ -17,6 +17,13 @@ export const ORG_CATEGORY_KEY_GROUP: string = "GROUP";
 export const DIRECTORATE_ID_IT_BJB: string =
   "BD4C8AE4-BF61-5C96-B5A7-60A921553";
 export const DIVISION_ID_IT_BJB: string = "8922E4AD-8183-B61B-34D1-CF629361D";
+
+// OrgGroupIds that bypass group filter restriction — these users can see ALL data
+// regardless of their own orgGroupId
+export const ORG_GROUP_WHITELIST_ALL_ACCESS: string[] = [
+  // Add orgGroupIds here that should have unrestricted access
+  // e.g. "uuid-of-admin-group", "uuid-of-it-head-group"
+];
 export const DIVISION_ID_CODE_BJB: string = "D440";
 export const SELECTED_OPTION_DIRECTORATE: OptionListProps = {
   label: `DIREKTORAT IT & TRANSACTION BANKING | ${ORG_CATEGORY_KEY_DIRECTORATE}`,
