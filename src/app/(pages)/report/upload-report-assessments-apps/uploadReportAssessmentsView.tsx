@@ -121,8 +121,8 @@ export default function UploadReportAssessmentsView() {
       accessorKey: "documentCount",
       cell: (info) => (
         <HStack spacing={1}>
-          <Icon as={FiFileText} boxSize={3.5} color={isDark ? "teal.300" : "teal.600"} />
-          <Badge colorScheme="teal" variant="subtle">{info.getValue() as number} document(s)</Badge>
+          <Icon as={FiFileText} boxSize={3.5} color={isDark ? "secondary.300" : "secondary.500"} />
+          <Badge colorScheme="blue" variant="subtle">{info.getValue() as number} document(s)</Badge>
         </HStack>
       ),
       header: () => <Text>Documents</Text>,
@@ -138,14 +138,10 @@ export default function UploadReportAssessmentsView() {
       id: "actions",
       header: () => <Text>Actions</Text>,
       cell: (info) => (
-        <HStack spacing={2}>
-          <Button size="xs" colorScheme="purple" variant="outline" _hover={{ bg: "purple.500", color: "white" }}
-            onClick={() => router.push(`/report/upload-report-assessments-apps/detail?id=${info.row.original.id}`)}>
-            View
-          </Button>
-          <IconButton aria-label="Delete" icon={<FiTrash2 />} size="xs" colorScheme="red" variant="ghost"
-            onClick={() => { setDeletingId(info.row.original.id); setIsDeletePeriodOpen(true); }} />
-        </HStack>
+        <Button size="xs" colorScheme="purple" variant="outline" _hover={{ bg: "purple.500", color: "white" }}
+          onClick={() => router.push(`/report/upload-report-assessments-apps/detail?id=${info.row.original.id}`)}>
+          View
+        </Button>
       ),
       footer: (p) => p.column.id,
     },
@@ -164,7 +160,7 @@ export default function UploadReportAssessmentsView() {
               {/* Header */}
               <HStack spacing={3} justify="space-between">
                 <HStack spacing={3}>
-                  <Box w={10} h={10} bg="teal.500" rounded="lg" display="flex" alignItems="center" justifyContent="center" color="white">
+                  <Box w={10} h={10} bg="secondary.500" rounded="lg" display="flex" alignItems="center" justifyContent="center" color="white">
                     <Icon as={FiFileText} boxSize={5} />
                   </Box>
                   <VStack align="start" spacing={0}>
@@ -172,7 +168,7 @@ export default function UploadReportAssessmentsView() {
                     <Text fontSize="sm" color={isDark ? "gray.400" : "gray.600"}>{totalCount} reporting period(s) found</Text>
                   </VStack>
                 </HStack>
-                <Button colorScheme="teal" leftIcon={<FiPlusSquare />} size="sm" onClick={onInsertOpen}>Add Period</Button>
+                <Button colorScheme="blue" leftIcon={<FiPlusSquare />} size="sm" onClick={onInsertOpen}>Add Period</Button>
               </HStack>
 
               {/* Filters */}
@@ -203,7 +199,7 @@ export default function UploadReportAssessmentsView() {
               </HStack>
 
               {/* Table */}
-              {loading ? <Flex justify="center" py={8}><Spinner color="teal.500" size="lg" /></Flex> : (
+              {loading ? <Flex justify="center" py={8}><Spinner color="secondary.500" size="lg" /></Flex> : (
                 <Box overflowX="auto" w="full"><Box minW="700px"><TableComponentFull table={table} /></Box></Box>
               )}
             </VStack>
@@ -212,39 +208,55 @@ export default function UploadReportAssessmentsView() {
       </Box>
 
       {/* Insert Period Modal */}
-      <Modal isOpen={isInsertOpen} onClose={() => { insertFormik.resetForm(); onInsertClose(); }} size="md">
-        <ModalOverlay /><ModalContent rounded={radiusStyle}>
+      <Modal isOpen={isInsertOpen} onClose={() => { insertFormik.resetForm(); onInsertClose(); }} size="md" isCentered>
+        <ModalOverlay bg="blackAlpha.500" />
+        <ModalContent rounded="12px" shadow="lg" border="1px" borderColor={isDark ? "gray.700" : "gray.200"} overflow="hidden" bg={isDark ? "gray.800" : "white"}>
           <form onSubmit={insertFormik.handleSubmit}>
-            <ModalHeader>Add Reporting Period</ModalHeader><ModalCloseButton />
-            <ModalBody><Stack spacing={4}>
-              <Grid templateColumns="1fr 1fr" gap={4}>
-                <GridItem>
-                  <FormControl isInvalid={!!(insertFormik.errors.reportQuartal && insertFormik.touched.reportQuartal)}>
-                    <FormLabel fontSize="sm">Quarter <Text as="span" color="red.400">*</Text></FormLabel>
-                    <Select name="reportQuartal" value={insertFormik.values.reportQuartal} onChange={insertFormik.handleChange} placeholder="Select" bg={isDark ? "gray.700" : "white"}>
-                      {QUARTERS.map(q => <option key={q} value={q}>{q}</option>)}
-                    </Select>
-                    <FormErrorMessage>{insertFormik.errors.reportQuartal}</FormErrorMessage>
-                  </FormControl>
-                </GridItem>
-                <GridItem>
-                  <FormControl>
-                    <FormLabel fontSize="sm">Year</FormLabel>
-                    <Select name="reportYear" value={insertFormik.values.reportYear} onChange={insertFormik.handleChange} bg={isDark ? "gray.700" : "white"}>
-                      {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-                    </Select>
-                  </FormControl>
-                </GridItem>
+            {/* Header — compact, solid color */}
+            <Flex bg="secondary.500" px={5} py={3} align="center" justify="space-between">
+              <Text fontSize="sm" fontWeight="600" color="white">New Reporting Period</Text>
+              <IconButton aria-label="Close" icon={<FiX />} size="xs" variant="ghost" color="white"
+                _hover={{ bg: "whiteAlpha.200" }} onClick={() => { insertFormik.resetForm(); onInsertClose(); }} />
+            </Flex>
+            {/* Body */}
+            <Box px={5} py={5}>
+              <Grid templateColumns="1fr 1fr" gap={4} mb={4}>
+                <FormControl isInvalid={!!(insertFormik.errors.reportQuartal && insertFormik.touched.reportQuartal)}>
+                  <FormLabel fontSize="xs" fontWeight="500" mb={1} color={isDark ? "gray.300" : "gray.600"}>Quarter <Text as="span" color="red.400">*</Text></FormLabel>
+                  <Select name="reportQuartal" value={insertFormik.values.reportQuartal} onChange={insertFormik.handleChange}
+                    placeholder="Select" size="sm" rounded="8px" bg={isDark ? "gray.700" : "white"} borderColor={isDark ? "gray.600" : "gray.200"}
+                    _focus={{ borderColor: "secondary.400", boxShadow: "0 0 0 1px var(--chakra-colors-secondary-400)" }}>
+                    {QUARTERS.map(q => <option key={q} value={q}>{q}</option>)}
+                  </Select>
+                  <FormErrorMessage fontSize="xs">{insertFormik.errors.reportQuartal}</FormErrorMessage>
+                </FormControl>
+                <FormControl>
+                  <FormLabel fontSize="xs" fontWeight="500" mb={1} color={isDark ? "gray.300" : "gray.600"}>Year</FormLabel>
+                  <Select name="reportYear" value={insertFormik.values.reportYear} onChange={insertFormik.handleChange}
+                    size="sm" rounded="8px" bg={isDark ? "gray.700" : "white"} borderColor={isDark ? "gray.600" : "gray.200"}
+                    _focus={{ borderColor: "secondary.400", boxShadow: "0 0 0 1px var(--chakra-colors-secondary-400)" }}>
+                    {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                  </Select>
+                </FormControl>
               </Grid>
               <FormControl>
-                <FormLabel fontSize="sm">Note</FormLabel>
-                <Textarea name="note" value={insertFormik.values.note} onChange={insertFormik.handleChange} rows={3} placeholder="Optional" bg={isDark ? "gray.700" : "white"} />
+                <FormLabel fontSize="xs" fontWeight="500" mb={1} color={isDark ? "gray.300" : "gray.600"}>Note</FormLabel>
+                <Textarea name="note" value={insertFormik.values.note} onChange={insertFormik.handleChange}
+                  rows={2} size="sm" rounded="8px" placeholder="Optional description..."
+                  bg={isDark ? "gray.700" : "white"} borderColor={isDark ? "gray.600" : "gray.200"}
+                  _placeholder={{ color: isDark ? "gray.500" : "gray.400" }}
+                  _focus={{ borderColor: "secondary.400", boxShadow: "0 0 0 1px var(--chakra-colors-secondary-400)" }} />
               </FormControl>
-            </Stack></ModalBody>
-            <ModalFooter gap={2}>
-              <Button variant="ghost" onClick={() => { insertFormik.resetForm(); onInsertClose(); }}>Cancel</Button>
-              <Button type="submit" colorScheme="teal" isLoading={actionLoading}>Create Period</Button>
-            </ModalFooter>
+            </Box>
+            {/* Footer — compact, right-aligned */}
+            <Flex px={5} py={3} justify="flex-end" gap="12px" borderTop="1px" borderColor={isDark ? "gray.700" : "gray.100"}>
+              <Button variant="ghost" size="sm" fontSize="xs" fontWeight="500" color={isDark ? "gray.400" : "gray.500"}
+                _hover={{ color: isDark ? "white" : "gray.700", bg: isDark ? "gray.700" : "gray.100" }}
+                onClick={() => { insertFormik.resetForm(); onInsertClose(); }}>Cancel</Button>
+              <Button type="submit" size="sm" fontSize="xs" fontWeight="600" bg="secondary.500" color="white"
+                _hover={{ bg: "secondary.600" }} _active={{ bg: "secondary.700" }}
+                rounded="8px" isLoading={actionLoading}>Create Period</Button>
+            </Flex>
           </form>
         </ModalContent>
       </Modal>
