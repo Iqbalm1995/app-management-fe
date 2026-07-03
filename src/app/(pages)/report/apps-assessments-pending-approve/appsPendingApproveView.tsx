@@ -199,7 +199,7 @@ export default function AppsPendingApproveView() {
     { accessorKey: "appManageByGroupName", cell: (info) => <Text fontSize="sm" noOfLines={1}>{(info.getValue() as string) || "-"}</Text>, header: () => <Text>Group</Text>, footer: (p) => p.column.id },
     { accessorKey: "batchCode", cell: (info) => <Badge colorScheme="purple" fontFamily="mono" fontSize="xs">{info.getValue() as string}</Badge>, header: () => <Text>Batch</Text>, footer: (p) => p.column.id },
     { accessorKey: "statusReport", cell: (info) => <Badge colorScheme={statusColor(info.getValue() as string)} variant="subtle">{info.getValue() as string}</Badge>, header: () => <Text>Status</Text>, footer: (p) => p.column.id },
-    { accessorKey: "crtAssessmentFinalScore", cell: (info) => <Badge colorScheme="teal">{Number(info.getValue()).toFixed(2)}</Badge>, header: () => <Text>Score</Text>, footer: (p) => p.column.id },
+    { accessorKey: "crtAssessmentFinalScore", cell: (info) => <Badge colorScheme="teal">{Number(info.getValue()).toFixed(3)}</Badge>, header: () => <Text>Score</Text>, footer: (p) => p.column.id },
     {
       id: "approver",
       header: () => <Text>Approver</Text>,
@@ -366,7 +366,7 @@ export default function AppsPendingApproveView() {
                     <Flex key={a.id} p={3} bg={isDark ? "gray.750" : "white"} rounded="md" border="1px" borderColor={isDark ? "gray.600" : "gray.100"} gap={3} align="center">
                       <VStack align="start" spacing={0} flex={1}><Text fontSize="sm" fontWeight="medium">{a.appShortName}</Text><Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"}>{a.appName}</Text></VStack>
                       <Badge colorScheme={statusColor(a.statusReport)} variant="subtle" fontSize="xs">{a.statusReport}</Badge>
-                      <Badge colorScheme="teal" fontSize="xs">{Number(a.crtAssessmentFinalScore).toFixed(2)}</Badge>
+                      <Badge colorScheme="teal" fontSize="xs">{Number(a.crtAssessmentFinalScore).toFixed(3)}</Badge>
                     </Flex>
                   ))}
                 </Stack>

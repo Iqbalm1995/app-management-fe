@@ -299,7 +299,7 @@ export default function AppsAssessmentsDetailView() {
       accessorKey: "crtAssessmentFinalScore",
       cell: (info) => (
         <Flex justifyContent="center">
-          <Text fontSize="sm" fontWeight="bold" color="purple.600">{(info.getValue() as number).toFixed(2)}</Text>
+          <Text fontSize="sm" fontWeight="bold" color="purple.600">{(info.getValue() as number).toFixed(3)}</Text>
         </Flex>
       ),
       header: () => <Flex justifyContent="center"><Text>Final Score</Text></Flex>,
