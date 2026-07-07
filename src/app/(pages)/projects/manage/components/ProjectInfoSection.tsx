@@ -214,13 +214,8 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
               {/* Beautiful Information Cards */}
               <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
                 {/* Basic Information Card */}
-                <Card
-                  shadow="lg"
-                  rounded="xl"
-                  border="1px"
-                  borderColor="gray.100"
-                >
-                  <CardHeader bg="blue.50" roundedTop="xl">
+                <Card shadow="lg" rounded="xl" border="1px" borderColor={colorMode === "light" ? "gray.100" : "gray.600"}>
+                  <CardHeader bg={colorMode === "light" ? "blue.50" : "gray.700"} roundedTop="xl">
                     <HStack spacing={3}>
                       <Box
                         w={10}
@@ -233,7 +228,7 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                       >
                         <FiInfo size={20} color="white" />
                       </Box>
-                      <Heading size="md" color="blue.700">
+                      <Heading size="md" color={colorMode === "light" ? "blue.700" : "blue.200"}>
                         Basic Information
                       </Heading>
                     </HStack>
@@ -241,97 +236,55 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                   <CardBody p={6}>
                     <VStack spacing={4} align="stretch">
                       <HStack justify="space-between">
-                        <Text
-                          fontSize="sm"
-                          color="gray.600"
-                          fontWeight="medium"
-                        >
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"} fontWeight="medium">
                           Project Number:
                         </Text>
-                        <Text
-                          fontSize="sm"
-                          fontWeight="bold"
-                          color="blue.600"
-                        >
+                        <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "blue.600" : "blue.300"}>
                           {DataProject.projectNo || "N/A"}
                         </Text>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
-                        <Text
-                          fontSize="sm"
-                          color="gray.600"
-                          fontWeight="medium"
-                        >
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"} fontWeight="medium">
                           Project Name:
                         </Text>
-                        <Text
-                          fontSize="sm"
-                          fontWeight="bold"
-                          color="gray.800"
-                          textAlign="right"
-                          maxW="200px"
-                        >
+                        <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"} textAlign="right" maxW="200px">
                           {DataProject.projectName || "N/A"}
                         </Text>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
-                        <Text
-                          fontSize="sm"
-                          color="gray.600"
-                          fontWeight="medium"
-                        >
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"} fontWeight="medium">
                           Karakteristik:
                         </Text>
-                        <Text fontSize="sm" fontWeight="bold" color="gray.800">
+                        <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
                           {DataProject.projectCharasteristicName || "N/A"}
                         </Text>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
-                        <Text
-                          fontSize="sm"
-                          color="gray.600"
-                          fontWeight="medium"
-                        >
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"} fontWeight="medium">
                           Sub Karakteristik:
                         </Text>
-                        <Text fontSize="sm" fontWeight="bold" color="gray.800">
+                        <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
                           {DataProject.projectSubCharasteristicName || "N/A"}
                         </Text>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
-                        <Text
-                          fontSize="sm"
-                          color="gray.600"
-                          fontWeight="medium"
-                        >
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"} fontWeight="medium">
                           Project Status:
                         </Text>
-                        <Text
-                          fontSize="sm"
-                          fontWeight="bold"
-                          color={
-                            DataProject.projectStatus === "ACTIVE"
-                              ? "green.600"
-                              : "red.600"
-                          }
-                        >
+                        <Text fontSize="sm" fontWeight="bold" color={DataProject.projectStatus === "ACTIVE" ? "green.500" : "red.500"}>
                           {DataProject.projectStatus || "N/A"}
                         </Text>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
-                        <Text
-                          fontSize="sm"
-                          color="gray.600"
-                          fontWeight="medium"
-                        >
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"} fontWeight="medium">
                           SDLC Status:
                         </Text>
-                        <Text fontSize="sm" fontWeight="bold" color="blue.600">
+                        <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "blue.600" : "blue.300"}>
                           {DataProject.sdlcStageName || "Not Set"}
                         </Text>
                       </HStack>
@@ -339,14 +292,10 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                         <>
                           <Divider />
                           <HStack justify="space-between">
-                            <Text
-                              fontSize="sm"
-                              color="gray.600"
-                              fontWeight="medium"
-                            >
+                            <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"} fontWeight="medium">
                               Next SDLC Stage:
                             </Text>
-                            <Text fontSize="sm" fontWeight="bold" color="gray.600">
+                            <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "gray.600" : "gray.300"}>
                               {IsLoadingNextStage ? "..." : (NextStageName || "None (Final Stage)")}
                             </Text>
                           </HStack>
@@ -354,14 +303,10 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                       )}
                       <Divider />
                       <HStack justify="space-between">
-                        <Text
-                          fontSize="sm"
-                          color="gray.600"
-                          fontWeight="medium"
-                        >
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"} fontWeight="medium">
                           Progress:
                         </Text>
-                        <Text fontSize="sm" fontWeight="bold" color="gray.800">
+                        <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
                           {DataProject.projectStatusPercentage || 0}%
                         </Text>
                       </HStack>
@@ -374,22 +319,14 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                   shadow="lg"
                   rounded="xl"
                   border="1px"
-                  borderColor="gray.100"
+                  borderColor={colorMode === "light" ? "gray.100" : "gray.600"}
                 >
-                  <CardHeader bg="purple.50" roundedTop="xl">
+                  <CardHeader bg={colorMode === "light" ? "purple.50" : "gray.700"} roundedTop="xl">
                     <HStack spacing={3}>
-                      <Box
-                        w={10}
-                        h={10}
-                        bgGradient="linear(135deg, purple.400, purple.600)"
-                        rounded="xl"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                      >
+                      <Box w={10} h={10} bgGradient="linear(135deg, purple.400, purple.600)" rounded="xl" display="flex" alignItems="center" justifyContent="center">
                         <FiTag size={20} color="white" />
                       </Box>
-                      <Heading size="md" color="purple.700">
+                      <Heading size="md" color={colorMode === "light" ? "purple.700" : "purple.200"}>
                         Categories
                       </Heading>
                     </HStack>
@@ -397,73 +334,29 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                   <CardBody p={6}>
                     <VStack spacing={4} align="stretch">
                       <HStack justify="space-between">
-                        <Text
-                          fontSize="sm"
-                          color="gray.600"
-                          fontWeight="medium"
-                        >
-                          Category:
-                        </Text>
-                        <Text
-                          fontSize="sm"
-                          fontWeight="bold"
-                          color="purple.600"
-                          textAlign="right"
-                        >
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"} fontWeight="medium">Category:</Text>
+                        <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "purple.600" : "purple.300"} textAlign="right">
                           {DataProject.projectCategory || "N/A"}
                         </Text>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
-                        <Text
-                          fontSize="sm"
-                          color="gray.600"
-                          fontWeight="medium"
-                        >
-                          Type:
-                        </Text>
-                        <Text
-                          fontSize="sm"
-                          fontWeight="bold"
-                          color="cyan.600"
-                          textAlign="right"
-                        >
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"} fontWeight="medium">Type:</Text>
+                        <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "cyan.600" : "cyan.300"} textAlign="right">
                           {DataProject.projectType || "N/A"}
                         </Text>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
-                        <Text
-                          fontSize="sm"
-                          color="gray.600"
-                          fontWeight="medium"
-                        >
-                          Acquisition Code:
-                        </Text>
-                        <Text
-                          fontSize="sm"
-                          fontWeight="bold"
-                          color="orange.600"
-                          textAlign="right"
-                        >
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"} fontWeight="medium">Acquisition Code:</Text>
+                        <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "orange.600" : "orange.300"} textAlign="right">
                           {DataProject.projectAcquisitionCode || "N/A"}
                         </Text>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
-                        <Text
-                          fontSize="sm"
-                          color="gray.600"
-                          fontWeight="medium"
-                        >
-                          Acquisition Name:
-                        </Text>
-                        <Text
-                          fontSize="sm"
-                          fontWeight="bold"
-                          color="teal.600"
-                          textAlign="right"
-                        >
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"} fontWeight="medium">Acquisition Name:</Text>
+                        <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "teal.600" : "teal.300"} textAlign="right">
                           {DataProject.projectAcquisitionName || "N/A"}
                         </Text>
                       </HStack>
@@ -476,22 +369,14 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                   shadow="lg"
                   rounded="xl"
                   border="1px"
-                  borderColor="gray.100"
+                  borderColor={colorMode === "light" ? "gray.100" : "gray.600"}
                 >
-                  <CardHeader bg="orange.50" roundedTop="xl">
+                  <CardHeader bg={colorMode === "light" ? "orange.50" : "gray.700"} roundedTop="xl">
                     <HStack spacing={3}>
-                      <Box
-                        w={10}
-                        h={10}
-                        bgGradient="linear(135deg, orange.400, orange.600)"
-                        rounded="xl"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                      >
+                      <Box w={10} h={10} bgGradient="linear(135deg, orange.400, orange.600)" rounded="xl" display="flex" alignItems="center" justifyContent="center">
                         <FiCalendar size={20} color="white" />
                       </Box>
-                      <Heading size="md" color="orange.700">
+                      <Heading size="md" color={colorMode === "light" ? "orange.700" : "orange.200"}>
                         Timeline
                       </Heading>
                     </HStack>
@@ -499,55 +384,43 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                   <CardBody p={6}>
                     <VStack spacing={4} align="stretch">
                       <HStack justify="space-between">
-                        <Text fontSize="sm" color="gray.600" fontWeight="medium">
-                          Tanggal Memo:
-                        </Text>
-                        <Text fontSize="sm" fontWeight="bold" color="gray.800">
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"} fontWeight="medium">Tanggal Memo:</Text>
+                        <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
                           {RequirementData?.reqInititateDate ? new Date(RequirementData.reqInititateDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : "-"}
                         </Text>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
-                        <Text fontSize="sm" color="gray.600" fontWeight="medium">
-                          Tanggal Memo Diterima:
-                        </Text>
-                        <Text fontSize="sm" fontWeight="bold" color="gray.800">
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"} fontWeight="medium">Tanggal Memo Diterima:</Text>
+                        <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
                           {RequirementData?.reqAcceptedDate ? new Date(RequirementData.reqAcceptedDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : "-"}
                         </Text>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
-                        <Text fontSize="sm" color="gray.600" fontWeight="medium">
-                          Durasi Memo:
-                        </Text>
-                        <Text fontSize="sm" fontWeight="bold" color="gray.800">
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"} fontWeight="medium">Durasi Memo:</Text>
+                        <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
                           {RequirementData?.reqDurationDay ? `${RequirementData.reqDurationDay} hari` : "-"}
                         </Text>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
-                        <Text fontSize="sm" color="gray.600" fontWeight="medium">
-                          Tanggal Register Project:
-                        </Text>
-                        <Text fontSize="sm" fontWeight="bold" color="gray.800">
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"} fontWeight="medium">Tanggal Register Project:</Text>
+                        <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
                           {DataProject.projectRegisterDate ? new Date(DataProject.projectRegisterDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : "-"}
                         </Text>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
-                        <Text fontSize="sm" color="gray.600" fontWeight="medium">
-                          Tanggal Closed Project:
-                        </Text>
-                        <Text fontSize="sm" fontWeight="bold" color="gray.800">
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"} fontWeight="medium">Tanggal Closed Project:</Text>
+                        <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
                           {DataProject.projectClosedDate ? new Date(DataProject.projectClosedDate).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : "-"}
                         </Text>
                       </HStack>
                       <Divider />
                       <HStack justify="space-between">
-                        <Text fontSize="sm" color="gray.600" fontWeight="medium">
-                          Durasi Project:
-                        </Text>
-                        <Text fontSize="sm" fontWeight="bold" color="gray.800">
+                        <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"} fontWeight="medium">Durasi Project:</Text>
+                        <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
                           {DataProject.projectDurationDays ? `${DataProject.projectDurationDays} hari` : "-"}
                         </Text>
                       </HStack>
@@ -559,35 +432,21 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                   shadow="lg"
                   rounded="xl"
                   border="1px"
-                  borderColor="gray.100"
+                  borderColor={colorMode === "light" ? "gray.100" : "gray.600"}
                 >
-                  <CardHeader bg="green.50" roundedTop="xl">
+                  <CardHeader bg={colorMode === "light" ? "green.50" : "gray.700"} roundedTop="xl">
                     <HStack spacing={3}>
-                      <Box
-                        w={10}
-                        h={10}
-                        bgGradient="linear(135deg, green.400, green.600)"
-                        rounded="xl"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                      >
+                      <Box w={10} h={10} bgGradient="linear(135deg, green.400, green.600)" rounded="xl" display="flex" alignItems="center" justifyContent="center">
                         <FiActivity size={20} color="white" />
                       </Box>
-                      <Heading size="md" color="green.700">
+                      <Heading size="md" color={colorMode === "light" ? "green.700" : "green.200"}>
                         Description
                       </Heading>
                     </HStack>
                   </CardHeader>
                   <CardBody p={6}>
-                    <Text
-                      fontSize="sm"
-                      color="gray.600"
-                      lineHeight="tall"
-                      minH="60px"
-                    >
-                      {DataProject.projectDesc ||
-                        "No description available for this project."}
+                    <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"} lineHeight="tall" minH="60px">
+                      {DataProject.projectDesc || "No description available for this project."}
                     </Text>
 
                     {/* SDLC Stage Reports Subsection */}
@@ -598,7 +457,7 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                           <HStack justify="space-between">
                             <HStack spacing={2}>
                               <Icon as={FiFileText} color="blue.500" />
-                              <Heading size="sm" color="gray.700">
+                              <Heading size="sm" color={colorMode === "light" ? "gray.700" : "gray.200"}>
                                 Current Stage Reports
                               </Heading>
                               <Badge colorScheme="blue" fontSize="xs">
@@ -610,20 +469,20 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                           {IsLoadingReports ? (
                             <HStack justify="center" py={4}>
                               <Spinner size="sm" />
-                              <Text fontSize="sm" color="gray.500">Loading reports...</Text>
+                              <Text fontSize="sm" color={colorMode === "light" ? "gray.500" : "gray.400"}>Loading reports...</Text>
                             </HStack>
                           ) : StageReports.length === 0 ? (
-                            <Text fontSize="sm" color="gray.500" fontStyle="italic">
+                            <Text fontSize="sm" color={colorMode === "light" ? "gray.500" : "gray.400"} fontStyle="italic">
                               No reports for this stage yet.
                             </Text>
                           ) : (
                             <VStack spacing={2} align="stretch">
                               {StageReports.map((report) => (
-                                <Card key={report.id} variant="outline" size="sm">
+                                <Card key={report.id} variant="outline" size="sm" bg={colorMode === "light" ? "white" : "gray.700"}>
                                   <CardBody>
                                     <VStack align="stretch" spacing={2}>
                                       <HStack justify="space-between">
-                                        <Badge 
+                                        <Badge
                                           colorScheme={
                                             report.statusLabel.toLowerCase().includes("progress") ? "blue" :
                                             report.statusLabel.toLowerCase().includes("complete") ? "green" :
@@ -633,23 +492,21 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
                                         >
                                           {report.statusLabel}
                                         </Badge>
-                                        <Text fontSize="xs" color="gray.500">
+                                        <Text fontSize="xs" color={colorMode === "light" ? "gray.500" : "gray.400"}>
                                           {new Date(report.createdAt).toLocaleDateString()}
                                         </Text>
                                       </HStack>
-                                      <Text fontSize="sm" noOfLines={2}>
+                                      <Text fontSize="sm" noOfLines={2} color={colorMode === "light" ? "gray.700" : "gray.200"}>
                                         {report.reportNote}
                                       </Text>
                                       {report.tagsReport && (
                                         <HStack spacing={1} flexWrap="wrap">
                                           {report.tagsReport.split(",").slice(0, 3).map((tag, i) => (
-                                            <Badge key={i} variant="subtle" colorScheme="gray" fontSize="xs">
-                                              {tag.trim()}
-                                            </Badge>
+                                            <Badge key={i} variant="subtle" colorScheme="gray" fontSize="xs">{tag.trim()}</Badge>
                                           ))}
                                         </HStack>
                                       )}
-                                      <Text fontSize="xs" color="gray.500">
+                                      <Text fontSize="xs" color={colorMode === "light" ? "gray.500" : "gray.400"}>
                                         By: {report.createdByName}
                                       </Text>
                                     </VStack>
@@ -666,27 +523,13 @@ const ProjectInfoSection = ({ DataProject }: ProjectInfoSectionProps) => {
               </SimpleGrid>
 
               {/* Requirements Information Section */}
-              <Card
-                shadow="lg"
-                rounded="xl"
-                border="1px"
-                borderColor="gray.100"
-                mt={6}
-              >
-                <CardHeader bg="orange.50" roundedTop="xl">
+              <Card shadow="lg" rounded="xl" border="1px" borderColor={colorMode === "light" ? "gray.100" : "gray.600"} mt={6}>
+                <CardHeader bg={colorMode === "light" ? "orange.50" : "gray.700"} roundedTop="xl">
                   <HStack spacing={3}>
-                    <Box
-                      w={10}
-                      h={10}
-                      bgGradient="linear(135deg, orange.400, orange.600)"
-                      rounded="xl"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                    >
+                    <Box w={10} h={10} bgGradient="linear(135deg, orange.400, orange.600)" rounded="xl" display="flex" alignItems="center" justifyContent="center">
                       <FiActivity size={20} color="white" />
                     </Box>
-                    <Heading size="md" color="orange.700">
+                    <Heading size="md" color={colorMode === "light" ? "orange.700" : "orange.200"}>
                       Requirements & Work Programs
                     </Heading>
                   </HStack>

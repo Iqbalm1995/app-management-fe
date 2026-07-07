@@ -607,7 +607,50 @@ const OverviewTab = ({ DataProject, onRefreshProject }: OverviewTabProps) => {
                   </Card>
                 )}
 
-                {/* 4. Member Task Statistics */}
+                {/* 4. SDLC Progress Statistics */}
+                {hasSdlcSetup && (
+                  <Card rounded={radiusStyle} shadow="md" bg={colorMode === "light" ? "white" : "gray.800"} borderWidth="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
+                    <CardBody>
+                      <VStack spacing={4} align="stretch">
+                        <HStack justify="space-between">
+                          <Heading size="sm">SDLC Progress Statistics</Heading>
+                          <Badge colorScheme="orange">{stageProgression.percentage}%</Badge>
+                        </HStack>
+                        <Progress value={stageProgression.percentage} size="lg" colorScheme="orange" rounded="full" />
+                        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+                          <Box>
+                            <Text fontSize="sm" color="gray.500">Completed Stages</Text>
+                            <Text fontSize="2xl" fontWeight="bold">{stageProgression.completedStages}/{stageProgression.totalStages}</Text>
+                          </Box>
+                          <Box>
+                            <Text fontSize="sm" color="gray.500">In Progress</Text>
+                            <Text fontSize="2xl" fontWeight="bold" color="blue.400">{stageProgression.inProgressStages}</Text>
+                          </Box>
+                          <Box>
+                            <Text fontSize="sm" color="gray.500">Not Started</Text>
+                            <Text fontSize="2xl" fontWeight="bold" color="gray.400">{stageProgression.totalStages - stageProgression.completedStages - stageProgression.inProgressStages}</Text>
+                          </Box>
+                        </SimpleGrid>
+                      </VStack>
+                    </CardBody>
+                  </Card>
+                )}
+                {!hasSdlcSetup && (
+                  <Card rounded={radiusStyle} shadow="md" bg={colorMode === "light" ? "white" : "gray.800"} borderWidth="1px" borderColor={colorMode === "light" ? "orange.200" : "orange.700"} borderStyle="dashed">
+                    <CardBody>
+                      <VStack spacing={3} align="stretch">
+                        <HStack justify="space-between">
+                          <Heading size="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>SDLC Progress Statistics</Heading>
+                          <Badge colorScheme="orange" variant="outline">Not Setup</Badge>
+                        </HStack>
+                        <Progress value={0} size="lg" colorScheme="orange" rounded="full" />
+                        <Text fontSize="sm" color="gray.500">SDLC methodology has not been configured for this project. Setup SDLC to track stage progression.</Text>
+                      </VStack>
+                    </CardBody>
+                  </Card>
+                )}
+
+                {/* 5. Member Task Statistics */}
                 {MemberStats && MemberStats.members.length > 0 && (
                   <Card rounded={radiusStyle} shadow="md" bg={colorMode === "light" ? "white" : "gray.800"} borderWidth="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
                     <CardBody>

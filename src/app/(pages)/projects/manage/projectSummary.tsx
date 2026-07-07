@@ -531,8 +531,7 @@ const ProjectSummary = ({ data, refreshActionMain }: ProjectSummaryProps) => {
             <Progress
               colorScheme={"yellow"}
               hasStripe
-              // value={data.projectStatusPercentage}
-              value={60}
+              value={data.projectStatusPercentage}
               rounded={radiusStyle}
               my={3}
             />

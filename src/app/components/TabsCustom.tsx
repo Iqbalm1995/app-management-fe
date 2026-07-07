@@ -26,8 +26,8 @@ export const TabButtonCustom = ({
         activeStep == idx
           ? "white"
           : colorMode == "light"
-          ? "gray.800"
-          : "gray.100"
+            ? "gray.800"
+            : "gray.100"
       }
       boxShadow={activeStep == idx ? "md" : "none"}
       minW={"280px"}
@@ -43,14 +43,14 @@ export const TabButtonCustom = ({
           activeStep == idx
             ? "secondary.500"
             : colorMode == "light"
-            ? "gray.100"
-            : "gray.800",
+              ? "gray.100"
+              : "gray.800",
         color:
           activeStep == idx
             ? "white"
             : colorMode == "light"
-            ? "gray.800"
-            : "white",
+              ? "gray.800"
+              : "white",
       }}
     >
       <Heading as="h4" size="md">
@@ -94,6 +94,55 @@ export const TabButtonCustomStyle = ({ children }: { children: ReactNode }) => {
         bgGradient: "linear(to-br, secondary.500, secondary.800)",
         color: "white",
         boxShadow: "md",
+      }}
+    >
+      {children}
+    </Tab>
+  );
+};
+
+export const TabButtonCustomStyleHighLight = ({
+  children,
+}: {
+  children: ReactNode;
+}) => {
+  const { colorMode } = useColorMode();
+  return (
+    <Tab
+      px={8}
+      py={2}
+      bg={colorMode == "light" ? "white" : "gray.900"}
+      rounded={radiusStyle}
+      color={colorMode == "light" ? "secondary.700" : "secondary.200"}
+      justifyContent={"center"}
+      textAlign={"center"}
+      fontWeight={600}
+      alignItems={"center"}
+      cursor={"pointer"}
+      whiteSpace={"nowrap"}
+      border="2px solid"
+      borderColor={colorMode == "light" ? "secondary.200" : "secondary.700"}
+      position="relative"
+      transition="all 0.2s ease"
+      _hover={{
+        bg: colorMode == "light" ? "secondary.50" : "gray.800",
+        borderColor: colorMode == "light" ? "secondary.400" : "secondary.500",
+        color: colorMode == "light" ? "secondary.600" : "secondary.100",
+        transform: "translateY(-1px)",
+        boxShadow: colorMode == "light"
+          ? "0 2px 8px rgba(0, 119, 254, 0.15)"
+          : "0 2px 8px rgba(0, 119, 254, 0.25)",
+      }}
+      _selected={{
+        bgGradient: colorMode == "light"
+          ? "linear(to-br, secondary.500, secondary.700)"
+          : "linear(to-br, secondary.600, secondary.900)",
+        borderColor: "transparent",
+        color: "white",
+        boxShadow: colorMode == "light"
+          ? "0 4px 12px rgba(0, 119, 254, 0.35)"
+          : "0 4px 12px rgba(0, 119, 254, 0.5)",
+        transform: "translateY(-2px)",
       }}
     >
       {children}

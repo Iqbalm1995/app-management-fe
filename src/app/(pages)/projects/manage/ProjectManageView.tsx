@@ -62,7 +62,7 @@ import {
   FiZap,
 } from "react-icons/fi";
 import { BsGlobe } from "react-icons/bs";
-import { TabButtonCustomStyle } from "@/app/components/TabsCustom";
+import { TabButtonCustomStyle, TabButtonCustomStyleHighLight } from "@/app/components/TabsCustom";
 import {
   OverviewTab,
   DetailsTab,
@@ -100,7 +100,7 @@ export default function ProjectManageView() {
   const [canMake, setCanMake] = useState(false);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [DataProject, setDataProject] = useState<ProjectDataResponse | null>(
-    null
+    null,
   );
   const [DataApps, setDataApps] = useState<AppsResponse | null>(null);
   const [RefreshData, setRefreshData] = useState<number>(0);
@@ -207,7 +207,7 @@ export default function ProjectManageView() {
       const GetAppData = async () => {
         const requestData = await GetDetailAppsByProjectId(
           DataProject.id,
-          tokenData
+          tokenData,
         );
         if (requestData?.statusCode === RES_CODE_OK && requestData.data) {
           setDataApps(requestData.data as AppsResponse);
@@ -298,28 +298,34 @@ export default function ProjectManageView() {
                       <Text>Details</Text>
                     </HStack>
                   </TabButtonCustomStyle>
-                  {showWorkstageTab && (
-                    <TabButtonCustomStyle>
-                      <HStack>
-                        <FiPlayCircle size={16} />
-                        <Text>Procurements</Text>
-                      </HStack>
-                    </TabButtonCustomStyle>
-                  )}
                   {showFeaturesTab && (
-                    <TabButtonCustomStyle>
+                    <TabButtonCustomStyleHighLight>
                       <HStack>
                         <FiCpu size={16} />
                         <Text>Work Progress</Text>
                       </HStack>
-                    </TabButtonCustomStyle>
+                    </TabButtonCustomStyleHighLight>
                   )}
-                  <TabButtonCustomStyle>
+                  {showWorkstageTab && (
+                    <TabButtonCustomStyleHighLight>
+                      <HStack>
+                        <FiPlayCircle size={16} />
+                        <Text>Procurements</Text>
+                      </HStack>
+                    </TabButtonCustomStyleHighLight>
+                  )}
+                  <TabButtonCustomStyleHighLight>
                     <HStack>
                       <FiFileText size={16} />
                       <Text>Work Documentation</Text>
                     </HStack>
-                  </TabButtonCustomStyle>
+                  </TabButtonCustomStyleHighLight>
+                  <TabButtonCustomStyleHighLight>
+                    <HStack>
+                      <FiGitBranch size={16} />
+                      <Text>SDLC Progress</Text>
+                    </HStack>
+                  </TabButtonCustomStyleHighLight>
                   <TabButtonCustomStyle>
                     <HStack>
                       <FiUsers size={16} />
@@ -336,12 +342,6 @@ export default function ProjectManageView() {
                     <HStack>
                       <FiCalendar size={16} />
                       <Text>Timeline</Text>
-                    </HStack>
-                  </TabButtonCustomStyle>
-                  <TabButtonCustomStyle>
-                    <HStack>
-                      <FiGitBranch size={16} />
-                      <Text>SDLC Progress</Text>
                     </HStack>
                   </TabButtonCustomStyle>
                   <TabButtonCustomStyle>
@@ -417,8 +417,8 @@ export default function ProjectManageView() {
                     />
                     <DetailsTab DataProject={DataProject} />
                     {showWorkstageTab && (
-                      <WorkstageProcurementTab 
-                        DataProject={DataProject} 
+                      <WorkstageProcurementTab
+                        DataProject={DataProject}
                         onRefreshProject={refreshProjectDetail}
                       />
                     )}
@@ -428,9 +428,12 @@ export default function ProjectManageView() {
                     <DocumentationTab DataProject={DataProject} />
                     <TeamTab DataProject={DataProject} canMake={canMake} />
                     <AnalyticsTab DataProject={DataProject} />
-                    <TimelineTab DataProject={DataProject} authData={DataAuth} />
-                    <SdlcProgressTab 
-                      DataProject={DataProject} 
+                    <TimelineTab
+                      DataProject={DataProject}
+                      authData={DataAuth}
+                    />
+                    <SdlcProgressTab
+                      DataProject={DataProject}
                       canMake={canMake}
                       onProjectUpdate={refreshProjectDetail}
                     />
@@ -567,12 +570,12 @@ export default function ProjectManageView() {
                               DataProject.appsProject.appsStatus === "ACTIVE"
                                 ? "green.400"
                                 : DataProject.appsProject.appsStatus ===
-                                  "DEVELOPMENT"
-                                ? "blue.400"
-                                : DataProject.appsProject.appsStatus ===
-                                  "TESTING"
-                                ? "orange.400"
-                                : "red.400"
+                                    "DEVELOPMENT"
+                                  ? "blue.400"
+                                  : DataProject.appsProject.appsStatus ===
+                                      "TESTING"
+                                    ? "orange.400"
+                                    : "red.400"
                             }
                             rounded="full"
                             border="2px solid white"
@@ -620,12 +623,12 @@ export default function ProjectManageView() {
                                 DataProject.appsProject.appsStatus === "ACTIVE"
                                   ? "green"
                                   : DataProject.appsProject.appsStatus ===
-                                    "DEVELOPMENT"
-                                  ? "blue"
-                                  : DataProject.appsProject.appsStatus ===
-                                    "TESTING"
-                                  ? "orange"
-                                  : "red"
+                                      "DEVELOPMENT"
+                                    ? "blue"
+                                    : DataProject.appsProject.appsStatus ===
+                                        "TESTING"
+                                      ? "orange"
+                                      : "red"
                               }
                               size="sm"
                               px={2}
@@ -862,10 +865,10 @@ export default function ProjectManageView() {
                                 DataProject.projectStatus === "ACTIVE"
                                   ? "green"
                                   : DataProject.projectStatus === "ONHOLD"
-                                  ? "orange"
-                                  : DataProject.projectStatus === "COMPLETED"
-                                  ? "blue"
-                                  : "gray"
+                                    ? "orange"
+                                    : DataProject.projectStatus === "COMPLETED"
+                                      ? "blue"
+                                      : "gray"
                               }
                             >
                               {DataProject.projectStatus}
