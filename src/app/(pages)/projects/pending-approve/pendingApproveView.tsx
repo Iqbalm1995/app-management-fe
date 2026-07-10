@@ -693,31 +693,29 @@ export default function PendingApproveView() {
 
     const filterWhere: any[] = [];
 
-    // Add filters only for ALL tab
-    if (viewMode === "ALL") {
-      if (FilterProjectType) {
-        filterWhere.push({
-          field: "ProjectType",
-          operator: "=" as const,
-          value: FilterProjectType,
-        });
-      }
+    // Add filters for both PENDING and ALL tabs
+    if (FilterProjectType) {
+      filterWhere.push({
+        field: "ProjectType",
+        operator: "=" as const,
+        value: FilterProjectType,
+      });
+    }
 
-      if (FilterProjectStatus) {
-        filterWhere.push({
-          field: "ProjectStatus",
-          operator: "=" as const,
-          value: FilterProjectStatus,
-        });
-      }
+    if (FilterProjectStatus) {
+      filterWhere.push({
+        field: "ProjectStatus",
+        operator: "=" as const,
+        value: FilterProjectStatus,
+      });
+    }
 
-      if (FilterApprovalStatus) {
-        filterWhere.push({
-          field: "ApprovalStatus",
-          operator: "=" as const,
-          value: FilterApprovalStatus,
-        });
-      }
+    if (FilterApprovalStatus) {
+      filterWhere.push({
+        field: "ApprovalStatus",
+        operator: "=" as const,
+        value: FilterApprovalStatus,
+      });
     }
 
     const PayloadList: PaggingListPayloadCustom = {
@@ -839,12 +837,8 @@ export default function PendingApproveView() {
     tokenData,
     pageIndex,
     pageSize,
-    globalFilter,
     RefreshData,
     viewMode,
-    FilterProjectType,
-    FilterProjectStatus,
-    FilterApprovalStatus,
     DataAuth,]);
 
   return (
@@ -924,52 +918,50 @@ export default function PendingApproveView() {
                     />
                   </InputGroup>
 
-                  {/* Filters - Only show for ALL view */}
-                  {viewMode === "ALL" && (
-                    <>
-                      <Select
-                        placeholder="All Project Types"
-                        maxW="200px"
-                        value={FilterProjectType}
-                        onChange={(e) => setFilterProjectType(e.target.value)}
-                        isDisabled={IsLoadingProcess}
-                      >
-                        {ProjectTypeOptions.map((type) => (
-                          <option key={type} value={type}>
-                            {getProjectTypeLabel(type)}
-                          </option>
-                        ))}
-                      </Select>
+                  {/* Filters - show for both PENDING and ALL tabs */}
+                  <>
+                    <Select
+                      placeholder="All Project Types"
+                      maxW="200px"
+                      value={FilterProjectType}
+                      onChange={(e) => setFilterProjectType(e.target.value)}
+                      isDisabled={IsLoadingProcess}
+                    >
+                      {ProjectTypeOptions.map((type) => (
+                        <option key={type} value={type}>
+                          {getProjectTypeLabel(type)}
+                        </option>
+                      ))}
+                    </Select>
 
-                      <Select
-                        placeholder="All Project Status"
-                        maxW="200px"
-                        value={FilterProjectStatus}
-                        onChange={(e) => setFilterProjectStatus(e.target.value)}
-                        isDisabled={IsLoadingProcess}
-                      >
-                        {ProjectStatusOptions.map((status) => (
-                          <option key={status} value={status}>
-                            {status}
-                          </option>
-                        ))}
-                      </Select>
+                    <Select
+                      placeholder="All Project Status"
+                      maxW="200px"
+                      value={FilterProjectStatus}
+                      onChange={(e) => setFilterProjectStatus(e.target.value)}
+                      isDisabled={IsLoadingProcess}
+                    >
+                      {ProjectStatusOptions.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </Select>
 
-                      <Select
-                        placeholder="All Approval Status"
-                        maxW="200px"
-                        value={FilterApprovalStatus}
-                        onChange={(e) => setFilterApprovalStatus(e.target.value)}
-                        isDisabled={IsLoadingProcess}
-                      >
-                        {ApprovalStatusOptions.map((opt) => (
-                          <option key={opt.code} value={opt.code}>
-                            {opt.name}
-                          </option>
-                        ))}
-                      </Select>
-                    </>
-                  )}
+                    <Select
+                      placeholder="All Approval Status"
+                      maxW="200px"
+                      value={FilterApprovalStatus}
+                      onChange={(e) => setFilterApprovalStatus(e.target.value)}
+                      isDisabled={IsLoadingProcess}
+                    >
+                      {ApprovalStatusOptions.map((opt) => (
+                        <option key={opt.code} value={opt.code}>
+                          {opt.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </>
 
                   {/* Action Buttons */}
                   <Button

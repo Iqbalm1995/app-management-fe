@@ -44,7 +44,7 @@ import {
 import { FiFilter, FiRefreshCcw, FiX, FiInfo, FiEye, FiEdit, FiCheck, FiAlertTriangle, FiSearch } from "react-icons/fi";
 import { Search2Icon } from "@chakra-ui/icons";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import { HeaderContent } from "@/app/components/headerContent";
 import LoadingMiniSignature from "@/app/components/loadingMini";
@@ -135,6 +135,12 @@ export default function ApprovalHubView() {
 
   // View Mode State (BRD/RFC filter)
   const [viewMode, setViewMode] = useState<"BRD" | "RFC">("BRD");
+
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const t = searchParams.get("tab");
+    if (t === "BRD" || t === "RFC") setViewMode(t as "BRD" | "RFC");
+  }, [searchParams]);
 
   // Filter State
   const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([]);
@@ -972,12 +978,19 @@ export default function ApprovalHubView() {
                 <VStack spacing={4} align="stretch">
                   {/* Row 1: View Mode Toggle & Action Buttons */}
                   <Flex gap={4} wrap="wrap" align="center">
-                    <HStack spacing={2}>
+                    <HStack
+                      spacing={1}
+                      bg={colorMode === "light" ? "gray.100" : "gray.700"}
+                      rounded="lg"
+                      p={1}
+                    >
                       <Button
                         size="sm"
                         variant={viewMode === "BRD" ? "solid" : "ghost"}
-                        colorScheme="blue"
-                        onClick={() => setViewMode("BRD")}
+                        colorScheme={viewMode === "BRD" ? "blue" : "gray"}
+                        fontSize="sm"
+                        px={4}
+                        onClick={() => { setViewMode("BRD"); router.replace("/requirements/approval-hub?tab=BRD"); }}
                         borderRadius="lg"
                       >
                         BRD
@@ -985,8 +998,10 @@ export default function ApprovalHubView() {
                       <Button
                         size="sm"
                         variant={viewMode === "RFC" ? "solid" : "ghost"}
-                        colorScheme="blue"
-                        onClick={() => setViewMode("RFC")}
+                        colorScheme={viewMode === "RFC" ? "blue" : "gray"}
+                        fontSize="sm"
+                        px={4}
+                        onClick={() => { setViewMode("RFC"); router.replace("/requirements/approval-hub?tab=RFC"); }}
                         borderRadius="lg"
                       >
                         RFC

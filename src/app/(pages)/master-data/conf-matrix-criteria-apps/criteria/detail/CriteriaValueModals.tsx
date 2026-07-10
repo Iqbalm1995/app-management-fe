@@ -19,7 +19,11 @@ import * as Yup from "yup";
 
 const valueSchema = Yup.object({
   scaleLabel: Yup.string().required("Label is required"),
-  scaleValue: Yup.number().required("Value is required"),
+  scaleValue: Yup.mixed().required("Value is required").test("is-decimal", "Numbers only, max 3 decimal places", v => {
+    if (v === "" || v === undefined || v === null) return false;
+    const n = parseFloat(String(v));
+    return !isNaN(n) && Number.isInteger(n * 1000);
+  }),
 });
 
 export function CriteriaValueInsertModal({ isOpen, onClose, token, criteriaId, onSuccess }:
@@ -61,9 +65,10 @@ export function CriteriaValueInsertModal({ isOpen, onClose, token, criteriaId, o
                 <GridItem>
                   <FormControl isInvalid={!!(formik.errors.scaleValue && formik.touched.scaleValue)}>
                     <FormLabel fontSize="sm">Scale Value <Text as="span" color="red.400">*</Text></FormLabel>
-                    <Input type="number" step="0.001" name="scaleValue" value={formik.values.scaleValue}
-                      onChange={(e) => { const v = e.target.value; const d = v.includes(".") ? v.split(".")[1].length : 0; if (d <= 3) formik.setFieldValue("scaleValue", parseFloat(v) || 0); }}
-                      onBlur={formik.handleBlur} bg={isDark ? "gray.700" : "white"} />
+                    <Input type="text" inputMode="decimal" name="scaleValue" value={formik.values.scaleValue}
+                      onChange={(e) => { const v = e.target.value; if (v === "" || /^\d*\.?\d{0,3}$/.test(v)) formik.setFieldValue("scaleValue", v); }}
+                      onBlur={(e) => { formik.handleBlur(e); const p = parseFloat(String(formik.values.scaleValue)); formik.setFieldValue("scaleValue", isNaN(p) ? 0 : p); }}
+                      bg={isDark ? "gray.700" : "white"} />
                     <FormErrorMessage>{formik.errors.scaleValue}</FormErrorMessage>
                   </FormControl>
                 </GridItem>
@@ -132,9 +137,10 @@ export function CriteriaValueEditModal({ isOpen, onClose, token, data, onSuccess
                 <GridItem>
                   <FormControl isInvalid={!!(formik.errors.scaleValue && formik.touched.scaleValue)}>
                     <FormLabel fontSize="sm">Scale Value <Text as="span" color="red.400">*</Text></FormLabel>
-                    <Input type="number" step="0.001" name="scaleValue" value={formik.values.scaleValue}
-                      onChange={(e) => { const v = e.target.value; const d = v.includes(".") ? v.split(".")[1].length : 0; if (d <= 3) formik.setFieldValue("scaleValue", parseFloat(v) || 0); }}
-                      onBlur={formik.handleBlur} bg={isDark ? "gray.700" : "white"} />
+                    <Input type="text" inputMode="decimal" name="scaleValue" value={formik.values.scaleValue}
+                      onChange={(e) => { const v = e.target.value; if (v === "" || /^\d*\.?\d{0,3}$/.test(v)) formik.setFieldValue("scaleValue", v); }}
+                      onBlur={(e) => { formik.handleBlur(e); const p = parseFloat(String(formik.values.scaleValue)); formik.setFieldValue("scaleValue", isNaN(p) ? 0 : p); }}
+                      bg={isDark ? "gray.700" : "white"} />
                     <FormErrorMessage>{formik.errors.scaleValue}</FormErrorMessage>
                   </FormControl>
                 </GridItem>

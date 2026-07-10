@@ -37,7 +37,11 @@ export default function CriteriaInsertView() {
   const [saving, setSaving] = useState(false);
   const [nextPos, setNextPos] = useState(1);
   const [valueRows, setValueRows] = useState<MstAppsCriteriaValueInputRequest[]>([
-    { scaleValue: 1, scaleLabel: "Scale-1", scaleDesc: "" },
+    { scaleValue: 1, scaleLabel: "SANGAT RENDAH", scaleDesc: "" },
+    { scaleValue: 2, scaleLabel: "RENDAH", scaleDesc: "" },
+    { scaleValue: 3, scaleLabel: "SEDANG", scaleDesc: "" },
+    { scaleValue: 4, scaleLabel: "TINGGI", scaleDesc: "" },
+    { scaleValue: 5, scaleLabel: "SANGAT TINGGI", scaleDesc: "" },
   ]);
 
   useEffect(() => {
@@ -176,7 +180,10 @@ export default function CriteriaInsertView() {
                     <Heading size="sm" color={isDark ? "gray.100" : "gray.700"}>Scale Values</Heading>
                     <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"}>{valueRows.length} value(s) configured</Text>
                   </VStack>
-                  <Button size="sm" colorScheme="purple" variant="outline" leftIcon={<FiPlus />} onClick={addValueRow}>Add Value</Button>
+                  <Button size="sm" colorScheme="purple" variant="outline" leftIcon={<FiPlus />}
+                    isDisabled={valueRows.length >= 5}
+                    title={valueRows.length >= 5 ? "Maximum 5 values allowed" : "Add Value"}
+                    onClick={addValueRow}>Add Value</Button>
                 </HStack>
               </CardHeader>
               <Divider borderColor={isDark ? "gray.700" : "gray.100"} />
@@ -211,7 +218,7 @@ export default function CriteriaInsertView() {
                           placeholder="Optional" variant="filled" bg={isDark ? "gray.700" : "white"} />
                       </FormControl>
                       <IconButton aria-label="Remove" icon={<FiTrash2 />} size="sm" colorScheme="red" variant="ghost"
-                        onClick={() => removeValueRow(i)} isDisabled={valueRows.length === 1} />
+                        onClick={() => removeValueRow(i)} isDisabled={valueRows.length <= 5} />
                     </Flex>
                   ))}
                 </Flex>
