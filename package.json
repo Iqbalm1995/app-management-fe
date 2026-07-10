@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack -p 8998",
+    "dev": "next dev --turbopack -p 5555",
     "build": "next build",
     "build:standalone": "next build && npm run copy:standalone && npm run clean:cache && npm run copy:ecosystem",
     "copy:standalone": "node scripts/copy-standalone.js",
