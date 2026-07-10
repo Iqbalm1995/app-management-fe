@@ -162,7 +162,7 @@ export default function AppsAssessmentsDetailView() {
         // Get criteria values by position
         const getScore = (pos: number) => {
           const detail = a.details?.find(d => d.appsCriteriaPos === pos);
-          return detail?.appsCriteriaScaleValue ?? "-";
+          return detail?.appsCriteriaScaleValue !== null && detail?.appsCriteriaScaleValue !== undefined ? Number(detail.appsCriteriaScaleValue).toFixed(3) : "-";
         };
         return {
           "NO.": i + 1,
@@ -612,7 +612,7 @@ export default function AppsAssessmentsDetailView() {
                     </VStack>
                     <VStack align="end" spacing={0}>
                       {d.appsCriteriaScaleValue !== null ? (
-                        <Badge colorScheme="green" fontSize="sm">{d.appsCriteriaScaleValue}</Badge>
+                        <Badge colorScheme="green" fontSize="sm">{Number(d.appsCriteriaScaleValue).toFixed(3)}</Badge>
                       ) : (
                         <Badge colorScheme="gray" variant="outline" fontSize="xs">Not filled</Badge>
                       )}

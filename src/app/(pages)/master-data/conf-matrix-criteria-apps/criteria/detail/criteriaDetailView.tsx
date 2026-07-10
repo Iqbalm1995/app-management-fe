@@ -98,7 +98,7 @@ export default function CriteriaDetailView() {
     },
     {
       accessorKey: "scaleValue",
-      cell: (info) => <Badge colorScheme="purple" fontFamily="mono" fontSize="sm">{info.getValue() as number}</Badge>,
+      cell: (info) => <Badge colorScheme="purple" fontFamily="mono" fontSize="sm">{Number(info.getValue() as number).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 3 })}</Badge>,
       header: () => <Text>Scale Value</Text>,
       footer: (props) => props.column.id,
     },
@@ -122,6 +122,8 @@ export default function CriteriaDetailView() {
           <IconButton aria-label="Edit" icon={<FiEdit />} size="sm" variant="ghost" colorScheme="blue"
             onClick={() => { setSelectedValue(info.row.original); onEditValOpen(); }} />
           <IconButton aria-label="Delete" icon={<FiTrash2 />} size="sm" variant="ghost" colorScheme="red"
+            isDisabled={(data?.values?.length || 0) <= 5}
+            title={(data?.values?.length || 0) <= 5 ? "Minimum 5 values required" : "Delete"}
             onClick={() => { setDeletingValId(info.row.original.id); setIsDeleteValOpen(true); }} />
         </HStack>
       ),
@@ -130,7 +132,7 @@ export default function CriteriaDetailView() {
   ], [isDark]);
 
   const valuesTable = useReactTable({
-    data: data?.values || [],
+    data: (data?.values || []).slice().sort((a, b) => a.scaleValue - b.scaleValue),
     columns: valueColumns,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -145,8 +147,14 @@ export default function CriteriaDetailView() {
 
           {/* Page Header */}
           <HStack spacing={3}>
-            <IconButton aria-label="Back" icon={<FaArrowLeft />} variant="ghost" size="sm"
-              onClick={() => router.push("/master-data/conf-matrix-criteria-apps?tab=CRITERIA")} />
+            <IconButton
+              as="a"
+              href="/master-data/conf-matrix-criteria-apps?tab=CRITERIA"
+              aria-label="Back"
+              icon={<FaArrowLeft />}
+              variant="ghost"
+              size="sm"
+            />
             <Box w={9} h={9} bg="purple.500" rounded="lg" display="flex" alignItems="center" justifyContent="center" color="white">
               <Icon as={FiGrid} boxSize={4} />
             </Box>
@@ -247,7 +255,10 @@ export default function CriteriaDetailView() {
                   <Heading size="sm" color={isDark ? "gray.100" : "gray.700"}>Scale Values</Heading>
                   <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"}>{data?.values?.length || 0} value(s) configured</Text>
                 </VStack>
-                <Button size="sm" colorScheme="purple" variant="outline" leftIcon={<FiPlus />} onClick={onInsertValOpen}>Add Value</Button>
+                <Button size="sm" colorScheme="purple" variant="outline" leftIcon={<FiPlus />}
+                  isDisabled={(data?.values?.length || 0) >= 5}
+                  title={(data?.values?.length || 0) >= 5 ? "Maximum 5 values allowed" : "Add Value"}
+                  onClick={onInsertValOpen}>Add Value</Button>
               </HStack>
             </CardHeader>
             <Divider borderColor={isDark ? "gray.700" : "gray.100"} />

@@ -22,19 +22,33 @@ import {
   getPaginationRowModel, PaginationState, useReactTable,
 } from "@tanstack/react-table";
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { FiActivity, FiAlertCircle, FiEye, FiRefreshCw, FiZap, FiX } from "react-icons/fi";
+import { useRouter, useSearchParams } from "next/navigation";
+import { FiActivity, FiAlertCircle, FiCheckCircle, FiClock, FiEye, FiGrid, FiRefreshCw, FiZap, FiX } from "react-icons/fi";
 
 const QUARTERS = ["Q1", "Q2", "Q3", "Q4"];
 const YEARS = Array.from({ length: 5 }, (_, i) => String(new Date().getFullYear() - i));
 
 const statusColor = (s: string) => ({ DRAFT: "gray", PUBLISHED: "green", APPROVED: "blue", ARCHIVED: "orange" }[s] || "gray");
 
+type TabMode = "ONGOING" | "COMPLETED";
+const TAB_STATUS: Record<TabMode, string> = {
+  ONGOING: "DRAFT,WAITING APPROVAL 1,WAITING APPROVAL 2",
+  COMPLETED: "APPROVED,DECLINE",
+};
+
 export default function AppsAssessmentsView() {
   const { colorMode } = useColorMode();
   const isDark = colorMode === "dark";
   const showToast = useToastHelper();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [tabMode, setTabMode] = useState<TabMode>("ONGOING");
+
+  // Sync tab from URL param
+  useEffect(() => {
+    const t = searchParams.get("tab");
+    if (t === "ONGOING" || t === "COMPLETED") setTabMode(t as TabMode);
+  }, [searchParams]);
   const { Generate, List } = useAppsCriticalReport();
   const { List: ListApps } = useApps();
 
@@ -75,7 +89,8 @@ export default function AppsAssessmentsView() {
       const fw: any[] = [];
       if (filterQ) fw.push({ field: "quartalReport", operator: "=", value: filterQ });
       if (filterYear) fw.push({ field: "yearReport", operator: "=", value: filterYear });
-      if (filterStatus) fw.push({ field: "statusReport", operator: "=", value: filterStatus });
+      // Tab-locked status filter
+      fw.push({ field: "statusReport", operator: "in", value: TAB_STATUS[tabMode] });
       const payload: PaggingListPayload = { search, limit: pageSize, page: pageIndex, filterWhere: fw, fieldOrder: ["timeReport"], orderDir: "desc" };
       const res = await List(payload, tokenData);
       if (res?.statusCode === RES_CODE_OK) {
@@ -86,7 +101,7 @@ export default function AppsAssessmentsView() {
       setLoading(false);
     };
     fetchData();
-  }, [DataAuth, tokenData, refresh, pageIndex, pageSize, search, filterQ, filterYear, filterStatus]);
+  }, [DataAuth, tokenData, refresh, pageIndex, pageSize, search, filterQ, filterYear, tabMode]);
 
   const handleOpenConfirm = async () => {
     setAppCount(null);
@@ -206,6 +221,38 @@ export default function AppsAssessmentsView() {
                 </Button>
               </HStack>
 
+              {/* Tab Toggle */}
+              <HStack
+                spacing={1}
+                bg={isDark ? "gray.700" : "gray.100"}
+                rounded="lg"
+                p={1}
+                w="fit-content"
+              >
+                <Button
+                  size="sm"
+                  variant={tabMode === "ONGOING" ? "solid" : "ghost"}
+                  colorScheme={tabMode === "ONGOING" ? "blue" : "gray"}
+                  leftIcon={<Icon as={FiClock} />}
+                  fontSize="sm"
+                  px={4}
+                  onClick={() => { setTabMode("ONGOING"); setPagination({ pageIndex: 0, pageSize }); router.replace("/report/apps-assessments?tab=ONGOING"); }}
+                >
+                  On Going Review
+                </Button>
+                <Button
+                  size="sm"
+                  variant={tabMode === "COMPLETED" ? "solid" : "ghost"}
+                  colorScheme={tabMode === "COMPLETED" ? "blue" : "gray"}
+                  leftIcon={<Icon as={FiCheckCircle} />}
+                  fontSize="sm"
+                  px={4}
+                  onClick={() => { setTabMode("COMPLETED"); setPagination({ pageIndex: 0, pageSize }); router.replace("/report/apps-assessments?tab=COMPLETED"); }}
+                >
+                  Completed
+                </Button>
+              </HStack>
+
               {/* Filters */}
               <Flex gap={3} wrap="wrap">
                 <InputGroup maxW="260px">
@@ -221,10 +268,7 @@ export default function AppsAssessmentsView() {
                 <Select placeholder="All Years" value={filterYear} onChange={(e) => setFilterYear(e.target.value)} maxW="110px" bg={isDark ? "gray.700" : "white"}>
                   {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
                 </Select>
-                <Select placeholder="All Status" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} maxW="130px" bg={isDark ? "gray.700" : "white"}>
-                  {["DRAFT", "PUBLISHED", "APPROVED", "ARCHIVED"].map(s => <option key={s} value={s}>{s}</option>)}
-                </Select>
-                <Button variant="outline" size="md" leftIcon={<FiX />} onClick={() => { setSearch(""); setFilterQ(""); setFilterYear(""); setFilterStatus(""); setPagination({ pageIndex: 0, pageSize }); }}>Clear</Button>
+                <Button variant="outline" size="md" leftIcon={<FiX />} onClick={() => { setSearch(""); setFilterQ(""); setFilterYear(""); setPagination({ pageIndex: 0, pageSize }); }}>Clear</Button>
                 <Spacer />
                 <Button colorScheme="gray" leftIcon={<FiRefreshCw />} onClick={() => setRefresh(p => p + 1)}>Refresh</Button>
               </Flex>

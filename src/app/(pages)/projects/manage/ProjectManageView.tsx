@@ -416,26 +416,26 @@ export default function ProjectManageView() {
                       onRefreshProject={refreshProjectDetail}
                     />
                     <DetailsTab DataProject={DataProject} />
+                    {showFeaturesTab && (
+                      <FeaturesTab DataProject={DataProject} />
+                    )}
                     {showWorkstageTab && (
                       <WorkstageProcurementTab
                         DataProject={DataProject}
                         onRefreshProject={refreshProjectDetail}
                       />
                     )}
-                    {showFeaturesTab && (
-                      <FeaturesTab DataProject={DataProject} />
-                    )}
                     <DocumentationTab DataProject={DataProject} />
+                    <SdlcProgressTab
+                      DataProject={DataProject}
+                      canMake={canMake}
+                      onProjectUpdate={refreshProjectDetail}
+                    />
                     <TeamTab DataProject={DataProject} canMake={canMake} />
                     <AnalyticsTab DataProject={DataProject} />
                     <TimelineTab
                       DataProject={DataProject}
                       authData={DataAuth}
-                    />
-                    <SdlcProgressTab
-                      DataProject={DataProject}
-                      canMake={canMake}
-                      onProjectUpdate={refreshProjectDetail}
                     />
                     <EditTab DataProject={DataProject} canMake={canMake} />
                   </TabPanels>

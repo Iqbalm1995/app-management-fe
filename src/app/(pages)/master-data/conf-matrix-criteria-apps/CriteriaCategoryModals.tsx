@@ -22,7 +22,11 @@ import * as Yup from "yup";
 const insertSchema = Yup.object({
   crtCategoryName: Yup.string().required("Category name is required"),
   valueOperator: Yup.string().required("Operator is required"),
-  valueTracehold: Yup.number().required("Tracehold is required").test("max-decimals", "Max 3 decimal places", v => v === undefined || Number.isInteger(v * 1000)),
+  valueTracehold: Yup.mixed().required("Tracehold is required").test("is-decimal", "Max 3 decimal places, numbers only", v => {
+    if (v === "" || v === undefined || v === null) return false;
+    const n = parseFloat(String(v));
+    return !isNaN(n) && Number.isInteger(n * 1000);
+  }),
 });
 
 // ---- INSERT MODAL ----
@@ -95,16 +99,22 @@ export function CriteriaCategoryInsertModal({
                   <FormControl isInvalid={!!(formik.errors.valueTracehold && formik.touched.valueTracehold)}>
                     <FormLabel fontSize="sm">Value Tracehold <Text as="span" color="red.400">*</Text></FormLabel>
                     <Input
-                      type="number"
-                      step="0.001"
+                      type="text"
+                      inputMode="decimal"
                       min={0}
                       value={formik.values.valueTracehold}
                       onChange={(e) => {
                         const val = e.target.value;
-                        const decimals = val.includes(".") ? val.split(".")[1].length : 0;
-                        if (decimals <= 3) formik.setFieldValue("valueTracehold", parseFloat(val) || 0);
+                        // Allow digits, one dot, up to 3 decimal places — block anything else
+                        if (val === "" || /^\d*\.?\d{0,3}$/.test(val)) {
+                          formik.setFieldValue("valueTracehold", val);
+                        }
                       }}
-                      onBlur={formik.handleBlur}
+                      onBlur={(e) => {
+                        formik.handleBlur(e);
+                        const parsed = parseFloat(String(formik.values.valueTracehold));
+                        formik.setFieldValue("valueTracehold", isNaN(parsed) ? 0 : parsed);
+                      }}
                       name="valueTracehold"
                       bg={isDark ? "gray.700" : "white"}
                     />
@@ -205,16 +215,22 @@ export function CriteriaCategoryEditModal({
                   <FormControl isInvalid={!!(formik.errors.valueTracehold && formik.touched.valueTracehold)}>
                     <FormLabel fontSize="sm">Value Tracehold <Text as="span" color="red.400">*</Text></FormLabel>
                     <Input
-                      type="number"
-                      step="0.001"
+                      type="text"
+                      inputMode="decimal"
                       min={0}
                       value={formik.values.valueTracehold}
                       onChange={(e) => {
                         const val = e.target.value;
-                        const decimals = val.includes(".") ? val.split(".")[1].length : 0;
-                        if (decimals <= 3) formik.setFieldValue("valueTracehold", parseFloat(val) || 0);
+                        // Allow digits, one dot, up to 3 decimal places — block anything else
+                        if (val === "" || /^\d*\.?\d{0,3}$/.test(val)) {
+                          formik.setFieldValue("valueTracehold", val);
+                        }
                       }}
-                      onBlur={formik.handleBlur}
+                      onBlur={(e) => {
+                        formik.handleBlur(e);
+                        const parsed = parseFloat(String(formik.values.valueTracehold));
+                        formik.setFieldValue("valueTracehold", isNaN(parsed) ? 0 : parsed);
+                      }}
                       name="valueTracehold"
                       bg={isDark ? "gray.700" : "white"}
                     />
@@ -279,7 +295,7 @@ export function CriteriaCategoryDetailModal({
           <DetailRow icon={FiHash} label="Value Condition">
             <HStack spacing={2}>
               <Badge colorScheme="orange" variant="solid" fontFamily="mono" fontSize="sm">{data.valueOperator}</Badge>
-              <Text fontSize="sm" fontWeight="semibold">{data.valueTracehold}</Text>
+              <Text fontSize="sm" fontWeight="semibold">{Number(data.valueTracehold).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 3 })}</Text>
             </HStack>
           </DetailRow>
           <Divider my={3} />
