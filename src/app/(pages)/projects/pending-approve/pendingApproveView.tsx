@@ -693,7 +693,7 @@ export default function PendingApproveView() {
 
     const filterWhere: any[] = [];
 
-    // Add filters for both PENDING and ALL tabs
+    // ProjectType filter applies to both tabs
     if (FilterProjectType) {
       filterWhere.push({
         field: "ProjectType",
@@ -702,19 +702,23 @@ export default function PendingApproveView() {
       });
     }
 
-    if (FilterProjectStatus) {
-      filterWhere.push({
-        field: "ProjectStatus",
-        operator: "=" as const,
-        value: FilterProjectStatus,
-      });
-    }
-
+    // ApprovalStatus filter applies to both tabs
+    // — on PENDING tab it narrows within the user's approvable projects
+    // — on ALL tab it filters all projects
     if (FilterApprovalStatus) {
       filterWhere.push({
         field: "ApprovalStatus",
         operator: "=" as const,
         value: FilterApprovalStatus,
+      });
+    }
+
+    // ProjectStatus filter only for ALL tab
+    if (viewMode === "ALL" && FilterProjectStatus) {
+      filterWhere.push({
+        field: "ProjectStatus",
+        operator: "=" as const,
+        value: FilterProjectStatus,
       });
     }
 
@@ -883,7 +887,7 @@ export default function PendingApproveView() {
                   size="sm"
                   variant={viewMode === "PENDING" ? "solid" : "ghost"}
                   colorScheme={viewMode === "PENDING" ? "blue" : "gray"}
-                  onClick={() => setViewMode("PENDING")}
+                  onClick={() => { setViewMode("PENDING"); setFilterProjectStatus(""); setFilterApprovalStatus(""); setPagination({ pageIndex: 0, pageSize }); }}
                   fontSize="sm"
                   px={4}
                 >
@@ -918,8 +922,9 @@ export default function PendingApproveView() {
                     />
                   </InputGroup>
 
-                  {/* Filters - show for both PENDING and ALL tabs */}
+                  {/* Filters */}
                   <>
+                    {/* Project Type — shown on both tabs */}
                     <Select
                       placeholder="All Project Types"
                       maxW="200px"
@@ -934,33 +939,57 @@ export default function PendingApproveView() {
                       ))}
                     </Select>
 
-                    <Select
-                      placeholder="All Project Status"
-                      maxW="200px"
-                      value={FilterProjectStatus}
-                      onChange={(e) => setFilterProjectStatus(e.target.value)}
-                      isDisabled={IsLoadingProcess}
-                    >
-                      {ProjectStatusOptions.map((status) => (
-                        <option key={status} value={status}>
-                          {status}
-                        </option>
-                      ))}
-                    </Select>
+                    {/* Approval stage filter for PENDING tab */}
+                    {viewMode === "PENDING" && (
+                      <Select
+                        placeholder="All Waiting Stages"
+                        maxW="200px"
+                        value={FilterApprovalStatus}
+                        onChange={(e) => setFilterApprovalStatus(e.target.value)}
+                        isDisabled={IsLoadingProcess}
+                      >
+                        {ApprovalStatusOptions.filter(opt =>
+                          opt.code.toLowerCase().includes("waiting")
+                        ).map((opt) => (
+                          <option key={opt.code} value={opt.code}>
+                            {opt.name}
+                          </option>
+                        ))}
+                      </Select>
+                    )}
 
-                    <Select
-                      placeholder="All Approval Status"
-                      maxW="200px"
-                      value={FilterApprovalStatus}
-                      onChange={(e) => setFilterApprovalStatus(e.target.value)}
-                      isDisabled={IsLoadingProcess}
-                    >
-                      {ApprovalStatusOptions.map((opt) => (
-                        <option key={opt.code} value={opt.code}>
-                          {opt.name}
-                        </option>
-                      ))}
-                    </Select>
+                    {/* Project Status and Approval Status — ALL tab only */}
+                    {viewMode === "ALL" && (
+                      <>
+                        <Select
+                          placeholder="All Project Status"
+                          maxW="200px"
+                          value={FilterProjectStatus}
+                          onChange={(e) => setFilterProjectStatus(e.target.value)}
+                          isDisabled={IsLoadingProcess}
+                        >
+                          {ProjectStatusOptions.map((status) => (
+                            <option key={status} value={status}>
+                              {status}
+                            </option>
+                          ))}
+                        </Select>
+
+                        <Select
+                          placeholder="All Approval Status"
+                          maxW="200px"
+                          value={FilterApprovalStatus}
+                          onChange={(e) => setFilterApprovalStatus(e.target.value)}
+                          isDisabled={IsLoadingProcess}
+                        >
+                          {ApprovalStatusOptions.map((opt) => (
+                            <option key={opt.code} value={opt.code}>
+                              {opt.name}
+                            </option>
+                          ))}
+                        </Select>
+                      </>
+                    )}
                   </>
 
                   {/* Action Buttons */}
