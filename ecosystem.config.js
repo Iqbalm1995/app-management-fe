@@ -7,7 +7,7 @@ module.exports = {
       exec_mode: "fork",
       instances: 1,
       env: {
-        PORT: 8998,
+        PORT: 5555,
       },
     },
   ],
