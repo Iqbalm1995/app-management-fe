@@ -113,6 +113,16 @@ function AuditTrailPage() {
         footer: (props) => props.column.id,
       },
       {
+        accessorKey: "userFullname",
+        cell: (info) => (
+          <Text fontSize="sm" fontWeight="medium">
+            {info.getValue() as string}
+          </Text>
+        ),
+        header: () => <Text>User</Text>,
+        footer: (props) => props.column.id,
+      },
+      {
         accessorKey: "actoinType",
         cell: (info) => (
           <Badge colorScheme="blue" variant="subtle">
@@ -243,9 +253,7 @@ function AuditTrailPage() {
     setIsLoadingProcess(true);
 
     try {
-      const filterWhere = [
-        { field: "UserIdUim", operator: "=" as const, value: DataAuth.userId },
-      ];
+      const filterWhere: { field: string; operator: "="; value: string }[] = [];
 
       if (FilterModule) {
         filterWhere.push({
@@ -397,7 +405,7 @@ function AuditTrailPage() {
             {/* Results Info */}
             <HStack mb={4}>
               <Text fontSize="sm" color="gray.600">
-                Showing your personal activity logs
+                Showing all activity logs
               </Text>
               <Spacer />
               <Text fontSize="sm" color="gray.600">
