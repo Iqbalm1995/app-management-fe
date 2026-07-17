@@ -3,10 +3,12 @@
 import { HeaderContent } from "@/app/components/headerContent";
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import { TableComponentFull } from "@/app/components/tableComponents";
-import { radiusStyle, RES_CODE_OK, RES_GENERIC_ERROR_MSG } from "@/app/constants/applicationConstants";
+import { radiusStyle, RES_CODE_OK, RES_GENERIC_ERROR_MSG, ORG_GROUP_WHITELIST_ALL_ACCESS, ORG_GROUP_WHITELIST_FULL_OVERRIDE, ORG_CATEGORY_KEY_GROUP, DIVISION_ID_IT_BJB } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
+import useOrganization, { OrganizationResponse } from "@/app/services/useOrganization";
+import { PaggingListPayload } from "@/app/types/masterTypes";
 import useAppsCriticalReport, {
   AppsCriticalReportAssessmentViewModel,
   AppsCriticalReportBatchSummary,
@@ -20,7 +22,7 @@ import {
   Badge, Box, Button, Card, CardBody, Checkbox, Divider, Flex, Heading, HStack,
   Icon, IconButton, Input, InputGroup, InputLeftElement, Modal, ModalBody,
   ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay,
-  SimpleGrid, Spacer, Spinner, Stack, Text, Textarea, Tooltip, useColorMode,
+  Select, SimpleGrid, Spacer, Spinner, Stack, Text, Textarea, Tooltip, useColorMode,
   useDisclosure, VStack,
 } from "@chakra-ui/react";
 import {
@@ -29,11 +31,14 @@ import {
 } from "@tanstack/react-table";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FiActivity, FiCheckCircle, FiClock, FiEye, FiRefreshCw, FiX } from "react-icons/fi";
+import { FiActivity, FiCheckCircle, FiClock, FiEye, FiLock, FiRefreshCw, FiX } from "react-icons/fi";
 
 type TabMode = "WA1" | "WA2" | "FINAL";
 
 const statusColor = (s: string) => ({ "WAITING APPROVAL 1": "orange", "WAITING APPROVAL 2": "blue", "APPROVED": "green", "DECLINE": "red", DRAFT: "gray" }[s] || "gray");
+
+const QUARTERS = ["Q1", "Q2", "Q3", "Q4"];
+const YEARS = Array.from({ length: 5 }, (_, i) => String(new Date().getFullYear() - i));
 
 export default function AppsPendingApproveView() {
   const { colorMode } = useColorMode();
@@ -61,6 +66,20 @@ export default function AppsPendingApproveView() {
   const [approveNote, setApproveNote] = useState("");
   const { isOpen: isBulkOpen, onOpen: onBulkOpen, onClose: onBulkClose } = useDisclosure();
 
+  // WA1 filter state
+  const { List: ListOrganization } = useOrganization();
+  const [groupOptions, setGroupOptions] = useState<OrganizationResponse[]>([]);
+  const [userOrgGroupId, setUserOrgGroupId] = useState<string | null>(null);
+  const [isGroupLocked, setIsGroupLocked] = useState(false);
+  const [filterGroup, setFilterGroup] = useState("");
+
+  // WA2 is only accessible to FULL_OVERRIDE users (IAG, ADMIN) — they are the WA2 target approvers
+  // Users with no orgGroupId (executives) can also see WA2
+  const isWA2Approver = !userOrgGroupId || ORG_GROUP_WHITELIST_FULL_OVERRIDE.includes(userOrgGroupId);
+  const [filterQ, setFilterQ] = useState("");
+  const [filterYear, setFilterYear] = useState("");
+  const [filterReview, setFilterReview] = useState<"" | "reviewed" | "pending">("");
+
   // Tab 2 state
   const [wa2Batches, setWa2Batches] = useState<AppsCriticalReportBatchSummary[]>([]);
   const [selectedBatch, setSelectedBatch] = useState<AppsCriticalReportBatchSummary | null>(null);
@@ -75,9 +94,35 @@ export default function AppsPendingApproveView() {
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
     const token = localStorage.getItem("tokenData") as string;
-    if (DataAuth == null && storedData) setDataAuth((JSON.parse(storedData) as AuthDataModelInterface).dataLogin as AuthDataResponse);
+    if (storedData) {
+      const parsed = (JSON.parse(storedData) as AuthDataModelInterface).dataLogin as AuthDataResponse;
+      setDataAuth(parsed);
+      // Group filter lock — same rule as batch detail page
+      const raw = parsed.team?.orgGroupId || null;
+      const orgGroupId = (raw && raw !== "-") ? raw : null;
+      setUserOrgGroupId(orgGroupId);
+      if (orgGroupId && !ORG_GROUP_WHITELIST_ALL_ACCESS.includes(orgGroupId)) {
+        setIsGroupLocked(true);
+        setFilterGroup(orgGroupId);
+      }
+    }
     if (token) setTokenData(token);
-  }, [DataAuth]);
+  }, []);
+
+  // Load group options for filter dropdown
+  useEffect(() => {
+    if (!tokenData) return;
+    ListOrganization({
+      search: "", limit: 1000, page: 0,
+      filterWhere: [
+        { field: "orgType", operator: "=", value: ORG_CATEGORY_KEY_GROUP },
+        { field: "parentId", operator: "=", value: DIVISION_ID_IT_BJB },
+      ],
+      fieldOrder: ["orgName"], orderDir: "asc",
+    } as PaggingListPayload, tokenData).then(res => {
+      if (res?.statusCode === RES_CODE_OK && res.data) setGroupOptions(res.data);
+    });
+  }, [tokenData]);
 
   useEffect(() => {
     if (!DataAuth || !tokenData) return;
@@ -104,12 +149,19 @@ export default function AppsPendingApproveView() {
           setCanApproveMap(map);
         }
       } else if (tabMode === "WA2") {
-        const fw: any[] = [{ field: "statusReport", operator: "=", value: "WAITING APPROVAL 2" }];
-        const res = await List({ search, limit: pageSize, page: pageIndex, filterWhere: fw, fieldOrder: ["timeReport"], orderDir: "desc" }, tokenData);
-        if (res?.statusCode === RES_CODE_OK) {
-          setWa2Batches(res.data || []);
-          setTotalCount(res.countTotal || 0);
-          setTotalPages(Math.ceil((res.countTotal || 0) / pageSize));
+        if (!isWA2Approver) {
+          // User is not a WA2 target approver — show nothing
+          setWa2Batches([]);
+          setTotalCount(0);
+          setTotalPages(0);
+        } else {
+          const fw: any[] = [{ field: "statusReport", operator: "=", value: "WAITING APPROVAL 2" }];
+          const res = await List({ search, limit: pageSize, page: pageIndex, filterWhere: fw, fieldOrder: ["timeReport"], orderDir: "desc" }, tokenData);
+          if (res?.statusCode === RES_CODE_OK) {
+            setWa2Batches(res.data || []);
+            setTotalCount(res.countTotal || 0);
+            setTotalPages(Math.ceil((res.countTotal || 0) / pageSize));
+          }
         }
       } else {
         const resApp = await ListByStatus({ status: "APPROVED", search, page: pageIndex, limit: pageSize }, tokenData);
@@ -122,7 +174,7 @@ export default function AppsPendingApproveView() {
       setLoading(false);
     };
     load();
-  }, [DataAuth, tokenData, tabMode, refresh, pageIndex, pageSize, search]);
+  }, [DataAuth, tokenData, tabMode, refresh, pageIndex, pageSize, search, isWA2Approver]);
 
   // Ensure pagination resets when switching tabs
   useEffect(() => {
@@ -230,7 +282,27 @@ export default function AppsPendingApproveView() {
     },
   ], []);
 
-  const wa1Table = useReactTable({ data: wa1Data, columns: wa1Columns, state: { pagination }, onPaginationChange: setPagination, getCoreRowModel: getCoreRowModel(), getFilteredRowModel: getFilteredRowModel(), getPaginationRowModel: getPaginationRowModel() });
+  // WA1 client-side filter
+  const filteredWa1 = useMemo(() => {
+    return wa1Data.filter(a => {
+      const q = search.toLowerCase();
+      if (q && !(
+        a.appShortName?.toLowerCase().includes(q) ||
+        a.appName?.toLowerCase().includes(q) ||
+        a.appManageByGroupName?.toLowerCase().includes(q)
+      )) return false;
+      if (filterGroup) {
+        if (a.appManageByGroupId !== filterGroup) return false;
+      }
+      if (filterQ && a.quartalReport !== filterQ) return false;
+      if (filterYear && a.yearReport !== filterYear) return false;
+      if (filterReview === "reviewed" && !a.isFullyReviewed) return false;
+      if (filterReview === "pending" && a.isFullyReviewed) return false;
+      return true;
+    });
+  }, [wa1Data, search, filterGroup, filterQ, filterYear, filterReview]);
+
+  const wa1Table = useReactTable({ data: filteredWa1, columns: wa1Columns, state: { pagination }, onPaginationChange: setPagination, getCoreRowModel: getCoreRowModel(), getFilteredRowModel: getFilteredRowModel(), getPaginationRowModel: getPaginationRowModel() });
   const wa2Table = useReactTable({ data: wa2Batches, columns: wa2Columns, pageCount: totalPages, state: { pagination }, onPaginationChange: setPagination, getCoreRowModel: getCoreRowModel(), getFilteredRowModel: getFilteredRowModel(), getPaginationRowModel: getPaginationRowModel(), manualFiltering: true, manualPagination: true });
 
   const tabConfig = [
@@ -267,22 +339,64 @@ export default function AppsPendingApproveView() {
 
               {/* Filters + bulk action for WA1 */}
               <Flex gap={3} wrap="wrap" align="center">
-                <InputGroup maxW="280px">
+                <InputGroup maxW="260px">
                   <InputLeftElement><Search2Icon color="gray.400" /></InputLeftElement>
-                  <Input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === "Enter" && setRefresh(p => p + 1)} bg={isDark ? "gray.700" : "white"} />
+                  <Input placeholder="Search app name or group..." value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === "Enter" && setRefresh(p => p + 1)} bg={isDark ? "gray.700" : "white"} />
                 </InputGroup>
-                <Button variant="outline" leftIcon={<FiX />} onClick={() => { setSearch(""); setRefresh(p => p + 1); }}>Clear</Button>
+
+                {/* Group filter */}
+                <Box minW="170px">
+                  <Select
+                    placeholder="All Groups"
+                    value={isGroupLocked ? filterGroup : filterGroup}
+                    size="md"
+                    bg={isDark ? "gray.700" : "white"}
+                    isDisabled={isGroupLocked}
+                    title={isGroupLocked ? "Filtered by your group" : undefined}
+                    onChange={e => { if (!isGroupLocked) setFilterGroup(e.target.value); }}
+                  >
+                    {groupOptions.map(g => (
+                      <option key={g.id} value={g.id}>{g.orgName}</option>
+                    ))}
+                  </Select>
+                  {isGroupLocked && (
+                    <HStack spacing={1} mt={1}>
+                      <Icon as={FiLock} boxSize={2.5} color="orange.400" />
+                      <Text fontSize="2xs" color="orange.400">Filtered by your group</Text>
+                    </HStack>
+                  )}
+                </Box>
+
+                <Select placeholder="All Quarters" value={filterQ} onChange={e => setFilterQ(e.target.value)} maxW="130px" bg={isDark ? "gray.700" : "white"}>
+                  {QUARTERS.map(q => <option key={q} value={q}>{q}</option>)}
+                </Select>
+                <Select placeholder="All Years" value={filterYear} onChange={e => setFilterYear(e.target.value)} maxW="110px" bg={isDark ? "gray.700" : "white"}>
+                  {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
+                </Select>
+                <Select placeholder="All Review" value={filterReview} onChange={e => setFilterReview(e.target.value as "" | "reviewed" | "pending")} maxW="130px" bg={isDark ? "gray.700" : "white"}>
+                  <option value="reviewed">Reviewed</option>
+                  <option value="pending">Not Yet</option>
+                </Select>
+
+                <Button variant="outline" leftIcon={<Icon as={FiX} />} onClick={() => {
+                  setSearch("");
+                  if (!isGroupLocked) setFilterGroup("");
+                  setFilterQ("");
+                  setFilterYear("");
+                  setFilterReview("");
+                  setRefresh(p => p + 1);
+                }}>Clear</Button>
                 <Spacer />
                 {tabMode === "WA1" && selectedIds.size > 0 && (
                   <Button colorScheme="green" size="sm" onClick={onBulkOpen}>
                     Bulk Approve ({selectedIds.size} selected)
                   </Button>
                 )}
-                <Button colorScheme="gray" leftIcon={<FiRefreshCw />} onClick={() => { setWa1Data([]); setRefresh(p => p + 1); }}>Refresh</Button>
+                <Button colorScheme="gray" leftIcon={<Icon as={FiRefreshCw} />} onClick={() => { setWa1Data([]); setRefresh(p => p + 1); }}>Refresh</Button>
               </Flex>
 
               <HStack>
-                <Text fontSize="sm" color={isDark ? "gray.400" : "gray.600"}>{totalCount} record(s)</Text>
+                <Text fontSize="sm" color={isDark ? "gray.400" : "gray.600"}>{filteredWa1.length} / {wa1Data.length} record(s)</Text>
                 <Spacer />
                 <Text fontSize="sm" color={isDark ? "gray.400" : "gray.600"}>Page {pageIndex + 1} of {totalPages || 1}</Text>
               </HStack>
@@ -290,7 +404,19 @@ export default function AppsPendingApproveView() {
               {loading ? <Flex justify="center" py={8}><VStack spacing={3}><Spinner size="xl" color="purple.500" thickness="4px" /><Text fontSize="sm" color={isDark ? "gray.400" : "gray.500"}>Loading data, please wait...</Text></VStack></Flex> : (
                 <>
                   {tabMode === "WA1" && <TableComponentFull table={wa1Table} />}
-                  {tabMode === "WA2" && <TableComponentFull table={wa2Table} />}
+                  {tabMode === "WA2" && (
+                    isWA2Approver
+                      ? <TableComponentFull table={wa2Table} />
+                      : (
+                        <VStack py={12} spacing={3} textAlign="center">
+                          <Box w={16} h={16} bg={isDark ? "gray.700" : "gray.100"} rounded="full" display="flex" alignItems="center" justifyContent="center">
+                            <Icon as={FiLock} boxSize={8} color={isDark ? "gray.500" : "gray.400"} />
+                          </Box>
+                          <Text fontWeight="semibold" color={isDark ? "gray.300" : "gray.600"}>Tidak memiliki akses</Text>
+                          <Text fontSize="sm" color={isDark ? "gray.500" : "gray.400"}>Hanya approver target Waiting Approval 2 yang dapat melihat data ini.</Text>
+                        </VStack>
+                      )
+                  )}
                   {tabMode === "FINAL" && (
                     <Stack spacing={3}>
                       {finalData.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize).map(a => (

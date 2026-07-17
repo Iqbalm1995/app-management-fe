@@ -68,6 +68,16 @@ export interface AppsCriticalReportAssessmentViewModel {
   filledCount: number;
   totalCount: number;
   details: AppsCriticalReportDetailItem[];
+  statusHistories: AppsCriticalReportStatusHistoryItem[];
+}
+
+export interface AppsCriticalReportStatusHistoryItem {
+  id: string;
+  statusReport: string;
+  note: string | null;
+  statusTime: string;
+  createdBy: string;
+  createdByName: string | null;
 }
 
 export interface AppsCriticalReportBatchDetailViewModel {
