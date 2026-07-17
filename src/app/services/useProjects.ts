@@ -235,6 +235,12 @@ export interface ProjectDataResponse {
   workPrograms: RequirementWorkProgramDataResponse[];
   projectWorkflowProjectData: ProjectWorkflowResponse[];
   projectWorkflowData: ProjectWorkflowResponse[];
+  targetApprovers: ProjectApproverResponse[];
+}
+
+export interface ProjectApproverResponse {
+  userId: string;
+  userName: string;
 }
 
 export interface ProjectSdlcStageResponse {

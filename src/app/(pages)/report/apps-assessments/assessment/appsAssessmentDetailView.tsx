@@ -8,6 +8,10 @@ import {
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
   CRITERIA_VALUE_OPERATORS,
+  ORG_GROUP_WHITELIST_ALL_ACCESS,
+  ORG_GROUP_WHITELIST_FULL_OVERRIDE,
+  ORG_GROUP_WHITELIST_ASSESMENT_RTO_SUGGESTIONS,
+  ORG_GROUP_WHITELIST_ASSESMENT_RPO,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
@@ -50,6 +54,7 @@ import {
   Stack,
   Switch,
   Text,
+  Tooltip,
   useColorMode,
   useDisclosure,
   VStack,
@@ -57,7 +62,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { FaArrowLeft } from "react-icons/fa6";
-import { FiActivity, FiSave } from "react-icons/fi";
+import { FiActivity, FiCheck, FiInfo, FiLock, FiSave } from "react-icons/fi";
 
 // --- helpers ---
 const evalOperator = (
@@ -131,6 +136,7 @@ export default function AppsAssessmentDetailView() {
     CanApproveAssessment,
     ApproveAssessment,
     ResubmitAssessment,
+    ReviseBatch,
   } = useAppsCriticalReport();
   const { List: ListCategory } = useMstAppsCriteriaCategory();
   const { List: ListCriteria } = useMstAppsCriteria();
@@ -142,6 +148,7 @@ export default function AppsAssessmentDetailView() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [revising, setRevising] = useState(false);
   const [canApprove, setCanApprove] = useState(false);
   const [approving, setApproving] = useState(false);
   const [isSaveConfirmOpen, setIsSaveConfirmOpen] = useState(false);
@@ -175,6 +182,45 @@ export default function AppsAssessmentDetailView() {
     appsRpoOperator: "" as string | null,
     appsRpoMinutes: null as number | null,
   });
+
+  // Note: JWT encodes null as "-" — treat "-" as no group
+  const userOrgGroupId = (DataAuth?.team?.orgGroupId && DataAuth.team.orgGroupId !== "-")
+    ? DataAuth.team.orgGroupId
+    : null;
+
+  // Full override access (audit/edit all fields, WA2 override, no submit restriction)
+  const isWhitelisted = userOrgGroupId
+    ? ORG_GROUP_WHITELIST_FULL_OVERRIDE.includes(userOrgGroupId)
+    : false;
+
+  // Cannot submit to approval:
+  // - User is in ALL_ACCESS (list-only/executive access) 
+  // - BUT NOT in FULL_OVERRIDE (admin/IAG)
+  // - AND NOT an RPO group user who owns this assessment (they can submit for their own apps)
+  // NOTE: defined after rpoUserOwnsAssessment below
+  const isSubmitBlockedBase = userOrgGroupId
+    ? ORG_GROUP_WHITELIST_ALL_ACCESS.includes(userOrgGroupId) && !isWhitelisted
+    : false;
+
+  // Per-field RTO/RPO edit access
+  const canEditRtoSuggestion = userOrgGroupId
+    ? ORG_GROUP_WHITELIST_ASSESMENT_RTO_SUGGESTIONS.includes(userOrgGroupId)
+    : false;
+
+  const canEditRpo = userOrgGroupId
+    ? ORG_GROUP_WHITELIST_ASSESMENT_RPO.includes(userOrgGroupId) ||
+      ORG_GROUP_WHITELIST_ASSESMENT_RTO_SUGGESTIONS.includes(userOrgGroupId)
+    : false;
+
+  // RTO/RPO completeness check for submit:
+  // RTO Suggestion: operator required + minutes > 0
+  // RTO IT: operator required + minutes > 0
+  // RPO: operator and value optional (can be null/0)
+  const isRtoRpoComplete =
+    !!rtoRpo.appsRtoSuggestionOperator &&
+    (rtoRpo.appsRtoSuggestionMinutes ?? 0) > 0 &&
+    !!rtoRpo.appsRtoItOperator &&
+    (rtoRpo.appsRtoItMinutes ?? 0) > 0;
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -270,7 +316,49 @@ export default function AppsAssessmentDetailView() {
   // Derived calculations
   const isDraft = data?.statusReport === "DRAFT";
   const isDeclined = data?.statusReport === "DECLINE";
-  const isEditable = isDraft || isDeclined;
+  const isWaitingApproval2 = data?.statusReport === "WAITING APPROVAL 2";
+
+  // Base editable = DRAFT or DECLINED
+  // Extended: WA2 + ALL_ACCESS can fully override; WA2 + RPO group can edit RPO only
+  const canOverrideWA2 = isWaitingApproval2 && isWhitelisted;
+
+  // RPO-only user: in RPO whitelist but NOT in RTO_SUGGESTIONS and NOT in ALL_ACCESS
+  // Only compute after auth is loaded — prevents false-positive on initial render
+  const isRpoOnlyUser = (DataAuth && userOrgGroupId)
+    ? ORG_GROUP_WHITELIST_ASSESMENT_RPO.includes(userOrgGroupId) &&
+      !ORG_GROUP_WHITELIST_ASSESMENT_RTO_SUGGESTIONS.includes(userOrgGroupId) &&
+      !isWhitelisted
+    : false;
+
+  // RPO-only user OWNS this assessment if their orgGroupId matches appManageByGroupId
+  // In that case they get full access like a normal group user
+  const rpoUserOwnsAssessment = isRpoOnlyUser &&
+    !!userOrgGroupId &&
+    !!data?.appManageByGroupId &&
+    data.appManageByGroupId === userOrgGroupId;
+
+  // Final submit blocked check — RPO user who owns the assessment CAN submit
+  const isSubmitBlocked = isSubmitBlockedBase && !rpoUserOwnsAssessment;
+
+  // RTO IT: anyone except RPO group — UNLESS RPO group user owns this assessment
+  const canEditRtoIt = userOrgGroupId
+    ? !ORG_GROUP_WHITELIST_ASSESMENT_RPO.includes(userOrgGroupId) || rpoUserOwnsAssessment
+    : true;
+
+  // WA2 + RPO group can edit RPO only (when they don't own the assessment)
+  const canEditRpoWA2 = isWaitingApproval2 && canEditRpo && !isWhitelisted && !rpoUserOwnsAssessment;
+
+  // isEditable:
+  // - Normal: DRAFT or DECLINE (non RPO-only users, or RPO user who owns the assessment)
+  // - WA2 ALL_ACCESS override
+  // - RPO-only users: read-only EXCEPT on WA2 (canEditRpoWA2) or if they own the assessment
+  const isEditable = (isDraft || isDeclined || canOverrideWA2) &&
+    (!isRpoOnlyUser || rpoUserOwnsAssessment);
+
+  // RTO Suggestion filled = prerequisite for RTO IT in DRAFT
+  const isRtoSuggestionFilled =
+    !!rtoRpo.appsRtoSuggestionOperator &&
+    (rtoRpo.appsRtoSuggestionMinutes ?? 0) > 0;
   const trueCount = Object.values(flags).filter((v) => v === "TRUE").length;
   const weight = weightMap[trueCount] ?? 0.2;
 
@@ -293,6 +381,23 @@ export default function AppsAssessmentDetailView() {
   const crtScore = filledScores.reduce((s, v) => s + v, 0);
   const crtAverage = totalDetails > 0 ? crtScore / totalDetails : 0;
   const crtFinal = crtAverage + weight;
+
+  // Assessment result score completeness check for submit
+  const isScoreComplete =
+    crtScore > 0 &&
+    crtAverage > 0 &&
+    weight > 0 &&
+    crtFinal > 0;
+
+  // Skip review flag — when true, bypasses score/RTO-RPO requirements for submit
+  // and disables criteria/IS-flags sections (only skip + onDev + RTO/RPO fields remain active)
+  const isSkipActive = flags.isSkipReview === "TRUE";
+
+  // Final submit gate: skip bypasses all checks
+  const canSubmit = isSkipActive || (isRtoRpoComplete && isScoreComplete);
+
+  // Fields editable only when not skipped (criteria scoring, IS flags)
+  const isFieldEditable = isEditable && !isSkipActive;
 
   const matchedCategory = useMemo(
     () => matchCategory(crtFinal, categories),
@@ -319,6 +424,13 @@ export default function AppsAssessmentDetailView() {
 
   const handleSave = async () => {
     if (!assessmentId || !data) return;
+
+    // Guard: RPO-only users who don't own this assessment cannot save general changes
+    if (isRpoOnlyUser && !rpoUserOwnsAssessment && !canEditRpoWA2) {
+      showToast({ description: "You do not have permission to save changes on this assessment.", statusToast: "error" });
+      return;
+    }
+
     setSaving(true);
 
     // 1. Save all detail rows
@@ -459,25 +571,43 @@ export default function AppsAssessmentDetailView() {
                       >
                         Save Changes
                       </Button>
-                      {isDraft && (
+                      {isDraft && !isSubmitBlocked && !isWhitelisted && (
                         <Button
                           size="sm"
                           bg="orange.400"
                           color="white"
                           _hover={{ bg: "orange.300" }}
                           isLoading={submitting}
+                          isDisabled={!canSubmit}
+                          title={
+                            isSkipActive ? "" :
+                            !isScoreComplete
+                              ? "Assessment scores (CRT Score, Average, Weight, Final) must all be > 0"
+                              : !isRtoRpoComplete
+                              ? "RTO Suggestion and RTO IT must have operator and value > 0"
+                              : ""
+                          }
                           onClick={() => setIsSubmitConfirmOpen(true)}
                         >
                           Submit for Approval
                         </Button>
                       )}
-                      {isDeclined && (
+                      {isDeclined && !isSubmitBlocked && !isWhitelisted && (
                         <Button
                           size="sm"
                           bg="yellow.400"
                           color="gray.800"
                           _hover={{ bg: "yellow.300" }}
                           isLoading={submitting}
+                          isDisabled={!canSubmit}
+                          title={
+                            isSkipActive ? "" :
+                            !isScoreComplete
+                              ? "Assessment scores (CRT Score, Average, Weight, Final) must all be > 0"
+                              : !isRtoRpoComplete
+                              ? "RTO Suggestion and RTO IT must have operator and value > 0"
+                              : ""
+                          }
                           onClick={async () => {
                             setSubmitting(true);
                             const res = await ResubmitAssessment(
@@ -503,6 +633,47 @@ export default function AppsAssessmentDetailView() {
                       )}
                     </>
                   )}
+
+                  {/* WA2: RPO group — Save Changes only (RPO field edit) */}
+                  {canEditRpoWA2 && sourceParam !== "pending" && (
+                    <Button
+                      size="sm"
+                      bg="whiteAlpha.200"
+                      color="white"
+                      _hover={{ bg: "whiteAlpha.300" }}
+                      leftIcon={<FiSave />}
+                      isLoading={saving}
+                      onClick={() => setIsSaveConfirmOpen(true)}
+                    >
+                      Save RPO
+                    </Button>
+                  )}
+
+                  {/* WA2: ALL_ACCESS — Revision (send batch back to DRAFT) */}
+                  {canOverrideWA2 && sourceParam !== "pending" && (
+                    <Button
+                      size="sm"
+                      bg="yellow.500"
+                      color="white"
+                      _hover={{ bg: "yellow.400" }}
+                      isLoading={revising}
+                      onClick={async () => {
+                        if (!data?.batchCode) return;
+                        setRevising(true);
+                        const res = await ReviseBatch(data.batchCode, tokenData);
+                        setRevising(false);
+                        if (res?.statusCode === RES_CODE_OK) {
+                          showToast({ description: "Batch revised back to DRAFT", statusToast: "success" });
+                          loadData();
+                        } else {
+                          showToast({ description: res?.message || "Revision failed", statusToast: "error" });
+                        }
+                      }}
+                    >
+                      Revision
+                    </Button>
+                  )}
+
                   {/* Approve/Decline — only for assigned approvers from pending page */}
                   {sourceParam === "pending" &&
                     canApprove &&
@@ -600,10 +771,10 @@ export default function AppsAssessmentDetailView() {
               <HStack justify="space-between">
                 <VStack align="start" spacing={0}>
                   <HStack spacing={2}>
-                    <Heading size="sm">Application On Development?</Heading>
+                    <Heading size="sm">Aplikasi Sedang Dalam Pengembangan?</Heading>
                     {flags.isOnDevelopment === "TRUE" && (
                       <Badge colorScheme="yellow" variant="solid" fontSize="xs">
-                        ON DEVELOPMENT
+                        DALAM PENGEMBANGAN
                       </Badge>
                     )}
                   </HStack>
@@ -628,7 +799,7 @@ export default function AppsAssessmentDetailView() {
                         setFlags((prev) => ({ ...prev, isOnDevelopment: opt }))
                       }
                     >
-                      {opt}
+                      {opt === "TRUE" ? "Ya" : "Tidak"}
                     </Button>
                   ))}
                 </HStack>
@@ -658,7 +829,7 @@ export default function AppsAssessmentDetailView() {
                   <VStack align="start" spacing={0}>
                     <HStack spacing={2}>
                       <Heading size="sm">
-                        Skip Review for this Assessment?
+                        Lewati Review untuk Assessment Ini?
                       </Heading>
                       {flags.isSkipReview === "TRUE" && (
                         <Badge
@@ -666,7 +837,7 @@ export default function AppsAssessmentDetailView() {
                           variant="solid"
                           fontSize="xs"
                         >
-                          SKIP REVIEW
+                          LEWATI REVIEW
                         </Badge>
                       )}
                     </HStack>
@@ -674,8 +845,7 @@ export default function AppsAssessmentDetailView() {
                       fontSize="xs"
                       color={isDark ? "gray.400" : "gray.500"}
                     >
-                      If skipped, this assessment will bypass the normal review
-                      process
+                      Jika dilewati, assessment ini akan melewati proses review normal
                     </Text>
                   </VStack>
                   <HStack spacing={2}>
@@ -694,7 +864,7 @@ export default function AppsAssessmentDetailView() {
                           setFlags((prev) => ({ ...prev, isSkipReview: opt }))
                         }
                       >
-                        {opt}
+                        {opt === "TRUE" ? "Ya" : "Tidak"}
                       </Button>
                     ))}
                   </HStack>
@@ -812,15 +982,15 @@ export default function AppsAssessmentDetailView() {
                       >
                         <Box
                           as="button"
-                          disabled={!isEditable}
+                          disabled={!isFieldEditable}
                           onClick={() =>
-                            isEditable &&
+                            isFieldEditable &&
                             setFlags((prev) => ({ ...prev, [key]: "TRUE" }))
                           }
                           px={3}
                           py={1}
                           rounded="md"
-                          cursor={isEditable ? "pointer" : "default"}
+                          cursor={isFieldEditable ? "pointer" : "default"}
                           bg={
                             flags[key] === "TRUE" ? "green.500" : "transparent"
                           }
@@ -834,21 +1004,21 @@ export default function AppsAssessmentDetailView() {
                           fontWeight="semibold"
                           fontSize="xs"
                           transition="all 0.15s"
-                          opacity={!isEditable ? 0.6 : 1}
+                          opacity={!isFieldEditable ? 0.6 : 1}
                         >
                           Ya
                         </Box>
                         <Box
                           as="button"
-                          disabled={!isEditable}
+                          disabled={!isFieldEditable}
                           onClick={() =>
-                            isEditable &&
+                            isFieldEditable &&
                             setFlags((prev) => ({ ...prev, [key]: "FALSE" }))
                           }
                           px={3}
                           py={1}
                           rounded="md"
-                          cursor={isEditable ? "pointer" : "default"}
+                          cursor={isFieldEditable ? "pointer" : "default"}
                           bg={
                             flags[key] === "FALSE" ? "red.500" : "transparent"
                           }
@@ -862,7 +1032,7 @@ export default function AppsAssessmentDetailView() {
                           fontWeight="semibold"
                           fontSize="xs"
                           transition="all 0.15s"
-                          opacity={!isEditable ? 0.6 : 1}
+                          opacity={!isFieldEditable ? 0.6 : 1}
                         >
                           Tidak
                         </Box>
@@ -951,9 +1121,9 @@ export default function AppsAssessmentDetailView() {
                             <Box
                               key={v.id}
                               as="button"
-                              disabled={!isEditable}
+                              disabled={!isFieldEditable}
                               onClick={() =>
-                                isEditable &&
+                                isFieldEditable &&
                                 setDetailSelections((prev) => ({
                                   ...prev,
                                   [d.id]: v.id,
@@ -963,7 +1133,7 @@ export default function AppsAssessmentDetailView() {
                               py={2}
                               px={2}
                               rounded="md"
-                              cursor={isEditable ? "pointer" : "default"}
+                              cursor={isFieldEditable ? "pointer" : "default"}
                               border="1px"
                               display="flex"
                               flexDirection="column"
@@ -987,7 +1157,7 @@ export default function AppsAssessmentDetailView() {
                                     : "gray.600"
                               }
                               _hover={
-                                isEditable
+                                isFieldEditable
                                   ? {
                                       borderColor: "secondary.300",
                                       bg: "secondary.50",
@@ -995,7 +1165,7 @@ export default function AppsAssessmentDetailView() {
                                   : {}
                               }
                               transition="all 0.15s"
-                              opacity={!isEditable ? 0.6 : 1}
+                              opacity={!isFieldEditable ? 0.6 : 1}
                             >
                               <Text fontSize="xs" fontWeight="bold">
                                 {v.scaleLabel}
@@ -1241,41 +1411,104 @@ export default function AppsAssessmentDetailView() {
                         label: "RTO Suggestion",
                         opKey: "appsRtoSuggestionOperator",
                         minKey: "appsRtoSuggestionMinutes",
+                        canEdit: isEditable && (canEditRtoSuggestion || rpoUserOwnsAssessment),
+                        lockReason: !canEditRtoSuggestion && !rpoUserOwnsAssessment
+                          ? "Only RTO Suggestion group can edit this field"
+                          : undefined,
+                        isFilled: !!rtoRpo.appsRtoSuggestionOperator && (rtoRpo.appsRtoSuggestionMinutes ?? 0) > 0,
+                        isRequired: true,
                       },
                       {
                         label: "RTO IT",
                         opKey: "appsRtoItOperator",
                         minKey: "appsRtoItMinutes",
+                        canEdit: isEditable && canEditRtoIt && (isRtoSuggestionFilled || rpoUserOwnsAssessment),
+                        lockReason: !canEditRtoIt
+                          ? "RPO group cannot edit RTO IT on apps they don't manage"
+                          : (!isRtoSuggestionFilled && !rpoUserOwnsAssessment)
+                          ? "Fill RTO Suggestion first before editing RTO IT"
+                          : undefined,
+                        isFilled: !!rtoRpo.appsRtoItOperator && (rtoRpo.appsRtoItMinutes ?? 0) > 0,
+                        isRequired: true,
                       },
                       {
                         label: "RPO",
                         opKey: "appsRpoOperator",
                         minKey: "appsRpoMinutes",
+                        canEdit: (isEditable && canEditRpo) || canEditRpoWA2,
+                        lockReason: !canEditRpo && !canEditRpoWA2
+                          ? "Only RPO group or RTO Suggestion group can edit this field"
+                          : undefined,
+                        isFilled: !!rtoRpo.appsRpoOperator,
+                        isRequired: false,
                       },
                     ] as {
                       label: string;
                       opKey: keyof typeof rtoRpo;
                       minKey: keyof typeof rtoRpo;
+                      canEdit: boolean;
+                      lockReason?: string;
+                      isFilled: boolean;
+                      isRequired: boolean;
                     }[]
-                  ).map(({ label, opKey, minKey }) => (
+                  ).map(({ label, opKey, minKey, canEdit, lockReason, isFilled, isRequired }) => (
                     <Box
                       key={opKey}
                       p={4}
-                      bg={isDark ? "secondary.900" : "secondary.50"}
+                      bg={canEdit
+                        ? (isDark ? "secondary.900" : "secondary.50")
+                        : (isDark ? "gray.800" : "gray.50")}
                       rounded="lg"
                       border="1px"
-                      borderColor={isDark ? "secondary.700" : "secondary.200"}
+                      borderColor={
+                        isFilled
+                          ? (isDark ? "green.600" : "green.300")
+                          : canEdit
+                          ? (isDark ? "secondary.700" : "secondary.200")
+                          : (isDark ? "gray.600" : "gray.200")
+                      }
+                      transition="all 0.2s"
                     >
-                      <Text
-                        fontSize="xs"
-                        fontWeight="bold"
-                        textTransform="uppercase"
-                        color={isDark ? "secondary.200" : "secondary.700"}
-                        mb={3}
-                        letterSpacing="wider"
-                      >
-                        {label}
-                      </Text>
+                      <HStack justify="space-between" mb={3}>
+                        <Text
+                          fontSize="xs"
+                          fontWeight="bold"
+                          textTransform="uppercase"
+                          color={canEdit
+                            ? (isDark ? "secondary.200" : "secondary.700")
+                            : (isDark ? "gray.400" : "gray.500")}
+                          letterSpacing="wider"
+                        >
+                          {label}
+                        </Text>
+                        <HStack spacing={1}>
+                          {isFilled ? (
+                            <Badge colorScheme="green" variant="subtle" fontSize="2xs">
+                              <HStack spacing={0.5}>
+                                <Icon as={FiCheck} boxSize={2.5} />
+                                <Text>Filled</Text>
+                              </HStack>
+                            </Badge>
+                          ) : (
+                            <Badge colorScheme={isRequired ? "orange" : "gray"} variant="subtle" fontSize="2xs">
+                              {isRequired ? "Required" : "Optional"}
+                            </Badge>
+                          )}
+                          {lockReason ? (
+                            <Tooltip label={lockReason} placement="top" hasArrow>
+                              <Box cursor="help">
+                                <Icon as={FiLock} boxSize={3} color={isDark ? "orange.400" : "orange.500"} />
+                              </Box>
+                            </Tooltip>
+                          ) : !canEdit ? (
+                            <Tooltip label="Read only in current status" placement="top" hasArrow>
+                              <Box cursor="help">
+                                <Icon as={FiInfo} boxSize={3} color={isDark ? "gray.500" : "gray.400"} />
+                              </Box>
+                            </Tooltip>
+                          ) : null}
+                        </HStack>
+                      </HStack>
                       <Stack spacing={3}>
                         <Box>
                           <FormLabel
@@ -1290,9 +1523,9 @@ export default function AppsAssessmentDetailView() {
                               <Box
                                 key={op.value}
                                 as="button"
-                                disabled={!isEditable}
+                                disabled={!canEdit}
                                 onClick={() =>
-                                  isEditable &&
+                                  canEdit &&
                                   setRtoRpo((prev) => ({
                                     ...prev,
                                     [opKey]:
@@ -1304,7 +1537,7 @@ export default function AppsAssessmentDetailView() {
                                 px={2.5}
                                 py={1.5}
                                 rounded="md"
-                                cursor={isEditable ? "pointer" : "default"}
+                                cursor={canEdit ? "pointer" : "default"}
                                 border="1px"
                                 borderColor={
                                   rtoRpo[opKey] === op.value
@@ -1328,7 +1561,7 @@ export default function AppsAssessmentDetailView() {
                                       : "gray.600"
                                 }
                                 _hover={
-                                  isEditable
+                                  canEdit
                                     ? {
                                         borderColor: "secondary.300",
                                         bg: "secondary.50",
@@ -1336,7 +1569,7 @@ export default function AppsAssessmentDetailView() {
                                     : {}
                                 }
                                 transition="all 0.15s"
-                                opacity={!isEditable ? 0.6 : 1}
+                                opacity={!canEdit ? 0.6 : 1}
                                 fontWeight="bold"
                                 fontSize="sm"
                               >
@@ -1367,13 +1600,13 @@ export default function AppsAssessmentDetailView() {
                                 360,
                               )}
                               onChange={(val) =>
-                                isEditable &&
+                                canEdit &&
                                 setRtoRpo((prev) => ({
                                   ...prev,
                                   [minKey]: val,
                                 }))
                               }
-                              isDisabled={!isEditable}
+                              isDisabled={!canEdit}
                               colorScheme="secondary"
                             >
                               <SliderTrack
@@ -1428,7 +1661,7 @@ export default function AppsAssessmentDetailView() {
                               }}
                               placeholder="0"
                               bg={isDark ? "gray.700" : "white"}
-                              isDisabled={!isEditable}
+                              isDisabled={!canEdit}
                               textAlign="center"
                             />
                           </HStack>
@@ -1440,6 +1673,68 @@ export default function AppsAssessmentDetailView() {
               </Box>
             </CardBody>
           </Card>
+
+          {/* Status History / Approval Notes Timeline */}
+          {(data?.statusHistories?.length ?? 0) > 0 && (
+            <Card rounded={radiusStyle} shadow="md" border="1px" borderColor={isDark ? "gray.700" : "gray.200"} bg={isDark ? "gray.800" : "white"}>
+              <CardHeader py={4} px={6}>
+                <HStack spacing={2}>
+                  <Icon as={FiActivity} boxSize={4} color={isDark ? "gray.300" : "gray.600"} />
+                  <Heading size="sm" color={isDark ? "gray.100" : "gray.700"}>Approval History</Heading>
+                  <Badge colorScheme="gray" variant="subtle" fontSize="xs">{data?.statusHistories?.length} entries</Badge>
+                </HStack>
+              </CardHeader>
+              <Divider borderColor={isDark ? "gray.700" : "gray.100"} />
+              <CardBody px={6} py={4}>
+                <VStack spacing={0} align="stretch">
+                  {data?.statusHistories?.map((h, i) => {
+                    const isLast = i === (data.statusHistories.length - 1);
+                    const colorScheme =
+                      h.statusReport === "APPROVED" ? "green" :
+                      h.statusReport === "DECLINE" ? "red" :
+                      h.statusReport?.includes("WAITING") ? "orange" : "gray";
+                    return (
+                      <HStack key={h.id} align="start" spacing={4} pb={isLast ? 0 : 4}>
+                        {/* Timeline dot + line */}
+                        <VStack spacing={0} align="center" flexShrink={0} pt={1}>
+                          <Box
+                            w={3} h={3} rounded="full"
+                            bg={colorScheme === "green" ? "green.400" :
+                                colorScheme === "red" ? "red.400" :
+                                colorScheme === "orange" ? "orange.400" : "gray.400"}
+                          />
+                          {!isLast && <Box w="1px" flex={1} minH="32px" bg={isDark ? "gray.600" : "gray.200"} mt={1} />}
+                        </VStack>
+                        {/* Content */}
+                        <Box flex={1} pb={isLast ? 0 : 1}>
+                          <HStack spacing={2} mb={1} flexWrap="wrap">
+                            <Badge colorScheme={colorScheme} variant="subtle" fontSize="xs">{h.statusReport}</Badge>
+                            <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"}>
+                              {new Date(h.statusTime).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                            </Text>
+                            {h.createdByName && (
+                              <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"}>
+                                by <Text as="span" fontWeight="semibold" color={isDark ? "gray.300" : "gray.700"}>{h.createdByName}</Text>
+                              </Text>
+                            )}
+                          </HStack>
+                          {h.note && (
+                            <Box
+                              px={3} py={2} rounded="md"
+                              bg={isDark ? "gray.700" : "gray.50"}
+                              border="1px" borderColor={isDark ? "gray.600" : "gray.200"}
+                            >
+                              <Text fontSize="sm" color={isDark ? "gray.300" : "gray.700"}>{h.note}</Text>
+                            </Box>
+                          )}
+                        </Box>
+                      </HStack>
+                    );
+                  })}
+                </VStack>
+              </CardBody>
+            </Card>
+          )}
         </VStack>
       </Box>
 
