@@ -524,6 +524,32 @@ export default function PendingApproveView() {
                 {info.row.original.approvalStatus || "PENDING"}
               </Badge>
             </VStack>
+
+            {/* Target Approvers — only show on PENDING tab for waiting approval statuses */}
+            {viewMode === "PENDING" &&
+              info.row.original.approvalStatus?.toLowerCase().includes("waiting") &&
+              (info.row.original.targetApprovers?.length ?? 0) > 0 && (
+              <VStack align="start" spacing={1}>
+                <Text fontSize="xs" fontWeight="600" color="gray.600">
+                  Target Approver:
+                </Text>
+                <VStack align="start" spacing={0}>
+                  {info.row.original.targetApprovers.map((approver) => (
+                    <Badge
+                      key={approver.userId}
+                      fontSize="xs"
+                      px={2}
+                      py={0.5}
+                      rounded="md"
+                      colorScheme="blue"
+                      variant="outline"
+                    >
+                      {approver.userName}
+                    </Badge>
+                  ))}
+                </VStack>
+              </VStack>
+            )}
           </VStack>
         ),
         header: () => <span>Status</span>,

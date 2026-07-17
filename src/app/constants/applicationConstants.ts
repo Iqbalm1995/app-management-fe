@@ -19,11 +19,43 @@ export const DIRECTORATE_ID_IT_BJB: string =
 export const DIVISION_ID_IT_BJB: string = "8922E4AD-8183-B61B-34D1-CF629361D";
 
 // OrgGroupIds that bypass group filter restriction — these users can see ALL data
+
+// for generate report assesment
+export const ORG_GROUP_WHITELIST_ACCESS_GENERATE_REPORT_ASSESMENT: string[] = [
+  "8922E4AD-8183-B61B-34D1-CF629361D", // ADMINISTRATOR (D440)
+  "F4233FE8-7788-C0DC-99F5-9D17EB679", // IAG
+  // Add orgGroupIds here that should have unrestricted list access
+];
+
 // regardless of their own orgGroupId
 export const ORG_GROUP_WHITELIST_ALL_ACCESS: string[] = [
-  // Add orgGroupIds here that should have unrestricted access
-  // e.g. "uuid-of-admin-group", "uuid-of-it-head-group"
+  "8922E4AD-8183-B61B-34D1-CF629361D", // ADMINISTRATOR (D440)
+  "F4233FE8-7788-C0DC-99F5-9D17EB679", // IAG
+  "1C15B798-2ABD-B74C-C8DB-F6191913B", // BMT — can view all, edit RPO only
+  // Add orgGroupIds here that should have unrestricted list access
 ];
+
+// Orgs that have FULL edit override on assessment detail (separate from list access)
+export const ORG_GROUP_WHITELIST_FULL_OVERRIDE: string[] = [
+  "8922E4AD-8183-B61B-34D1-CF629361D", // ADMINISTRATOR (D440)
+  "F4233FE8-7788-C0DC-99F5-9D17EB679", // IAG
+  // Add orgGroupIds here that can fully override/audit assessments
+];
+
+// Orgs that can edit RTO Suggestion field on assessment
+export const ORG_GROUP_WHITELIST_ASSESMENT_RTO_SUGGESTIONS: string[] = [
+  // Add orgGroupIds here that can edit RTO Suggestion
+  "8922E4AD-8183-B61B-34D1-CF629361D", // ADMINISTRATOR (D440)
+  "F4233FE8-7788-C0DC-99F5-9D17EB679", // IAG
+];
+
+// Orgs that can edit RPO field on assessment
+export const ORG_GROUP_WHITELIST_ASSESMENT_RPO: string[] = [
+  // Add orgGroupIds here that can edit RPO only
+  "8922E4AD-8183-B61B-34D1-CF629361D", // ADMINISTRATOR (D440)
+  "1C15B798-2ABD-B74C-C8DB-F6191913B", // BMT
+];
+
 export const DIVISION_ID_CODE_BJB: string = "D440";
 export const SELECTED_OPTION_DIRECTORATE: OptionListProps = {
   label: `DIREKTORAT IT & TRANSACTION BANKING | ${ORG_CATEGORY_KEY_DIRECTORATE}`,
@@ -609,3 +641,5 @@ export const CRITERIA_VALUE_OPERATORS = [
   { value: ">=", label: ">= (Greater or Equal)" },
   { value: "<=", label: "<= (Less or Equal)" },
 ];
+
+// ASSESSMENT RAT ADJUSTMENT

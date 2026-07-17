@@ -3,25 +3,66 @@
 import { HeaderContent } from "@/app/components/headerContent";
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import { TableComponentFull } from "@/app/components/tableComponents";
-import { radiusStyle, RES_CODE_OK, RES_GENERIC_ERROR_MSG, ORG_CATEGORY_KEY_GROUP, DIVISION_ID_IT_BJB, ORG_GROUP_WHITELIST_ALL_ACCESS } from "@/app/constants/applicationConstants";
+import {
+  radiusStyle,
+  RES_CODE_OK,
+  RES_GENERIC_ERROR_MSG,
+  ORG_CATEGORY_KEY_GROUP,
+  DIVISION_ID_IT_BJB,
+  ORG_GROUP_WHITELIST_ALL_ACCESS,
+} from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
-import useAppsCriticalReport, { AppsCriticalReportAssessmentViewModel, AppsCriticalReportBatchDetailViewModel } from "@/app/services/useAppsCriticalReport";
+import useAppsCriticalReport, {
+  AppsCriticalReportAssessmentViewModel,
+  AppsCriticalReportBatchDetailViewModel,
+} from "@/app/services/useAppsCriticalReport";
 import { ConfirmationDialog } from "@/app/components/confirmationDialog";
 import { Search2Icon } from "@chakra-ui/icons";
-import useOrganization, { OrganizationResponse } from "@/app/services/useOrganization";
+import useOrganization, {
+  OrganizationResponse,
+} from "@/app/services/useOrganization";
 import {
-  Badge, Box, Button, Card, CardBody, CardHeader, Divider, Flex,
-  Heading, HStack, Icon, IconButton, Input, InputGroup, InputLeftElement,
-  Modal, ModalBody, ModalCloseButton, ModalContent, ModalHeader, ModalOverlay,
-  Select, SimpleGrid, Spacer, Spinner, Stack, Text,
-  useColorMode, useDisclosure, VStack,
+  Badge,
+  Box,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Divider,
+  Flex,
+  Heading,
+  HStack,
+  Icon,
+  IconButton,
+  Input,
+  InputGroup,
+  InputLeftElement,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
+  Select,
+  SimpleGrid,
+  Spacer,
+  Spinner,
+  Stack,
+  Text,
+  Tooltip,
+  useColorMode,
+  useDisclosure,
+  VStack,
 } from "@chakra-ui/react";
 import { Select as ChakraSelect } from "chakra-react-select";
 import {
-  ColumnDef, getCoreRowModel, getFilteredRowModel,
-  getPaginationRowModel, useReactTable,
+  ColumnDef,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  useReactTable,
 } from "@tanstack/react-table";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -30,8 +71,19 @@ import { FaArrowLeft } from "react-icons/fa6";
 import { FiActivity, FiEye, FiInfo, FiLock, FiX } from "react-icons/fi";
 import { FaFileExcel, FaFilePdf } from "react-icons/fa6";
 
-const boolBadge = (v: string) => <Badge colorScheme={v === "TRUE" ? "green" : "gray"} variant="subtle" fontSize="xs">{v}</Badge>;
-const statusColor = (s: string) => ({ DRAFT: "gray", PUBLISHED: "green", APPROVED: "blue", ARCHIVED: "orange" }[s] || "gray");
+const boolBadge = (v: string) => (
+  <Badge
+    colorScheme={v === "TRUE" ? "green" : "gray"}
+    variant="subtle"
+    fontSize="xs"
+  >
+    {v}
+  </Badge>
+);
+const statusColor = (s: string) =>
+  ({ DRAFT: "gray", PUBLISHED: "green", APPROVED: "blue", ARCHIVED: "orange" })[
+    s
+  ] || "gray";
 
 export default function AppsAssessmentsDetailView() {
   const { colorMode } = useColorMode();
@@ -41,17 +93,24 @@ export default function AppsAssessmentsDetailView() {
   const searchParams = useSearchParams();
   const batchCode = searchParams.get("batchCode");
 
-  const { GetBatchDetail, SubmitBatchForApproval, SyncBatchStatus, ReviseBatch } = useAppsCriticalReport();
+  const {
+    GetBatchDetail,
+    SubmitBatchForApproval,
+    SyncBatchStatus,
+    ReviseBatch,
+  } = useAppsCriticalReport();
   const { List: ListOrganization } = useOrganization();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState("");
-  const [batchData, setBatchData] = useState<AppsCriticalReportBatchDetailViewModel | null>(null);
+  const [batchData, setBatchData] =
+    useState<AppsCriticalReportBatchDetailViewModel | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isRevising, setIsRevising] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
-  const [selectedAssessment, setSelectedAssessment] = useState<AppsCriticalReportAssessmentViewModel | null>(null);
+  const [selectedAssessment, setSelectedAssessment] =
+    useState<AppsCriticalReportAssessmentViewModel | null>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   // Group org state
@@ -63,53 +122,66 @@ export default function AppsAssessmentsDetailView() {
   const [search, setSearch] = useState("");
   const [filterGroup, setFilterGroup] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
-  const [filterReview, setFilterReview] = useState<"" | "reviewed" | "pending">("");
+  const [filterReview, setFilterReview] = useState<"" | "reviewed" | "pending">(
+    "",
+  );
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
     const token = localStorage.getItem("tokenData") as string;
-    if (DataAuth == null && storedData) {
-      const parsed = (JSON.parse(storedData) as AuthDataModelInterface).dataLogin as AuthDataResponse;
+    if (storedData) {
+      const parsed = (JSON.parse(storedData) as AuthDataModelInterface)
+        .dataLogin as AuthDataResponse;
       setDataAuth(parsed);
 
       // Determine group filter lock based on orgGroupId
-      const orgGroupId = parsed.team?.orgGroupId || null;
+      // Note: JWT encodes null as "-" — treat "-" as no group
+      const rawOrgGroupId = parsed.team?.orgGroupId || null;
+      const orgGroupId =
+        rawOrgGroupId && rawOrgGroupId !== "-" ? rawOrgGroupId : null;
       setUserOrgGroupId(orgGroupId);
 
-      // Lock group filter if user has orgGroupId AND it's NOT in the whitelist
+      // Lock group filter only if user has a real orgGroupId AND it's NOT in the whitelist
       if (orgGroupId && !ORG_GROUP_WHITELIST_ALL_ACCESS.includes(orgGroupId)) {
         setIsGroupLocked(true);
-        // filterGroup will be set by name once groupOptions load (see org useEffect)
+        setFilterGroup(orgGroupId);
       }
     }
     if (token) setTokenData(token);
-  }, [DataAuth]);
+  }, []);
 
-  // Load group org options + auto-set locked filter by orgName (not ID)
+  // Load group org options for the manual group filter dropdown
   useEffect(() => {
     if (!tokenData) return;
     const loadGroups = async () => {
       try {
-        const res = await ListOrganization({
-          search: "", limit: 1000, page: 0,
-          filterWhere: [
-            { field: "orgType", operator: "=", value: ORG_CATEGORY_KEY_GROUP },
-            { field: "parentId", operator: "=", value: DIVISION_ID_IT_BJB },
-          ],
-          fieldOrder: ["orgName"], orderDir: "asc",
-        } as PaggingListPayload, tokenData);
+        const res = await ListOrganization(
+          {
+            search: "",
+            limit: 1000,
+            page: 0,
+            filterWhere: [
+              {
+                field: "orgType",
+                operator: "=",
+                value: ORG_CATEGORY_KEY_GROUP,
+              },
+              { field: "parentId", operator: "=", value: DIVISION_ID_IT_BJB },
+            ],
+            fieldOrder: ["orgName"],
+            orderDir: "asc",
+          } as PaggingListPayload,
+          tokenData,
+        );
         if (res?.statusCode === RES_CODE_OK && res.data) {
           setGroupOptions(res.data);
-          // If locked, find the orgName matching the user's orgGroupId and set as filter
-          if (isGroupLocked && userOrgGroupId) {
-            const matched = res.data.find((g: OrganizationResponse) => g.id === userOrgGroupId);
-            if (matched) setFilterGroup(matched.orgName);
-          }
         }
-      } catch { /* silent */ }
+      } catch {
+        /* silent */
+      }
     };
     loadGroups();
-  }, [tokenData, isGroupLocked, userOrgGroupId]);
+  }, [tokenData]);
 
   useEffect(() => {
     if (!tokenData || !batchCode) return;
@@ -117,7 +189,11 @@ export default function AppsAssessmentsDetailView() {
       setLoading(true);
       const res = await GetBatchDetail(batchCode, tokenData);
       if (res?.statusCode === RES_CODE_OK && res.data) setBatchData(res.data);
-      else showToast({ description: res?.message || RES_GENERIC_ERROR_MSG, statusToast: "error" });
+      else
+        showToast({
+          description: res?.message || RES_GENERIC_ERROR_MSG,
+          statusToast: "error",
+        });
       setLoading(false);
     };
     load();
@@ -128,15 +204,20 @@ export default function AppsAssessmentsDetailView() {
   // Client-side filtered data
   const filteredAssessments = useMemo(() => {
     const all = batchData?.assessments || [];
-    return all.filter(a => {
+    return all.filter((a) => {
       const q = search.toLowerCase();
-      if (q && !(
-        a.appShortName?.toLowerCase().includes(q) ||
-        a.appName?.toLowerCase().includes(q) ||
-        a.appManageByGroupName?.toLowerCase().includes(q)
-      )) return false;
+      if (
+        q &&
+        !(
+          a.appShortName?.toLowerCase().includes(q) ||
+          a.appName?.toLowerCase().includes(q) ||
+          a.appManageByGroupName?.toLowerCase().includes(q)
+        )
+      )
+        return false;
       if (filterGroup) {
-        if (a.appManageByGroupName !== filterGroup) return false;
+        // filterGroup always stores orgGroupId (UUID) — compare against appManageByGroupId
+        if (a.appManageByGroupId !== filterGroup) return false;
       }
       if (filterStatus && a.statusReport !== filterStatus) return false;
       if (filterReview === "reviewed" && !a.isFullyReviewed) return false;
@@ -161,8 +242,11 @@ export default function AppsAssessmentsDetailView() {
       const excelData = filteredAssessments.map((a, i) => {
         // Get criteria values by position
         const getScore = (pos: number) => {
-          const detail = a.details?.find(d => d.appsCriteriaPos === pos);
-          return detail?.appsCriteriaScaleValue !== null && detail?.appsCriteriaScaleValue !== undefined ? Number(detail.appsCriteriaScaleValue).toFixed(3) : "-";
+          const detail = a.details?.find((d) => d.appsCriteriaPos === pos);
+          return detail?.appsCriteriaScaleValue !== null &&
+            detail?.appsCriteriaScaleValue !== undefined
+            ? Number(detail.appsCriteriaScaleValue).toFixed(3)
+            : "-";
         };
         return {
           "NO.": i + 1,
@@ -176,19 +260,32 @@ export default function AppsAssessmentsDetailView() {
           "KERAHASIAAN (1-5)": getScore(6),
           "INTEGRITAS (1-5)": getScore(7),
           "KETERSEDIAAN (1-5)": getScore(8),
-          "BERHUBUNGAN LANGSUNG DENGAN NASABAH (YA/TIDAK)": a.isRelationWithCustomers === "TRUE" ? "Ya" : "Tidak",
-          "BERSIFAT TRANSAKSIONAL (YA/TIDAK)": a.isTransactionalApp === "TRUE" ? "Ya" : "Tidak",
-          "MEMILIKI CUT OFF TIME YANG KETAT (YA/TIDAK)": a.isStrictCutoffTime === "TRUE" ? "Ya" : "Tidak",
-          "BERHUBUNGAN DENGAN PEMDA (YA/TIDAK)": a.isRelationWithGov === "TRUE" ? "Ya" : "Tidak",
+          "BERHUBUNGAN LANGSUNG DENGAN NASABAH (YA/TIDAK)":
+            a.isRelationWithCustomers === "TRUE" ? "Ya" : "Tidak",
+          "BERSIFAT TRANSAKSIONAL (YA/TIDAK)":
+            a.isTransactionalApp === "TRUE" ? "Ya" : "Tidak",
+          "MEMILIKI CUT OFF TIME YANG KETAT (YA/TIDAK)":
+            a.isStrictCutoffTime === "TRUE" ? "Ya" : "Tidak",
+          "BERHUBUNGAN DENGAN PEMDA (YA/TIDAK)":
+            a.isRelationWithGov === "TRUE" ? "Ya" : "Tidak",
           "JUMLAH YA": a.countTrueIsAdditionalFlag || 0,
           "FAKTOR PENGALI": a.weightTrueIsAdditionalFlag || 0,
           "TOTAL SKOR": a.crtAssessmentScore || 0,
           "RATA-RATA SKOR": a.crtAssessmentAverageScore || 0,
           "SKOR FINAL": a.crtAssessmentFinalScore || 0,
           "KATEGORI KRITIKALITAS": a.appCrtCategoryName || "-",
-          "RTO HARAPAN USER & MRO": a.appsRtoSuggestionMinutes !== null ? `${a.appsRtoSuggestionOperator || ""} ${(a.appsRtoSuggestionMinutes / 60).toFixed(2)} Jam` : "-",
-          "RTO IT 2025": a.appsRtoItMinutes !== null ? `${a.appsRtoItOperator || ""} ${(a.appsRtoItMinutes / 60).toFixed(2)} Jam` : "-",
-          "RPO": a.appsRpoMinutes !== null ? `${a.appsRpoOperator || ""} ${(a.appsRpoMinutes / 60).toFixed(2)} Jam` : "-",
+          "RTO HARAPAN USER & MRO":
+            a.appsRtoSuggestionMinutes !== null
+              ? `${a.appsRtoSuggestionOperator || ""} ${(a.appsRtoSuggestionMinutes / 60).toFixed(2)} Jam`
+              : "-",
+          "RTO IT 2025":
+            a.appsRtoItMinutes !== null
+              ? `${a.appsRtoItOperator || ""} ${(a.appsRtoItMinutes / 60).toFixed(2)} Jam`
+              : "-",
+          RPO:
+            a.appsRpoMinutes !== null
+              ? `${a.appsRpoOperator || ""} ${(a.appsRpoMinutes / 60).toFixed(2)} Jam`
+              : "-",
         };
       });
       const wb = XLSX.utils.book_new();
@@ -199,16 +296,49 @@ export default function AppsAssessmentsDetailView() {
         ["Penilaian Aplikasi Kritikal bank bjb"],
         [],
         headers,
-        ...excelData.map((row) => headers.map((h) => (row as Record<string, unknown>)[h])),
+        ...excelData.map((row) =>
+          headers.map((h) => (row as Record<string, unknown>)[h]),
+        ),
       ];
       const ws = XLSX.utils.aoa_to_sheet(aoa);
 
       // Style: title row
       const baseFont = { name: "Trebuchet MS", sz: 12 };
-      const titleStyle = { font: { ...baseFont, sz: 14, bold: true }, alignment: { horizontal: "center", vertical: "center" } };
-      const headerStyle = { font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "FFFFFF" } }, fill: { fgColor: { rgb: "4472C4" } }, alignment: { horizontal: "center", vertical: "center", wrapText: true }, border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } } };
-      const cellStyle = { font: baseFont, alignment: { horizontal: "left", vertical: "top" }, border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } } };
-      const cellStyleWrap = { font: baseFont, alignment: { horizontal: "left", vertical: "top", wrapText: true }, border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } } };
+      const titleStyle = {
+        font: { ...baseFont, sz: 14, bold: true },
+        alignment: { horizontal: "center", vertical: "center" },
+      };
+      const headerStyle = {
+        font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "FFFFFF" } },
+        fill: { fgColor: { rgb: "4472C4" } },
+        alignment: { horizontal: "center", vertical: "center", wrapText: true },
+        border: {
+          top: { style: "thin" },
+          bottom: { style: "thin" },
+          left: { style: "thin" },
+          right: { style: "thin" },
+        },
+      };
+      const cellStyle = {
+        font: baseFont,
+        alignment: { horizontal: "left", vertical: "top" },
+        border: {
+          top: { style: "thin" },
+          bottom: { style: "thin" },
+          left: { style: "thin" },
+          right: { style: "thin" },
+        },
+      };
+      const cellStyleWrap = {
+        font: baseFont,
+        alignment: { horizontal: "left", vertical: "top", wrapText: true },
+        border: {
+          top: { style: "thin" },
+          bottom: { style: "thin" },
+          left: { style: "thin" },
+          right: { style: "thin" },
+        },
+      };
 
       const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
       for (let R = range.s.r; R <= range.e.r; R++) {
@@ -216,13 +346,18 @@ export default function AppsAssessmentsDetailView() {
           const addr = XLSX.utils.encode_cell({ r: R, c: C });
           if (!ws[addr]) ws[addr] = { t: "s", v: "" };
           if (R === 0) (ws[addr] as Record<string, unknown>).s = titleStyle;
-          else if (R === 2) (ws[addr] as Record<string, unknown>).s = headerStyle;
-          else if (R > 2) (ws[addr] as Record<string, unknown>).s = C === 2 ? cellStyleWrap : cellStyle;
+          else if (R === 2)
+            (ws[addr] as Record<string, unknown>).s = headerStyle;
+          else if (R > 2)
+            (ws[addr] as Record<string, unknown>).s =
+              C === 2 ? cellStyleWrap : cellStyle;
         }
       }
 
       // Merge title across all columns
-      ws["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } }];
+      ws["!merges"] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } },
+      ];
       // Column widths
       ws["!cols"] = headers.map((h, idx) => {
         if (idx === 0) return { wch: 5 }; // NO.
@@ -237,8 +372,14 @@ export default function AppsAssessmentsDetailView() {
       ws["!rows"] = rows;
 
       XLSX.utils.book_append_sheet(wb, ws, "Perhitungan Kritikalitas");
-      const buf = XLSX.write(wb, { bookType: "xlsx", type: "array", cellStyles: true });
-      const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const buf = XLSX.write(wb, {
+        bookType: "xlsx",
+        type: "array",
+        cellStyles: true,
+      });
+      const blob = new Blob([buf], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -247,10 +388,16 @@ export default function AppsAssessmentsDetailView() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      showToast({ description: "Excel exported successfully", statusToast: "success" });
+      showToast({
+        description: "Excel exported successfully",
+        statusToast: "success",
+      });
     } catch (e) {
       console.error(e);
-      showToast({ description: "Failed to export Excel", statusToast: "error" });
+      showToast({
+        description: "Failed to export Excel",
+        statusToast: "error",
+      });
     }
     setExportLoading(false);
   };
@@ -265,15 +412,40 @@ export default function AppsAssessmentsDetailView() {
       doc.setFontSize(14);
       doc.text(`Apps Assessment Report — ${batchData.batchCode}`, 14, 15);
       doc.setFontSize(10);
-      doc.text(`${batchData.quartalReport} ${batchData.yearReport} | Generated: ${new Date().toLocaleString()}`, 14, 22);
+      doc.text(
+        `${batchData.quartalReport} ${batchData.yearReport} | Generated: ${new Date().toLocaleString()}`,
+        14,
+        22,
+      );
       const tableData = filteredAssessments.map((a, i) => [
-        i + 1, a.appShortName || "-", a.appName || "-", a.appManageByGroupName || "-",
-        a.statusReport || "-", a.isRelationWithCustomers, a.isTransactionalApp, a.isStrictCutoffTime,
-        a.crtAssessmentFinalScore || 0, a.appCrtCategoryName || "-",
+        i + 1,
+        a.appShortName || "-",
+        a.appName || "-",
+        a.appManageByGroupName || "-",
+        a.statusReport || "-",
+        a.isRelationWithCustomers,
+        a.isTransactionalApp,
+        a.isStrictCutoffTime,
+        a.crtAssessmentFinalScore || 0,
+        a.appCrtCategoryName || "-",
         a.isFullyReviewed ? "Reviewed" : "Pending",
       ]);
       autoTable(doc, {
-        head: [["No", "Short Name", "App Name", "Group", "Status", "Cust.", "Trans.", "Cutoff", "Score", "Category", "Review"]],
+        head: [
+          [
+            "No",
+            "Short Name",
+            "App Name",
+            "Group",
+            "Status",
+            "Cust.",
+            "Trans.",
+            "Cutoff",
+            "Score",
+            "Category",
+            "Review",
+          ],
+        ],
         body: tableData,
         startY: 28,
         styles: { fontSize: 7 },
@@ -288,7 +460,10 @@ export default function AppsAssessmentsDetailView() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      showToast({ description: "PDF exported successfully", statusToast: "success" });
+      showToast({
+        description: "PDF exported successfully",
+        statusToast: "success",
+      });
     } catch (e) {
       console.error(e);
       showToast({ description: "Failed to export PDF", statusToast: "error" });
@@ -296,110 +471,278 @@ export default function AppsAssessmentsDetailView() {
     setExportLoading(false);
   };
 
-  const assessmentColumns = useMemo<ColumnDef<AppsCriticalReportAssessmentViewModel>[]>(() => [
-    {
-      accessorKey: "numbData",
-      cell: (info) => <Flex justifyContent="center"><Text fontSize="sm">{info.row.index + 1}.</Text></Flex>,
-      header: () => <Flex justifyContent="center">No.</Flex>,
-      footer: (p) => p.column.id,
-    },
-    {
-      accessorKey: "appShortName",
-      cell: (info) => {
-        const name = info.getValue() as string;
-        const initials = (name || "").split(" ").slice(0, 5).map(w => w[0] || "").join("").toUpperCase();
-        return (
-          <HStack spacing={3}>
-            <Flex w="40px" h="40px" bg="secondary.50" rounded="xl" align="center" justify="center" flexShrink={0}>
-              <Text fontSize="xs" fontWeight="bold" color="secondary.500">{initials}</Text>
+  const assessmentColumns = useMemo<
+    ColumnDef<AppsCriticalReportAssessmentViewModel>[]
+  >(
+    () => [
+      {
+        accessorKey: "numbData",
+        cell: (info) => (
+          <Flex justifyContent="center">
+            <Text fontSize="sm">{info.row.index + 1}.</Text>
+          </Flex>
+        ),
+        header: () => <Flex justifyContent="center">No.</Flex>,
+        footer: (p) => p.column.id,
+      },
+      {
+        accessorKey: "appShortName",
+        cell: (info) => {
+          const name = info.getValue() as string;
+          const initials = (name || "")
+            .split(" ")
+            .slice(0, 5)
+            .map((w) => w[0] || "")
+            .join("")
+            .toUpperCase();
+          return (
+            <HStack spacing={3}>
+              <Flex
+                w="40px"
+                h="40px"
+                bg="secondary.50"
+                rounded="xl"
+                align="center"
+                justify="center"
+                flexShrink={0}
+              >
+                <Text fontSize="xs" fontWeight="bold" color="secondary.500">
+                  {initials}
+                </Text>
+              </Flex>
+              <VStack align="start" spacing={0}>
+                <Text
+                  fontSize="sm"
+                  fontWeight="semibold"
+                  color={isDark ? "white" : "gray.800"}
+                >
+                  {name}
+                </Text>
+                <Text
+                  fontSize="xs"
+                  color={isDark ? "gray.400" : "gray.500"}
+                  noOfLines={1}
+                >
+                  {info.row.original.appName || "-"}
+                </Text>
+              </VStack>
+            </HStack>
+          );
+        },
+        header: () => <Text>Application</Text>,
+        footer: (p) => p.column.id,
+      },
+      {
+        accessorKey: "appManageByGroupName",
+        cell: (info) => (
+          <Text
+            fontSize="sm"
+            color={isDark ? "gray.400" : "gray.600"}
+            noOfLines={1}
+          >
+            {(info.getValue() as string) || "-"}
+          </Text>
+        ),
+        header: () => <Text>Manage Group</Text>,
+        footer: (p) => p.column.id,
+      },
+      {
+        accessorKey: "statusReport",
+        cell: (info) => (
+          <VStack align="start" spacing={1}>
+            <Badge
+              colorScheme={statusColor(info.getValue() as string)}
+              variant="subtle"
+            >
+              {info.getValue() as string}
+            </Badge>
+            {info.row.original.statusHistories?.length > 0 &&
+              info.row.original.statusHistories[0].note && (
+                <Text
+                  fontSize="2xs"
+                  color="gray.500"
+                  noOfLines={2}
+                  maxW="160px"
+                  title={info.row.original.statusHistories[0].note}
+                >
+                  💬 {info.row.original.statusHistories[0].note}
+                </Text>
+              )}
+          </VStack>
+        ),
+        header: () => <Text>Status</Text>,
+        footer: (p) => p.column.id,
+      },
+      {
+        accessorKey: "appCrtCategoryName",
+        cell: (info) => {
+          const val = info.getValue() as string | null;
+          return (
+            <Flex justifyContent="center">
+              {val ? (
+                <Badge colorScheme="blue" variant="subtle" fontSize="xs">
+                  {val}
+                </Badge>
+              ) : (
+                <Text fontSize="xs" color="gray.400">
+                  -
+                </Text>
+              )}
             </Flex>
-            <VStack align="start" spacing={0}>
-              <Text fontSize="sm" fontWeight="semibold" color={isDark ? "white" : "gray.800"}>{name}</Text>
-              <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"} noOfLines={1}>{info.row.original.appName || "-"}</Text>
-            </VStack>
-          </HStack>
-        );
+          );
+        },
+        header: () => (
+          <Flex justifyContent="center">
+            <Text>Category</Text>
+          </Flex>
+        ),
+        footer: (p) => p.column.id,
       },
-      header: () => <Text>Application</Text>,
-      footer: (p) => p.column.id,
-    },
-    {
-      accessorKey: "appManageByGroupName",
-      cell: (info) => <Text fontSize="sm" color={isDark ? "gray.400" : "gray.600"} noOfLines={1}>{(info.getValue() as string) || "-"}</Text>,
-      header: () => <Text>Manage Group</Text>,
-      footer: (p) => p.column.id,
-    },
-    {
-      accessorKey: "statusReport",
-      cell: (info) => <Badge colorScheme={statusColor(info.getValue() as string)} variant="subtle">{info.getValue() as string}</Badge>,
-      header: () => <Text>Status</Text>,
-      footer: (p) => p.column.id,
-    },
-    {
-      accessorKey: "appCrtCategoryName",
-      cell: (info) => {
-        const val = info.getValue() as string | null;
-        return <Flex justifyContent="center">{val ? <Badge colorScheme="blue" variant="subtle" fontSize="xs">{val}</Badge> : <Text fontSize="xs" color="gray.400">-</Text>}</Flex>;
+      {
+        accessorKey: "crtAssessmentFinalScore",
+        cell: (info) => (
+          <Flex justifyContent="center">
+            <Text fontSize="sm" fontWeight="bold" color="purple.600">
+              {(info.getValue() as number).toFixed(3)}
+            </Text>
+          </Flex>
+        ),
+        header: () => (
+          <Flex justifyContent="center">
+            <Text>Final Score</Text>
+          </Flex>
+        ),
+        footer: (p) => p.column.id,
       },
-      header: () => <Flex justifyContent="center"><Text>Category</Text></Flex>,
-      footer: (p) => p.column.id,
-    },
-    {
-      accessorKey: "crtAssessmentFinalScore",
-      cell: (info) => (
-        <Flex justifyContent="center">
-          <Text fontSize="sm" fontWeight="bold" color="purple.600">{(info.getValue() as number).toFixed(3)}</Text>
-        </Flex>
-      ),
-      header: () => <Flex justifyContent="center"><Text>Final Score</Text></Flex>,
-      footer: (p) => p.column.id,
-    },
-    {
-      accessorKey: "isFullyReviewed",
-      cell: (info) => {
-        const row = info.row.original;
-        return row.isFullyReviewed ? (
-          <Badge colorScheme="green" variant="subtle">✓ Reviewed ({row.filledCount}/{row.totalCount})</Badge>
-        ) : (
-          <Badge colorScheme="orange" variant="subtle">⚠ Pending ({row.filledCount}/{row.totalCount})</Badge>
-        );
+      {
+        accessorKey: "isFullyReviewed",
+        cell: (info) => {
+          const row = info.row.original;
+          return row.isFullyReviewed ? (
+            <Badge colorScheme="green" variant="subtle">
+              ✓ Reviewed ({row.filledCount}/{row.totalCount})
+            </Badge>
+          ) : (
+            <Badge colorScheme="orange" variant="subtle">
+              ⚠ Pending ({row.filledCount}/{row.totalCount})
+            </Badge>
+          );
+        },
+        header: () => <Text>Review Status</Text>,
+        footer: (p) => p.column.id,
       },
-      header: () => <Text>Review Status</Text>,
-      footer: (p) => p.column.id,
-    },
-    ...([
-      { key: "appsRtoSuggestionOperator", mKey: "appsRtoSuggestionMinutes", label: "RTO Suggestion" },
-      { key: "appsRtoItOperator", mKey: "appsRtoItMinutes", label: "RTO IT" },
-      { key: "appsRpoOperator", mKey: "appsRpoMinutes", label: "RPO" },
-    ] as { key: keyof AppsCriticalReportAssessmentViewModel; mKey: keyof AppsCriticalReportAssessmentViewModel; label: string }[]).map(({ key, mKey, label }) => ({
-      accessorKey: key,
-      cell: (info: any) => {
-        const op = info.row.original[key] as string | null;
-        const min = info.row.original[mKey] as number | null;
-        if (!op && min === null) return <Badge colorScheme="gray" variant="outline" fontSize="2xs">Not set</Badge>;
-        return (
-          <HStack spacing={1}>
-            {op && <Badge colorScheme="orange" fontFamily="mono" fontSize="xs">{op}</Badge>}
-            {min !== null && min !== undefined && <Text fontSize="sm" fontWeight="medium">{min} <Text as="span" fontSize="2xs" color={isDark ? "gray.400" : "gray.500"}>min</Text></Text>}
-          </HStack>
-        );
+      ...(
+        [
+          {
+            key: "appsRtoSuggestionOperator",
+            mKey: "appsRtoSuggestionMinutes",
+            label: "RTO Suggestion",
+            required: true,
+          },
+          {
+            key: "appsRtoItOperator",
+            mKey: "appsRtoItMinutes",
+            label: "RTO IT",
+            required: true,
+          },
+          {
+            key: "appsRpoOperator",
+            mKey: "appsRpoMinutes",
+            label: "RPO",
+            required: false,
+          },
+        ] as {
+          key: keyof AppsCriticalReportAssessmentViewModel;
+          mKey: keyof AppsCriticalReportAssessmentViewModel;
+          label: string;
+          required: boolean;
+        }[]
+      ).map(({ key, mKey, label, required }) => ({
+        accessorKey: key,
+        cell: (info: any) => {
+          const op = info.row.original[key] as string | null;
+          const min = info.row.original[mKey] as number | null;
+          const skipReview = info.row.original.isSkipReview === "TRUE";
+          const isFilled = !!op && min !== null && min > 0;
+          const isNotSet = !op && min === null;
+
+          // If skip review — show neutral "Skipped" badge, no highlight
+          if (skipReview) {
+            return (
+              <Badge colorScheme="gray" variant="subtle" fontSize="2xs">
+                Skipped
+              </Badge>
+            );
+          }
+
+          // Not set + required → orange warning highlight
+          if (isNotSet) {
+            return (
+              <Tooltip
+                label={`${label} not configured yet`}
+                placement="top"
+                hasArrow
+              >
+                <Badge
+                  colorScheme={required ? "orange" : "gray"}
+                  variant={required ? "solid" : "outline"}
+                  fontSize="2xs"
+                  cursor="default"
+                >
+                  {required ? "⚠ Not Set" : "—"}
+                </Badge>
+              </Tooltip>
+            );
+          }
+
+          return (
+            <HStack spacing={1}>
+              {op && (
+                <Badge colorScheme="orange" fontFamily="mono" fontSize="xs">
+                  {op}
+                </Badge>
+              )}
+              {min !== null && min !== undefined && (
+                <Text fontSize="sm" fontWeight="medium">
+                  {min}{" "}
+                  <Text
+                    as="span"
+                    fontSize="2xs"
+                    color={isDark ? "gray.400" : "gray.500"}
+                  >
+                    min
+                  </Text>
+                </Text>
+              )}
+            </HStack>
+          );
+        },
+        header: () => <Text fontSize="xs">{label}</Text>,
+        footer: (p: any) => p.column.id,
+      })),
+      {
+        id: "actions",
+        header: () => <Text>Details</Text>,
+        cell: (info) => (
+          <Button
+            size="xs"
+            colorScheme="blue"
+            variant="outline"
+            _hover={{ bg: "blue.500", color: "white" }}
+            onClick={() =>
+              router.push(
+                `/report/apps-assessments/assessment?id=${info.row.original.id}`,
+              )
+            }
+          >
+            Show
+          </Button>
+        ),
+        footer: (p) => p.column.id,
       },
-      header: () => <Text fontSize="xs">{label}</Text>,
-      footer: (p: any) => p.column.id,
-    })),
-    {
-      id: "actions",
-      header: () => <Text>Details</Text>,
-      cell: (info) => (
-        <Button size="xs" colorScheme="blue" variant="outline"
-          _hover={{ bg: "blue.500", color: "white" }}
-          onClick={() => router.push(`/report/apps-assessments/assessment?id=${info.row.original.id}`)}>
-          Show
-        </Button>
-      ),
-      footer: (p) => p.column.id,
-    },
-  ], [isDark]);
+    ],
+    [isDark],
+  );
 
   const table = useReactTable({
     data: filteredAssessments,
@@ -411,55 +754,131 @@ export default function AppsAssessmentsDetailView() {
 
   return (
     <LayoutAdmin>
-      <HeaderContent titleName="Batch Assessment Detail" breadCrumb={["Home", "Report", "Assessment of Critical Apps", "Detail"]} />
+      <HeaderContent
+        titleName="Batch Assessment Detail"
+        breadCrumb={["Home", "Report", "Assessment of Critical Apps", "Detail"]}
+      />
       <Box p={4}>
         <VStack spacing={5} align="stretch">
-
           {/* Header */}
           <Card rounded={radiusStyle} overflow="hidden" shadow="md" border="0">
             <Box bg="secondary.500" px={6} py={5}>
               <Flex align="center" justify="space-between" wrap="wrap" gap={3}>
                 <HStack spacing={3}>
-                  <IconButton aria-label="Back" icon={<FaArrowLeft />} variant="ghost" size="sm" color="white" _hover={{ bg: "whiteAlpha.200" }} onClick={() => router.push("/report/apps-assessments")} />
+                  <IconButton
+                    aria-label="Back"
+                    icon={<FaArrowLeft />}
+                    variant="ghost"
+                    size="sm"
+                    color="white"
+                    _hover={{ bg: "whiteAlpha.200" }}
+                    onClick={() => router.push("/report/apps-assessments")}
+                  />
                   <VStack align="start" spacing={0}>
-                    <Heading size="md" color="white">{batchCode || "Loading..."}</Heading>
+                    <Heading size="md" color="white">
+                      {batchCode || "Loading..."}
+                    </Heading>
                     {batchData && (
                       <HStack spacing={2}>
-                        <Badge colorScheme={batchData.statusReport === "APPROVED" ? "green" : "yellow"} variant="solid" fontSize="xs">{batchData.statusReport}</Badge>
+                        <Badge
+                          colorScheme={
+                            batchData.statusReport === "APPROVED"
+                              ? "green"
+                              : "yellow"
+                          }
+                          variant="solid"
+                          fontSize="xs"
+                        >
+                          {batchData.statusReport}
+                        </Badge>
                       </HStack>
                     )}
                   </VStack>
                   {batchData && (
                     <HStack spacing={3} ml={4}>
-                      <Badge bg="whiteAlpha.200" color="white" px={2} py={1} rounded="md" fontSize="xs">
-                        <Text as="span" color="whiteAlpha.700" mr={1}>Batch:</Text>{batchData.batchCode}
+                      <Badge
+                        bg="whiteAlpha.200"
+                        color="white"
+                        px={2}
+                        py={1}
+                        rounded="md"
+                        fontSize="xs"
+                      >
+                        <Text as="span" color="whiteAlpha.700" mr={1}>
+                          Batch:
+                        </Text>
+                        {batchData.batchCode}
                       </Badge>
-                      <Badge bg="whiteAlpha.200" color="white" px={2} py={1} rounded="md" fontSize="xs">
-                        <Text as="span" color="whiteAlpha.700" mr={1}>Quarter:</Text>{batchData.quartalReport}
+                      <Badge
+                        bg="whiteAlpha.200"
+                        color="white"
+                        px={2}
+                        py={1}
+                        rounded="md"
+                        fontSize="xs"
+                      >
+                        <Text as="span" color="whiteAlpha.700" mr={1}>
+                          Quarter:
+                        </Text>
+                        {batchData.quartalReport}
                       </Badge>
-                      <Badge bg="whiteAlpha.200" color="white" px={2} py={1} rounded="md" fontSize="xs">
-                        <Text as="span" color="whiteAlpha.700" mr={1}>Year:</Text>{batchData.yearReport}
+                      <Badge
+                        bg="whiteAlpha.200"
+                        color="white"
+                        px={2}
+                        py={1}
+                        rounded="md"
+                        fontSize="xs"
+                      >
+                        <Text as="span" color="whiteAlpha.700" mr={1}>
+                          Year:
+                        </Text>
+                        {batchData.yearReport}
                       </Badge>
-                      <Badge bg="whiteAlpha.200" color="white" px={2} py={1} rounded="md" fontSize="xs">
-                        <Text as="span" color="whiteAlpha.700" mr={1}>Total Apps:</Text>{batchData.assessments?.length || 0}
+                      <Badge
+                        bg="whiteAlpha.200"
+                        color="white"
+                        px={2}
+                        py={1}
+                        rounded="md"
+                        fontSize="xs"
+                      >
+                        <Text as="span" color="whiteAlpha.700" mr={1}>
+                          Total Apps:
+                        </Text>
+                        {batchData.assessments?.length || 0}
                       </Badge>
                     </HStack>
                   )}
                 </HStack>
                 <HStack spacing={2} flexWrap="wrap">
                   {/* Export buttons */}
-                  <Button size="sm" bg="whiteAlpha.200" color="white" _hover={{ bg: "whiteAlpha.300" }} leftIcon={<FaFileExcel />}
-                    isLoading={exportLoading} isDisabled={filteredAssessments.length === 0}
-                    onClick={handleExportExcel}>
+                  <Button
+                    size="sm"
+                    bg="whiteAlpha.200"
+                    color="white"
+                    _hover={{ bg: "whiteAlpha.300" }}
+                    leftIcon={<FaFileExcel />}
+                    isLoading={exportLoading}
+                    isDisabled={filteredAssessments.length === 0}
+                    onClick={handleExportExcel}
+                  >
                     Export Excel
                   </Button>
-                  <Button size="sm" bg="whiteAlpha.200" color="white" _hover={{ bg: "whiteAlpha.300" }} leftIcon={<FaFilePdf />}
-                    isLoading={exportLoading} isDisabled={filteredAssessments.length === 0}
-                    onClick={handleExportPDF}>
+                  <Button
+                    size="sm"
+                    bg="whiteAlpha.200"
+                    color="white"
+                    _hover={{ bg: "whiteAlpha.300" }}
+                    leftIcon={<FaFilePdf />}
+                    isLoading={exportLoading}
+                    isDisabled={filteredAssessments.length === 0}
+                    onClick={handleExportPDF}
+                  >
                     Export PDF
                   </Button>
                   {/* Sync button — show when batch is DRAFT or WAITING APPROVAL 1 */}
-                  {(batchData?.statusReport === "DRAFT" || batchData?.statusReport === "WAITING APPROVAL 1") && (
+                  {/* {(batchData?.statusReport === "DRAFT" || batchData?.statusReport === "WAITING APPROVAL 1") && (
                     <Button size="sm" bg="whiteAlpha.200" color="white" _hover={{ bg: "whiteAlpha.300" }} isLoading={isSyncing}
                       onClick={async () => {
                         setIsSyncing(true);
@@ -473,104 +892,204 @@ export default function AppsAssessmentsDetailView() {
                       }}>
                       Sync Status
                     </Button>
-                  )}
+                  )} */}
                   {/* Revise button — show when batch is DECLINE */}
                   {batchData?.statusReport === "DECLINE" && (
-                    <Button size="sm" bg="yellow.400" color="gray.800" _hover={{ bg: "yellow.300" }} isLoading={isRevising}
+                    <Button
+                      size="sm"
+                      bg="yellow.400"
+                      color="gray.800"
+                      _hover={{ bg: "yellow.300" }}
+                      isLoading={isRevising}
                       onClick={async () => {
                         setIsRevising(true);
                         const res = await ReviseBatch(batchCode!, tokenData);
                         setIsRevising(false);
                         if (res?.statusCode === RES_CODE_OK) {
-                          showToast({ description: "Batch reset to revision — all assessments back to WAITING APPROVAL 1", statusToast: "success" });
-                          const reload = await GetBatchDetail(batchCode!, tokenData);
-                          if (reload?.statusCode === RES_CODE_OK && reload.data) setBatchData(reload.data);
-                        } else showToast({ description: res?.message || "Revise failed", statusToast: "error" });
-                      }}>
+                          showToast({
+                            description:
+                              "Batch reset to revision — all assessments back to WAITING APPROVAL 1",
+                            statusToast: "success",
+                          });
+                          const reload = await GetBatchDetail(
+                            batchCode!,
+                            tokenData,
+                          );
+                          if (reload?.statusCode === RES_CODE_OK && reload.data)
+                            setBatchData(reload.data);
+                        } else
+                          showToast({
+                            description: res?.message || "Revise failed",
+                            statusToast: "error",
+                          });
+                      }}
+                    >
                       Revise Batch
                     </Button>
                   )}
                   {/* Submit for Approval — only when batch is WAITING APPROVAL 2 */}
-                  {batchData?.statusReport === "WAITING APPROVAL 2" && (
+                  {/* {batchData?.statusReport === "WAITING APPROVAL 2" && (
                     <Button size="sm" bg="orange.400" color="white" _hover={{ bg: "orange.300" }} onClick={() => setIsSubmitConfirmOpen(true)}>
                       Submit for Approval
                     </Button>
-                  )}
+                  )} */}
                 </HStack>
               </Flex>
             </Box>
           </Card>
 
           {/* Assessments Table */}
-          <Card rounded={radiusStyle} shadow="md" border="1px" borderColor={isDark ? "gray.700" : "gray.200"} bg={isDark ? "gray.800" : "white"}>
+          <Card
+            rounded={radiusStyle}
+            shadow="md"
+            border="1px"
+            borderColor={isDark ? "gray.700" : "gray.200"}
+            bg={isDark ? "gray.800" : "white"}
+          >
             <CardHeader py={4} px={6}>
-              <Heading size="sm" color={isDark ? "gray.100" : "gray.700"}>App Assessments ({filteredAssessments.length}/{batchData?.assessments.length || 0})</Heading>
+              <Heading size="sm" color={isDark ? "gray.100" : "gray.700"}>
+                App Assessments ({filteredAssessments.length}/
+                {batchData?.assessments.length || 0})
+              </Heading>
             </CardHeader>
             <Divider borderColor={isDark ? "gray.700" : "gray.100"} />
             <CardBody>
               {/* Filter Row */}
               <Flex gap={3} wrap="wrap" mb={4} align="center">
                 <InputGroup maxW="260px">
-                  <InputLeftElement><Search2Icon color="gray.400" /></InputLeftElement>
-                  <Input placeholder="Search app name or group..."
-                    value={search} onChange={e => setSearch(e.target.value)}
-                    bg={isDark ? "gray.700" : "white"} />
+                  <InputLeftElement>
+                    <Search2Icon color="gray.400" />
+                  </InputLeftElement>
+                  <Input
+                    placeholder="Search app name or group..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    bg={isDark ? "gray.700" : "white"}
+                  />
                 </InputGroup>
                 <HStack spacing={2}>
                   <Box minW="180px">
                     <Select
                       placeholder="All Groups"
-                      value={filterGroup}
-                      onChange={e => { if (!isGroupLocked) setFilterGroup(e.target.value); }}
+                      value={isGroupLocked ? filterGroup : filterGroup}
+                      onChange={(e) => {
+                        if (!isGroupLocked) setFilterGroup(e.target.value);
+                      }}
                       size="sm"
                       bg={isDark ? "gray.700" : "white"}
                       isDisabled={isGroupLocked}
-                      title={isGroupLocked ? "Filtered by your group" : undefined}
+                      title={
+                        isGroupLocked ? "Filtered by your group" : undefined
+                      }
                     >
-                      {groupOptions.map(g => (
-                        <option key={g.id} value={g.orgName}>{g.orgName}</option>
+                      {groupOptions.map((g) => (
+                        <option key={g.id} value={g.id}>
+                          {g.orgName}
+                        </option>
                       ))}
                     </Select>
                     {isGroupLocked && (
                       <HStack spacing={1} mt={1}>
                         <Icon as={FiLock} boxSize={2.5} color="orange.400" />
-                        <Text fontSize="2xs" color="orange.400">Filtered by your group</Text>
+                        <Text fontSize="2xs" color="orange.400">
+                          Filtered by your group
+                        </Text>
                       </HStack>
                     )}
                   </Box>
                   <Box minW="160px">
                     <ChakraSelect
-                      value={filterStatus ? { label: filterStatus, value: filterStatus } : null}
-                      onChange={(option) => setFilterStatus(option?.value || "")}
-                      options={["DRAFT", "WAITING APPROVAL 1", "WAITING APPROVAL 2", "APPROVED", "DECLINE"].map(s => ({ label: s, value: s }))}
+                      value={
+                        filterStatus
+                          ? { label: filterStatus, value: filterStatus }
+                          : null
+                      }
+                      onChange={(option) =>
+                        setFilterStatus(option?.value || "")
+                      }
+                      options={[
+                        "DRAFT",
+                        "WAITING APPROVAL 1",
+                        "WAITING APPROVAL 2",
+                        "APPROVED",
+                        "DECLINE",
+                      ].map((s) => ({ label: s, value: s }))}
                       placeholder="All Status"
                       isClearable
                       size="sm"
-                      menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
+                      menuPortalTarget={
+                        typeof document !== "undefined"
+                          ? document.body
+                          : undefined
+                      }
                       chakraStyles={{
-                        control: (provided) => ({ ...provided, bg: isDark ? "gray.700" : "white", minH: "40px" }),
-                        menu: (provided) => ({ ...provided, bg: isDark ? "gray.700" : "white", zIndex: 9999 }),
+                        control: (provided) => ({
+                          ...provided,
+                          bg: isDark ? "gray.700" : "white",
+                          minH: "40px",
+                        }),
+                        menu: (provided) => ({
+                          ...provided,
+                          bg: isDark ? "gray.700" : "white",
+                          zIndex: 9999,
+                        }),
                       }}
                     />
                   </Box>
                   <Box minW="140px">
                     <ChakraSelect
-                      value={filterReview ? { label: filterReview === "reviewed" ? "Reviewed" : "Not Yet", value: filterReview } : null}
-                      onChange={(option) => setFilterReview((option?.value || "") as "" | "reviewed" | "pending")}
-                      options={[{ label: "Reviewed", value: "reviewed" }, { label: "Not Yet", value: "pending" }]}
+                      value={
+                        filterReview
+                          ? {
+                              label:
+                                filterReview === "reviewed"
+                                  ? "Reviewed"
+                                  : "Not Yet",
+                              value: filterReview,
+                            }
+                          : null
+                      }
+                      onChange={(option) =>
+                        setFilterReview(
+                          (option?.value || "") as "" | "reviewed" | "pending",
+                        )
+                      }
+                      options={[
+                        { label: "Reviewed", value: "reviewed" },
+                        { label: "Not Yet", value: "pending" },
+                      ]}
                       placeholder="All Review"
                       isClearable
                       size="sm"
-                      menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
+                      menuPortalTarget={
+                        typeof document !== "undefined"
+                          ? document.body
+                          : undefined
+                      }
                       chakraStyles={{
-                        control: (provided) => ({ ...provided, bg: isDark ? "gray.700" : "white", minH: "40px" }),
-                        menu: (provided) => ({ ...provided, bg: isDark ? "gray.700" : "white", zIndex: 9999 }),
+                        control: (provided) => ({
+                          ...provided,
+                          bg: isDark ? "gray.700" : "white",
+                          minH: "40px",
+                        }),
+                        menu: (provided) => ({
+                          ...provided,
+                          bg: isDark ? "gray.700" : "white",
+                          zIndex: 9999,
+                        }),
                       }}
                     />
                   </Box>
                 </HStack>
                 {(search || filterGroup || filterStatus || filterReview) && (
-                  <Button variant="outline" leftIcon={<FiX />} size="sm" onClick={clearFilters}>Clear</Button>
+                  <Button
+                    variant="outline"
+                    leftIcon={<FiX />}
+                    size="sm"
+                    onClick={clearFilters}
+                  >
+                    Clear
+                  </Button>
                 )}
               </Flex>
               <Box overflowX="auto" w="full">
@@ -584,17 +1103,35 @@ export default function AppsAssessmentsDetailView() {
       </Box>
 
       {/* Criteria Detail Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="xl" scrollBehavior="inside">
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        size="xl"
+        scrollBehavior="inside"
+      >
         <ModalOverlay />
         <ModalContent rounded={radiusStyle}>
           <ModalHeader>
             <HStack spacing={3}>
-              <Box w={7} h={7} bg="teal.500" rounded="md" display="flex" alignItems="center" justifyContent="center" color="white">
+              <Box
+                w={7}
+                h={7}
+                bg="teal.500"
+                rounded="md"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                color="white"
+              >
                 <Icon as={FiInfo} boxSize={3.5} />
               </Box>
               <VStack align="start" spacing={0}>
-                <Text fontWeight="bold" fontSize="md">{selectedAssessment?.appShortName}</Text>
-                <Badge colorScheme="blue" variant="subtle" fontSize="xs">{selectedAssessment?.appCode}</Badge>
+                <Text fontWeight="bold" fontSize="md">
+                  {selectedAssessment?.appShortName}
+                </Text>
+                <Badge colorScheme="blue" variant="subtle" fontSize="xs">
+                  {selectedAssessment?.appCode}
+                </Badge>
               </VStack>
             </HStack>
           </ModalHeader>
@@ -604,17 +1141,50 @@ export default function AppsAssessmentsDetailView() {
               <Stack spacing={4}>
                 {/* Criteria detail rows */}
                 {selectedAssessment.details.map((d, i) => (
-                  <Flex key={d.id} gap={3} p={3} bg={isDark ? "gray.750" : "gray.50"} rounded="md" border="1px" borderColor={isDark ? "gray.600" : "gray.200"} align="center">
-                    <Badge colorScheme="purple" variant="solid" minW="24px" textAlign="center">{d.appsCriteriaPos}</Badge>
+                  <Flex
+                    key={d.id}
+                    gap={3}
+                    p={3}
+                    bg={isDark ? "gray.750" : "gray.50"}
+                    rounded="md"
+                    border="1px"
+                    borderColor={isDark ? "gray.600" : "gray.200"}
+                    align="center"
+                  >
+                    <Badge
+                      colorScheme="purple"
+                      variant="solid"
+                      minW="24px"
+                      textAlign="center"
+                    >
+                      {d.appsCriteriaPos}
+                    </Badge>
                     <VStack align="start" spacing={0} flex={1}>
-                      <Text fontSize="sm" fontWeight="semibold">{d.appsCriteriaName}</Text>
-                      {d.appsCriteriaDesc && <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"}>{d.appsCriteriaDesc}</Text>}
+                      <Text fontSize="sm" fontWeight="semibold">
+                        {d.appsCriteriaName}
+                      </Text>
+                      {d.appsCriteriaDesc && (
+                        <Text
+                          fontSize="xs"
+                          color={isDark ? "gray.400" : "gray.500"}
+                        >
+                          {d.appsCriteriaDesc}
+                        </Text>
+                      )}
                     </VStack>
                     <VStack align="end" spacing={0}>
                       {d.appsCriteriaScaleValue !== null ? (
-                        <Badge colorScheme="green" fontSize="sm">{Number(d.appsCriteriaScaleValue).toFixed(3)}</Badge>
+                        <Badge colorScheme="green" fontSize="sm">
+                          {Number(d.appsCriteriaScaleValue).toFixed(3)}
+                        </Badge>
                       ) : (
-                        <Badge colorScheme="gray" variant="outline" fontSize="xs">Not filled</Badge>
+                        <Badge
+                          colorScheme="gray"
+                          variant="outline"
+                          fontSize="xs"
+                        >
+                          Not filled
+                        </Badge>
                       )}
                     </VStack>
                   </Flex>
@@ -631,10 +1201,18 @@ export default function AppsAssessmentsDetailView() {
         action={async () => {
           const res = await SubmitBatchForApproval(batchCode!, tokenData);
           if (res?.statusCode === RES_CODE_OK) {
-            showToast({ description: "Batch submitted for approval", statusToast: "success" });
+            showToast({
+              description: "Batch submitted for approval",
+              statusToast: "success",
+            });
             const reload = await GetBatchDetail(batchCode!, tokenData);
-            if (reload?.statusCode === RES_CODE_OK && reload.data) setBatchData(reload.data);
-          } else showToast({ description: res?.message || "Submit failed", statusToast: "error" });
+            if (reload?.statusCode === RES_CODE_OK && reload.data)
+              setBatchData(reload.data);
+          } else
+            showToast({
+              description: res?.message || "Submit failed",
+              statusToast: "error",
+            });
         }}
         captionMsg="Submit for Approval"
         questionMsg={`Are you sure you want to submit batch "${batchCode}" for the next approval level? All remaining assessments will be advanced.`}
