@@ -707,7 +707,7 @@ function MasterDataAplikasiPage() {
                                     {app.appName}
                                   </Text>
                                   <Text fontSize="xs" color="gray.500" mt={0.5}>
-                                    {app.appCode}
+                                    {app.appShortName || app.appCode}
                                   </Text>
                                 </Box>
 
@@ -817,7 +817,7 @@ function MasterDataAplikasiPage() {
                                     {app.appName}
                                   </Text>
                                 </HStack>
-                                <Text fontSize="xs" color="gray.500">{app.appCode}</Text>
+                                <Text fontSize="xs" color="gray.500">{app.appShortName || app.appCode}</Text>
                               </Box>
 
                               {/* Project counts + status */}

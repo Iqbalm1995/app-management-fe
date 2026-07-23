@@ -69,6 +69,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import React, { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { FiRefreshCcw, FiDownload } from "react-icons/fi";
 import { FaFileExcel, FaFilePdf } from "react-icons/fa";
 
@@ -81,6 +82,7 @@ function ProjectPortfolioReportPage() {
   // SetUp auth data on current page
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
+  const router = useRouter();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
   const {
@@ -689,6 +691,28 @@ function ProjectPortfolioReportPage() {
           </Flex>
         ),
         header: () => <span>Team Assignment</span>,
+        footer: (props) => props.column.id,
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
+      },
+      {
+        id: "actions",
+        cell: (info) => (
+          <HStack spacing={2}>
+            <Button size="xs" colorScheme="blue" variant="outline"
+              _hover={{ bg: "blue.500", color: "white" }}
+              onClick={() => router.push(`/projects/manage?projectId=${info.row.original.id}`)}>
+              Manage
+            </Button>
+            <Button size="xs" colorScheme="gray" variant="outline"
+              _hover={{ bg: "gray.500", color: "white" }}
+              onClick={() => router.push(`/projects/preview?projectId=${info.row.original.id}`)}>
+              Preview
+            </Button>
+          </HStack>
+        ),
+        header: () => <span>Actions</span>,
         footer: (props) => props.column.id,
         meta: {
           isFilterable: false,
