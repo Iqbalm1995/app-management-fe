@@ -145,6 +145,8 @@ const ProjectManagerPageContent = () => {
   const [DataProjects, setDataProjects] = useState<ProjectDataResponse[]>([]);
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
+  const [totalProjectsCount, setTotalProjectsCount] = useState<number>(0);
+  const [totalActiveProjectsCount, setTotalActiveProjectsCount] = useState<number>(0);
 
   // Table state
   const [totalPages, setTotalPageData] = useState<number>(0);
@@ -371,9 +373,14 @@ const ProjectManagerPageContent = () => {
           const totalData: number = requestData.countTotal as number;
           const totalPages: number =
             totalData > 0 ? Math.ceil(totalData / pageSize) : -1;
+          const activeCount = itemsData.filter(
+            (p) => p.projectStatus === PRO_STATUS_RUNNING
+          ).length;
 
           setDataProjects(itemsData);
           setTotalPageData(totalPages);
+          setTotalProjectsCount(totalData || 0);
+          setTotalActiveProjectsCount(activeCount);
           setIsLoadingProcess(false);
         } catch (error) {
           console.error("Error fetching projects:", error);
@@ -581,7 +588,7 @@ const ProjectManagerPageContent = () => {
                   fontWeight="bold"
                   color={colorMode == "light" ? "gray.900" : "white"}
                 >
-                  {DataProjects.length}
+                  {totalProjectsCount}
                 </Text>
                 <Text
                   fontSize="xs"
@@ -603,11 +610,7 @@ const ProjectManagerPageContent = () => {
                   fontWeight="bold"
                   color={colorMode == "light" ? "gray.900" : "white"}
                 >
-                  {
-                    DataProjects.filter(
-                      (p) => p.projectStatus === PRO_STATUS_RUNNING
-                    ).length
-                  }
+                  {totalActiveProjectsCount}
                 </Text>
                 <Text
                   fontSize="xs"
@@ -684,22 +687,18 @@ const ProjectManagerPageContent = () => {
             {/* Mobile Stats */}
             <HStack spacing={4} display={{ base: "flex", lg: "none" }}>
               <VStack spacing={0}>
-                <Text fontSize="lg" fontWeight="bold" color="white">
-                  {DataProjects.length}
+                <Text fontSize="lg" fontWeight="bold" color={colorMode == "light" ? "gray.900" : "white"}>
+                  {totalProjectsCount}
                 </Text>
-                <Text fontSize="xs" color="whiteAlpha.700">
+                <Text fontSize="xs" color={colorMode == "light" ? "gray.500" : "whiteAlpha.700"}>
                   Total
                 </Text>
               </VStack>
               <VStack spacing={0}>
-                <Text fontSize="lg" fontWeight="bold" color="white">
-                  {
-                    DataProjects.filter(
-                      (p) => p.projectStatus === PRO_STATUS_RUNNING
-                    ).length
-                  }
+                <Text fontSize="lg" fontWeight="bold" color={colorMode == "light" ? "gray.900" : "white"}>
+                  {totalActiveProjectsCount}
                 </Text>
-                <Text fontSize="xs" color="whiteAlpha.700">
+                <Text fontSize="xs" color={colorMode == "light" ? "gray.500" : "whiteAlpha.700"}>
                   Active
                 </Text>
               </VStack>
@@ -724,6 +723,8 @@ const ProjectManagerPageContent = () => {
               statusFilter={statusFilter}
               setStatusFilter={setStatusFilter}
               DataProjects={DataProjects}
+              totalActiveProjectsCount={totalActiveProjectsCount}
+              totalProjectsCount={totalProjectsCount}
               colorMode={colorMode}
             />
           </GridItem>

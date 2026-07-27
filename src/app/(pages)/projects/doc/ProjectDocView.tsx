@@ -90,18 +90,17 @@ export default function ProjectDocView() {
   }, [projectId, tokenData]);
 
   // Load status history
-  // Load status history
   useEffect(() => {
     const fetchStatusHistory = async () => {
       if (!projectId || !tokenData) return;
       const response = await GetProjectStatusHistory(projectId, tokenData);
       if (response?.statusCode === RES_CODE_OK && response.data) {
         setStatusHistory(response.data);
-      } else {
       }
     };
     fetchStatusHistory();
-  }, [projectId, tokenData, GetProjectStatusHistory]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, tokenData]);
   const handlePrint = () => {
     window.print();
   };
@@ -249,16 +248,17 @@ export default function ProjectDocView() {
         });
 
         yPos = (doc as any).lastAutoTable.finalY + 5;
+      }
 
-        // Approval Users Section
-        if (statusHistory && statusHistory.filter((h: any) => h.approvalNama && h.approvalNama.trim()).length > 0) {
-          const approvalBody = statusHistory
-            .filter((history: any) => history.approvalNama && history.approvalNama.trim())
-            .reverse()
-            .map((history: any, idx: number) => [
-              { content: `${history.approvalNama} (${history.approvalBy})`, styles: { fontStyle: "bold" as const } },
-              `Stage ${idx + 1} - APPROVED`
-            ]);
+      // Approval Users Section
+      if (statusHistory && statusHistory.filter((h: any) => h.approvalNama && h.approvalNama.trim()).length > 0) {
+        const approvalBody = statusHistory
+          .filter((history: any) => history.approvalNama && history.approvalNama.trim())
+          .reverse()
+          .map((history: any, idx: number) => [
+            { content: `${history.approvalNama} (${history.approvalBy})`, styles: { fontStyle: "bold" as const } },
+            `Stage ${idx + 1} - APPROVED`
+          ]);
 
           if (approvalBody.length > 0) {
             autoTable(doc, {
@@ -457,7 +457,6 @@ export default function ProjectDocView() {
           description: "PDF exported successfully",
           statusToast: "success",
         });
-      }
     } catch (error) {
       console.error("PDF export error:", error);
       showToast({

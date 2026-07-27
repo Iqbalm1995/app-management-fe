@@ -2,6 +2,7 @@
 
 import {
   LocalPrioritiesOptions,
+  ENV_SIDE_OPTIONS,
   MAINTENANCE_CATEGORY_OPTIONS,
   MAINTENANCE_TYPE_OPTIONS,
   MAX_SIZE_TABLE,
@@ -113,6 +114,11 @@ import {
   AlertDialogHeader,
   AlertDialogContent,
   AlertDialogOverlay,
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  AccordionPanel,
+  AccordionIcon,
   AlertDialogCloseButton,
   Alert,
   AlertIcon,
@@ -500,26 +506,26 @@ const FeatureBacklogsView = ({
 
     const isRfc = DataRequirement?.requirementType === "RFC";
 
-    // Prepare payload with all required fields
+    // Prepare payload with all required fields from formik values
     const payload = {
       id: selectedBacklog.id,
       backlogName: values.backlogName,
       backlogDesc: values.backlogDesc || null,
-      envSide: selectedBacklog.envSide,
-      maintenanceCategory: selectedBacklog.maintenanceCategory,
-      maintenanceType: selectedBacklog.maintenanceType,
-      rppb: selectedBacklog.rppb,
-      licensing: selectedBacklog.licensing,
+      envSide: values.envSide || null,
+      maintenanceCategory: values.maintenanceCategory || null,
+      maintenanceType: values.maintenanceType || null,
+      rppb: values.rppb || "N",
+      licensing: values.licensing || "N",
       backogRegistered: selectedBacklog.backogRegistered,
       backlogStartdate: values.backlogStartdate || null,
       backlogEnddate: values.backlogEnddate || null,
-      urgency: isRfc ? selectedBacklog.urgency : values.urgency,
-      impact: isRfc ? selectedBacklog.impact : values.impact,
-      priority: isRfc ? selectedBacklog.priority : values.priority,
-      rfcBacklogChanges: isRfc ? (values.rfcBacklogChanges || "MAJOR") : selectedBacklog.rfcBacklogChanges,
-      rfcBacklogImportant: isRfc ? (values.rfcBacklogImportant || "NORMAL") : selectedBacklog.rfcBacklogImportant,
-      rfcBacklogImpactOthers: isRfc ? (values.rfcBacklogImpactOthers || "SMALL") : selectedBacklog.rfcBacklogImpactOthers,
-      rfcPriorities: isRfc ? (values.rfcPriorities || "LOW") : selectedBacklog.rfcPriorities,
+      urgency: values.urgency || null,
+      impact: values.impact || null,
+      priority: values.priority || null,
+      rfcBacklogChanges: values.rfcBacklogChanges || null,
+      rfcBacklogImportant: values.rfcBacklogImportant || null,
+      rfcBacklogImpactOthers: values.rfcBacklogImpactOthers || null,
+      rfcPriorities: values.rfcPriorities || null,
       developmentStatus: selectedBacklog.developmentStatus, // Keep original status
       backlogImplementStartdate: values.backlogImplementStartdate || null,
       backlogImplementEnddate: values.backlogImplementEnddate || null,
@@ -3075,6 +3081,12 @@ const BacklogEditFormFeatures = ({
       backlogImplementEnddate: backlog.backlogImplementEnddate
         ? backlog.backlogImplementEnddate.split("T")[0]
         : "",
+      // Additional Info
+      envSide: backlog.envSide || "",
+      maintenanceCategory: backlog.maintenanceCategory || "",
+      maintenanceType: backlog.maintenanceType || "",
+      rppb: backlog.rppb || "N",
+      licensing: backlog.licensing || "N",
     },
     onSubmit: (values) => {
       onSubmit(values);
@@ -3263,6 +3275,97 @@ const BacklogEditFormFeatures = ({
             />
           </FormControl>
         </Grid>
+
+        {/* Additional Information — Collapsible */}
+        <Accordion allowToggle w="full" defaultIndex={[]}>
+          <AccordionItem border="1px" borderColor="gray.200" rounded="lg">
+            <AccordionButton py={3} px={4} _hover={{ bg: "gray.50" }} rounded="lg">
+              <HStack flex={1} spacing={2}>
+                <Text fontSize="sm" fontWeight="semibold">Additional Information</Text>
+                {(formik.values.envSide || formik.values.maintenanceCategory || formik.values.maintenanceType) && (
+                  <Badge colorScheme="blue" variant="subtle" fontSize="2xs">Has Data</Badge>
+                )}
+              </HStack>
+              <AccordionIcon />
+            </AccordionButton>
+            <AccordionPanel pb={4} px={4}>
+              <VStack spacing={4}>
+                <Grid templateColumns="1fr 1fr" gap={4} w="full">
+                  <FormControl>
+                    <FormLabel fontSize="sm">App Side</FormLabel>
+                    <Select
+                      name="envSide"
+                      value={formik.values.envSide}
+                      onChange={formik.handleChange}
+                      placeholder="Select Environment Side"
+                      size="sm"
+                    >
+                      {ENV_SIDE_OPTIONS.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel fontSize="sm">Jenis Maintenance</FormLabel>
+                    <Select
+                      name="maintenanceCategory"
+                      value={formik.values.maintenanceCategory}
+                      onChange={formik.handleChange}
+                      placeholder="Select Category"
+                      size="sm"
+                    >
+                      {MAINTENANCE_CATEGORY_OPTIONS.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <FormControl>
+                  <FormLabel fontSize="sm">Tipe Maintenance</FormLabel>
+                  <Select
+                    name="maintenanceType"
+                    value={formik.values.maintenanceType}
+                    onChange={formik.handleChange}
+                    placeholder="Select Type"
+                    size="sm"
+                  >
+                    {MAINTENANCE_TYPE_OPTIONS.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </Select>
+                </FormControl>
+                <Grid templateColumns="1fr 1fr" gap={4} w="full">
+                  <FormControl>
+                    <FormLabel fontSize="sm">Perizinan</FormLabel>
+                    <RadioGroup
+                      name="licensing"
+                      value={formik.values.licensing}
+                      onChange={(value) => formik.setFieldValue("licensing", value)}
+                    >
+                      <HStack spacing={6}>
+                        <Radio value="Y" size="sm">Ya</Radio>
+                        <Radio value="N" size="sm">Tidak</Radio>
+                      </HStack>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel fontSize="sm">RPPB</FormLabel>
+                    <RadioGroup
+                      name="rppb"
+                      value={formik.values.rppb}
+                      onChange={(value) => formik.setFieldValue("rppb", value)}
+                    >
+                      <HStack spacing={6}>
+                        <Radio value="Y" size="sm">Ya</Radio>
+                        <Radio value="N" size="sm">Tidak</Radio>
+                      </HStack>
+                    </RadioGroup>
+                  </FormControl>
+                </Grid>
+              </VStack>
+            </AccordionPanel>
+          </AccordionItem>
+        </Accordion>
 
         <HStack spacing={3} w="full" justify="end">
           <Button variant="outline" onClick={() => formik.resetForm()}>
@@ -4291,11 +4394,11 @@ const WorkflowBacklogTable = ({
       id: selectedBacklog.id,
       backlogName: selectedBacklog.backlogName,
       backlogDesc: values.backlogDesc,
-      envSide: selectedBacklog.envSide || null,
-      maintenanceCategory: selectedBacklog.maintenanceCategory || null,
-      maintenanceType: selectedBacklog.maintenanceType || null,
-      rppb: selectedBacklog.rppb,
-      licensing: selectedBacklog.licensing,
+      envSide: values.envSide || null,
+      maintenanceCategory: values.maintenanceCategory || null,
+      maintenanceType: values.maintenanceType || null,
+      rppb: values.rppb || "N",
+      licensing: values.licensing || "N",
       backogRegistered: values.backogRegistered,
       backlogStartdate: values.backlogStartdate || null,
       backlogEnddate: values.backlogEnddate || null,
@@ -4663,6 +4766,11 @@ const BacklogEditForm = ({
       backlogImplementEnddate: backlog.backlogImplementEnddate
         ? backlog.backlogImplementEnddate.split("T")[0]
         : "",
+      envSide: backlog.envSide || "",
+      maintenanceCategory: backlog.maintenanceCategory || "",
+      maintenanceType: backlog.maintenanceType || "",
+      rppb: backlog.rppb || "N",
+      licensing: backlog.licensing || "N",
     },
     onSubmit: (values) => {
       onSubmit(values);
@@ -4779,6 +4887,97 @@ const BacklogEditForm = ({
             />
           </FormControl>
         </Grid>
+
+        {/* Additional Information — Collapsible */}
+        <Accordion allowToggle w="full" defaultIndex={[]}>
+          <AccordionItem border="1px" borderColor="gray.200" rounded="lg">
+            <AccordionButton py={3} px={4} _hover={{ bg: "gray.50" }} rounded="lg">
+              <HStack flex={1} spacing={2}>
+                <Text fontSize="sm" fontWeight="semibold">Additional Information</Text>
+                {(formik.values.envSide || formik.values.maintenanceCategory || formik.values.maintenanceType) && (
+                  <Badge colorScheme="blue" variant="subtle" fontSize="2xs">Has Data</Badge>
+                )}
+              </HStack>
+              <AccordionIcon />
+            </AccordionButton>
+            <AccordionPanel pb={4} px={4}>
+              <VStack spacing={4}>
+                <Grid templateColumns="1fr 1fr" gap={4} w="full">
+                  <FormControl>
+                    <FormLabel fontSize="sm">App Side</FormLabel>
+                    <Select
+                      name="envSide"
+                      value={formik.values.envSide}
+                      onChange={formik.handleChange}
+                      placeholder="Select Environment Side"
+                      size="sm"
+                    >
+                      {ENV_SIDE_OPTIONS.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel fontSize="sm">Jenis Maintenance</FormLabel>
+                    <Select
+                      name="maintenanceCategory"
+                      value={formik.values.maintenanceCategory}
+                      onChange={formik.handleChange}
+                      placeholder="Select Category"
+                      size="sm"
+                    >
+                      {MAINTENANCE_CATEGORY_OPTIONS.map((option) => (
+                        <option key={option} value={option}>{option}</option>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <FormControl>
+                  <FormLabel fontSize="sm">Tipe Maintenance</FormLabel>
+                  <Select
+                    name="maintenanceType"
+                    value={formik.values.maintenanceType}
+                    onChange={formik.handleChange}
+                    placeholder="Select Type"
+                    size="sm"
+                  >
+                    {MAINTENANCE_TYPE_OPTIONS.map((option) => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </Select>
+                </FormControl>
+                <Grid templateColumns="1fr 1fr" gap={4} w="full">
+                  <FormControl>
+                    <FormLabel fontSize="sm">Perizinan</FormLabel>
+                    <RadioGroup
+                      name="licensing"
+                      value={formik.values.licensing}
+                      onChange={(value) => formik.setFieldValue("licensing", value)}
+                    >
+                      <HStack spacing={6}>
+                        <Radio value="Y" size="sm">Ya</Radio>
+                        <Radio value="N" size="sm">Tidak</Radio>
+                      </HStack>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel fontSize="sm">RPPB</FormLabel>
+                    <RadioGroup
+                      name="rppb"
+                      value={formik.values.rppb}
+                      onChange={(value) => formik.setFieldValue("rppb", value)}
+                    >
+                      <HStack spacing={6}>
+                        <Radio value="Y" size="sm">Ya</Radio>
+                        <Radio value="N" size="sm">Tidak</Radio>
+                      </HStack>
+                    </RadioGroup>
+                  </FormControl>
+                </Grid>
+              </VStack>
+            </AccordionPanel>
+          </AccordionItem>
+        </Accordion>
 
         <HStack spacing={3} w="full" justify="end">
           <Button variant="outline" onClick={() => formik.resetForm()}>

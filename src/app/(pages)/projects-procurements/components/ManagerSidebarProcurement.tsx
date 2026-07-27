@@ -58,6 +58,8 @@ interface ManagerSidebarProcurementProps {
   statusFilter: string[];
   setStatusFilter: (value: string[]) => void;
   DataProjects: ProjectDataResponse[];
+  totalActiveProjectsCount: number;
+  totalProjectsCount: number;
   colorMode: "light" | "dark";
 }
 
@@ -67,13 +69,13 @@ const ManagerSidebarProcurement = ({
   statusFilter,
   setStatusFilter,
   DataProjects,
+  totalActiveProjectsCount,
+  totalProjectsCount,
   colorMode,
 }: ManagerSidebarProcurementProps) => {
   // Procurement-specific calculations
-  const totalProjects = DataProjects.length;
-  const activeProjects = DataProjects.filter(
-    (p) => p.projectStatus === "ACTIVE"
-  ).length;
+  const totalProjects = totalProjectsCount;
+  const activeProjects = totalActiveProjectsCount;
   const completedProjects = DataProjects.filter(
     (p) => p.projectStatus === "COMPLETED"
   ).length;
