@@ -79,11 +79,13 @@ import {
   FiTrendingUp,
   FiBarChart,
   FiActivity,
+  FiGrid,
   FiRefreshCw,
 } from "react-icons/fi";
 import { SearchIcon } from "@chakra-ui/icons";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
+import DashboardTableView from "./DashboardTableView";
 
 export default function DashboardPortfolioRealTimePage() {
   const { colorMode } = useColorMode();
@@ -2366,6 +2368,13 @@ export default function DashboardPortfolioRealTimePage() {
                     <Icon as={FiActivity} mr={2} />
                     Special
                   </Tab>
+                  <Tab
+                    rounded={radiusStyle}
+                    _selected={{ bg: "blue.500", color: "white" }}
+                  >
+                    <Icon as={FiGrid} mr={2} />
+                    Table View
+                  </Tab>
                 </TabList>
 
                 <HStack
@@ -3444,6 +3453,10 @@ export default function DashboardPortfolioRealTimePage() {
                   </Card>
                 </GridItem>
               </Grid>
+            </TabPanel>
+
+            <TabPanel p={0}>
+              <DashboardTableView tokenData={tokenData} />
             </TabPanel>
 
           </TabPanels>
