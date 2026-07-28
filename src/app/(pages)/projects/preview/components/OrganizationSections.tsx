@@ -188,7 +188,7 @@ export const OrganizationSection = ({ DataProject, title, colorScheme, type }: O
   const directorateName = type === "requirement-initiated" 
     ? DataProject.requirementData?.senderDirectorateName || "-"
     : type === "requirement-managed"
-      ? DataProject.proManageByDirectorateName
+      ? DataProject.requirementData?.reqManageByDirectorateName || "-"
       : type === "initiated" 
         ? DataProject.proOwnerDirectorateName 
         : DataProject.proManageByDirectorateName;
@@ -196,7 +196,7 @@ export const OrganizationSection = ({ DataProject, title, colorScheme, type }: O
   const divisionName = type === "requirement-initiated" 
     ? DataProject.requirementData?.senderDivisionName || "-"
     : type === "requirement-managed"
-      ? DataProject.proManageByDivisionName
+      ? DataProject.requirementData?.reqManageByDivisionName || "-"
       : type === "initiated" 
         ? DataProject.proOwnerDivisionName 
         : DataProject.proManageByDivisionName;
@@ -204,12 +204,12 @@ export const OrganizationSection = ({ DataProject, title, colorScheme, type }: O
   const groupName = type === "requirement-initiated" 
     ? null
     : type === "requirement-managed"
-      ? DataProject.proManageByGroupName
+      ? DataProject.requirementData?.reqManageByGroupName || null
       : type === "initiated" 
         ? DataProject.proOwnerGroupName 
         : DataProject.proManageByGroupName;
   
-  const teamName = (type === "managed" || type === "requirement-managed")
+  const teamName = (type === "managed")
     ? DataProject.proManageByTeamName 
     : null;
 

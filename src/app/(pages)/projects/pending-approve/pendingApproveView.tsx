@@ -723,7 +723,7 @@ export default function PendingApproveView() {
     }
 
     const PayloadList: PaggingListPayloadCustom = {
-      search: globalFilter,
+      search: globalFilter.trim() || "",
       limit: pageSize,
       page: pageIndex,
       projectType: "",

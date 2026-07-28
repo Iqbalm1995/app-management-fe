@@ -161,6 +161,10 @@ interface useUsersServices {
     oldPassword: string,
     newPassword: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
+  AdminResetPassword: (
+    userId: string,
+    newPassword: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
   UpdateOrgUser: (
     payload: UserUpdateOrgGroupPayload,
     token: string
@@ -475,6 +479,49 @@ const useUsers = (): useUsersServices => {
     }
   };
 
+  const AdminResetPassword = async (
+    userId: string,
+    newPassword: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+
+    try {
+      const response = await axiosInstance.put(
+        `${UrlEndpoint}/v1/Authenticate/admin-reset-password`,
+        {
+          userId: userId,
+          newPassword: newPassword,
+        }
+      );
+
+      setIsLoading(false);
+      return response.data;
+    } catch (err: any) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message ||
+            "An error occurred during password reset."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   return {
     List,
     GetDetailById,
@@ -482,6 +529,7 @@ const useUsers = (): useUsersServices => {
     GetDetailOrgById,
     GetDetailOrgByUserId,
     EditUserPassword,
+    AdminResetPassword,
     UpdateOrgUser,
     isLoading,
     error,

@@ -74,7 +74,7 @@ import { useEffect, useMemo, useState, useRef } from "react";
 export default function MasterDataUsersPage() {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
-  const { List: GetUsersList, UpdateOrgUser, EditUserPassword, isLoading } = useUsers();
+  const { List: GetUsersList, UpdateOrgUser, AdminResetPassword, isLoading } = useUsers();
   const { List: GetOrganizationList } = useOrganization();
 
   // Auth Setup
@@ -477,9 +477,8 @@ export default function MasterDataUsersPage() {
 
     setIsResettingPassword(true);
     try {
-      const response = await EditUserPassword(
+      const response = await AdminResetPassword(
         ResetUser.userId,
-        DEFAULT_PWD_SETTINGS,
         DEFAULT_PWD_SETTINGS
       );
 
