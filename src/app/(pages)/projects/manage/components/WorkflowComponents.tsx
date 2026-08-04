@@ -18,6 +18,7 @@ import {
   formatKBMB,
 } from "@/app/helper/MasterHelper";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
+import { downloadWatermarkedPdf } from "@/app/helper/PdfWatermarkHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useProjects, {
   ProjectWorkflowResponse,
@@ -144,19 +145,7 @@ export const WorkflowLevel2Box = ({
   );
 
   const handleDownloadFile = async (url: string, fileName: string) => {
-    try {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
-    } catch {
-      window.open(url, "_blank");
-    }
+    await downloadWatermarkedPdf(url, fileName);
   };
   const { InsertProjectWorkflowValue, ListProjectWorkflowValue } =
     useProjects();
@@ -1491,19 +1480,7 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
   );
 
   const handleDownloadFile = async (url: string, fileName: string) => {
-    try {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(link.href);
-    } catch {
-      window.open(url, "_blank");
-    }
+    await downloadWatermarkedPdf(url, fileName);
   };
   const { InsertProjectWorkflowValue, ListProjectWorkflowValue } =
     useProjects();

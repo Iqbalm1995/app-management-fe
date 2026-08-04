@@ -54,6 +54,7 @@ import {
   SummaryStatusReq,
 } from "@/app/helper/MasterHelper";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
+import { downloadWatermarkedPdf } from "@/app/helper/PdfWatermarkHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import { MediaObjectResponse } from "@/app/services/useMediaObject";
 import useRequirements, {
@@ -3119,7 +3120,7 @@ const ReqInfoSummaryFileAttachmentsView = ({
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
 
-  const handleDownloadFile = (url: string) => {
+  const handleDownloadFile = async (url: string, fileName?: string) => {
     if (!url || url.trim() === "") {
       showToast({
         description: "URL file tidak tersedia",
@@ -3127,7 +3128,7 @@ const ReqInfoSummaryFileAttachmentsView = ({
       });
       return;
     }
-    window.open(url, "_blank");
+    await downloadWatermarkedPdf(url, fileName || "download");
   };
 
   const columnsData = useMemo<ColumnDef<MediaObjectResponse>[]>(
@@ -3248,7 +3249,10 @@ const ReqInfoSummaryFileAttachmentsView = ({
                   colorScheme={"blue"}
                   leftIcon={<FiDownload />}
                   onClick={() =>
-                    handleDownloadFile(info.row.original.objectFullPath || "")
+                    handleDownloadFile(
+                      info.row.original.objectFullPath || "",
+                      info.row.original.objectRawName || ""
+                    )
                   }
                 >
                   Unduh
@@ -3307,8 +3311,16 @@ const ReqInfoSummaryFileAttachmentsView = ({
       return;
     }
 
-    setUrlFilePDF(urlData);
+    // Route through the server-side proxy to bypass mixed-content blocking
+    // (MinIO is HTTP, frontend may be HTTPS — direct fetch would be blocked)
+    const proxiedUrl = `/api/proxy-pdf?url=${encodeURIComponent(urlData)}`;
+    setUrlFilePDF(proxiedUrl);
     ModalPreview.onOpen();
+  };
+
+  const handleClosePreview = () => {
+    setUrlFilePDF("");
+    ModalPreview.onClose();
   };
 
   return (
@@ -3319,7 +3331,7 @@ const ReqInfoSummaryFileAttachmentsView = ({
           size={"6xl"}
           isOpen={ModalPreview.isOpen}
           isCentered
-          onClose={ModalPreview.onClose}
+          onClose={handleClosePreview}
           closeOnOverlayClick={true}
           scrollBehavior={"inside"}
         >
@@ -3334,22 +3346,12 @@ const ReqInfoSummaryFileAttachmentsView = ({
             <ModalBody w={"full"}>
               <Flex as={Stack} w={"full"}>
                 {UrlFilePDF && UrlFilePDF.trim() !== "" ? (
-                  <object
-                    data={UrlFilePDF}
-                    type="application/pdf"
+                  <iframe
+                    src={UrlFilePDF}
                     width="100%"
                     height="600px"
-                    style={{ border: "none" }}
-                  >
-                    <iframe
-                      src={`https://docs.google.com/viewer?url=${encodeURIComponent(
-                        UrlFilePDF
-                      )}&embedded=true`}
-                      width="100%"
-                      height="600px"
-                      style={{ border: "none" }}
-                    />
-                  </object>
+                    style={{ border: "none", borderRadius: "8px" }}
+                  />
                 ) : (
                   <Flex
                     w="100%"

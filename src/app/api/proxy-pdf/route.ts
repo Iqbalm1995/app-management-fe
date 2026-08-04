@@ -22,12 +22,18 @@ export async function GET(req: NextRequest) {
     }
 
     const buffer = await res.arrayBuffer();
-    const contentType = res.headers.get("content-type") ?? "application/pdf";
 
+    // Extract original filename from the URL path (before query string)
+    const urlPath = pdfUrl.split("?")[0];
+    const fileName = urlPath.split("/").pop() ?? "preview.pdf";
+
+    // Always force application/pdf regardless of what MinIO returns.
+    // MinIO commonly returns application/octet-stream which causes browsers
+    // to force-download the file even when Content-Disposition is "inline".
     return new NextResponse(Buffer.from(buffer), {
       headers: {
-        "Content-Type": contentType,
-        "Content-Disposition": "inline", // ✅ Key to view in iframe
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename="${fileName}"`,
         "Cache-Control": "no-cache",
       },
     });
