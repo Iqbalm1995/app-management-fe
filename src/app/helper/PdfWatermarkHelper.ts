@@ -39,8 +39,8 @@ export const addWatermarkToPdfBuffer = async (
   const cos = Math.cos(angleRad);
   const sin = Math.sin(angleRad);
 
-  // BJB Blue (#0057AD -> rgb(0, 87/255, 173/255))
-  const blueColor = rgb(0.0, 0.34, 0.68);
+  // Red Color (#D32F2F -> rgb(0.83, 0.18, 0.18))
+  const redColor = rgb(0.83, 0.18, 0.18);
 
   for (const page of pages) {
     const { width, height } = page.getSize();
@@ -60,13 +60,13 @@ export const addWatermarkToPdfBuffer = async (
     const x = width / 2 - xOffset;
     const y = height / 2 - yOffset;
 
-    // Draw BIG BLUE center diagonal watermark
+    // Draw BIG RED center diagonal watermark
     page.drawText(text, {
       x,
       y,
       size: fontSize,
       font,
-      color: blueColor,
+      color: redColor,
       opacity: 0.3,
       rotate: degrees(angleDegrees),
     });
@@ -82,7 +82,7 @@ export const addWatermarkToPdfBuffer = async (
       y: footerY,
       size: footerFontSize,
       font,
-      color: blueColor,
+      color: redColor,
       opacity: 0.6,
     });
   }
