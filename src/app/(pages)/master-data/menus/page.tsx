@@ -131,6 +131,7 @@ function MenusManagementPage() {
             parentMenuLink: null,
             isPro: item.isPro ? "Y" : "N",
             isOperations: "N",
+            isDisplaySidebar: item.isDisplaySidebar || "Y",
             menuPos: index + 1,
             children:
               item.children && item.children.length > 0

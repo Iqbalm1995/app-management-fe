@@ -1537,6 +1537,7 @@ function RequirementDetailView() {
                                 DataAttachment={DataFileReq}
                                 steps={steps}
                                 activeStep={activeStep}
+                                tokenData={tokenData}
                               />
                             </InputGroupPanel>
 
@@ -1697,6 +1698,7 @@ function RequirementDetailView() {
                             DataAttachment={DataFileReq}
                             steps={steps}
                             activeStep={activeStep}
+                            tokenData={tokenData}
                           />
                         </InputGroupPanel>
 
@@ -1875,6 +1877,7 @@ function RequirementDetailView() {
                             DataAttachment={DataFileReq}
                             steps={steps}
                             activeStep={activeStep}
+                            tokenData={tokenData}
                           />
                         </InputGroupPanel>
                         <ReqInfoAcceptanceView
@@ -2091,6 +2094,7 @@ interface ReqSectionProps {
   steps: StepsProps[];
   activeStep: number;
   OpenBacklogModal?: () => void;
+  tokenData?: string;
 }
 
 const ReqInfoGeneralSectionView = ({
@@ -3116,9 +3120,44 @@ const ReqInfoSummaryFileAttachmentsView = ({
   DataAttachment,
   steps,
   activeStep,
+  tokenData,
 }: ReqSectionProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
+  const { SecureDownloadFiles, error: secureDownloadError } = useRequirements();
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleSecureDownload = async (mediaObjectIds: string[]) => {
+    if (!tokenData) {
+      showToast({ description: "Token tidak tersedia", statusToast: "error" });
+      return;
+    }
+    if (!DataRequirement?.id) {
+      showToast({ description: "Data requirement tidak tersedia", statusToast: "error" });
+      return;
+    }
+    setIsDownloading(true);
+    try {
+      const blob = await SecureDownloadFiles(DataRequirement.id, mediaObjectIds, tokenData);
+      if (blob) {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `REQ-${DataRequirement.reqNumber || "download"}-${new Date().toISOString().slice(0, 10)}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        showToast({ description: "File berhasil diunduh. Password dikirim ke email Anda.", statusToast: "success" });
+      } else {
+        showToast({ description: secureDownloadError || "Gagal mengunduh file", statusToast: "error" });
+      }
+    } catch {
+      showToast({ description: "Terjadi kesalahan saat mengunduh file", statusToast: "error" });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   const handleDownloadFile = async (url: string, fileName?: string) => {
     if (!url || url.trim() === "") {
@@ -3248,11 +3287,9 @@ const ReqInfoSummaryFileAttachmentsView = ({
                   size={"sm"}
                   colorScheme={"blue"}
                   leftIcon={<FiDownload />}
+                  isLoading={isDownloading}
                   onClick={() =>
-                    handleDownloadFile(
-                      info.row.original.objectFullPath || "",
-                      info.row.original.objectRawName || ""
-                    )
+                    handleSecureDownload([info.row.original.id])
                   }
                 >
                   Unduh
@@ -3373,6 +3410,25 @@ const ReqInfoSummaryFileAttachmentsView = ({
             </ModalBody>
           </ModalContent>
         </Modal>
+
+        <Flex justifyContent="flex-end" mb={2}>
+          {DataAttachment && DataAttachment.filter(f => f.objectName !== "EXTERNAL_LINK").length > 1 && (
+            <Button
+              size="sm"
+              colorScheme="blue"
+              leftIcon={<FiDownload />}
+              isLoading={isDownloading}
+              onClick={() => {
+                const fileIds = DataAttachment
+                  .filter(f => f.objectName !== "EXTERNAL_LINK")
+                  .map(f => f.id);
+                handleSecureDownload(fileIds);
+              }}
+            >
+              Unduh Semua
+            </Button>
+          )}
+        </Flex>
 
         <TableComponentWithFilterCTX table={table} />
       </Flex>

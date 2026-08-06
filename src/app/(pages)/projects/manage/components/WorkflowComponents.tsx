@@ -20,6 +20,7 @@ import {
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { downloadWatermarkedPdf } from "@/app/helper/PdfWatermarkHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
+import useMediaObject from "@/app/services/useMediaObject";
 import useProjects, {
   ProjectWorkflowResponse,
   ProjectWorkflowValueInsertPayload,
@@ -144,9 +145,40 @@ export const WorkflowLevel2Box = ({
     ENDPOINT_PORT_BASIC_OBJECT
   );
 
-  const handleDownloadFile = async (url: string, fileName: string) => {
-    await downloadWatermarkedPdf(url, fileName);
+  const { SecureDownloadFiles, error: secureDownloadError } = useMediaObject();
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleSecureDownload = async (mediaObjectId: string, fileName: string) => {
+    if (!tokenData) return;
+    setIsDownloading(true);
+    try {
+      const blob = await SecureDownloadFiles(
+        [mediaObjectId],
+        tokenData,
+        workflow.projectId,
+        "Project_Workflow",
+        `${fileName || "document"}.zip`
+      );
+      if (blob) {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${fileName || "document"}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        showToast({ description: "File berhasil diunduh. Password dikirim ke email Anda.", statusToast: "success" });
+      } else {
+        showToast({ description: secureDownloadError || "Gagal mengunduh file", statusToast: "error" });
+      }
+    } catch {
+      showToast({ description: "Terjadi kesalahan saat mengunduh file", statusToast: "error" });
+    } finally {
+      setIsDownloading(false);
+    }
   };
+
   const { InsertProjectWorkflowValue, ListProjectWorkflowValue } =
     useProjects();
 
@@ -1001,13 +1033,12 @@ export const WorkflowLevel2Box = ({
                                       size="md"
                                       colorScheme="green"
                                       leftIcon={<FiDownload />}
+                                      isLoading={isDownloading}
                                       onClick={() => {
-                                        if (
-                                          item.mediaObjectData?.objectFullPath
-                                        ) {
-                                          handleDownloadFile(
-                                            item.mediaObjectData.objectFullPath,
-                                            item.mediaObjectData.objectRawName || item.mediaObjectData.objectName,
+                                        if (item.mediaObjectId) {
+                                          handleSecureDownload(
+                                            item.mediaObjectId,
+                                            item.mediaObjectData?.objectRawName || item.mediaObjectData?.objectName || "document",
                                           );
                                         }
                                       }}
@@ -1479,9 +1510,40 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
     ENDPOINT_PORT_BASIC_OBJECT
   );
 
-  const handleDownloadFile = async (url: string, fileName: string) => {
-    await downloadWatermarkedPdf(url, fileName);
+  const { SecureDownloadFiles: SecureDownloadFiles2, error: secureDownloadError2 } = useMediaObject();
+  const [isDownloading2, setIsDownloading2] = useState(false);
+
+  const handleSecureDownload2 = async (mediaObjectId: string, fileName: string) => {
+    if (!tokenData) return;
+    setIsDownloading2(true);
+    try {
+      const blob = await SecureDownloadFiles2(
+        [mediaObjectId],
+        tokenData,
+        workflow.projectId,
+        "Project_Workflow",
+        `${fileName || "document"}.zip`
+      );
+      if (blob) {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${fileName || "document"}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        showToast({ description: "File berhasil diunduh. Password dikirim ke email Anda.", statusToast: "success" });
+      } else {
+        showToast({ description: secureDownloadError2 || "Gagal mengunduh file", statusToast: "error" });
+      }
+    } catch {
+      showToast({ description: "Terjadi kesalahan saat mengunduh file", statusToast: "error" });
+    } finally {
+      setIsDownloading2(false);
+    }
   };
+
   const { InsertProjectWorkflowValue, ListProjectWorkflowValue } =
     useProjects();
 
@@ -2153,11 +2215,12 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
                                     size="md"
                                     colorScheme="green"
                                     leftIcon={<FiDownload />}
+                                    isLoading={isDownloading2}
                                     onClick={() => {
-                                      if (item.mediaObjectData?.objectFullPath) {
-                                        handleDownloadFile(
-                                          item.mediaObjectData.objectFullPath,
-                                          item.mediaObjectData.objectRawName || item.mediaObjectData.objectName,
+                                      if (item.mediaObjectId) {
+                                        handleSecureDownload2(
+                                          item.mediaObjectId,
+                                          item.mediaObjectData?.objectRawName || item.mediaObjectData?.objectName || "document",
                                         );
                                       }
                                     }}

@@ -1052,6 +1052,7 @@ const SidebarContent = ({
             role: ["user"],
             menuID: menu.id || uniquePath,
             isPro: menu.isPro === "Y",
+            isDisplaySidebar: menu.isDisplaySidebar || "Y",
             children: menu.children && menu.children.length > 0 
               ? buildMenuFromAccess(menu.children, uniquePath) 
               : [],
@@ -1060,7 +1061,7 @@ const SidebarContent = ({
       };
 
       const accessMenus = buildMenuFromAccess(accessibleMenus);
-      setFilteredMenus(accessMenus);
+      setFilteredMenus(accessMenus.filter(m => m.isDisplaySidebar === "Y"));
     } catch (error) {
       console.error("Failed to parse accessData:", error);
       setFilteredMenus([]);

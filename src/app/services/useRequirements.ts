@@ -669,6 +669,11 @@ interface useRequirements {
     requirementId: string,
     token: string
   ) => Promise<ApiGenericResponse<any[] | null> | null>;
+  SecureDownloadFiles: (
+    requirementId: string,
+    mediaObjectIds: string[],
+    token: string
+  ) => Promise<Blob | null>;
   isLoading: boolean;
   error: string | null;
 }
@@ -1564,6 +1569,53 @@ const useRequirements = (): useRequirements => {
     }
   };
 
+  const SecureDownloadFiles = async (
+    requirementId: string,
+    mediaObjectIds: string[],
+    token: string
+  ): Promise<Blob | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Requirement/secure-download";
+    try {
+      const response = await axiosInstance.post(
+        `${UrlEndpoint}${PathEndpoint}`,
+        { requirementId, mediaObjectIds },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          responseType: "blob",
+        }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        // Try to read error message from blob response
+        if (err.response?.data instanceof Blob) {
+          const text = await err.response.data.text();
+          try {
+            const json = JSON.parse(text);
+            setError(json.message || "Download gagal");
+          } catch {
+            setError("Download gagal");
+          }
+        } else {
+          setError(err.response?.data?.message || "Download gagal");
+        }
+      } else {
+        setError("Terjadi kesalahan. Silakan coba lagi.");
+      }
+      return null;
+    }
+  };
+
   const GetProjectsByRequirementId = async (
     requirementId: string,
     token: string
@@ -1629,6 +1681,7 @@ const useRequirements = (): useRequirements => {
     DeleteBacklog,
     ListReqMedia,
     GetProjectsByRequirementId,
+    SecureDownloadFiles,
     isLoading,
     error,
   };

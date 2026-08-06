@@ -27,6 +27,7 @@ export interface MenuResponse {
   isHide: string;
   isPro?: string | null;
   isOperations?: string | null;
+  isDisplaySidebar?: string | null;
   menuPos?: number | null;
   createdAt: string;
   createdBy: string;
@@ -40,6 +41,7 @@ export interface MenuShortResponse {
   menuName: string;
   isPro?: string | null;
   isOperations?: string | null;
+  isDisplaySidebar?: string | null;
   menuPos?: number | null;
 }
 

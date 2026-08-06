@@ -139,6 +139,7 @@ export interface UserMenuResponse {
   parentId?: string | null;
   isPro: string;
   isOperations: string;
+  isDisplaySidebar: string;
   children?: UserMenuResponse[];
 }
 

@@ -24,6 +24,7 @@ export const authenticatedOnlyRoutes: string[] = [
   "/coming-soon",
   "/forbidden",
   "/settings",
+  "/additional-menus",
 ];
 
 /**

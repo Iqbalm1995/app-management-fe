@@ -76,6 +76,13 @@ interface useMediaObjectServices {
     id: string,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
+  SecureDownloadFiles: (
+    mediaObjectIds: string[],
+    token: string,
+    referenceId?: string,
+    referenceModule?: string,
+    zipFileName?: string
+  ) => Promise<Blob | null>;
 
   isLoading: boolean;
   error: string | null;
@@ -357,6 +364,54 @@ const useMediaObject = (): useMediaObjectServices => {
     }
   };
 
+  const SecureDownloadFiles = async (
+    mediaObjectIds: string[],
+    token: string,
+    referenceId?: string,
+    referenceModule?: string,
+    zipFileName?: string
+  ): Promise<Blob | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/MediaObjects/secure-download";
+    try {
+      const response = await axiosInstance.post(
+        `${UrlEndpoint}${PathEndpoint}`,
+        { mediaObjectIds, referenceId, referenceModule, zipFileName },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          responseType: "blob",
+        }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        if (err.response?.data instanceof Blob) {
+          const text = await err.response.data.text();
+          try {
+            const json = JSON.parse(text);
+            setError(json.message || "Download gagal");
+          } catch {
+            setError("Download gagal");
+          }
+        } else {
+          setError(err.response?.data?.message || "Download gagal");
+        }
+      } else {
+        setError("Terjadi kesalahan. Silakan coba lagi.");
+      }
+      return null;
+    }
+  };
+
   return {
     List,
     GetDetailById,
@@ -364,6 +419,7 @@ const useMediaObject = (): useMediaObjectServices => {
     InsertMediaObjectByKey,
     InsertMediaObject,
     DeleteMediaObject,
+    SecureDownloadFiles,
     isLoading,
     error,
   };

@@ -103,6 +103,7 @@ import {
   FiTrendingUp,
   FiClock,
   FiList,
+  FiGrid,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
 import { GoDotFill } from "react-icons/go";
@@ -1041,6 +1042,7 @@ const SidebarContent = ({
             role: ["user"],
             menuID: menu.id || uniquePath,
             isPro: menu.isPro === "Y",
+            isDisplaySidebar: menu.isDisplaySidebar || "Y",
             children:
               menu.children && menu.children.length > 0
                 ? buildMenuFromAccess(menu.children, uniquePath)
@@ -1050,7 +1052,23 @@ const SidebarContent = ({
       };
 
       const accessMenus = buildMenuFromAccess(accessibleMenus);
-      setFilteredMenus(accessMenus);
+      const visibleMenus = accessMenus.filter(m => m.isDisplaySidebar === "Y");
+      const hasHiddenMenus = accessMenus.some(m => m.isDisplaySidebar !== "Y");
+
+      if (hasHiddenMenus) {
+        visibleMenus.push({
+          name: "Menu Lainnya",
+          icon: FiGrid,
+          link: "/additional-menus",
+          role: ["user"],
+          menuID: "__additional_menus__",
+          isPro: false,
+          isDisplaySidebar: "Y",
+          children: [],
+        });
+      }
+
+      setFilteredMenus(visibleMenus);
     } catch (error) {
       console.error("Failed to parse accessData:", error);
       setFilteredMenus([]);
@@ -1718,6 +1736,7 @@ export function SearchMenuButton({
             role: ["user"],
             menuID: menu.id || uniquePath,
             isPro: menu.isPro === "Y",
+            isDisplaySidebar: menu.isDisplaySidebar || "Y",
             children:
               menu.children && menu.children.length > 0
                 ? buildMenuFromAccess(menu.children, uniquePath)
@@ -1727,7 +1746,23 @@ export function SearchMenuButton({
       };
 
       const accessMenus = buildMenuFromAccess(menus);
-      setAccessibleMenus(accessMenus);
+      const visibleMenus = accessMenus.filter(m => m.isDisplaySidebar === "Y");
+      const hasHiddenMenus = accessMenus.some(m => m.isDisplaySidebar !== "Y");
+
+      if (hasHiddenMenus) {
+        visibleMenus.push({
+          name: "Menu Lainnya",
+          icon: FiGrid,
+          link: "/additional-menus",
+          role: ["user"],
+          menuID: "__additional_menus__",
+          isPro: false,
+          isDisplaySidebar: "Y",
+          children: [],
+        });
+      }
+
+      setAccessibleMenus(visibleMenus);
     } catch (error) {
       console.error("Failed to parse accessData:", error);
       setAccessibleMenus([]);
