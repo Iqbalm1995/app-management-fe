@@ -62,7 +62,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { FaArrowLeft } from "react-icons/fa6";
-import { FiActivity, FiCheck, FiInfo, FiLock, FiSave } from "react-icons/fi";
+import { FiActivity, FiAlertTriangle, FiCheck, FiInfo, FiLock, FiSave } from "react-icons/fi";
 
 // --- helpers ---
 const evalOperator = (
@@ -359,6 +359,12 @@ export default function AppsAssessmentDetailView() {
   const isRtoSuggestionFilled =
     !!rtoRpo.appsRtoSuggestionOperator &&
     (rtoRpo.appsRtoSuggestionMinutes ?? 0) > 0;
+
+  // Eligible to fill RTO / RPO fields check
+  const canEditAnyRtoRpo =
+    (isEditable && (canEditRtoSuggestion || rpoUserOwnsAssessment)) ||
+    (isEditable && canEditRtoIt && (isRtoSuggestionFilled || rpoUserOwnsAssessment)) ||
+    ((isEditable && canEditRpo) || canEditRpoWA2);
   const trueCount = Object.values(flags).filter((v) => v === "TRUE").length;
   const weight = weightMap[trueCount] ?? 0.2;
 
@@ -389,9 +395,9 @@ export default function AppsAssessmentDetailView() {
     weight > 0 &&
     crtFinal > 0;
 
-  // Skip review flag — when true, bypasses score/RTO-RPO requirements for submit
-  // and disables criteria/IS-flags sections (only skip + onDev + RTO/RPO fields remain active)
-  const isSkipActive = flags.isSkipReview === "TRUE";
+  // Skip review flag — active ONLY when isOnDevelopment === "TRUE" AND isSkipReview === "TRUE"
+  const isSkipActive =
+    flags.isOnDevelopment === "TRUE" && flags.isSkipReview === "TRUE";
 
   // Final submit gate: skip bypasses all checks
   const canSubmit = isSkipActive || (isRtoRpoComplete && isScoreComplete);
@@ -447,22 +453,22 @@ export default function AppsAssessmentDetailView() {
       await UpdateAssessmentDetail(payload, tokenData);
     }
 
-    // 2. Save assessment with flags + matched category
+    // 2. Save assessment with flags + matched category (clear RTO/RPO if skip review is active)
     const assessPayload: UpdateAssessmentRequest = {
       id: assessmentId,
       ...flags,
-      appCrtCategoryId: matchedCategory?.id || null,
-      appCrtCategoryCode: matchedCategory?.crtCategoryCode || null,
-      appCrtCategoryName: matchedCategory?.crtCategoryName || null,
-      appCrtCategoryDesc: matchedCategory?.crtCategoryDesc || null,
-      appCrtCategoryValueOperator: matchedCategory?.valueOperator || null,
-      appCrtCategoryValueTracehold: matchedCategory?.valueTracehold || 0,
-      appsRtoSuggestionOperator: rtoRpo.appsRtoSuggestionOperator || null,
-      appsRtoSuggestionMinutes: rtoRpo.appsRtoSuggestionMinutes,
-      appsRtoItOperator: rtoRpo.appsRtoItOperator || null,
-      appsRtoItMinutes: rtoRpo.appsRtoItMinutes,
-      appsRpoOperator: rtoRpo.appsRpoOperator || null,
-      appsRpoMinutes: rtoRpo.appsRpoMinutes,
+      appCrtCategoryId: isSkipActive ? null : (matchedCategory?.id || null),
+      appCrtCategoryCode: isSkipActive ? null : (matchedCategory?.crtCategoryCode || null),
+      appCrtCategoryName: isSkipActive ? null : (matchedCategory?.crtCategoryName || null),
+      appCrtCategoryDesc: isSkipActive ? null : (matchedCategory?.crtCategoryDesc || null),
+      appCrtCategoryValueOperator: isSkipActive ? null : (matchedCategory?.valueOperator || null),
+      appCrtCategoryValueTracehold: isSkipActive ? 0 : (matchedCategory?.valueTracehold || 0),
+      appsRtoSuggestionOperator: isSkipActive ? null : (rtoRpo.appsRtoSuggestionOperator || null),
+      appsRtoSuggestionMinutes: isSkipActive ? null : rtoRpo.appsRtoSuggestionMinutes,
+      appsRtoItOperator: isSkipActive ? null : (rtoRpo.appsRtoItOperator || null),
+      appsRtoItMinutes: isSkipActive ? null : rtoRpo.appsRtoItMinutes,
+      appsRpoOperator: isSkipActive ? null : (rtoRpo.appsRpoOperator || null),
+      appsRpoMinutes: isSkipActive ? null : rtoRpo.appsRpoMinutes,
     };
     const res = await UpdateAssessment(assessPayload, tokenData);
     setSaving(false);
@@ -751,6 +757,50 @@ export default function AppsAssessmentDetailView() {
             </Box>
           </Card>
 
+          {/* Alert Section: Application Not Reviewed by IAG (RTO Suggestion not filled) */}
+          {!isRtoSuggestionFilled && (
+            <Card
+              rounded={radiusStyle}
+              shadow="sm"
+              border="1px"
+              borderColor={isDark ? "orange.600" : "orange.300"}
+              bg={isDark ? "gray.800" : "orange.50"}
+            >
+              <CardBody py={4} px={5}>
+                <HStack spacing={4} align="flex-start">
+                  <Box
+                    p={2.5}
+                    bg={isDark ? "orange.900" : "orange.100"}
+                    rounded="lg"
+                    color="orange.500"
+                  >
+                    <Icon as={FiAlertTriangle} boxSize={6} />
+                  </Box>
+                  <VStack align="start" spacing={1} flex={1}>
+                    <HStack spacing={2}>
+                      <Heading
+                        size="sm"
+                        color={isDark ? "orange.300" : "orange.800"}
+                      >
+                        RTO Pada Aplikasi ini Belum Dilakukan Review oleh IAG
+                      </Heading>
+                      <Badge colorScheme="orange" variant="solid" fontSize="xs">
+                        BELUM DIREVIEW
+                      </Badge>
+                    </HStack>
+                    <Text
+                      fontSize="xs"
+                      color={isDark ? "orange.200" : "orange.700"}
+                      lineHeight="relaxed"
+                    >
+                      Aplikasi ini belum melalui proses peninjauan dan pengisian RTO Suggestion oleh IAG, Tetapi anda masih bisa mengisi data lainnya.
+                    </Text>
+                  </VStack>
+                </HStack>
+              </CardBody>
+            </Card>
+          )}
+
           {/* On Development Section */}
           <Card
             rounded={radiusStyle}
@@ -771,7 +821,7 @@ export default function AppsAssessmentDetailView() {
               <HStack justify="space-between">
                 <VStack align="start" spacing={0}>
                   <HStack spacing={2}>
-                    <Heading size="sm">Aplikasi Sedang Dalam Pengembangan?</Heading>
+                    <Heading size="sm">Aplikasi Masih Dalam Tahap Pengembangan?</Heading>
                     {flags.isOnDevelopment === "TRUE" && (
                       <Badge colorScheme="yellow" variant="solid" fontSize="xs">
                         DALAM PENGEMBANGAN
@@ -783,25 +833,76 @@ export default function AppsAssessmentDetailView() {
                     development
                   </Text>
                 </VStack>
-                <HStack spacing={2}>
-                  {(["TRUE", "FALSE"] as const).map((opt) => (
-                    <Button
-                      key={opt}
-                      size="sm"
-                      px={5}
-                      variant={
-                        flags.isOnDevelopment === opt ? "solid" : "outline"
-                      }
-                      colorScheme={opt === "TRUE" ? "yellow" : "gray"}
-                      isDisabled={!isEditable}
-                      onClick={() =>
-                        isEditable &&
-                        setFlags((prev) => ({ ...prev, isOnDevelopment: opt }))
-                      }
-                    >
-                      {opt === "TRUE" ? "Ya" : "Tidak"}
-                    </Button>
-                  ))}
+                <HStack
+                  spacing={0}
+                  bg={isDark ? "gray.700" : "gray.100"}
+                  rounded="md"
+                  p={0.5}
+                >
+                  <Box
+                    as="button"
+                    disabled={!isEditable}
+                    onClick={() =>
+                      isEditable &&
+                      setFlags((prev) => ({ ...prev, isOnDevelopment: "TRUE" }))
+                    }
+                    px={4}
+                    py={1.5}
+                    rounded="md"
+                    cursor={isEditable ? "pointer" : "default"}
+                    bg={
+                      flags.isOnDevelopment === "TRUE"
+                        ? "yellow.500"
+                        : "transparent"
+                    }
+                    color={
+                      flags.isOnDevelopment === "TRUE"
+                        ? "white"
+                        : isDark
+                          ? "gray.400"
+                          : "gray.500"
+                    }
+                    fontWeight="semibold"
+                    fontSize="xs"
+                    transition="all 0.15s"
+                    opacity={!isEditable ? 0.6 : 1}
+                  >
+                    Ya
+                  </Box>
+                  <Box
+                    as="button"
+                    disabled={!isEditable}
+                    onClick={() =>
+                      isEditable &&
+                      setFlags((prev) => ({
+                        ...prev,
+                        isOnDevelopment: "FALSE",
+                        isSkipReview: "FALSE",
+                      }))
+                    }
+                    px={4}
+                    py={1.5}
+                    rounded="md"
+                    cursor={isEditable ? "pointer" : "default"}
+                    bg={
+                      flags.isOnDevelopment === "FALSE"
+                        ? "gray.500"
+                        : "transparent"
+                    }
+                    color={
+                      flags.isOnDevelopment === "FALSE"
+                        ? "white"
+                        : isDark
+                          ? "gray.400"
+                          : "gray.500"
+                    }
+                    fontWeight="semibold"
+                    fontSize="xs"
+                    transition="all 0.15s"
+                    opacity={!isEditable ? 0.6 : 1}
+                  >
+                    Tidak
+                  </Box>
                 </HStack>
               </HStack>
             </CardBody>
@@ -848,25 +949,79 @@ export default function AppsAssessmentDetailView() {
                       Jika dilewati, assessment ini akan melewati proses review normal
                     </Text>
                   </VStack>
-                  <HStack spacing={2}>
-                    {(["TRUE", "FALSE"] as const).map((opt) => (
-                      <Button
-                        key={opt}
-                        size="sm"
-                        px={5}
-                        variant={
-                          flags.isSkipReview === opt ? "solid" : "outline"
+                  <HStack
+                    spacing={0}
+                    bg={isDark ? "gray.700" : "gray.100"}
+                    rounded="md"
+                    p={0.5}
+                  >
+                    <Box
+                      as="button"
+                      disabled={!isEditable}
+                      onClick={() => {
+                        if (isEditable) {
+                          setFlags((prev) => ({ ...prev, isSkipReview: "TRUE" }));
+                          showToast({
+                            description:
+                              "Tahap review dilewati. Jangan lupa simpan perubahan.",
+                            statusToast: "info",
+                          });
                         }
-                        colorScheme={opt === "TRUE" ? "orange" : "gray"}
-                        isDisabled={!isEditable}
-                        onClick={() =>
-                          isEditable &&
-                          setFlags((prev) => ({ ...prev, isSkipReview: opt }))
+                      }}
+                      px={4}
+                      py={1.5}
+                      rounded="md"
+                      cursor={isEditable ? "pointer" : "default"}
+                      bg={
+                        flags.isSkipReview === "TRUE"
+                          ? "orange.500"
+                          : "transparent"
+                      }
+                      color={
+                        flags.isSkipReview === "TRUE"
+                          ? "white"
+                          : isDark
+                            ? "gray.400"
+                            : "gray.500"
+                      }
+                      fontWeight="semibold"
+                      fontSize="xs"
+                      transition="all 0.15s"
+                      opacity={!isEditable ? 0.6 : 1}
+                    >
+                      Ya
+                    </Box>
+                    <Box
+                      as="button"
+                      disabled={!isEditable}
+                      onClick={() => {
+                        if (isEditable) {
+                          setFlags((prev) => ({ ...prev, isSkipReview: "FALSE" }));
                         }
-                      >
-                        {opt === "TRUE" ? "Ya" : "Tidak"}
-                      </Button>
-                    ))}
+                      }}
+                      px={4}
+                      py={1.5}
+                      rounded="md"
+                      cursor={isEditable ? "pointer" : "default"}
+                      bg={
+                        flags.isSkipReview === "FALSE"
+                          ? "gray.500"
+                          : "transparent"
+                      }
+                      color={
+                        flags.isSkipReview === "FALSE"
+                          ? "white"
+                          : isDark
+                            ? "gray.400"
+                            : "gray.500"
+                      }
+                      fontWeight="semibold"
+                      fontSize="xs"
+                      transition="all 0.15s"
+                      opacity={!isEditable ? 0.6 : 1}
+                    >
+                      Tidak
+                    </Box>
                   </HStack>
                 </HStack>
               </CardBody>
@@ -874,7 +1029,7 @@ export default function AppsAssessmentDetailView() {
           )}
 
           {/* App Info + Flags side by side */}
-          <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={5}>
+          <Grid templateColumns={{ base: "1fr", lg: isSkipActive ? "1fr" : "1fr 1fr" }} gap={5}>
             {/* App Info */}
             <Card
               rounded={radiusStyle}
@@ -922,7 +1077,132 @@ export default function AppsAssessmentDetailView() {
               </CardBody>
             </Card>
 
-            {/* Additional Flags */}
+            {/* Additional Flags — hidden when skip review is active */}
+            {!isSkipActive && (
+              <Card
+                rounded={radiusStyle}
+                shadow="sm"
+                border="1px"
+                borderColor={isDark ? "gray.700" : "gray.200"}
+                bg={isDark ? "gray.800" : "white"}
+              >
+                <CardHeader py={3} px={5}>
+                  <HStack justify="space-between">
+                    <HStack spacing={2}>
+                      <Box w="4px" h="20px" bg="secondary.400" rounded="full" />
+                      <Heading size="sm">Additional Flags</Heading>
+                    </HStack>
+                    <HStack>
+                      <Text
+                        fontSize="xs"
+                        color={isDark ? "gray.400" : "gray.500"}
+                      >
+                        TRUE: {trueCount}/4
+                      </Text>
+                      <Badge colorScheme="purple">Weight: {weight}</Badge>
+                    </HStack>
+                  </HStack>
+                </CardHeader>
+                <Divider borderColor={isDark ? "gray.700" : "gray.100"} />
+                <CardBody px={5} py={4}>
+                  <Stack spacing={3}>
+                    {(
+                      [
+                        [
+                          "isRelationWithCustomers",
+                          "Berhubungan Langsung dengan Nasabah",
+                        ],
+                        ["isTransactionalApp", "Bersifat Transaksional"],
+                        [
+                          "isStrictCutoffTime",
+                          "Memiliki Cut Off Time yang Ketat",
+                        ],
+                        ["isRelationWithGov", "Berhubungan dengan PEMDA"],
+                      ] as [keyof typeof flags, string][]
+                    ).map(([key, label]) => (
+                      <HStack
+                        key={key}
+                        justify="space-between"
+                        py={2}
+                        borderBottom="1px"
+                        borderColor={isDark ? "gray.700" : "gray.100"}
+                      >
+                        <Text fontSize="sm" fontWeight="medium">
+                          {label}
+                        </Text>
+                        <HStack
+                          spacing={0}
+                          bg={isDark ? "gray.700" : "gray.100"}
+                          rounded="md"
+                          p={0.5}
+                        >
+                          <Box
+                            as="button"
+                            disabled={!isFieldEditable}
+                            onClick={() =>
+                              isFieldEditable &&
+                              setFlags((prev) => ({ ...prev, [key]: "TRUE" }))
+                            }
+                            px={3}
+                            py={1}
+                            rounded="md"
+                            cursor={isFieldEditable ? "pointer" : "default"}
+                            bg={
+                              flags[key] === "TRUE" ? "green.500" : "transparent"
+                            }
+                            color={
+                              flags[key] === "TRUE"
+                                ? "white"
+                                : isDark
+                                  ? "gray.400"
+                                  : "gray.500"
+                            }
+                            fontWeight="semibold"
+                            fontSize="xs"
+                            transition="all 0.15s"
+                            opacity={!isFieldEditable ? 0.6 : 1}
+                          >
+                            Ya
+                          </Box>
+                          <Box
+                            as="button"
+                            disabled={!isFieldEditable}
+                            onClick={() =>
+                              isFieldEditable &&
+                              setFlags((prev) => ({ ...prev, [key]: "FALSE" }))
+                            }
+                            px={3}
+                            py={1}
+                            rounded="md"
+                            cursor={isFieldEditable ? "pointer" : "default"}
+                            bg={
+                              flags[key] === "FALSE" ? "red.500" : "transparent"
+                            }
+                            color={
+                              flags[key] === "FALSE"
+                                ? "white"
+                                : isDark
+                                  ? "gray.400"
+                                  : "gray.500"
+                            }
+                            fontWeight="semibold"
+                            fontSize="xs"
+                            transition="all 0.15s"
+                            opacity={!isFieldEditable ? 0.6 : 1}
+                          >
+                            Tidak
+                          </Box>
+                        </HStack>
+                      </HStack>
+                    ))}
+                  </Stack>
+                </CardBody>
+              </Card>
+            )}
+          </Grid>
+
+          {/* BSC Criteria Assessment — hidden when skip review is active */}
+          {!isSkipActive && (
             <Card
               rounded={radiusStyle}
               shadow="sm"
@@ -930,128 +1210,6 @@ export default function AppsAssessmentDetailView() {
               borderColor={isDark ? "gray.700" : "gray.200"}
               bg={isDark ? "gray.800" : "white"}
             >
-              <CardHeader py={3} px={5}>
-                <HStack justify="space-between">
-                  <HStack spacing={2}>
-                    <Box w="4px" h="20px" bg="secondary.400" rounded="full" />
-                    <Heading size="sm">Additional Flags</Heading>
-                  </HStack>
-                  <HStack>
-                    <Text
-                      fontSize="xs"
-                      color={isDark ? "gray.400" : "gray.500"}
-                    >
-                      TRUE: {trueCount}/4
-                    </Text>
-                    <Badge colorScheme="purple">Weight: {weight}</Badge>
-                  </HStack>
-                </HStack>
-              </CardHeader>
-              <Divider borderColor={isDark ? "gray.700" : "gray.100"} />
-              <CardBody px={5} py={4}>
-                <Stack spacing={3}>
-                  {(
-                    [
-                      [
-                        "isRelationWithCustomers",
-                        "Berhubungan Langsung dengan Nasabah",
-                      ],
-                      ["isTransactionalApp", "Bersifat Transaksional"],
-                      [
-                        "isStrictCutoffTime",
-                        "Memiliki Cut Off Time yang Ketat",
-                      ],
-                      ["isRelationWithGov", "Berhubungan dengan PEMDA"],
-                    ] as [keyof typeof flags, string][]
-                  ).map(([key, label]) => (
-                    <HStack
-                      key={key}
-                      justify="space-between"
-                      py={2}
-                      borderBottom="1px"
-                      borderColor={isDark ? "gray.700" : "gray.100"}
-                    >
-                      <Text fontSize="sm" fontWeight="medium">
-                        {label}
-                      </Text>
-                      <HStack
-                        spacing={0}
-                        bg={isDark ? "gray.700" : "gray.100"}
-                        rounded="md"
-                        p={0.5}
-                      >
-                        <Box
-                          as="button"
-                          disabled={!isFieldEditable}
-                          onClick={() =>
-                            isFieldEditable &&
-                            setFlags((prev) => ({ ...prev, [key]: "TRUE" }))
-                          }
-                          px={3}
-                          py={1}
-                          rounded="md"
-                          cursor={isFieldEditable ? "pointer" : "default"}
-                          bg={
-                            flags[key] === "TRUE" ? "green.500" : "transparent"
-                          }
-                          color={
-                            flags[key] === "TRUE"
-                              ? "white"
-                              : isDark
-                                ? "gray.400"
-                                : "gray.500"
-                          }
-                          fontWeight="semibold"
-                          fontSize="xs"
-                          transition="all 0.15s"
-                          opacity={!isFieldEditable ? 0.6 : 1}
-                        >
-                          Ya
-                        </Box>
-                        <Box
-                          as="button"
-                          disabled={!isFieldEditable}
-                          onClick={() =>
-                            isFieldEditable &&
-                            setFlags((prev) => ({ ...prev, [key]: "FALSE" }))
-                          }
-                          px={3}
-                          py={1}
-                          rounded="md"
-                          cursor={isFieldEditable ? "pointer" : "default"}
-                          bg={
-                            flags[key] === "FALSE" ? "red.500" : "transparent"
-                          }
-                          color={
-                            flags[key] === "FALSE"
-                              ? "white"
-                              : isDark
-                                ? "gray.400"
-                                : "gray.500"
-                          }
-                          fontWeight="semibold"
-                          fontSize="xs"
-                          transition="all 0.15s"
-                          opacity={!isFieldEditable ? 0.6 : 1}
-                        >
-                          Tidak
-                        </Box>
-                      </HStack>
-                    </HStack>
-                  ))}
-                </Stack>
-              </CardBody>
-            </Card>
-          </Grid>
-
-          {/* BSC Criteria Assessment */}
-          <Card
-            rounded={radiusStyle}
-            shadow="sm"
-            border="1px"
-            borderColor={isDark ? "gray.700" : "gray.200"}
-            bg={isDark ? "gray.800" : "white"}
-          >
             <CardHeader py={3} px={5}>
               <HStack justify="space-between">
                 <HStack spacing={2}>
@@ -1220,18 +1378,36 @@ export default function AppsAssessmentDetailView() {
               })}
             </CardBody>
           </Card>
+          )}
 
-          {/* Criteria Category & Scores — auto calculated, at bottom */}
-          <Card
-            rounded={radiusStyle}
-            shadow="md"
-            border="1px"
-            borderColor={isDark ? "gray.700" : "gray.200"}
-            bg={isDark ? "gray.800" : "white"}
-          >
+          {/* Criteria Category & Scores — auto calculated, hidden when skip review is active */}
+          {!isSkipActive && (
+            <Card
+              rounded={radiusStyle}
+              shadow="md"
+              border={canEditAnyRtoRpo ? "2px" : "1px"}
+              borderColor={
+                canEditAnyRtoRpo
+                  ? isDark
+                    ? "blue.400"
+                    : "blue.500"
+                  : isDark
+                  ? "gray.700"
+                  : "gray.200"
+              }
+              bg={isDark ? "gray.800" : "white"}
+              transition="all 0.2s"
+            >
             <CardHeader py={3} px={5}>
               <HStack justify="space-between">
-                <Heading size="sm">Assessment Result</Heading>
+                <HStack spacing={2}>
+                  <Heading size="sm">Assessment Result</Heading>
+                  {canEditAnyRtoRpo && (
+                    <Badge colorScheme="blue" variant="subtle" fontSize="xs">
+                      ELIGIBLE TO FILL
+                    </Badge>
+                  )}
+                </HStack>
                 <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"}>
                   Auto-calculated
                 </Text>
@@ -1673,6 +1849,7 @@ export default function AppsAssessmentDetailView() {
               </Box>
             </CardBody>
           </Card>
+          )}
 
           {/* Status History / Approval Notes Timeline */}
           {(data?.statusHistories?.length ?? 0) > 0 && (
