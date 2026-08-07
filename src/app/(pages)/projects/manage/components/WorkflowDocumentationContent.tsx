@@ -20,11 +20,13 @@ import { DynamicWorkflowBox } from "./WorkflowComponents";
 interface WorkflowDocumentationContentProps {
   DataProject: ProjectDataResponse;
   refreshTrigger: number;
+  onParentRefresh?: () => void;
 }
 
 const WorkflowDocumentationContent = ({
   DataProject,
   refreshTrigger,
+  onParentRefresh,
 }: WorkflowDocumentationContentProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
@@ -40,6 +42,7 @@ const WorkflowDocumentationContent = ({
 
   const RefreshAction = () => {
     setRefreshData((prev) => prev + 1);
+    if (onParentRefresh) onParentRefresh();
   };
 
   useEffect(() => {

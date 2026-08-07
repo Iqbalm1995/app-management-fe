@@ -365,6 +365,7 @@ export interface ProjectWorkflowResponse {
   workflowChild: ProjectWorkflowResponse[];
   workflowValues: ProjectWorkflowValueResponse[];
   workflowBacklog?: BacklogDataResponse | null;
+  progressionStatus?: string | null;
 }
 
 export interface ProjectWorkflowValueResponse {
@@ -857,7 +858,19 @@ interface useProjectsServices {
     token: string
   ) => Promise<ApiGenericResponse<ProjectDataResponse[] | null> | null>;
   ApproveProject: (
-    payload: { projectId: string; isApproved: boolean; note?: string },
+    payload: { projectId: string; isApproved: boolean; note?: string; action?: string },
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  ResumeProject: (
+    payload: { projectId: string; note?: string },
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  RequestHoldProject: (
+    payload: { projectId: string; note?: string },
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  RequestCancelProject: (
+    payload: { projectId: string; note?: string },
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
   CanApproveProject: (
@@ -1093,6 +1106,16 @@ interface useProjectsServices {
 
   ProjectWorkflowBacklogInitialize: (
     pauload: ProjectWorkflowBacklogInitializePayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+
+  CompleteDocumentationProgression: (
+    projectWorkflowId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+
+  DeleteProjectWorkflow: (
+    workflowId: string,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
 
@@ -1361,7 +1384,7 @@ const useProjects = (): useProjectsServices => {
   };
 
   const ApproveProject = async (
-    payload: { projectId: string; isApproved: boolean; note?: string },
+    payload: { projectId: string; isApproved: boolean; note?: string; action?: string },
     token: string
   ): Promise<ApiGenericResponse<string | null> | null> => {
     setIsLoading(true);
@@ -1402,6 +1425,99 @@ const useProjects = (): useProjectsServices => {
           message: "Error connect to api",
           error: null,
         };
+      }
+    }
+  };
+
+  const ResumeProject = async (
+    payload: { projectId: string; note?: string },
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Projects/resume";
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "An error occurred.");
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const RequestHoldProject = async (
+    payload: { projectId: string; note?: string },
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const PathEndpoint: string = "/v1/Projects/request-hold";
+    try {
+      const response = await axiosInstance.post<ApiGenericResponse<string>>(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "An error occurred.");
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred.");
+        return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error connect to api", error: null };
+      }
+    }
+  };
+
+  const RequestCancelProject = async (
+    payload: { projectId: string; note?: string },
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const PathEndpoint: string = "/v1/Projects/request-cancel";
+    try {
+      const response = await axiosInstance.post<ApiGenericResponse<string>>(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "An error occurred.");
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred.");
+        return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error connect to api", error: null };
       }
     }
   };
@@ -3732,6 +3848,92 @@ const useProjects = (): useProjectsServices => {
     }
   };
 
+  const CompleteDocumentationProgression = async (
+    projectWorkflowId: string,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string =
+      "/v1/Projects/projectWorkflow/complete-documentation";
+
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, { projectWorkflowId }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const DeleteProjectWorkflow = async (
+    workflowId: string,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string =
+      `/v1/Projects/projectWorkflow/delete/${workflowId}`;
+
+    try {
+      const response = await axiosInstance.delete<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   const ListProjectWorkflowBacklog = async (
     projectId: string,
     token: string
@@ -4539,6 +4741,9 @@ const useProjects = (): useProjectsServices => {
     GetAssignedProjects,
     GetWaitingApproval,
     ApproveProject,
+    ResumeProject,
+    RequestHoldProject,
+    RequestCancelProject,
     CanApproveProject,
     GetDetailById,
     GetProjectDetail,
@@ -4596,6 +4801,8 @@ const useProjects = (): useProjectsServices => {
     DeleteProjectFeature,
 
     ProjectWorkflowBacklogInitialize,
+    CompleteDocumentationProgression,
+    DeleteProjectWorkflow,
     ListProjectWorkflowBacklog,
 
     GetProjectBacklogProgression,

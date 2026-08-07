@@ -318,10 +318,10 @@ export default function ProjectPreviewView({
             projectMembers={projectMembers}
             canApprove={canApprove}
             approvalMode={approvalMode}
-            onApprove={async (isApproved: boolean, note?: string) => {
+            onApprove={async (isApproved: boolean, note?: string, action?: string) => {
               if (!projectId) return;
               const response = await ApproveProject(
-                { projectId, isApproved, note },
+                { projectId, isApproved, note, action },
                 tokenData
               );
               if (response?.statusCode === RES_CODE_OK) {

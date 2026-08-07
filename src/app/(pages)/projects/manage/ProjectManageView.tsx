@@ -4,6 +4,7 @@ import { HeaderContentProps } from "@/app/components/headerContent";
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import LoadingMiniSquare from "@/app/components/loadingMiniSquare";
 import LoadingMiniSignature from "@/app/components/loadingMini";
+import { ConfirmationDialog } from "@/app/components/confirmationDialog";
 import {
   radiusStyle,
   RES_CODE_OK,
@@ -91,7 +92,7 @@ export default function ProjectManageView() {
 
   const delay = (ms: number) =>
     new Promise((resolve) => setTimeout(resolve, ms));
-  const { GetDetailById, GetDetailAppsByProjectId } = useProjects();
+  const { GetDetailById, GetDetailAppsByProjectId, RequestHoldProject, RequestCancelProject, ResumeProject } = useProjects();
 
   const [HeaderContentState, setHeaderContentState] =
     useState<HeaderContentProps>(HeaderDataContent);
@@ -105,6 +106,51 @@ export default function ProjectManageView() {
   const [DataApps, setDataApps] = useState<AppsResponse | null>(null);
   const [RefreshData, setRefreshData] = useState<number>(0);
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
+  const [isRequestingHold, setIsRequestingHold] = useState(false);
+  const [isRequestingCancel, setIsRequestingCancel] = useState(false);
+  const [isRequestingResume, setIsRequestingResume] = useState(false);
+  const [openConfirmHold, setOpenConfirmHold] = useState(false);
+  const [openConfirmCancel, setOpenConfirmCancel] = useState(false);
+  const [openConfirmResume, setOpenConfirmResume] = useState(false);
+
+  const handleRequestHold = async () => {
+    if (!projectId || !tokenData) return;
+    setIsRequestingHold(true);
+    const response = await RequestHoldProject({ projectId }, tokenData);
+    if (response?.statusCode === 200) {
+      showToast({ description: response.message || "Request On Hold submitted", statusToast: "success" });
+      setRefreshData((prev) => prev + 1);
+    } else {
+      showToast({ description: response?.message || "Failed to request hold", statusToast: "error" });
+    }
+    setIsRequestingHold(false);
+  };
+
+  const handleRequestCancel = async () => {
+    if (!projectId || !tokenData) return;
+    setIsRequestingCancel(true);
+    const response = await RequestCancelProject({ projectId }, tokenData);
+    if (response?.statusCode === 200) {
+      showToast({ description: response.message || "Request Cancel submitted", statusToast: "success" });
+      setRefreshData((prev) => prev + 1);
+    } else {
+      showToast({ description: response?.message || "Failed to request cancel", statusToast: "error" });
+    }
+    setIsRequestingCancel(false);
+  };
+
+  const handleResumeProject = async () => {
+    if (!projectId || !tokenData) return;
+    setIsRequestingResume(true);
+    const response = await ResumeProject({ projectId }, tokenData);
+    if (response?.statusCode === 200) {
+      showToast({ description: response.message || "Resume submitted. Waiting for approval.", statusToast: "success" });
+      setRefreshData((prev) => prev + 1);
+    } else {
+      showToast({ description: response?.message || "Failed to resume project", statusToast: "error" });
+    }
+    setIsRequestingResume(false);
+  };
 
   const scrollTabs = (direction: "left" | "right") => {
     if (tabsRef.current) {
@@ -873,6 +919,41 @@ export default function ProjectManageView() {
                             >
                               {DataProject.projectStatus}
                             </Badge>
+                            {(DataProject.projectStatus === "INITIATING" || DataProject.projectStatus === "RUNNING") && (
+                              <HStack spacing={2} mt={2}>
+                                <Button
+                                  size="xs"
+                                  colorScheme="orange"
+                                  variant="outline"
+                                  isLoading={isRequestingHold}
+                                  onClick={() => setOpenConfirmHold(true)}
+                                >
+                                  Request On Hold
+                                </Button>
+                                <Button
+                                  size="xs"
+                                  colorScheme="red"
+                                  variant="outline"
+                                  isLoading={isRequestingCancel}
+                                  onClick={() => setOpenConfirmCancel(true)}
+                                >
+                                  Request Cancel
+                                </Button>
+                              </HStack>
+                            )}
+                            {DataProject.projectStatus === "ON HOLD" && (
+                              <HStack spacing={2} mt={2}>
+                                <Button
+                                  size="xs"
+                                  colorScheme="green"
+                                  variant="solid"
+                                  isLoading={isRequestingResume}
+                                  onClick={() => setOpenConfirmResume(true)}
+                                >
+                                  Resume Project
+                                </Button>
+                              </HStack>
+                            )}
                           </VStack>
                         </>
                       ) : (
@@ -988,6 +1069,32 @@ export default function ProjectManageView() {
           </GridItem>
         </Grid>
       </Box>
+
+      {/* Confirmation Dialogs */}
+      <ConfirmationDialog
+        key={"confirmRequestHold"}
+        isOpenTrigger={openConfirmHold}
+        action={handleRequestHold}
+        trigger={setOpenConfirmHold}
+        questionMsg={"Apakah Anda yakin ingin mengajukan permohonan On Hold untuk project ini?\n\nProject akan menunggu persetujuan dari approver sebelum status berubah menjadi ON HOLD."}
+        captionMsg={"Request On Hold"}
+      />
+      <ConfirmationDialog
+        key={"confirmRequestCancel"}
+        isOpenTrigger={openConfirmCancel}
+        action={handleRequestCancel}
+        trigger={setOpenConfirmCancel}
+        questionMsg={"Apakah Anda yakin ingin mengajukan permohonan Cancel untuk project ini?\n\nProject akan menunggu persetujuan dari approver sebelum status berubah menjadi CANCELED. Aksi ini bersifat permanen setelah disetujui."}
+        captionMsg={"Request Cancel"}
+      />
+      <ConfirmationDialog
+        key={"confirmResumeProject"}
+        isOpenTrigger={openConfirmResume}
+        action={handleResumeProject}
+        trigger={setOpenConfirmResume}
+        questionMsg={"Apakah Anda yakin ingin melanjutkan (resume) project ini?\n\nProject akan masuk kembali ke proses approval dari awal (Waiting Approval 1) sebelum kembali berjalan."}
+        captionMsg={"Resume Project"}
+      />
     </LayoutAdmin>
   );
 }

@@ -63,7 +63,7 @@ interface ProjectInfoPreviewProps {
   projectMembers?: ProjectUserAssignmentResponse[];
   canApprove?: boolean;
   approvalMode?: boolean;
-  onApprove?: (isApproved: boolean, note?: string) => Promise<void>;
+  onApprove?: (isApproved: boolean, note?: string, action?: string) => Promise<void>;
 }
 
 const ProjectInfoPreview = ({ 
@@ -83,17 +83,23 @@ const ProjectInfoPreview = ({
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [isApproving, setIsApproving] = useState(false);
   const [approvalNote, setApprovalNote] = useState("");
-  const [approvalAction, setApprovalAction] = useState<boolean | null>(null);
+  const [approvalAction, setApprovalAction] = useState<string | null>(null);
 
   const handleApprovalClick = (isApproved: boolean) => {
-    setApprovalAction(isApproved);
+    setApprovalAction(isApproved ? "APPROVE" : "DECLINE");
+    onOpen();
+  };
+
+  const handleActionClick = (action: string) => {
+    setApprovalAction(action);
     onOpen();
   };
 
   const handleConfirmApproval = async () => {
     if (approvalAction === null || !onApprove) return;
     setIsApproving(true);
-    await onApprove(approvalAction, approvalNote);
+    const isApproved = approvalAction === "APPROVE";
+    await onApprove(isApproved, approvalNote, approvalAction);
     setIsApproving(false);
     setApprovalNote("");
     onClose();
@@ -261,7 +267,10 @@ const ProjectInfoPreview = ({
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>
-            {approvalAction ? "Approve Project" : "Decline Project"}
+            {approvalAction === "APPROVE" ? "Approve Project" 
+              : approvalAction === "ON_HOLD" ? "On Hold Project"
+              : approvalAction === "CANCEL" ? "Cancel Project"
+              : "Decline Project"}
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody>
@@ -293,7 +302,10 @@ const ProjectInfoPreview = ({
                 <Textarea
                   value={approvalNote}
                   onChange={(e) => setApprovalNote(e.target.value)}
-                  placeholder={approvalAction ? "Add approval note..." : "Add reason for declining..."}
+                  placeholder={approvalAction === "APPROVE" ? "Add approval note..." 
+                    : approvalAction === "ON_HOLD" ? "Add reason for putting on hold..."
+                    : approvalAction === "CANCEL" ? "Add reason for canceling..."
+                    : "Add reason for declining..."}
                   rows={4}
                 />
               </FormControl>
@@ -304,12 +316,17 @@ const ProjectInfoPreview = ({
               Cancel
             </Button>
             <Button
-              colorScheme={approvalAction ? "green" : "red"}
+              colorScheme={approvalAction === "APPROVE" ? "green" 
+                : approvalAction === "ON_HOLD" ? "orange" 
+                : "red"}
               onClick={handleConfirmApproval}
               isLoading={isApproving}
               leftIcon={approvalAction ? <FiCheckCircle /> : <FiXCircle />}
             >
-              {approvalAction ? "Confirm Approval" : "Confirm Decline"}
+              {approvalAction === "APPROVE" ? "Confirm Approval" 
+                : approvalAction === "ON_HOLD" ? "Confirm On Hold"
+                : approvalAction === "CANCEL" ? "Confirm Cancel"
+                : "Confirm Decline"}
             </Button>
           </ModalFooter>
         </ModalContent>

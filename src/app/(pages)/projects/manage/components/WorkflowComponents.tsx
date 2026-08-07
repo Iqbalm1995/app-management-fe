@@ -76,6 +76,10 @@ import {
   Radio,
   IconButton,
   Divider,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverBody,
 } from "@chakra-ui/react";
 import { useFormik } from "formik";
 import { useEffect, useState } from "react";
@@ -90,6 +94,7 @@ import {
   FiFile,
   FiTrash2,
   FiExternalLink,
+  FiMoreVertical,
 } from "react-icons/fi";
 import * as yup from "yup";
 import { useDropzone } from "react-dropzone";
@@ -1544,8 +1549,50 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
     }
   };
 
-  const { InsertProjectWorkflowValue, ListProjectWorkflowValue } =
+  const { InsertProjectWorkflowValue, ListProjectWorkflowValue, CompleteDocumentationProgression, DeleteProjectWorkflow } =
     useProjects();
+
+  const [isCompleting, setIsCompleting] = useState(false);
+  const [openConfirmComplete, setOpenConfirmComplete] = useState(false);
+
+  const handleCompleteDocumentation = async () => {
+    if (!tokenData || !workflow.id) return;
+    setIsCompleting(true);
+    try {
+      const response = await CompleteDocumentationProgression(workflow.id, tokenData);
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({ description: "Progression berhasil ditandai selesai", statusToast: "success" });
+        if (onRefresh) onRefresh();
+      } else {
+        showToast({ description: response?.message || "Gagal menyelesaikan progression", statusToast: "error" });
+      }
+    } catch {
+      showToast({ description: "Terjadi kesalahan", statusToast: "error" });
+    } finally {
+      setIsCompleting(false);
+    }
+  };
+
+  const [openConfirmDelete, setOpenConfirmDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteWorkflow = async () => {
+    if (!tokenData || !workflow.id) return;
+    setIsDeleting(true);
+    try {
+      const response = await DeleteProjectWorkflow(workflow.id, tokenData);
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({ description: "Workstage berhasil dihapus", statusToast: "success" });
+        if (onRefresh) onRefresh();
+      } else {
+        showToast({ description: response?.message || "Gagal menghapus workstage", statusToast: "error" });
+      }
+    } catch {
+      showToast({ description: "Terjadi kesalahan", statusToast: "error" });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
@@ -1779,9 +1826,67 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
             >
               Detail
             </Button>
+            {workflow.workflowValues?.length > 0 && workflow.progressionStatus !== "DONE" && (
+              <Button
+                size="xs"
+                colorScheme="green"
+                variant="solid"
+                leftIcon={<FiCheckCircle />}
+                isLoading={isCompleting}
+                onClick={() => setOpenConfirmComplete(true)}
+              >
+                Force Done Progression
+              </Button>
+            )}
+            <Popover placement="bottom-end">
+              <PopoverTrigger>
+                <IconButton
+                  aria-label="More actions"
+                  icon={<FiMoreVertical />}
+                  size="xs"
+                  variant="ghost"
+                />
+              </PopoverTrigger>
+              <PopoverContent w="180px">
+                <PopoverBody p={1}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    colorScheme="red"
+                    leftIcon={<FiTrash2 />}
+                    w="full"
+                    justifyContent="start"
+                    isLoading={isDeleting}
+                    onClick={() => setOpenConfirmDelete(true)}
+                  >
+                    Delete Workstage
+                  </Button>
+                </PopoverBody>
+              </PopoverContent>
+            </Popover>
           </HStack>
         </Td>
       </Tr>
+
+      {/* Confirmation Dialog for Force Done Progression */}
+      <ConfirmationDialog
+        key={"confirmCompleteDocProgression"}
+        isOpenTrigger={openConfirmComplete}
+        action={handleCompleteDocumentation}
+        trigger={setOpenConfirmComplete}
+        questionMsg={"Apakah Anda yakin ingin menandai progression ini sebagai selesai?\n\nPerhatian: Aksi ini akan membuat progression selesai tanpa melalui Kanban. User tidak akan ter-assign pada task sehingga tidak akan tercatat pada laporan kerja user."}
+        captionMsg={"Force Done Progression"}
+      />
+
+      {/* Confirmation Dialog for Delete Workstage */}
+      <ConfirmationDialog
+        key={"confirmDeleteWorkstage"}
+        isOpenTrigger={openConfirmDelete}
+        action={handleDeleteWorkflow}
+        trigger={setOpenConfirmDelete}
+        questionMsg={"Apakah Anda yakin ingin menghapus workstage ini?\n\nPerhatian: Menghapus workstage akan menghapus seluruh data terkait termasuk:\n- Dokumen yang telah diupload\n- Data progression dan backlog\n- Task dan Kanban board\n- Riwayat perubahan\n\nAksi ini tidak dapat dibatalkan."}
+        captionMsg={"Delete Workstage"}
+      />
 
       {/* Reuse existing modals from WorkflowLevel2Box */}
       <Modal

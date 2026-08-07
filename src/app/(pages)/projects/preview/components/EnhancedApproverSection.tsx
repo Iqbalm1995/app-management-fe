@@ -28,7 +28,7 @@ export const EnhancedApproverSection = ({
   DataProject,
   canApprove,
   onApprove,
-  onDecline
+  onDecline,
 }: EnhancedApproverSectionProps) => {
   const { colorMode } = useColorMode();
 

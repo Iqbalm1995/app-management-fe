@@ -152,10 +152,14 @@ export default function PendingApproveView() {
           );
 
           if (flowsResponse?.statusCode === RES_CODE_OK && flowsResponse.data) {
-            const options = flowsResponse.data.map((flow: any) => ({
-              code: flow.codeStatus,
-              name: flow.nameStatus,
-            }));
+            const options = flowsResponse.data
+              .map((flow: any) => ({
+                code: flow.codeStatus,
+                name: flow.nameStatus,
+              }))
+              .filter((opt: any, index: number, self: any[]) => 
+                self.findIndex((o: any) => o.code === opt.code) === index
+              );
 
             setApprovalStatusOptions(options);
           }

@@ -165,6 +165,7 @@ import {
   FiUsers,
   FiAlertTriangle,
   FiCheck,
+  FiTrash2,
 } from "react-icons/fi";
 import * as Yup from "yup";
 import { AnimatePresence, motion } from "framer-motion";
@@ -178,6 +179,7 @@ import {
   priorityColor,
 } from "@/app/helper/MasterHelper";
 import LoadingMiniSignature from "@/app/components/loadingMini";
+import { ConfirmationDialog } from "@/app/components/confirmationDialog";
 import { TableComponentFull } from "@/app/components/tableComponents";
 import { InputLayoutFull } from "@/app/components/layoutContentBody";
 
@@ -3914,7 +3916,7 @@ const WorkFlowBacklogsView = ({
       )}
 
       {/* Tabs Section */}
-      <Tabs colorScheme="secondary" w="full">
+      <Tabs colorScheme="secondary" w="full" defaultIndex={1}>
         <HStack justify="space-between" align="center" w="full">
           <TabList>
             <Tab>Progression</Tab>
@@ -3949,6 +3951,7 @@ const WorkFlowBacklogsView = ({
             <WorkflowDocumentationContent
               DataProject={DataProject}
               refreshTrigger={refreshTrigger}
+              onParentRefresh={onRefresh}
             />
           </TabPanel>
         </TabPanels>
@@ -4358,7 +4361,7 @@ const WorkflowBacklogTable = ({
 
   const showToast = useToastHelper();
   const { UpdateBacklog, GetDetailBacklogById } = useRequirements();
-  const { ProjectWorkflowBacklogInitialize } = useProjects();
+  const { ProjectWorkflowBacklogInitialize, DeleteProjectWorkflow } = useProjects();
   const [isLoading, setIsLoading] = useState(false);
   const [tokenData, setTokenData] = useState<string>("");
 
@@ -4366,6 +4369,28 @@ const WorkflowBacklogTable = ({
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedBacklog, setSelectedBacklog] =
     useState<BacklogDataResponse | null>(null);
+
+  // Delete state
+  const [openConfirmDeleteWS, setOpenConfirmDeleteWS] = useState(false);
+  const [isDeletingWS, setIsDeletingWS] = useState(false);
+
+  const handleDeleteWorkstage = async () => {
+    if (!tokenData || !workflow.id) return;
+    setIsDeletingWS(true);
+    try {
+      const response = await DeleteProjectWorkflow(workflow.id, tokenData);
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({ description: "Workstage berhasil dihapus", statusToast: "success" });
+        onRefresh();
+      } else {
+        showToast({ description: response?.message || "Gagal menghapus workstage", statusToast: "error" });
+      }
+    } catch {
+      showToast({ description: "Terjadi kesalahan", statusToast: "error" });
+    } finally {
+      setIsDeletingWS(false);
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("tokenData") as string;
@@ -4644,6 +4669,32 @@ const WorkflowBacklogTable = ({
                         Kanban
                       </Button>
                     </Link>
+                    <Popover placement="bottom-end">
+                      <PopoverTrigger>
+                        <IconButton
+                          aria-label="More actions"
+                          icon={<FiMoreVertical />}
+                          size="xs"
+                          variant="ghost"
+                        />
+                      </PopoverTrigger>
+                      <PopoverContent w="180px">
+                        <PopoverBody p={1}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            colorScheme="red"
+                            leftIcon={<FiTrash2 />}
+                            w="full"
+                            justifyContent="start"
+                            isLoading={isDeletingWS}
+                            onClick={() => setOpenConfirmDeleteWS(true)}
+                          >
+                            Delete Workstage
+                          </Button>
+                        </PopoverBody>
+                      </PopoverContent>
+                    </Popover>
                   </HStack>
                 </Td>
               </Tr>
@@ -4651,6 +4702,16 @@ const WorkflowBacklogTable = ({
           </Tbody>
         </Table>
       </Box>
+
+      {/* Confirmation Dialog for Delete Workstage */}
+      <ConfirmationDialog
+        key={"confirmDeleteWorkstageProgression"}
+        isOpenTrigger={openConfirmDeleteWS}
+        action={handleDeleteWorkstage}
+        trigger={setOpenConfirmDeleteWS}
+        questionMsg={"Apakah Anda yakin ingin menghapus workstage ini?\n\nPerhatian: Menghapus workstage akan menghapus seluruh data terkait termasuk:\n- Dokumen yang telah diupload\n- Data progression dan backlog\n- Task dan Kanban board\n- Riwayat perubahan\n\nAksi ini tidak dapat dibatalkan."}
+        captionMsg={"Delete Workstage"}
+      />
 
       {/* Edit Backlog Modal */}
       <Modal isOpen={isOpen} onClose={onClose} size="4xl">
