@@ -21,14 +21,19 @@ import {
   useColorMode,
   Box,
   SimpleGrid,
+  Alert,
+  AlertIcon,
+  Divider,
+  Icon,
 } from "@chakra-ui/react";
-import { FiEdit3, FiSave, FiX, FiSettings, FiRefreshCcw } from "react-icons/fi";
+import { FiEdit3, FiSave, FiX, FiSettings, FiRefreshCcw, FiAlertTriangle, FiPauseCircle, FiXCircle, FiPlayCircle } from "react-icons/fi";
 import { useState, useEffect } from "react";
 import { radiusStyle, RES_CODE_OK, RES_GENERIC_ERROR_MSG, MAX_SIZE_TABLE } from "@/app/constants/applicationConstants";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import { PaggingListPayload } from "@/app/types/masterTypes";
+import { ConfirmationDialog } from "@/app/components/confirmationDialog";
 
 interface ProjectEditSectionProps {
   DataProject: ProjectDataResponse | null;
@@ -42,12 +47,59 @@ const ProjectEditSection = ({ DataProject, canMake, onRefresh }: ProjectEditSect
   const [isSaving, setIsSaving] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const showToast = useToastHelper();
-  const { UpdateProjects } = useProjects();
+  const { UpdateProjects, RequestHoldProject, RequestCancelProject, ResumeProject } = useProjects();
   const { List: ListOrganizations } = useOrganization();
   const { ListConstantData } = useConstants();
 
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
+
+  // Hold/Cancel/Resume state
+  const [isRequestingHold, setIsRequestingHold] = useState(false);
+  const [isRequestingCancel, setIsRequestingCancel] = useState(false);
+  const [isRequestingResume, setIsRequestingResume] = useState(false);
+  const [openConfirmHold, setOpenConfirmHold] = useState(false);
+  const [openConfirmCancel, setOpenConfirmCancel] = useState(false);
+  const [openConfirmResume, setOpenConfirmResume] = useState(false);
+
+  const handleRequestHold = async () => {
+    if (!DataProject?.id || !tokenData) return;
+    setIsRequestingHold(true);
+    const response = await RequestHoldProject({ projectId: DataProject.id }, tokenData);
+    if (response?.statusCode === RES_CODE_OK) {
+      showToast({ description: response.message || "Request On Hold submitted", statusToast: "success" });
+      if (onRefresh) onRefresh();
+    } else {
+      showToast({ description: response?.message || "Failed to request hold", statusToast: "error" });
+    }
+    setIsRequestingHold(false);
+  };
+
+  const handleRequestCancel = async () => {
+    if (!DataProject?.id || !tokenData) return;
+    setIsRequestingCancel(true);
+    const response = await RequestCancelProject({ projectId: DataProject.id }, tokenData);
+    if (response?.statusCode === RES_CODE_OK) {
+      showToast({ description: response.message || "Request Cancel submitted", statusToast: "success" });
+      if (onRefresh) onRefresh();
+    } else {
+      showToast({ description: response?.message || "Failed to request cancel", statusToast: "error" });
+    }
+    setIsRequestingCancel(false);
+  };
+
+  const handleResumeProject = async () => {
+    if (!DataProject?.id || !tokenData) return;
+    setIsRequestingResume(true);
+    const response = await ResumeProject({ projectId: DataProject.id }, tokenData);
+    if (response?.statusCode === RES_CODE_OK) {
+      showToast({ description: response.message || "Resume submitted. Waiting for approval.", statusToast: "success" });
+      if (onRefresh) onRefresh();
+    } else {
+      showToast({ description: response?.message || "Failed to resume project", statusToast: "error" });
+    }
+    setIsRequestingResume(false);
+  };
 
   const [organizations, setOrganizations] = useState<OrganizationResponse[]>([]);
   const [acquisitionCodes, setAcquisitionCodes] = useState<ConstantDataResponse[]>([]);
@@ -302,10 +354,10 @@ const ProjectEditSection = ({ DataProject, canMake, onRefresh }: ProjectEditSect
       <HStack justify="space-between" align="center">
         <VStack align="start" spacing={1}>
           <Heading size="lg" color={colorMode === "light" ? "gray.800" : "white"}>
-            Edit Project
+            Project Options
           </Heading>
           <Text color="gray.600" fontSize="sm">
-            Manage project information and settings
+            Manage project settings, edit information, and project actions
           </Text>
         </VStack>
         <HStack spacing={3}>
@@ -323,8 +375,8 @@ const ProjectEditSection = ({ DataProject, canMake, onRefresh }: ProjectEditSect
         </HStack>
       </HStack>
 
-      <Card shadow="lg" rounded="xl" border="1px" borderColor="gray.100">
-        <CardHeader bg="blue.50" roundedTop="xl">
+      <Card shadow="lg" rounded="xl" border="1px" borderColor={colorMode === "light" ? "gray.100" : "gray.700"}>
+        <CardHeader bg={colorMode === "light" ? "gray.50" : "gray.900"} roundedTop="xl" borderBottom="1px" borderColor={colorMode === "light" ? "gray.100" : "gray.700"}>
           <HStack justify="space-between" align="center">
             <HStack spacing={3}>
               <Box
@@ -336,11 +388,16 @@ const ProjectEditSection = ({ DataProject, canMake, onRefresh }: ProjectEditSect
                 alignItems="center"
                 justifyContent="center"
               >
-                <FiSettings size={20} color="white" />
+                <FiEdit3 size={20} color="white" />
               </Box>
-              <Heading size="md" color="blue.700">
-                Project Information
-              </Heading>
+              <VStack align="start" spacing={0}>
+                <Heading size="sm" color={colorMode === "light" ? "gray.800" : "gray.100"}>
+                  Project Information
+                </Heading>
+                <Text fontSize="xs" color="gray.500">
+                  Detail dan konfigurasi informasi project
+                </Text>
+              </VStack>
             </HStack>
             <Button
               size="sm"
@@ -349,249 +406,278 @@ const ProjectEditSection = ({ DataProject, canMake, onRefresh }: ProjectEditSect
               onClick={() => setIsEditing(!isEditing)}
               variant={isEditing ? "outline" : "solid"}
               rounded="full"
-              // isDisabled={isSaving || !canMake}
               isDisabled={true}
             >
-              {isEditing ? "Cancel" : "Edit Project"}
+              {isEditing ? "Cancel" : "Edit Information"}
             </Button>
           </HStack>
         </CardHeader>
 
-        <CardBody p={6}>
-          <VStack spacing={6} align="stretch">
+        <CardBody p={0}>
+          <VStack spacing={0} align="stretch" divider={<Divider borderColor={colorMode === "light" ? "gray.100" : "gray.700"} />}>
             {/* Project Number */}
-            <FormControl>
-              <FormLabel fontSize="sm" fontWeight="semibold" color="gray.700">
-                Nomor Project
-              </FormLabel>
-              <Input
-                value={formData.projectNo}
-                onChange={(e) => setFormData(prev => ({ ...prev, projectNo: e.target.value }))}
-                isReadOnly={!isEditing}
-                bg={isEditing ? "white" : "gray.50"}
-                rounded="lg"
-              />
-            </FormControl>
+            <HStack justify="space-between" align="center" px={6} py={4} _hover={{ bg: colorMode === "light" ? "gray.50" : "gray.750" }}>
+              <VStack align="start" spacing={0} minW="200px">
+                <Text fontSize="sm" fontWeight="600" color={colorMode === "light" ? "gray.700" : "gray.200"}>Nomor Project</Text>
+                <Text fontSize="xs" color="gray.500">Kode unik identifikasi project</Text>
+              </VStack>
+              <Box flex={1} maxW="400px">
+                <Input
+                  value={formData.projectNo}
+                  onChange={(e) => setFormData(prev => ({ ...prev, projectNo: e.target.value }))}
+                  isReadOnly={!isEditing}
+                  bg={isEditing ? "white" : colorMode === "light" ? "gray.50" : "gray.700"}
+                  rounded="lg"
+                  size="sm"
+                />
+              </Box>
+            </HStack>
 
             {/* Jenis Pengadaan - Only for PROCUREMENT */}
             {DataProject?.projectType === "PROCUREMENT" && (
-              <FormControl>
-                <FormLabel fontSize="sm" fontWeight="semibold" color="gray.700">
-                  Jenis Pengadaan
-                </FormLabel>
-                <Select
-                  options={acquisitionCodes.map(acq => ({
-                    label: acq.label,
-                    value: acq.value,
-                  }))}
-                  value={acquisitionCodes.filter(a => a.value === formData.projectAcquisitionCode).map(a => ({
-                    label: a.label,
-                    value: a.value,
-                  }))[0]}
-                  onChange={(e) => {
-                    if (e) {
-                      setFormData(prev => ({ ...prev, projectAcquisitionCode: e.value }));
-                    }
-                  }}
-                  isDisabled={!isEditing}
-                  placeholder="Pilih Jenis Pengadaan"
-                  isClearable
-                />
-              </FormControl>
-            )}
-
-            {/* Project Name */}
-            <FormControl>
-              <FormLabel fontSize="sm" fontWeight="semibold" color="gray.700">
-                Nama Project
-              </FormLabel>
-              <Input
-                value={formData.projectName}
-                onChange={(e) => setFormData(prev => ({ ...prev, projectName: e.target.value.toUpperCase() }))}
-                isReadOnly={!isEditing}
-                bg={isEditing ? "white" : "gray.50"}
-                rounded="lg"
-              />
-            </FormControl>
-
-            {/* Divisi Yang Menginisiasi */}
-            <FormControl>
-              <FormLabel fontSize="sm" fontWeight="semibold" color="gray.700">
-                Divisi Yang Menginisiasi
-              </FormLabel>
-              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                {/* Direktorat */}
-                <FormControl>
-                  <FormLabel fontSize="xs" color="gray.600">Direktorat</FormLabel>
+              <HStack justify="space-between" align="center" px={6} py={4} _hover={{ bg: colorMode === "light" ? "gray.50" : "gray.750" }}>
+                <VStack align="start" spacing={0} minW="200px">
+                  <Text fontSize="sm" fontWeight="600" color={colorMode === "light" ? "gray.700" : "gray.200"}>Jenis Pengadaan</Text>
+                  <Text fontSize="xs" color="gray.500">Tipe akuisisi project</Text>
+                </VStack>
+                <Box flex={1} maxW="400px">
                   <Select
-                    options={organizations.filter(o => o.orgType === "DIRECTORATE").map(o => ({
-                      label: `${o.orgName} | ${o.orgType}`,
-                      value: o.id,
+                    options={acquisitionCodes.map(acq => ({
+                      label: acq.label,
+                      value: acq.value,
                     }))}
-                    value={organizations.filter(o => o.id === formData.proOwnerDirectorateId).map(o => ({
-                      label: `${o.orgName} | ${o.orgType}`,
-                      value: o.id,
-                    }))[0]}
-                    isDisabled={true}
-                    placeholder="Pilih Direktorat"
-                    size="sm"
-                  />
-                </FormControl>
-
-                {/* Divisi */}
-                <FormControl>
-                  <FormLabel fontSize="xs" color="gray.600">Divisi</FormLabel>
-                  <Select
-                    options={organizations.filter(o => o.orgType === "DIVISION").map(o => ({
-                      label: `${o.orgName} | ${o.orgType}`,
-                      value: o.id,
-                    }))}
-                    value={organizations.filter(o => o.id === formData.proOwnerDivisionId).map(o => ({
-                      label: `${o.orgName} | ${o.orgType}`,
-                      value: o.id,
+                    value={acquisitionCodes.filter(a => a.value === formData.projectAcquisitionCode).map(a => ({
+                      label: a.label,
+                      value: a.value,
                     }))[0]}
                     onChange={(e) => {
                       if (e) {
-                        setFormData(prev => ({ ...prev, proOwnerDivisionId: e.value, proOwnerGroupId: "" }));
-                        const division = organizations.find(o => o.id === e.value);
-                        if (division?.parentId) {
-                          setFormData(prev => ({ ...prev, proOwnerDirectorateId: division.parentId || "" }));
-                        }
+                        setFormData(prev => ({ ...prev, projectAcquisitionCode: e.value }));
                       }
                     }}
                     isDisabled={!isEditing}
-                    placeholder="Pilih Divisi"
-                    size="sm"
+                    placeholder="Pilih Jenis Pengadaan"
                     isClearable
+                    size="sm"
                   />
-                </FormControl>
+                </Box>
+              </HStack>
+            )}
 
-                {/* Grup */}
-                <FormControl gridColumn={{ base: "1", md: "1 / -1" }}>
-                  <FormLabel fontSize="xs" color="gray.600">Grup</FormLabel>
-                  <Select
-                    options={organizations.filter(o => o.orgType === "GROUP" && o.parentId === formData.proOwnerDivisionId).map(o => ({
-                      label: `${o.orgName} | ${o.orgType}`,
-                      value: o.id,
-                    }))}
-                    value={organizations.filter(o => o.id === formData.proOwnerGroupId).map(o => ({
-                      label: `${o.orgName} | ${o.orgType}`,
-                      value: o.id,
-                    }))[0]}
-                    onChange={(e) => {
-                      if (e) {
-                        setFormData(prev => ({ ...prev, proOwnerGroupId: e.value }));
-                      }
-                    }}
-                    isDisabled={!isEditing || !formData.proOwnerDivisionId}
-                    placeholder="Pilih Grup"
-                    size="sm"
-                    isClearable
-                  />
-                </FormControl>
-              </SimpleGrid>
-            </FormControl>
+            {/* Project Name */}
+            <HStack justify="space-between" align="center" px={6} py={4} _hover={{ bg: colorMode === "light" ? "gray.50" : "gray.750" }}>
+              <VStack align="start" spacing={0} minW="200px">
+                <Text fontSize="sm" fontWeight="600" color={colorMode === "light" ? "gray.700" : "gray.200"}>Nama Project</Text>
+                <Text fontSize="xs" color="gray.500">Nama lengkap project</Text>
+              </VStack>
+              <Box flex={1} maxW="400px">
+                <Input
+                  value={formData.projectName}
+                  onChange={(e) => setFormData(prev => ({ ...prev, projectName: e.target.value.toUpperCase() }))}
+                  isReadOnly={!isEditing}
+                  bg={isEditing ? "white" : colorMode === "light" ? "gray.50" : "gray.700"}
+                  rounded="lg"
+                  size="sm"
+                />
+              </Box>
+            </HStack>
+
+            {/* Divisi Yang Menginisiasi */}
+            <Box px={6} py={4} _hover={{ bg: colorMode === "light" ? "gray.50" : "gray.750" }}>
+              <VStack align="start" spacing={3} w="full">
+                <VStack align="start" spacing={0}>
+                  <Text fontSize="sm" fontWeight="600" color={colorMode === "light" ? "gray.700" : "gray.200"}>Divisi Yang Menginisiasi</Text>
+                  <Text fontSize="xs" color="gray.500">Organisasi penginisiasi project</Text>
+                </VStack>
+                <SimpleGrid columns={{ base: 1, md: 3 }} spacing={3} w="full">
+                  <FormControl>
+                    <FormLabel fontSize="xs" color="gray.500">Direktorat</FormLabel>
+                    <Select
+                      options={organizations.filter(o => o.orgType === "DIRECTORATE").map(o => ({
+                        label: `${o.orgName}`,
+                        value: o.id,
+                      }))}
+                      value={organizations.filter(o => o.id === formData.proOwnerDirectorateId).map(o => ({
+                        label: `${o.orgName}`,
+                        value: o.id,
+                      }))[0]}
+                      isDisabled={true}
+                      placeholder="Direktorat"
+                      size="sm"
+                    />
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel fontSize="xs" color="gray.500">Divisi</FormLabel>
+                    <Select
+                      options={organizations.filter(o => o.orgType === "DIVISION").map(o => ({
+                        label: `${o.orgName}`,
+                        value: o.id,
+                      }))}
+                      value={organizations.filter(o => o.id === formData.proOwnerDivisionId).map(o => ({
+                        label: `${o.orgName}`,
+                        value: o.id,
+                      }))[0]}
+                      onChange={(e) => {
+                        if (e) {
+                          setFormData(prev => ({ ...prev, proOwnerDivisionId: e.value, proOwnerGroupId: "" }));
+                          const division = organizations.find(o => o.id === e.value);
+                          if (division?.parentId) {
+                            setFormData(prev => ({ ...prev, proOwnerDirectorateId: division.parentId || "" }));
+                          }
+                        }
+                      }}
+                      isDisabled={!isEditing}
+                      placeholder="Divisi"
+                      size="sm"
+                      isClearable
+                    />
+                  </FormControl>
+                  <FormControl>
+                    <FormLabel fontSize="xs" color="gray.500">Grup</FormLabel>
+                    <Select
+                      options={organizations.filter(o => o.orgType === "GROUP" && o.parentId === formData.proOwnerDivisionId).map(o => ({
+                        label: `${o.orgName}`,
+                        value: o.id,
+                      }))}
+                      value={organizations.filter(o => o.id === formData.proOwnerGroupId).map(o => ({
+                        label: `${o.orgName}`,
+                        value: o.id,
+                      }))[0]}
+                      onChange={(e) => {
+                        if (e) {
+                          setFormData(prev => ({ ...prev, proOwnerGroupId: e.value }));
+                        }
+                      }}
+                      isDisabled={!isEditing || !formData.proOwnerDivisionId}
+                      placeholder="Grup"
+                      size="sm"
+                      isClearable
+                    />
+                  </FormControl>
+                </SimpleGrid>
+              </VStack>
+            </Box>
 
             {/* Karakteristik Project */}
-            <FormControl>
-              <FormLabel fontSize="sm" fontWeight="semibold" color="gray.700">
-                Karakteristik Project
-              </FormLabel>
-              <Select
-                options={characteristicCodes.map(c => ({
-                  label: c.label,
-                  value: c.value,
-                }))}
-                value={characteristicCodes.filter(c => c.value === formData.projectCharasteristicCode).map(c => ({
-                  label: c.label,
-                  value: c.value,
-                }))[0]}
-                onChange={(e) => {
-                  if (e) {
-                    setFormData(prev => ({ ...prev, projectCharasteristicCode: e.value, projectSubCharasteristicCode: "" }));
-                  }
-                }}
-                isDisabled={!isEditing}
-                placeholder="Pilih Karakteristik Project"
-                isClearable
-              />
-            </FormControl>
+            <HStack justify="space-between" align="center" px={6} py={4} _hover={{ bg: colorMode === "light" ? "gray.50" : "gray.750" }}>
+              <VStack align="start" spacing={0} minW="200px">
+                <Text fontSize="sm" fontWeight="600" color={colorMode === "light" ? "gray.700" : "gray.200"}>Karakteristik Project</Text>
+                <Text fontSize="xs" color="gray.500">Kategori karakteristik</Text>
+              </VStack>
+              <Box flex={1} maxW="400px">
+                <Select
+                  options={characteristicCodes.map(c => ({
+                    label: c.label,
+                    value: c.value,
+                  }))}
+                  value={characteristicCodes.filter(c => c.value === formData.projectCharasteristicCode).map(c => ({
+                    label: c.label,
+                    value: c.value,
+                  }))[0]}
+                  onChange={(e) => {
+                    if (e) {
+                      setFormData(prev => ({ ...prev, projectCharasteristicCode: e.value, projectSubCharasteristicCode: "" }));
+                    }
+                  }}
+                  isDisabled={!isEditing}
+                  placeholder="Pilih Karakteristik"
+                  isClearable
+                  size="sm"
+                />
+              </Box>
+            </HStack>
 
-            {/* Sub Karakteristik Project */}
-            <FormControl>
-              <FormLabel fontSize="sm" fontWeight="semibold" color="gray.700">
-                Sub Karakteristik Project
-              </FormLabel>
-              <Select
-                options={subCharacteristicCodes.map(c => ({
-                  label: c.label,
-                  value: c.value,
-                }))}
-                value={subCharacteristicCodes.filter(c => c.value === formData.projectSubCharasteristicCode).map(c => ({
-                  label: c.label,
-                  value: c.value,
-                }))[0]}
-                onChange={(e) => {
-                  if (e) {
-                    setFormData(prev => ({ ...prev, projectSubCharasteristicCode: e.value }));
-                  }
-                }}
-                isDisabled={!isEditing || !formData.projectCharasteristicCode}
-                placeholder="Pilih Sub Karakteristik Project"
-                isClearable
-              />
-            </FormControl>
+            {/* Sub Karakteristik */}
+            <HStack justify="space-between" align="center" px={6} py={4} _hover={{ bg: colorMode === "light" ? "gray.50" : "gray.750" }}>
+              <VStack align="start" spacing={0} minW="200px">
+                <Text fontSize="sm" fontWeight="600" color={colorMode === "light" ? "gray.700" : "gray.200"}>Sub Karakteristik</Text>
+                <Text fontSize="xs" color="gray.500">Detail sub kategori</Text>
+              </VStack>
+              <Box flex={1} maxW="400px">
+                <Select
+                  options={subCharacteristicCodes.map(c => ({
+                    label: c.label,
+                    value: c.value,
+                  }))}
+                  value={subCharacteristicCodes.filter(c => c.value === formData.projectSubCharasteristicCode).map(c => ({
+                    label: c.label,
+                    value: c.value,
+                  }))[0]}
+                  onChange={(e) => {
+                    if (e) {
+                      setFormData(prev => ({ ...prev, projectSubCharasteristicCode: e.value }));
+                    }
+                  }}
+                  isDisabled={!isEditing || !formData.projectCharasteristicCode}
+                  placeholder="Pilih Sub Karakteristik"
+                  isClearable
+                  size="sm"
+                />
+              </Box>
+            </HStack>
 
             {/* Deskripsi */}
-            <FormControl>
-              <FormLabel fontSize="sm" fontWeight="semibold" color="gray.700">
-                Deskripsi
-              </FormLabel>
-              <Textarea
-                value={formData.projectDesc}
-                onChange={(e) => setFormData(prev => ({ ...prev, projectDesc: e.target.value }))}
-                isReadOnly={!isEditing}
-                bg={isEditing ? "white" : "gray.50"}
-                rounded="lg"
-                rows={3}
-                maxLength={300}
-              />
-            </FormControl>
+            <HStack justify="space-between" align="start" px={6} py={4} _hover={{ bg: colorMode === "light" ? "gray.50" : "gray.750" }}>
+              <VStack align="start" spacing={0} minW="200px" pt={1}>
+                <Text fontSize="sm" fontWeight="600" color={colorMode === "light" ? "gray.700" : "gray.200"}>Deskripsi</Text>
+                <Text fontSize="xs" color="gray.500">Keterangan project</Text>
+              </VStack>
+              <Box flex={1} maxW="400px">
+                <Textarea
+                  value={formData.projectDesc}
+                  onChange={(e) => setFormData(prev => ({ ...prev, projectDesc: e.target.value }))}
+                  isReadOnly={!isEditing}
+                  bg={isEditing ? "white" : colorMode === "light" ? "gray.50" : "gray.700"}
+                  rounded="lg"
+                  rows={2}
+                  maxLength={300}
+                  size="sm"
+                />
+              </Box>
+            </HStack>
 
-            {/* Tanggal Register Project */}
-            <FormControl>
-              <FormLabel fontSize="sm" fontWeight="semibold" color="gray.700">
-                Tanggal Register Project
-              </FormLabel>
-              <Input
-                type="date"
-                value={formData.projectRegisterDate}
-                onChange={(e) => setFormData(prev => ({ ...prev, projectRegisterDate: e.target.value }))}
-                isDisabled={!isEditing}
-                bg={isEditing ? "white" : "gray.50"}
-                rounded="lg"
-              />
-            </FormControl>
+            {/* Tanggal Register */}
+            <HStack justify="space-between" align="center" px={6} py={4} _hover={{ bg: colorMode === "light" ? "gray.50" : "gray.750" }}>
+              <VStack align="start" spacing={0} minW="200px">
+                <Text fontSize="sm" fontWeight="600" color={colorMode === "light" ? "gray.700" : "gray.200"}>Tanggal Register</Text>
+                <Text fontSize="xs" color="gray.500">Tanggal pendaftaran project</Text>
+              </VStack>
+              <Box flex={1} maxW="400px">
+                <Input
+                  type="date"
+                  value={formData.projectRegisterDate}
+                  onChange={(e) => setFormData(prev => ({ ...prev, projectRegisterDate: e.target.value }))}
+                  isDisabled={!isEditing}
+                  bg={isEditing ? "white" : colorMode === "light" ? "gray.50" : "gray.700"}
+                  rounded="lg"
+                  size="sm"
+                />
+              </Box>
+            </HStack>
 
             {/* Note */}
-            <FormControl>
-              <FormLabel fontSize="sm" fontWeight="semibold" color="gray.700">
-                Note
-              </FormLabel>
-              <Textarea
-                value={formData.note}
-                onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
-                isReadOnly={!isEditing}
-                bg={isEditing ? "white" : "gray.50"}
-                rounded="lg"
-                rows={2}
-                maxLength={300}
-              />
-            </FormControl>
+            <HStack justify="space-between" align="start" px={6} py={4} _hover={{ bg: colorMode === "light" ? "gray.50" : "gray.750" }}>
+              <VStack align="start" spacing={0} minW="200px" pt={1}>
+                <Text fontSize="sm" fontWeight="600" color={colorMode === "light" ? "gray.700" : "gray.200"}>Catatan</Text>
+                <Text fontSize="xs" color="gray.500">Catatan tambahan</Text>
+              </VStack>
+              <Box flex={1} maxW="400px">
+                <Textarea
+                  value={formData.note}
+                  onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
+                  isReadOnly={!isEditing}
+                  bg={isEditing ? "white" : colorMode === "light" ? "gray.50" : "gray.700"}
+                  rounded="lg"
+                  rows={2}
+                  maxLength={300}
+                  size="sm"
+                />
+              </Box>
+            </HStack>
 
             {/* Save Button */}
             {isEditing && (
-              <HStack justify="flex-end" pt={4}>
+              <HStack justify="flex-end" px={6} py={4}>
                 <Button
                   colorScheme="green"
                   leftIcon={<FiSave />}
@@ -608,6 +694,167 @@ const ProjectEditSection = ({ DataProject, canMake, onRefresh }: ProjectEditSect
           </VStack>
         </CardBody>
       </Card>
+
+      {/* Danger Zone - Hold/Cancel/Resume */}
+      {DataProject && (DataProject.projectStatus === "INITIATING" || DataProject.projectStatus === "RUNNING" || DataProject.projectStatus === "ON HOLD") && (
+        <Card
+          w="full"
+          shadow="md"
+          rounded={radiusStyle}
+          border="2px"
+          borderColor={colorMode === "light" ? "red.200" : "red.700"}
+          bg={colorMode === "light" ? "red.50" : "gray.800"}
+        >
+          <CardHeader pb={2}>
+            <HStack spacing={3}>
+              <Icon as={FiAlertTriangle} color="red.500" boxSize={5} />
+              <Heading size="sm" color="red.600">
+                Danger Zone
+              </Heading>
+            </HStack>
+          </CardHeader>
+          <CardBody pt={0}>
+            <VStack spacing={4} align="stretch">
+              <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
+                Aksi di bawah ini akan mengubah status project secara signifikan. Pastikan Anda memahami konsekuensi dari setiap aksi.
+              </Text>
+
+              <Divider borderColor={colorMode === "light" ? "red.200" : "red.700"} />
+
+              {/* Request On Hold */}
+              {(DataProject.projectStatus === "INITIATING" || DataProject.projectStatus === "RUNNING") && (
+                <Box
+                  p={4}
+                  rounded={radiusStyle}
+                  border="1px"
+                  borderColor={colorMode === "light" ? "orange.200" : "orange.700"}
+                  bg={colorMode === "light" ? "orange.50" : "gray.750"}
+                >
+                  <HStack justify="space-between" align="center" wrap="wrap" gap={3}>
+                    <VStack align="start" spacing={1} flex={1}>
+                      <HStack>
+                        <Icon as={FiPauseCircle} color="orange.500" />
+                        <Text fontWeight="600" fontSize="sm" color={colorMode === "light" ? "gray.800" : "gray.100"}>
+                          Request On Hold
+                        </Text>
+                      </HStack>
+                      <Text fontSize="xs" color="gray.500">
+                        Mengajukan permohonan untuk menahan project. Memerlukan persetujuan approver.
+                      </Text>
+                    </VStack>
+                    <Button
+                      size="sm"
+                      colorScheme="orange"
+                      variant="outline"
+                      leftIcon={<FiPauseCircle />}
+                      isLoading={isRequestingHold}
+                      onClick={() => setOpenConfirmHold(true)}
+                    >
+                      Request On Hold
+                    </Button>
+                  </HStack>
+                </Box>
+              )}
+
+              {/* Request Cancel */}
+              {(DataProject.projectStatus === "INITIATING" || DataProject.projectStatus === "RUNNING") && (
+                <Box
+                  p={4}
+                  rounded={radiusStyle}
+                  border="1px"
+                  borderColor={colorMode === "light" ? "red.200" : "red.700"}
+                  bg={colorMode === "light" ? "red.50" : "gray.750"}
+                >
+                  <HStack justify="space-between" align="center" wrap="wrap" gap={3}>
+                    <VStack align="start" spacing={1} flex={1}>
+                      <HStack>
+                        <Icon as={FiXCircle} color="red.500" />
+                        <Text fontWeight="600" fontSize="sm" color={colorMode === "light" ? "gray.800" : "gray.100"}>
+                          Request Cancel Project
+                        </Text>
+                      </HStack>
+                      <Text fontSize="xs" color="gray.500">
+                        Mengajukan permohonan pembatalan project. Bersifat permanen setelah disetujui.
+                      </Text>
+                    </VStack>
+                    <Button
+                      size="sm"
+                      colorScheme="red"
+                      variant="outline"
+                      leftIcon={<FiXCircle />}
+                      isLoading={isRequestingCancel}
+                      onClick={() => setOpenConfirmCancel(true)}
+                    >
+                      Request Cancel
+                    </Button>
+                  </HStack>
+                </Box>
+              )}
+
+              {/* Resume Project */}
+              {DataProject.projectStatus === "ON HOLD" && (
+                <Box
+                  p={4}
+                  rounded={radiusStyle}
+                  border="1px"
+                  borderColor={colorMode === "light" ? "green.200" : "green.700"}
+                  bg={colorMode === "light" ? "green.50" : "gray.750"}
+                >
+                  <HStack justify="space-between" align="center" wrap="wrap" gap={3}>
+                    <VStack align="start" spacing={1} flex={1}>
+                      <HStack>
+                        <Icon as={FiPlayCircle} color="green.500" />
+                        <Text fontWeight="600" fontSize="sm" color={colorMode === "light" ? "gray.800" : "gray.100"}>
+                          Resume Project
+                        </Text>
+                      </HStack>
+                      <Text fontSize="xs" color="gray.500">
+                        Melanjutkan project yang sedang ditahan. Project akan masuk kembali ke proses approval.
+                      </Text>
+                    </VStack>
+                    <Button
+                      size="sm"
+                      colorScheme="green"
+                      variant="solid"
+                      leftIcon={<FiPlayCircle />}
+                      isLoading={isRequestingResume}
+                      onClick={() => setOpenConfirmResume(true)}
+                    >
+                      Resume Project
+                    </Button>
+                  </HStack>
+                </Box>
+              )}
+            </VStack>
+          </CardBody>
+        </Card>
+      )}
+
+      {/* Confirmation Dialogs */}
+      <ConfirmationDialog
+        key={"confirmRequestHoldEdit"}
+        isOpenTrigger={openConfirmHold}
+        action={handleRequestHold}
+        trigger={setOpenConfirmHold}
+        questionMsg={"Apakah Anda yakin ingin mengajukan permohonan On Hold untuk project ini?\n\nProject akan menunggu persetujuan dari approver sebelum status berubah menjadi ON HOLD."}
+        captionMsg={"Request On Hold"}
+      />
+      <ConfirmationDialog
+        key={"confirmRequestCancelEdit"}
+        isOpenTrigger={openConfirmCancel}
+        action={handleRequestCancel}
+        trigger={setOpenConfirmCancel}
+        questionMsg={"Apakah Anda yakin ingin mengajukan permohonan Cancel untuk project ini?\n\nProject akan menunggu persetujuan dari approver sebelum status berubah menjadi CANCELED. Aksi ini bersifat permanen setelah disetujui."}
+        captionMsg={"Request Cancel"}
+      />
+      <ConfirmationDialog
+        key={"confirmResumeProjectEdit"}
+        isOpenTrigger={openConfirmResume}
+        action={handleResumeProject}
+        trigger={setOpenConfirmResume}
+        questionMsg={"Apakah Anda yakin ingin melanjutkan (resume) project ini?\n\nProject akan masuk kembali ke proses approval dari awal (Waiting Approval 1) sebelum kembali berjalan."}
+        captionMsg={"Resume Project"}
+      />
     </VStack>
   );
 };
