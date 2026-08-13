@@ -1119,6 +1119,11 @@ interface useProjectsServices {
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
 
+  DeleteProjectWorkflowValue: (
+    id: string,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+
   ListProjectWorkflowBacklog: (
     projectId: string,
     token: string
@@ -3934,6 +3939,33 @@ const useProjects = (): useProjectsServices => {
     }
   };
 
+  const DeleteProjectWorkflowValue = async (
+    id: string,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const PathEndpoint: string = `/v1/Projects/projectWorkflowValue/delete/${id}`;
+    try {
+      const response = await axiosInstance.delete<ApiGenericResponse<string>>(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "An error occurred.");
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred.");
+        return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error connect to api", error: null };
+      }
+    }
+  };
+
   const ListProjectWorkflowBacklog = async (
     projectId: string,
     token: string
@@ -4803,6 +4835,7 @@ const useProjects = (): useProjectsServices => {
     ProjectWorkflowBacklogInitialize,
     CompleteDocumentationProgression,
     DeleteProjectWorkflow,
+    DeleteProjectWorkflowValue,
     ListProjectWorkflowBacklog,
 
     GetProjectBacklogProgression,

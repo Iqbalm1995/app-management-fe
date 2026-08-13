@@ -23,6 +23,7 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   FiRefreshCcw,
   FiSearch,
@@ -33,6 +34,7 @@ import {
   FiAlertCircle,
   FiSlash,
   FiPlusSquare,
+  FiEye,
 } from "react-icons/fi";
 import { Search2Icon } from "@chakra-ui/icons";
 import {
@@ -91,6 +93,7 @@ const VendorManagementPage = () => {
   useDocumentTitle("Vendor Management");
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
+  const router = useRouter();
   const { List } = useVendor();
 
   // Auth
@@ -180,6 +183,13 @@ const VendorManagementPage = () => {
   // Table columns
   const columns = useMemo<ColumnDef<VendorResponse>[]>(
     () => [
+      {
+        id: "rowNumber",
+        header: "No.",
+        cell: (info) => (
+          <Text fontSize="sm" textAlign="center">{info.row.index + 1 + pagination.pageIndex * pagination.pageSize}.</Text>
+        ),
+      },
       {
         accessorKey: "vendorCode",
         header: "Code",
@@ -271,8 +281,23 @@ const VendorManagementPage = () => {
           );
         },
       },
+      {
+        id: "actions",
+        header: "Aksi",
+        cell: (info) => (
+          <Button
+            size="xs"
+            colorScheme="blue"
+            variant="outline"
+            leftIcon={<FiEye />}
+            onClick={() => router.push(`/vendor-management/detail?id=${info.row.original.id}`)}
+          >
+            Detail
+          </Button>
+        ),
+      },
     ],
-    [colorMode]
+    [colorMode, router]
   );
 
   const table = useReactTable({
@@ -617,7 +642,11 @@ const VendorManagementPage = () => {
                     </VStack>
                   ) : (
                     <Box w="full">
-                      <TableComponentFull table={table} />
+                      <Box overflowX="auto" w="full">
+                        <Box minW="1400px">
+                          <TableComponentFull table={table} />
+                        </Box>
+                      </Box>
                     </Box>
                   )}
 

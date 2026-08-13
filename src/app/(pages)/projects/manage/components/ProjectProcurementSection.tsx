@@ -346,6 +346,7 @@ const ProjectProcurementSection = ({
         setSelectedWorkflowIds(new Set());
         setSelectedPreset(null);
         RefreshAction();
+        if (onAssignSuccess) onAssignSuccess();
       } else {
         showToast({ description: response?.message || "Failed to assign procurement stages", statusToast: "error" });
       }

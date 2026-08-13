@@ -125,6 +125,7 @@ import {
   AlertTitle,
   AlertDescription,
   Icon,
+  Tooltip,
 } from "@chakra-ui/react";
 import {
   ColumnDef,
@@ -4361,7 +4362,7 @@ const WorkflowBacklogTable = ({
 
   const showToast = useToastHelper();
   const { UpdateBacklog, GetDetailBacklogById } = useRequirements();
-  const { ProjectWorkflowBacklogInitialize, DeleteProjectWorkflow } = useProjects();
+  const { ProjectWorkflowBacklogInitialize, DeleteProjectWorkflow, CompleteDocumentationProgression } = useProjects();
   const [isLoading, setIsLoading] = useState(false);
   const [tokenData, setTokenData] = useState<string>("");
 
@@ -4373,6 +4374,26 @@ const WorkflowBacklogTable = ({
   // Delete state
   const [openConfirmDeleteWS, setOpenConfirmDeleteWS] = useState(false);
   const [isDeletingWS, setIsDeletingWS] = useState(false);
+  const [openConfirmAutoComplete, setOpenConfirmAutoComplete] = useState(false);
+  const [isAutoCompleting, setIsAutoCompleting] = useState(false);
+
+  const handleAutoComplete = async () => {
+    if (!tokenData || !workflow.id) return;
+    setIsAutoCompleting(true);
+    try {
+      const response = await CompleteDocumentationProgression(workflow.id, tokenData);
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({ description: "Progression berhasil ditandai selesai", statusToast: "success" });
+        onRefresh();
+      } else {
+        showToast({ description: response?.message || "Gagal menyelesaikan progression", statusToast: "error" });
+      }
+    } catch {
+      showToast({ description: "Terjadi kesalahan", statusToast: "error" });
+    } finally {
+      setIsAutoCompleting(false);
+    }
+  };
 
   const handleDeleteWorkstage = async () => {
     if (!tokenData || !workflow.id) return;
@@ -4671,27 +4692,70 @@ const WorkflowBacklogTable = ({
                     </Link>
                     <Popover placement="bottom-end">
                       <PopoverTrigger>
-                        <IconButton
-                          aria-label="More actions"
-                          icon={<FiMoreVertical />}
-                          size="xs"
-                          variant="ghost"
-                        />
-                      </PopoverTrigger>
-                      <PopoverContent w="180px">
-                        <PopoverBody p={1}>
-                          <Button
-                            size="sm"
+                        <Box position="relative" display="inline-block">
+                          <IconButton
+                            aria-label="More actions"
+                            icon={<FiMoreVertical />}
+                            size="xs"
                             variant="ghost"
-                            colorScheme="red"
-                            leftIcon={<FiTrash2 />}
-                            w="full"
-                            justifyContent="start"
-                            isLoading={isDeletingWS}
-                            onClick={() => setOpenConfirmDeleteWS(true)}
-                          >
-                            Delete Workstage
-                          </Button>
+                          />
+                          {workflow.workflowBacklog && workflow.workflowBacklog.developmentStatus !== "DONE" && (
+                            <Box
+                              position="absolute"
+                              top="-1px"
+                              right="-1px"
+                              w="8px"
+                              h="8px"
+                              bg="red.500"
+                              rounded="full"
+                              border="1.5px solid white"
+                              animation="pulse 2s infinite"
+                              sx={{
+                                "@keyframes pulse": {
+                                  "0%": { boxShadow: "0 0 0 0 rgba(229, 62, 62, 0.7)" },
+                                  "70%": { boxShadow: "0 0 0 6px rgba(229, 62, 62, 0)" },
+                                  "100%": { boxShadow: "0 0 0 0 rgba(229, 62, 62, 0)" },
+                                },
+                              }}
+                            />
+                          )}
+                        </Box>
+                      </PopoverTrigger>
+                      <PopoverContent w="220px">
+                        <PopoverBody p={1}>
+                          <VStack spacing={0} align="stretch">
+                            {workflow.workflowBacklog && workflow.workflowBacklog.developmentStatus !== "DONE" && (
+                              <Tooltip label={`Force Auto Complete Progression Task about Work Doc. ${workflow.wfgName}`} placement="left" hasArrow>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  colorScheme="green"
+                                  leftIcon={<FiCheckCircle />}
+                                  w="full"
+                                  justifyContent="start"
+                                  fontWeight="normal"
+                                  isLoading={isAutoCompleting}
+                                  onClick={() => setOpenConfirmAutoComplete(true)}
+                                >
+                                  Auto-Complete
+                                </Button>
+                              </Tooltip>
+                            )}
+                            <Divider my={1} />
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              colorScheme="red"
+                              leftIcon={<FiTrash2 />}
+                              w="full"
+                              justifyContent="start"
+                              fontWeight="normal"
+                              isLoading={isDeletingWS}
+                              onClick={() => setOpenConfirmDeleteWS(true)}
+                            >
+                              Delete Workstage
+                            </Button>
+                          </VStack>
                         </PopoverBody>
                       </PopoverContent>
                     </Popover>
@@ -4711,6 +4775,14 @@ const WorkflowBacklogTable = ({
         trigger={setOpenConfirmDeleteWS}
         questionMsg={"Apakah Anda yakin ingin menghapus workstage ini?\n\nPerhatian: Menghapus workstage akan menghapus seluruh data terkait termasuk:\n- Dokumen yang telah diupload\n- Data progression dan backlog\n- Task dan Kanban board\n- Riwayat perubahan\n\nAksi ini tidak dapat dibatalkan."}
         captionMsg={"Delete Workstage"}
+      />
+      <ConfirmationDialog
+        key={"confirmAutoCompleteProgression"}
+        isOpenTrigger={openConfirmAutoComplete}
+        action={handleAutoComplete}
+        trigger={setOpenConfirmAutoComplete}
+        questionMsg={"Apakah Anda yakin ingin menandai progression ini sebagai selesai?\n\nPerhatian: Aksi ini akan membuat progression selesai tanpa melalui Kanban. User tidak akan ter-assign pada task sehingga tidak akan tercatat pada laporan kerja user."}
+        captionMsg={"Auto-Complete Progression"}
       />
 
       {/* Edit Backlog Modal */}

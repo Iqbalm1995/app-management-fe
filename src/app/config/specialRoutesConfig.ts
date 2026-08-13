@@ -187,6 +187,16 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
   },
 
   // ===== VENDOR MANAGEMENT =====
+
+  {
+    pattern: "/vendor-management/register",
+    baseMenu: "/vendor-management",
+  },
+  {
+    pattern: "/vendor-management/detail",
+    baseMenu: "/vendor-management",
+  },
+
   {
     pattern: "/performances/divisions/detail",
     baseMenu: "/performances",

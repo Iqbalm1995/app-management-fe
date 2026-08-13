@@ -1297,15 +1297,35 @@ export const WorkflowLevel2Box = ({
                       >
                         Upload
                       </Button>
-                      <Button
-                        size="xs"
-                        colorScheme="gray"
-                        variant="outline"
-                        leftIcon={<FiEye />}
-                        onClick={() => handleOpenDetail(level3)}
-                      >
-                        Detail
-                      </Button>
+                      <Popover placement="bottom-end">
+                        <PopoverTrigger>
+                          <Box position="relative" display="inline-block">
+                            <IconButton
+                              aria-label="More actions"
+                              icon={<FiMoreVertical />}
+                              size="xs"
+                              variant="ghost"
+                            />
+                          </Box>
+                        </PopoverTrigger>
+                        <PopoverContent w="200px">
+                          <PopoverBody p={1}>
+                            <VStack spacing={0} align="stretch">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                leftIcon={<FiEye />}
+                                w="full"
+                                justifyContent="start"
+                                fontWeight="normal"
+                                onClick={() => handleOpenDetail(level3)}
+                              >
+                                Detail
+                              </Button>
+                            </VStack>
+                          </PopoverBody>
+                        </PopoverContent>
+                      </Popover>
                     </HStack>
                   </Td>
                 </Tr>
@@ -1549,7 +1569,7 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
     }
   };
 
-  const { InsertProjectWorkflowValue, ListProjectWorkflowValue, CompleteDocumentationProgression, DeleteProjectWorkflow } =
+  const { InsertProjectWorkflowValue, ListProjectWorkflowValue, CompleteDocumentationProgression, DeleteProjectWorkflow, DeleteProjectWorkflowValue } =
     useProjects();
 
   const [isCompleting, setIsCompleting] = useState(false);
@@ -1591,6 +1611,26 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
       showToast({ description: "Terjadi kesalahan", statusToast: "error" });
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const [deletingDocId, setDeletingDocId] = useState<string | null>(null);
+  const [openConfirmDeleteDoc, setOpenConfirmDeleteDoc] = useState(false);
+
+  const handleDeleteDocument = async () => {
+    if (!tokenData || !deletingDocId) return;
+    try {
+      const response = await DeleteProjectWorkflowValue(deletingDocId, tokenData);
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({ description: "Dokumen berhasil dihapus", statusToast: "success" });
+        setListProjectWFValue((prev) => prev.filter((v) => v.id !== deletingDocId));
+        setDeletingDocId(null);
+        if (onRefresh) onRefresh();
+      } else {
+        showToast({ description: response?.message || "Gagal menghapus dokumen", statusToast: "error" });
+      }
+    } catch {
+      showToast({ description: "Terjadi kesalahan", statusToast: "error" });
     }
   };
 
@@ -1817,50 +1857,83 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
             >
               Upload
             </Button>
-            <Button
-              size="xs"
-              colorScheme="gray"
-              variant="outline"
-              leftIcon={<FiEye />}
-              onClick={handleOpenDetail}
-            >
-              Detail
-            </Button>
-            {workflow.workflowValues?.length > 0 && workflow.progressionStatus !== "DONE" && (
-              <Button
-                size="xs"
-                colorScheme="green"
-                variant="solid"
-                leftIcon={<FiCheckCircle />}
-                isLoading={isCompleting}
-                onClick={() => setOpenConfirmComplete(true)}
-              >
-                Force Done Progression
-              </Button>
-            )}
             <Popover placement="bottom-end">
               <PopoverTrigger>
-                <IconButton
-                  aria-label="More actions"
-                  icon={<FiMoreVertical />}
-                  size="xs"
-                  variant="ghost"
-                />
-              </PopoverTrigger>
-              <PopoverContent w="180px">
-                <PopoverBody p={1}>
-                  <Button
-                    size="sm"
+                <Box position="relative" display="inline-block">
+                  <IconButton
+                    aria-label="More actions"
+                    icon={<FiMoreVertical />}
+                    size="xs"
                     variant="ghost"
-                    colorScheme="red"
-                    leftIcon={<FiTrash2 />}
-                    w="full"
-                    justifyContent="start"
-                    isLoading={isDeleting}
-                    onClick={() => setOpenConfirmDelete(true)}
-                  >
-                    Delete Workstage
-                  </Button>
+                  />
+                  {workflow.workflowValues?.length > 0 && workflow.progressionStatus != null && workflow.progressionStatus !== "DONE" && (
+                    <Box
+                      position="absolute"
+                      top="-1px"
+                      right="-1px"
+                      w="8px"
+                      h="8px"
+                      bg="red.500"
+                      rounded="full"
+                      border="1.5px solid white"
+                      animation="pulse 2s infinite"
+                      sx={{
+                        "@keyframes pulse": {
+                          "0%": { boxShadow: "0 0 0 0 rgba(229, 62, 62, 0.7)" },
+                          "70%": { boxShadow: "0 0 0 6px rgba(229, 62, 62, 0)" },
+                          "100%": { boxShadow: "0 0 0 0 rgba(229, 62, 62, 0)" },
+                        },
+                      }}
+                    />
+                  )}
+                </Box>
+              </PopoverTrigger>
+              <PopoverContent w="220px">
+                <PopoverBody p={1}>
+                  <VStack spacing={0} align="stretch">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      leftIcon={<FiEye />}
+                      w="full"
+                      justifyContent="start"
+                      fontWeight="normal"
+                      onClick={handleOpenDetail}
+                    >
+                      Detail
+                    </Button>
+                    {workflow.workflowValues?.length > 0 && workflow.progressionStatus != null && workflow.progressionStatus !== "DONE" && (
+                      <Tooltip label={`Force Auto Complete Progression Task about Work Doc. ${workflow.wfgName}`} placement="left" hasArrow>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          colorScheme="green"
+                          leftIcon={<FiCheckCircle />}
+                          w="full"
+                          justifyContent="start"
+                          fontWeight="normal"
+                          isLoading={isCompleting}
+                          onClick={() => setOpenConfirmComplete(true)}
+                        >
+                          Auto-Complete
+                        </Button>
+                      </Tooltip>
+                    )}
+                    <Divider my={1} />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      colorScheme="red"
+                      leftIcon={<FiTrash2 />}
+                      w="full"
+                      justifyContent="start"
+                      fontWeight="normal"
+                      isLoading={isDeleting}
+                      onClick={() => setOpenConfirmDelete(true)}
+                    >
+                      Delete Workstage
+                    </Button>
+                  </VStack>
                 </PopoverBody>
               </PopoverContent>
             </Popover>
@@ -1886,6 +1959,16 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
         trigger={setOpenConfirmDelete}
         questionMsg={"Apakah Anda yakin ingin menghapus workstage ini?\n\nPerhatian: Menghapus workstage akan menghapus seluruh data terkait termasuk:\n- Dokumen yang telah diupload\n- Data progression dan backlog\n- Task dan Kanban board\n- Riwayat perubahan\n\nAksi ini tidak dapat dibatalkan."}
         captionMsg={"Delete Workstage"}
+      />
+
+      {/* Confirmation Dialog for Delete Document */}
+      <ConfirmationDialog
+        key={"confirmDeleteDocument"}
+        isOpenTrigger={openConfirmDeleteDoc}
+        action={handleDeleteDocument}
+        trigger={setOpenConfirmDeleteDoc}
+        questionMsg={"Apakah Anda yakin ingin menghapus dokumen ini?\n\nDokumen yang dihapus tidak dapat dikembalikan."}
+        captionMsg={"Delete Document"}
       />
 
       {/* Reuse existing modals from WorkflowLevel2Box */}
@@ -2240,9 +2323,22 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
                               </Badge>
                             </HStack>
                           </VStack>
-                          <Badge colorScheme="green" fontSize="sm" px={3} py={1}>
-                            v{item.documentVersion}
-                          </Badge>
+                          <HStack spacing={2}>
+                            <Badge colorScheme="green" fontSize="sm" px={3} py={1}>
+                              v{item.documentVersion}
+                            </Badge>
+                            <IconButton
+                              aria-label="Delete document"
+                              icon={<FiTrash2 />}
+                              size="xs"
+                              colorScheme="red"
+                              variant="ghost"
+                              onClick={() => {
+                                setDeletingDocId(item.id);
+                                setOpenConfirmDeleteDoc(true);
+                              }}
+                            />
+                          </HStack>
                         </HStack>
 
                         {/* Card Body */}

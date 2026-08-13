@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  Box, Button, Card, CardBody, Divider, Flex, FormControl,
+  Box, Button, ButtonGroup, Card, CardBody, Divider, Flex, FormControl,
   FormErrorMessage, FormLabel, Grid, GridItem, Heading, HStack,
   Icon, Input, Select as SelectC, Switch, Badge, Text, Textarea,
   VStack, useColorMode,
@@ -16,11 +16,12 @@ import {
 
 import { HeaderContent } from "@/app/components/headerContent";
 import LayoutAdmin from "@/app/components/layoutAdmin";
+import { ConfirmationDialog } from "@/app/components/confirmationDialog";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useVendor, { VendorInsertPayload } from "@/app/services/useVendor";
-import { radiusStyle, RES_CODE_OK, RES_GENERIC_ERROR_MSG } from "@/app/constants/applicationConstants";
+import { radiusStyle, RES_CODE_OK, RES_GENERIC_ERROR_MSG, VENDOR_TYPE_OPTIONS } from "@/app/constants/applicationConstants";
 
 const DEPENDENCY_OPTIONS = ["LOW", "MEDIUM", "HIGH"];
 const IMPACT_OPTIONS = ["LOW", "MEDIUM", "HIGH"];
@@ -110,6 +111,7 @@ function VendorRegisterPage() {
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
+  const [openConfirmRegister, setOpenConfirmRegister] = useState(false);
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -238,7 +240,19 @@ function VendorRegisterPage() {
 
                         <FormControl isRequired isInvalid={!!(formik.errors.vendorType && formik.touched.vendorType)}>
                           <FormLabel fontWeight="semibold">Vendor Type</FormLabel>
-                          <Input name="vendorType" value={formik.values.vendorType} onChange={handleUpperCase("vendorType")} onBlur={formik.handleBlur} placeholder="e.g. SUPPLIER" {...inputStyle} />
+                          <ButtonGroup size="sm" isAttached variant="outline" w="full">
+                            {VENDOR_TYPE_OPTIONS.map((type) => (
+                              <Button
+                                key={type}
+                                flex={1}
+                                colorScheme={formik.values.vendorType === type ? "blue" : "gray"}
+                                variant={formik.values.vendorType === type ? "solid" : "outline"}
+                                onClick={() => formik.setFieldValue("vendorType", type)}
+                              >
+                                {type}
+                              </Button>
+                            ))}
+                          </ButtonGroup>
                           <FormErrorMessage>{formik.errors.vendorType}</FormErrorMessage>
                         </FormControl>
                       </Grid>
@@ -333,7 +347,7 @@ function VendorRegisterPage() {
                       </Grid>
                       <FormControl>
                         <FormLabel fontWeight="semibold">Hotline</FormLabel>
-                        <Input name="picBusinessNumberHotline" value={formik.values.picBusinessNumberHotline} onChange={formik.handleChange} placeholder="Business hotline number" {...inputStyle} />
+                        <Input name="picBusinessNumberHotline" value={formik.values.picBusinessNumberHotline} onChange={(e) => { const val = e.target.value.replace(/\D/g, "").slice(0, 15); formik.setFieldValue("picBusinessNumberHotline", val); }} placeholder="Business hotline number" maxLength={15} inputMode="numeric" {...inputStyle} />
                       </FormControl>
 
                       <Divider />
@@ -352,7 +366,7 @@ function VendorRegisterPage() {
                       </Grid>
                       <FormControl>
                         <FormLabel fontWeight="semibold">Hotline</FormLabel>
-                        <Input name="picTechnicalNumberHotline" value={formik.values.picTechnicalNumberHotline} onChange={formik.handleChange} placeholder="Technical hotline number" {...inputStyle} />
+                        <Input name="picTechnicalNumberHotline" value={formik.values.picTechnicalNumberHotline} onChange={(e) => { const val = e.target.value.replace(/\D/g, "").slice(0, 15); formik.setFieldValue("picTechnicalNumberHotline", val); }} placeholder="Technical hotline number" maxLength={15} inputMode="numeric" {...inputStyle} />
                       </FormControl>
                     </VStack>
                   </CardBody>
@@ -400,8 +414,8 @@ function VendorRegisterPage() {
                   </CardBody>
                 </Card>
 
-                {/* Section: TDR (Optional) */}
-                <Card {...sectionCard}>
+                {/* Section: TDR (Optional) — Hidden for now */}
+                {false && <Card {...sectionCard}>
                   <CardBody p={6}>
                     <VStack spacing={4} align="stretch">
                       <HStack justify="space-between">
@@ -489,7 +503,7 @@ function VendorRegisterPage() {
                       )}
                     </VStack>
                   </CardBody>
-                </Card>
+                </Card>}
 
                 {/* Action Buttons */}
                 <HStack justify="end" spacing={4} pt={2}>
@@ -497,9 +511,18 @@ function VendorRegisterPage() {
                     onClick={() => router.push("/vendor-management")}>
                     Cancel
                   </Button>
-                  <Button type="submit" colorScheme="blue" rounded="xl" px={8} size="lg"
+                  <Button colorScheme="blue" rounded="xl" px={8} size="lg"
                     isLoading={IsLoadingProcess} loadingText="Registering..."
                     leftIcon={<Icon as={FiCheckCircle} />}
+                    onClick={() => {
+                      formik.validateForm().then((errors) => {
+                        if (Object.keys(errors).length === 0) {
+                          setOpenConfirmRegister(true);
+                        } else {
+                          formik.handleSubmit();
+                        }
+                      });
+                    }}
                     _hover={{ transform: "translateY(-1px)", shadow: "lg" }} transition="all 0.2s">
                     Register Vendor
                   </Button>
@@ -593,6 +616,15 @@ function VendorRegisterPage() {
           </Grid>
         </form>
       </Box>
+
+      <ConfirmationDialog
+        key={"confirmRegisterVendor"}
+        isOpenTrigger={openConfirmRegister}
+        action={() => formik.handleSubmit()}
+        trigger={setOpenConfirmRegister}
+        questionMsg={"Apakah Anda yakin ingin mendaftarkan vendor ini?\n\nPastikan semua data yang diisi sudah benar sebelum melanjutkan."}
+        captionMsg={"Register Vendor"}
+      />
     </LayoutAdmin>
   );
 }
