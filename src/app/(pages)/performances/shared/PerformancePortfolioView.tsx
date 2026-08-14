@@ -21,6 +21,7 @@ import {
 } from "@/app/helper/MasterHelper";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
+import useUsers, { UsersResponse } from "@/app/services/useUsers";
 import useReports, {
   UserEvaluationReportListResponse,
   MyPerformanceSummaryResponse,
@@ -202,6 +203,7 @@ export default function PerformancePortfolioView({
     GetMyPerformanceQuartalChart,
     GetMyPerformanceRequirements,
   } = useReports();
+  const { GetDetailByUserId } = useUsers();
   const { GetAssignedProjects } = useWorkspace();
   const { GetAssignedProjects: GetAssignedProjectsFull } = useProjects();
   const { List: ListOrganization } = useOrganization();
@@ -214,7 +216,7 @@ export default function PerformancePortfolioView({
     if (!DataAuth || !tokenData) return;
     setIsExportingPdf(true);
     try {
-      const projRes = await GetAssignedProjects(
+      const projRes = await GetAssignedProjectsFull(
         {
           search: "",
           limit: 9999,
@@ -225,11 +227,18 @@ export default function PerformancePortfolioView({
           orderDir: "desc",
         },
         tokenData,
+        UserIdFilter || undefined,
       );
       const allProjects =
         projRes?.statusCode === RES_CODE_OK && projRes.data ? projRes.data : [];
+
+      // Use target user profile for PDF when viewing another user
+      const pdfAuth = isViewingOther && TargetUserProfile
+        ? { ...DataAuth, nama: TargetUserProfile.nama, nip: TargetUserProfile.nip, userId: TargetUserProfile.userId, jabatan: TargetUserProfile.jabatan, namaUnitKerja: TargetUserProfile.namaUnitKerja }
+        : DataAuth;
+
       await exportMyPerformancePDF({
-        auth: DataAuth,
+        auth: pdfAuth,
         summary: Summary,
         quartalChart: QuartalChart,
         projects: allProjects,
@@ -252,6 +261,7 @@ export default function PerformancePortfolioView({
   const [isExporting, setIsExporting] = useState(false);
   const [globalFilter, setGlobalFilter] = useState<string>("");
   const [UserIdFilter, setUserIdFilter] = useState<string>("");
+  const [TargetUserProfile, setTargetUserProfile] = useState<UsersResponse | null>(null);
   const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([
     {
       field: "projectStatus",
@@ -318,6 +328,19 @@ export default function PerformancePortfolioView({
     }
     if (token) setTokenData(token);
   }, [DataAuth]);
+
+  // Fetch target user profile when viewing another user
+  useEffect(() => {
+    if (mode !== "my" && urlUserId && tokenData) {
+      const fetchTargetUser = async () => {
+        const res = await GetDetailByUserId(urlUserId, tokenData);
+        if (res?.statusCode === RES_CODE_OK && res.data) {
+          setTargetUserProfile(res.data);
+        }
+      };
+      fetchTargetUser();
+    }
+  }, [urlUserId, tokenData, mode]);
 
   // Summary + quartal chart state
   const [Summary, setSummary] =
@@ -429,6 +452,7 @@ export default function PerformancePortfolioView({
             orderDir: "desc",
           },
           tokenData,
+          UserIdFilter || undefined,
         );
         if (res?.statusCode === RES_CODE_OK && res.data) {
           setDataAssignedProjects(res.data);
@@ -1115,6 +1139,15 @@ export default function PerformancePortfolioView({
   // Profile info: use target user data from report when viewing another user
   const isViewingOther = mode !== "my" && !!urlUserId;
   const profileInfo = useMemo(() => {
+    if (isViewingOther && TargetUserProfile) {
+      return {
+        nama: TargetUserProfile.nama || "—",
+        nip: TargetUserProfile.nip || "—",
+        jabatan: TargetUserProfile.jabatan || "—",
+        namaUnitKerja: TargetUserProfile.namaUnitKerja || "—",
+        profilePict: TargetUserProfile.profilePict || null,
+      };
+    }
     if (isViewingOther && DataReport.length > 0) {
       const r = DataReport[0];
       return {
@@ -1132,7 +1165,7 @@ export default function PerformancePortfolioView({
       namaUnitKerja: DataAuth?.namaUnitKerja || "—",
       profilePict: DataAuth?.profilePict || null,
     };
-  }, [isViewingOther, DataReport, DataAuth]);
+  }, [isViewingOther, TargetUserProfile, DataReport, DataAuth]);
   const cardBg = isDark ? "gray.800" : "white";
   const borderCol = isDark ? "gray.700" : "gray.200";
   const textMuted = isDark ? "gray.400" : "gray.500";

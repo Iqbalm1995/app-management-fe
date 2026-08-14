@@ -851,7 +851,8 @@ interface useProjectsServices {
   ) => Promise<ApiGenericResponse<ProjectDataResponse[] | null> | null>;
   GetAssignedProjects: (
     payload: PaggingListPayloadCustom,
-    token: string
+    token: string,
+    userId?: string
   ) => Promise<ApiGenericResponse<ProjectDataResponse[] | null> | null>;
   GetWaitingApproval: (
     payload: PaggingListPayloadCustom,
@@ -1303,7 +1304,8 @@ const useProjects = (): useProjectsServices => {
 
   const GetAssignedProjects = async (
     payload: PaggingListPayloadCustom,
-    token: string
+    token: string,
+    userId?: string
   ): Promise<ApiGenericResponse<ProjectDataResponse[] | null> | null> => {
     setIsLoading(true);
     setError(null);
@@ -1311,7 +1313,9 @@ const useProjects = (): useProjectsServices => {
       ENDPOINT_API_BASEURL,
       ENDPOINT_PORT_BASIC
     );
-    const PathEndpoint: string = "/v1/Projects/assigned-projects";
+    const PathEndpoint: string = userId 
+      ? `/v1/Projects/assigned-projects?userId=${userId}`
+      : "/v1/Projects/assigned-projects";
     try {
       const response = await axiosInstance.post<
         ApiGenericResponse<ProjectDataResponse[]>

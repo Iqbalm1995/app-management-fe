@@ -4699,7 +4699,7 @@ const WorkflowBacklogTable = ({
                             size="xs"
                             variant="ghost"
                           />
-                          {workflow.workflowBacklog && workflow.workflowBacklog.developmentStatus !== "DONE" && (
+                          {workflow.workflowBacklog && workflow.workflowBacklog.developmentStatus !== "DONE" && workflow.workflowValues && workflow.workflowValues.length > 0 && (
                             <Box
                               position="absolute"
                               top="-1px"
@@ -4724,7 +4724,7 @@ const WorkflowBacklogTable = ({
                       <PopoverContent w="220px">
                         <PopoverBody p={1}>
                           <VStack spacing={0} align="stretch">
-                            {workflow.workflowBacklog && workflow.workflowBacklog.developmentStatus !== "DONE" && (
+                            {workflow.workflowBacklog && workflow.workflowBacklog.developmentStatus !== "DONE" && workflow.workflowValues && workflow.workflowValues.length > 0 && (
                               <Tooltip label={`Force Auto Complete Progression Task about Work Doc. ${workflow.wfgName}`} placement="left" hasArrow>
                                 <Button
                                   size="sm"
