@@ -55,6 +55,30 @@ export interface VendorInsertPayload {
   tdr: VendorTdrInsertPayload[];
 }
 
+export interface VendorUpdatePayload {
+  id: string;
+  vendorCode: string;
+  vendorName: string;
+  vendorType: string;
+  address1: string;
+  address2?: string | null;
+  address3?: string | null;
+  city: string;
+  country: string;
+  postalCode?: string | null;
+  website?: string | null;
+  picBusinessName: string;
+  picBusinessEmail: string;
+  picBusinessNumberHotline?: string | null;
+  picTechnicalName: string;
+  picTechnicalEmail: string;
+  picTechnicalNumberHotline?: string | null;
+  status: string;
+  reasonStatus?: string | null;
+  depedencyLevel: string;
+  businessImpact: string;
+}
+
 // ─── Response Interfaces ────────────────────────────────────────────────────
 
 export interface VendorMediaResponse {
@@ -127,6 +151,8 @@ export interface VendorContractResponse {
   ovexValues: number;
   ovexPercentage: number;
   status: string;
+  vendorCode?: string | null;
+  vendorName?: string | null;
   createdAt: string;
   createdBy: string;
   updatedAt?: string | null;
@@ -134,6 +160,7 @@ export interface VendorContractResponse {
   items: ContractItemResponse[];
   topList: ContractTopResponse[];
   mediaList: VendorMediaResponse[];
+  vendor?: VendorResponse | null;
 }
 
 export interface VendorTdrResponse {
@@ -188,6 +215,54 @@ export interface VendorResponse {
   contractList: VendorContractResponse[];
 }
 
+export interface ContractItemInsertPayload {
+  itemCode?: string;
+  itemName: string;
+  itemDesc?: string;
+  itemType: string;
+  brand?: string;
+  itemValues: number;
+}
+
+export interface ContractTopInsertPayload {
+  stepOrder: number;
+  topValues: number;
+  topDate: string;
+}
+
+export interface VendorContractInsertPayload {
+  vendorId: string;
+  corpNumber: string;
+  corpName: string;
+  contractNumber: string;
+  contractDate: string;
+  workValue: number;
+  note?: string;
+  contractStartDate: string;
+  contractEndDate: string;
+  worksStartDate?: string;
+  worksEndDate?: string;
+  warrantyStartDate?: string;
+  warrantyEndDate?: string;
+  maintenanceStartDate?: string;
+  maintenanceEndDate?: string;
+  othersTimeline?: string;
+  termOfPayment?: string;
+  performanceGuaranteeStartDate?: string;
+  performanceGuaranteeEndDate?: string;
+  performanceGuaranteeValues?: number;
+  maintenanceWarrantyStartDate?: string;
+  maintenanceWarrantyEndDate?: string;
+  maintenanceWarrantyValues?: number;
+  cavexValues?: number;
+  capexPercentage?: number;
+  ovexValues?: number;
+  ovexPercentage?: number;
+  status?: string;
+  items?: ContractItemInsertPayload[];
+  topList?: ContractTopInsertPayload[];
+}
+
 // ─── Service Interface ───────────────────────────────────────────────────────
 
 interface useVendorServices {
@@ -201,6 +276,38 @@ interface useVendorServices {
   ) => Promise<ApiGenericResponse<VendorResponse | null> | null>;
   Register: (
     payload: VendorInsertPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  Update: (
+    payload: VendorUpdatePayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  ListTdr: (
+    payload: PaggingListPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<VendorTdrResponse[] | null> | null>;
+  ListContract: (
+    payload: PaggingListPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<VendorContractResponse[] | null> | null>;
+  InsertContract: (
+    payload: VendorContractInsertPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  GetContractDetail: (
+    id: string,
+    token: string
+  ) => Promise<ApiGenericResponse<VendorContractResponse | null> | null>;
+  InsertTdr: (
+    formData: FormData,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  UpdateTdr: (
+    formData: FormData,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  DeleteTdrMedia: (
+    relId: string,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
   isLoading: boolean;
@@ -316,10 +423,234 @@ const useVendor = (): useVendorServices => {
     }
   };
 
+  const Update = async (
+    payload: VendorUpdatePayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const PathEndpoint: string = "/v1/Vendor/update";
+    try {
+      const response = await axiosInstance.put<ApiGenericResponse<string>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "An error occurred during request.");
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error connect to api", error: null };
+      }
+    }
+  };
+
+  const ListTdr = async (
+    payload: PaggingListPayload,
+    token: string
+  ): Promise<ApiGenericResponse<VendorTdrResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    try {
+      const response = await axiosInstance.post<ApiGenericResponse<VendorTdrResponse[]>>(
+        `${UrlEndpoint}/v1/Vendor/tdr/list`,
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || "An error occurred.");
+        return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: err.response?.data?.message || "Error", error: null };
+      }
+      setError("An unknown error occurred.");
+      return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error", error: null };
+    }
+  };
+
+  const InsertTdr = async (
+    formData: FormData,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    try {
+      const response = await axiosInstance.post<ApiGenericResponse<string>>(
+        `${UrlEndpoint}/v1/Vendor/tdr/insert`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || "An error occurred.");
+        return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: err.response?.data?.message || "Error", error: null };
+      }
+      setError("An unknown error occurred.");
+      return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error connect to api", error: null };
+    }
+  };
+
+  const UpdateTdr = async (
+    formData: FormData,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    try {
+      const response = await axiosInstance.put<ApiGenericResponse<string>>(
+        `${UrlEndpoint}/v1/Vendor/tdr/update`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || "An error occurred.");
+        return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: err.response?.data?.message || "Error", error: null };
+      }
+      setError("An unknown error occurred.");
+      return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error connect to api", error: null };
+    }
+  };
+
+  const DeleteTdrMedia = async (
+    relId: string,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    try {
+      const response = await axiosInstance.delete<ApiGenericResponse<string>>(
+        `${UrlEndpoint}/v1/Vendor/tdr/media/delete/${relId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: err.response?.data?.message || "Error", error: null };
+      }
+      return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error", error: null };
+    }
+  };
+
+  const ListContract = async (
+    payload: PaggingListPayload,
+    token: string
+  ): Promise<ApiGenericResponse<VendorContractResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    try {
+      const response = await axiosInstance.post<ApiGenericResponse<VendorContractResponse[]>>(
+        `${UrlEndpoint}/v1/Vendor/contract/list`,
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || "An error occurred.");
+        return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: err.response?.data?.message || "Error", error: null };
+      }
+      setError("An unknown error occurred.");
+      return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error", error: null };
+    }
+  };
+
+  const InsertContract = async (
+    payload: VendorContractInsertPayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    try {
+      const response = await axiosInstance.post<ApiGenericResponse<string>>(
+        `${UrlEndpoint}/v1/Vendor/contract/insert`,
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || "An error occurred.");
+        return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: err.response?.data?.message || "Error", error: null };
+      }
+      setError("An unknown error occurred.");
+      return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error", error: null };
+    }
+  };
+
+  const GetContractDetail = async (
+    id: string,
+    token: string
+  ): Promise<ApiGenericResponse<VendorContractResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    try {
+      const response = await axiosInstance.get<ApiGenericResponse<VendorContractResponse>>(
+        `${UrlEndpoint}/v1/Vendor/contract/detail/${id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || "An error occurred.");
+        return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: err.response?.data?.message || "Error", error: null };
+      }
+      setError("An unknown error occurred.");
+      return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error", error: null };
+    }
+  };
+
   return {
     List,
+    ListTdr,
+    ListContract,
+    InsertContract,
+    GetContractDetail,
     GetDetailById,
     Register,
+    Update,
+    InsertTdr,
+    UpdateTdr,
+    DeleteTdrMedia,
     isLoading,
     error,
   };

@@ -343,6 +343,17 @@ export const LinkItems: LinkItemProps[] = [
         isDisplaySidebar: "Y",
       },
       {
+        name: "Vendor Contracts",
+        icon: TbContract,
+        iconName: "TbContract",
+        link: "/vendor-management/contracts",
+        isPro: false,
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+        isDisplaySidebar: "Y",
+      },
+      {
         name: "Work Program",
         icon: FiUmbrella,
         iconName: "FiUmbrella",

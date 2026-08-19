@@ -15,6 +15,7 @@ export interface ApiGenericResponse<T> {
   data: T | null;
   count?: number;
   countTotal?: number;
+  totalWorkValue?: number;
   error?: any; // Optional error message, present only in case of an error
 }
 
