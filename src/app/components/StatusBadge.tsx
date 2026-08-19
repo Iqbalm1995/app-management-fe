@@ -8,14 +8,15 @@ interface StatusBadgeProps extends Omit<BadgeProps, 'colorScheme'> {
   variant?: "solid" | "subtle" | "outline";
 }
 
-export function StatusBadge({ status, variant = "subtle", ...props }: StatusBadgeProps) {
+export function StatusBadge({ status = "", variant = "subtle", ...props }: StatusBadgeProps) {
+  const safeStatus = String(status || "");
   return (
     <Badge
-      colorScheme={getStatusColor(status)}
+      colorScheme={getStatusColor(safeStatus)}
       variant={variant}
       {...props}
     >
-      {status}
+      {safeStatus || "—"}
     </Badge>
   );
 }

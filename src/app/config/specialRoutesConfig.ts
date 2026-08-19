@@ -94,6 +94,23 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
     pattern: "/workspace/project",
     baseMenu: "/workspace",
   },
+  {
+    pattern: "/cab/cab-request",
+    baseMenu: "/cab",
+  },
+  {
+    pattern: "/cab/cab-request/detail",
+    baseMenu: "/cab",
+  },
+  {
+    pattern: "/cab/cab-request/create",
+    baseMenu: "/cab",
+    permission: "make",
+  },
+  {
+    pattern: "/cab/cab-approve",
+    baseMenu: "/cab",
+  },
 
   // ===== REQUIREMENTS =====
   // BRD routes

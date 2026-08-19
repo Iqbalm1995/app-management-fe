@@ -130,14 +130,21 @@ export const STATUS_COLORS = {
 } as const;
 
 // UTILITY FUNCTIONS
-export const getStatusColor = (status: string): string => {
-  // Handle duplicate status names by context
-  if (status === "ON HOLD") return "orange";
-  if (status === "CANCELED") return "red";
-  if (status === "INITIATING") return "blue";
-  if (status === "COMPLETED") return "green";
+export const getStatusColor = (status?: string | null): string => {
+  if (!status) return "gray";
+  const s = String(status).toUpperCase();
+  // Handle CAB specific statuses
+  if (s === "DRAFT") return "gray";
+  if (s === "REQUEST" || s === "SUBMITTED") return "purple";
+  if (s === "WAITING APPROVE" || s === "WAITING APPROVAL" || s === "SCHEDULED" || s === "IN_REVIEW") return "blue";
+  if (s === "APPROVED") return "green";
+  if (s === "REJECTED") return "red";
+  if (s === "CANCELED") return "red";
+  if (s === "ON HOLD") return "orange";
+  if (s === "INITIATING") return "blue";
+  if (s === "COMPLETED") return "green";
 
-  return STATUS_COLORS[status as keyof typeof STATUS_COLORS] || "gray";
+  return STATUS_COLORS[s as keyof typeof STATUS_COLORS] || "gray";
 };
 
 export const isRequirementDone = (status: string): boolean => {
