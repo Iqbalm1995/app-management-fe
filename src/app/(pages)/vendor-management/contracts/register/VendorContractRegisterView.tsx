@@ -41,6 +41,7 @@ import {
   SliderFilledTrack,
   SliderThumb,
   Stack,
+  Switch,
   Table,
   Tbody,
   Td,
@@ -66,6 +67,7 @@ import {
   FiLayers,
   FiPlus,
   FiSave,
+  FiSliders,
   FiTrash2,
   FiUserCheck,
 } from "react-icons/fi";
@@ -85,6 +87,7 @@ import useVendor, {
 import { radiusStyle, RES_CODE_OK } from "@/app/constants/applicationConstants";
 import { formatIDR } from "@/app/components/CardContract";
 import ModalVendorSelector from "./components/ModalVendorSelector";
+import ModalTopAutoAdjust from "./components/ModalTopAutoAdjust";
 import CurrencyInput from "@/app/components/inputProps/currencyInput";
 
 const HeaderDataContent: HeaderContentProps = {
@@ -116,6 +119,8 @@ const VendorContractRegisterView = () => {
   // Modals & Safety 5s countdown
   const vendorModal = useDisclosure();
   const confirmModal = useDisclosure();
+  const topAutoAdjustModal = useDisclosure();
+  const [showTopDates, setShowTopDates] = useState<boolean>(false);
   const [countdown, setCountdown] = useState<number>(5);
   const [canSubmit, setCanSubmit] = useState<boolean>(false);
 
@@ -176,7 +181,7 @@ const VendorContractRegisterView = () => {
       status: "ACTIVE",
       items: [],
       topList: [
-        { stepOrder: 1, topValues: 0, topDate: new Date().toISOString().split("T")[0] },
+        { stepOrder: 1, topValues: 0, topDate: "", topDescriptions: "", topStatus: "ACTIVE" },
       ],
     },
     validationSchema,
@@ -209,6 +214,10 @@ const VendorContractRegisterView = () => {
       capexPercentage: formik.values.capexPercentage || 0,
       ovexValues: formik.values.ovexValues || 0,
       ovexPercentage: formik.values.ovexPercentage || 0,
+      topList: (formik.values.topList || []).map((t) => ({
+        ...t,
+        topDate: cleanDate(t.topDate),
+      })),
     };
 
     const res = await InsertContract(sanitizedPayload, tokenData);
@@ -227,7 +236,7 @@ const VendorContractRegisterView = () => {
     const nextOrder = (formik.values.topList?.length || 0) + 1;
     formik.setFieldValue("topList", [
       ...(formik.values.topList || []),
-      { stepOrder: nextOrder, topValues: 0, topDate: new Date().toISOString().split("T")[0] },
+      { stepOrder: nextOrder, topValues: 0, topDate: "", topDescriptions: "", topStatus: "ACTIVE" },
     ]);
   };
 
@@ -710,20 +719,46 @@ const VendorContractRegisterView = () => {
             {/* SECTION 3: Contract TOP (Terms of Payment) Schedule */}
             <Card rounded="2xl" shadow="lg" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
               <CardHeader bg={colorMode === "light" ? "gray.50" : "gray.900"} py={4} roundedTop="2xl">
-                <Flex justify="space-between" align="center">
+                <Flex justify="space-between" align="center" wrap="wrap" gap={3}>
                   <HStack spacing={3}>
                     <Box w={9} h={9} bg="teal.500" rounded="lg" display="flex" alignItems="center" justifyContent="center" color="white">
                       <FiDollarSign size={18} />
                     </Box>
                     <VStack align="start" spacing={0}>
                       <Heading size="md">3. Terms of Payment (TOP) Schedule</Heading>
-                      <Text fontSize="xs" color="gray.500">Define payment milestones and scheduled due dates</Text>
+                      <Text fontSize="xs" color="gray.500">Define payment milestones, descriptions, and optional due dates</Text>
                     </VStack>
                   </HStack>
 
-                  <Button size="sm" colorScheme="teal" leftIcon={<FiPlus />} onClick={handleAddTopStep}>
-                    Add Payment Step
-                  </Button>
+                  <HStack spacing={3}>
+                    <FormControl display="flex" alignItems="center" w="auto">
+                      <FormLabel htmlFor="toggle-top-dates" mb="0" fontSize="xs" fontWeight="bold" color="gray.600" cursor="pointer" mr={2}>
+                        Include Due Dates
+                      </FormLabel>
+                      <Switch
+                        id="toggle-top-dates"
+                        size="sm"
+                        colorScheme="teal"
+                        isChecked={showTopDates}
+                        onChange={(e) => setShowTopDates(e.target.checked)}
+                      />
+                    </FormControl>
+
+                    <Button
+                      size="sm"
+                      colorScheme="teal"
+                      variant="outline"
+                      leftIcon={<FiSliders />}
+                      onClick={topAutoAdjustModal.onOpen}
+                      title="Auto calculate and adjust TOP payment schedule"
+                    >
+                      Auto Schedule
+                    </Button>
+
+                    <Button size="sm" colorScheme="teal" leftIcon={<FiPlus />} onClick={handleAddTopStep}>
+                      Add Payment Step
+                    </Button>
+                  </HStack>
                 </Flex>
               </CardHeader>
 
@@ -746,41 +781,70 @@ const VendorContractRegisterView = () => {
 
                   {(formik.values.topList || []).map((top, idx) => (
                     <Box key={idx} p={4} rounded="xl" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"} bg={colorMode === "light" ? "white" : "gray.800"}>
-                      <Grid templateColumns={{ base: "1fr", md: "100px 1fr 1fr 60px" }} gap={3} alignItems="center">
-                        <GridItem>
-                          <Text fontSize="xs" fontWeight="bold">Step #{top.stepOrder}</Text>
-                        </GridItem>
-                        <GridItem>
-                          <FormControl>
-                            <FormLabel fontSize="2xs">Payment Amount (Rp.)</FormLabel>
-                            <CurrencyInput
-                              size="sm"
-                              rounded="md"
-                              name={`topList[${idx}].topValues`}
-                              fieldCustom={`topList[${idx}].topValues`}
-                              value={top.topValues}
-                              onChange={(field, val) => formik.setFieldValue(field, val)}
-                            />
-                          </FormControl>
-                        </GridItem>
-                        <GridItem>
-                          <FormControl>
-                            <FormLabel fontSize="2xs">Scheduled Due Date</FormLabel>
-                            <Input
-                              size="sm"
-                              type="date"
-                              rounded="md"
-                              value={top.topDate.split("T")[0]}
-                              onChange={(e) => formik.setFieldValue(`topList[${idx}].topDate`, e.target.value)}
-                            />
-                          </FormControl>
-                        </GridItem>
-                        <GridItem textAlign="right">
-                          <Button size="xs" colorScheme="red" variant="ghost" onClick={() => handleRemoveTopStep(idx)}>
+                      <VStack align="stretch" spacing={3}>
+                        <Flex justify="space-between" align="center">
+                          <Badge colorScheme="teal" rounded="md" px={2.5} py={0.5} fontSize="2xs">
+                            Step #{top.stepOrder}
+                          </Badge>
+
+                          <Button size="xs" colorScheme="red" variant="ghost" onClick={() => handleRemoveTopStep(idx)} title="Remove step">
                             <FiTrash2 />
                           </Button>
-                        </GridItem>
-                      </Grid>
+                        </Flex>
+
+                        <Grid
+                          templateColumns={
+                            showTopDates
+                              ? { base: "1fr", md: "1fr 1fr 1fr" }
+                              : { base: "1fr", md: "1fr 2fr" }
+                          }
+                          gap={3}
+                          alignItems="flex-start"
+                        >
+                          <GridItem>
+                            <FormControl>
+                              <FormLabel fontSize="2xs" fontWeight="bold">Payment Amount (Rp.) *</FormLabel>
+                              <CurrencyInput
+                                size="sm"
+                                rounded="md"
+                                name={`topList[${idx}].topValues`}
+                                fieldCustom={`topList[${idx}].topValues`}
+                                value={top.topValues || 0}
+                                onChange={(field, val) => formik.setFieldValue(field, val)}
+                              />
+                            </FormControl>
+                          </GridItem>
+
+                          <GridItem>
+                            <FormControl>
+                              <FormLabel fontSize="2xs" fontWeight="bold">TOP Description / Milestone Note</FormLabel>
+                              <Textarea
+                                size="sm"
+                                rounded="md"
+                                rows={1}
+                                placeholder="e.g. DP 30% after signing contract..."
+                                value={top.topDescriptions || ""}
+                                onChange={(e) => formik.setFieldValue(`topList[${idx}].topDescriptions`, e.target.value)}
+                              />
+                            </FormControl>
+                          </GridItem>
+
+                          {showTopDates && (
+                            <GridItem>
+                              <FormControl>
+                                <FormLabel fontSize="2xs" fontWeight="bold">Scheduled Due Date (Optional)</FormLabel>
+                                <Input
+                                  size="sm"
+                                  type="date"
+                                  rounded="md"
+                                  value={top.topDate ? top.topDate.split("T")[0] : ""}
+                                  onChange={(e) => formik.setFieldValue(`topList[${idx}].topDate`, e.target.value)}
+                                />
+                              </FormControl>
+                            </GridItem>
+                          )}
+                        </Grid>
+                      </VStack>
                     </Box>
                   ))}
                 </VStack>
@@ -847,7 +911,6 @@ const VendorContractRegisterView = () => {
                   <Text><strong>Contract No:</strong> {formik.values.contractNumber}</Text>
                   <Text><strong>Total Work Value:</strong> <span style={{ color: "#319795", fontWeight: "bold" }}>{formatIDR(formik.values.workValue)}</span></Text>
                   <Text><strong>TOP Steps:</strong> {formik.values.topList?.length || 0} payment steps ({formatIDR(totalTopValues)})</Text>
-                  <Text><strong>Scope Items:</strong> {formik.values.items?.length || 0} items</Text>
                 </VStack>
               </Box>
             </VStack>
@@ -868,12 +931,20 @@ const VendorContractRegisterView = () => {
                 onClick={handleExecuteSubmit}
                 leftIcon={<FiCheck />}
               >
-                {canSubmit ? "Confirm Submit 🚀" : `Confirm Submit (${countdown}s)`}
+                {canSubmit ? "Confirm Submit" : `Confirm Submit (${countdown}s)`}
               </Button>
             </HStack>
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* Modal Auto Adjust TOP Schedule */}
+      <ModalTopAutoAdjust
+        isOpen={topAutoAdjustModal.isOpen}
+        onClose={topAutoAdjustModal.onClose}
+        workValue={formik.values.workValue || 0}
+        onApplySchedule={(generated) => formik.setFieldValue("topList", generated)}
+      />
     </LayoutAdmin>
   );
 };

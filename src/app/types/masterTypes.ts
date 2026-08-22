@@ -16,6 +16,9 @@ export interface ApiGenericResponse<T> {
   count?: number;
   countTotal?: number;
   totalWorkValue?: number;
+  activeCount?: number;
+  expiringSoonCount?: number;
+  expiredCount?: number;
   error?: any; // Optional error message, present only in case of an error
 }
 

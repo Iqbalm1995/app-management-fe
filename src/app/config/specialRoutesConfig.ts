@@ -205,6 +205,20 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
     baseMenu: "/vendor-management",
   },
 
+  ///master-data/rbb/register/
+  {
+    pattern: "/master-data/rbb/register",
+    baseMenu: "/master-data/rbb",
+  },
+  {
+    pattern: "/master-data/rbb/detail",
+    baseMenu: "/master-data/rbb",
+  },
+  {
+    pattern: "/master-data/rbb/edi",
+    baseMenu: "/master-data/rbb",
+  },
+
   {
     pattern: "/performances/divisions/detail",
     baseMenu: "/performances",

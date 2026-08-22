@@ -54,7 +54,7 @@ import {
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import { HeaderContent, HeaderContentProps } from "@/app/components/headerContent";
 import LoadingMiniSignature from "@/app/components/loadingMini";
-import CardContract, { formatIDR } from "@/app/components/CardContract";
+import CardContract, { formatIDR, getContractDeadlineStatus } from "@/app/components/CardContract";
 import ContractSidebar from "./components/ContractSidebar";
 import { ControlTable } from "@/app/components/tableComponents";
 
@@ -88,6 +88,9 @@ const VendorContractsPage = () => {
   const [showWorkValue, setShowWorkValue] = useState<boolean>(false);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [totalPortfolioWorkValue, setTotalPortfolioWorkValue] = useState<number>(0);
+  const [activeContractsCount, setActiveContractsCount] = useState<number>(0);
+  const [expiringSoonContractsCount, setExpiringSoonContractsCount] = useState<number>(0);
+  const [expiredContractsCount, setExpiredContractsCount] = useState<number>(0);
 
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -146,10 +149,16 @@ const VendorContractsPage = () => {
       setDataContracts(res.data);
       setTotalCount(res.countTotal || res.data.length);
       setTotalPortfolioWorkValue(res.totalWorkValue || 0);
+      setActiveContractsCount(res.activeCount || 0);
+      setExpiringSoonContractsCount(res.expiringSoonCount || 0);
+      setExpiredContractsCount(res.expiredCount || 0);
     } else {
       setDataContracts([]);
       setTotalCount(0);
       setTotalPortfolioWorkValue(0);
+      setActiveContractsCount(0);
+      setExpiringSoonContractsCount(0);
+      setExpiredContractsCount(0);
       showToast({ description: res?.message || RES_GENERIC_ERROR_MSG, statusToast: "error" });
     }
     setIsLoading(false);
@@ -160,7 +169,6 @@ const VendorContractsPage = () => {
   }, [fetchContracts]);
 
   // Derived metrics
-  const activeContractsCount = DataContracts.filter((c) => c.status?.toUpperCase() === "ACTIVE").length;
   const totalWorkValueSum = DataContracts.reduce((acc, c) => acc + (c.workValue || 0), 0);
   const totalPages = Math.ceil(totalCount / pageSize) || 1;
 
@@ -246,28 +254,46 @@ const VendorContractsPage = () => {
             </HStack>
 
             {/* Quick Metrics */}
-            <HStack spacing={6} display={{ base: "none", lg: "flex" }}>
+            <HStack spacing={5} display={{ base: "none", lg: "flex" }}>
               <VStack spacing={0}>
-                <Text fontSize="2xl" fontWeight="bold" color={colorMode === "light" ? "gray.900" : "white"}>
+                <Text fontSize="xl" fontWeight="bold" color={colorMode === "light" ? "gray.900" : "white"}>
                   {totalCount}
                 </Text>
                 <Text fontSize="2xs" color={colorMode === "light" ? "gray.600" : "white"} textTransform="uppercase" fontWeight="600">
-                  Total Contracts
+                  Total
                 </Text>
               </VStack>
-              <Box w="1px" h="40px" bg={colorMode === "light" ? "blackAlpha.200" : "whiteAlpha.400"} />
+              <Box w="1px" h="36px" bg={colorMode === "light" ? "blackAlpha.200" : "whiteAlpha.400"} />
               <VStack spacing={0}>
-                <Text fontSize="2xl" fontWeight="bold" color="green.500">
+                <Text fontSize="xl" fontWeight="bold" color="teal.500">
                   {activeContractsCount}
                 </Text>
                 <Text fontSize="2xs" color={colorMode === "light" ? "gray.600" : "white"} textTransform="uppercase" fontWeight="600">
                   Active
                 </Text>
               </VStack>
-              <Box w="1px" h="40px" bg={colorMode === "light" ? "blackAlpha.200" : "whiteAlpha.400"} />
+              <Box w="1px" h="36px" bg={colorMode === "light" ? "blackAlpha.200" : "whiteAlpha.400"} />
+              <VStack spacing={0}>
+                <Text fontSize="xl" fontWeight="bold" color="orange.500">
+                  {expiringSoonContractsCount}
+                </Text>
+                <Text fontSize="2xs" color="orange.500" textTransform="uppercase" fontWeight="700">
+                  Expiring Soon (1-Mo)
+                </Text>
+              </VStack>
+              <Box w="1px" h="36px" bg={colorMode === "light" ? "blackAlpha.200" : "whiteAlpha.400"} />
+              <VStack spacing={0}>
+                <Text fontSize="xl" fontWeight="bold" color="red.500">
+                  {expiredContractsCount}
+                </Text>
+                <Text fontSize="2xs" color="red.500" textTransform="uppercase" fontWeight="700">
+                  Expired
+                </Text>
+              </VStack>
+              <Box w="1px" h="36px" bg={colorMode === "light" ? "blackAlpha.200" : "whiteAlpha.400"} />
               <VStack spacing={0} cursor="pointer" onClick={() => setShowWorkValue(!showWorkValue)}>
                 <HStack spacing={1}>
-                  <Text fontSize="lg" fontWeight="bold" color="secondary.600">
+                  <Text fontSize="md" fontWeight="bold" color="secondary.600">
                     {showWorkValue ? formatIDR(totalWorkValueSum) : "••••••"}
                   </Text>
                   <Icon as={showWorkValue ? FiEye : FiEyeOff} boxSize={3} color="gray.400" />
@@ -386,6 +412,7 @@ const VendorContractsPage = () => {
                             <Thead>
                               <Tr bg={colorMode === "light" ? "gray.50" : "gray.900"}>
                                 <Th py={3}>No.</Th>
+                                <Th py={3}>Vendor Partner</Th>
                                 <Th py={3}>SPK / Corp Ref</Th>
                                 <Th py={3}>Contract Title</Th>
                                 <Th py={3}>Contract Number</Th>
@@ -400,6 +427,11 @@ const VendorContractsPage = () => {
                               {DataContracts.map((contract, index) => (
                                 <Tr key={contract.id} _hover={{ bg: colorMode === "light" ? "gray.50" : "gray.700" }}>
                                   <Td py={3}>{pageIndex * pageSize + index + 1}.</Td>
+                                  <Td py={3}>
+                                    <Text fontSize="xs" color="secondary.700">
+                                      <strong>{contract.vendorName || contract.vendorId || "-"}</strong>
+                                    </Text>
+                                  </Td>
                                   <Td py={3}><Text fontSize="xs" fontWeight="700" color="secondary.700">{contract.corpNumber}</Text></Td>
                                   <Td py={3}><Text fontSize="xs" fontWeight="600" maxW="200px" noOfLines={1}>{contract.corpName}</Text></Td>
                                   <Td py={3}><Text fontSize="xs">{contract.contractNumber}</Text></Td>
@@ -407,8 +439,13 @@ const VendorContractsPage = () => {
                                   <Td py={3}><Text fontSize="xs">{new Date(contract.contractStartDate).toLocaleDateString("id-ID")}</Text></Td>
                                   <Td py={3}><Text fontSize="xs">{new Date(contract.contractEndDate).toLocaleDateString("id-ID")}</Text></Td>
                                   <Td py={3}>
-                                    <Badge colorScheme={contract.status === "ACTIVE" ? "green" : "blue"} fontSize="2xs" rounded="md" px={2}>
-                                      {contract.status}
+                                    <Badge
+                                      colorScheme={getContractDeadlineStatus(contract.contractEndDate).badgeColor}
+                                      fontSize="2xs"
+                                      rounded="md"
+                                      px={2}
+                                    >
+                                      {getContractDeadlineStatus(contract.contractEndDate).badgeLabel}
                                     </Badge>
                                   </Td>
                                   <Td py={3} textAlign="right">

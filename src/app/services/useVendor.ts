@@ -113,7 +113,9 @@ export interface ContractTopResponse {
   venContractId: string;
   stepOrder: number;
   topValues: number;
-  topDate: string;
+  topDate?: string | null;
+  topDescriptions?: string | null;
+  topStatus?: string | null;
   createdAt: string;
   createdBy: string;
   updatedAt?: string | null;
@@ -160,7 +162,62 @@ export interface VendorContractResponse {
   items: ContractItemResponse[];
   topList: ContractTopResponse[];
   mediaList: VendorMediaResponse[];
+  historyList?: VendorContractHistoryResponse[];
   vendor?: VendorResponse | null;
+}
+
+export interface ContractTopHistoryResponse {
+  id: string;
+  venContractParentId?: string | null;
+  venContractId?: string | null;
+  venContractHistoryId?: string | null;
+  stepOrder?: number | null;
+  topValues?: number | null;
+  topDate?: string | null;
+  topDescriptions?: string | null;
+  topStatus?: string | null;
+  createdAt?: string | null;
+  createdBy?: string | null;
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+}
+
+export interface VendorContractHistoryResponse {
+  id: string;
+  venContractParentId: string;
+  vendorId: string;
+  corpNumber: string;
+  corpName: string;
+  contractNumber: string;
+  contractDate: string;
+  workValue: number;
+  note?: string | null;
+  contractStartDate: string;
+  contractEndDate: string;
+  worksStartDate?: string | null;
+  worksEndDate?: string | null;
+  warrantyStartDate?: string | null;
+  warrantyEndDate?: string | null;
+  maintenanceStartDate?: string | null;
+  maintenanceEndDate?: string | null;
+  othersTimeline?: string | null;
+  termOfPayment?: string | null;
+  performanceGuaranteeStartDate: string;
+  performanceGuaranteeEndDate: string;
+  performanceGuaranteeValues: number;
+  maintenanceWarrantyStartDate: string;
+  maintenanceWarrantyEndDate: string;
+  maintenanceWarrantyValues: number;
+  cavexValues: number;
+  capexPercentage: number;
+  ovexValues: number;
+  ovexPercentage: number;
+  status: string;
+  createdAt: string;
+  createdBy: string;
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+  topHistoryList?: ContractTopHistoryResponse[];
 }
 
 export interface VendorTdrResponse {
@@ -227,10 +284,13 @@ export interface ContractItemInsertPayload {
 export interface ContractTopInsertPayload {
   stepOrder: number;
   topValues: number;
-  topDate: string;
+  topDate?: string;
+  topDescriptions?: string;
+  topStatus?: string;
 }
 
 export interface VendorContractInsertPayload {
+  id?: string;
   vendorId: string;
   corpNumber: string;
   corpName: string;

@@ -103,6 +103,9 @@ export interface UpdateAssessmentRequest {
   isRelationWithGov: string;
   isOnDevelopment: string;
   isSkipReview: string;
+  appManageByGroupId?: string | null;
+  appManageByGroupCode?: string | null;
+  appManageByGroupName?: string | null;
   appCrtCategoryId: string | null;
   appCrtCategoryCode: string | null;
   appCrtCategoryName: string | null;
@@ -265,7 +268,21 @@ const useAppsCriticalReport = () => {
     } catch (e: any) { return handleError(e); }
   };
 
-  return { Generate, List, GetBatchDetail, GetAssessmentDetail, UpdateAssessment, UpdateAssessmentDetail, SubmitForApproval, SubmitBatchForApproval, SyncBatchStatus, ListByStatus, CanApproveAssessment, ApproveAssessment, ApproveBatch, ResubmitAssessment, ReviseBatch, GetListByApp };
+  const GetUnassignedApps = async (batchCode: string, token: string) => {
+    try {
+      const res = await axios.get(`${base}/unassigned-apps/${batchCode}`, { headers: { Authorization: `Bearer ${token}` } });
+      return res.data;
+    } catch (e: any) { return handleError(e); }
+  };
+
+  const AssignAppsToBatch = async (payload: { batchCode: string; appIds: string[] }, token: string) => {
+    try {
+      const res = await axios.post(`${base}/assign-apps-to-batch`, payload, { headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" } });
+      return res.data;
+    } catch (e: any) { return handleError(e); }
+  };
+
+  return { Generate, List, GetBatchDetail, GetAssessmentDetail, UpdateAssessment, UpdateAssessmentDetail, SubmitForApproval, SubmitBatchForApproval, SyncBatchStatus, ListByStatus, CanApproveAssessment, ApproveAssessment, ApproveBatch, ResubmitAssessment, ReviseBatch, GetListByApp, GetUnassignedApps, AssignAppsToBatch };
 };
 
 export default useAppsCriticalReport;

@@ -4,6 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
   Badge,
   Box,
   Button,
@@ -54,15 +58,19 @@ import {
   FiAlertCircle,
   FiTrendingUp,
   FiInfo,
+  FiSliders,
+  FiRotateCcw,
 } from "react-icons/fi";
 
 // Components
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import { HeaderContent } from "@/app/components/headerContent";
-import { formatIDR } from "@/app/components/CardContract";
+import { formatIDR, getContractDeadlineStatus } from "@/app/components/CardContract";
 import useVendor, { VendorContractResponse } from "@/app/services/useVendor";
 import { RES_CODE_OK } from "@/app/constants/applicationConstants";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
+import ContractEditTabPanel from "./components/ContractEditTabPanel";
+import ContractHistoryTabPanel from "./components/ContractHistoryTabPanel";
 
 export default function VendorContractDetailView() {
   const { colorMode } = useColorMode();
@@ -131,6 +139,7 @@ export default function VendorContractDetailView() {
 
   const topTotalSum = (contract.topList || []).reduce((acc, curr) => acc + (curr.topValues || 0), 0);
   const itemsTotalSum = (contract.items || []).reduce((acc, curr) => acc + (curr.itemValues || 0), 0);
+  const deadline = getContractDeadlineStatus(contract.contractEndDate);
 
   const getStatusColorScheme = (st?: string) => {
     switch (st?.toUpperCase()) {
@@ -149,6 +158,35 @@ export default function VendorContractDetailView() {
       <Box px={{ base: 3, md: 6 }} py={4} w="full">
         <VStack spacing={6} align="stretch" w="full">
 
+          {/* Expiration & Deadline Alert Banners */}
+          {deadline.isExpired && (
+            <Alert status="error" rounded="2xl" shadow="lg" border="1px" borderColor="red.200">
+              <AlertIcon boxSize={5} />
+              <Box flex={1}>
+                <AlertTitle fontSize="sm" fontWeight="bold">
+                  CRITICAL NOTICE: Contract Expired ({Math.abs(deadline.daysRemaining)} days ago)
+                </AlertTitle>
+                <AlertDescription fontSize="xs">
+                  {deadline.warningMessage}
+                </AlertDescription>
+              </Box>
+            </Alert>
+          )}
+
+          {deadline.isExpiringSoon && (
+            <Alert status="warning" rounded="2xl" shadow="lg" border="1px" borderColor="orange.200">
+              <AlertIcon boxSize={5} />
+              <Box flex={1}>
+                <AlertTitle fontSize="sm" fontWeight="bold">
+                  ⚡ 1-MONTH CONTRACT EXPIRATION NOTICE ({deadline.daysRemaining} days remaining)
+                </AlertTitle>
+                <AlertDescription fontSize="xs">
+                  {deadline.warningMessage}
+                </AlertDescription>
+              </Box>
+            </Alert>
+          )}
+
           {/* Top Bar Navigation */}
           <Flex justify="space-between" align="center" wrap="wrap" gap={3}>
             <HStack spacing={3}>
@@ -159,6 +197,9 @@ export default function VendorContractDetailView() {
               </Link>
               <Badge colorScheme={getStatusColorScheme(contract.status)} variant="solid" px={3} py={1} rounded="full" fontSize="xs">
                 {contract.status}
+              </Badge>
+              <Badge colorScheme={deadline.badgeColor} variant="solid" px={3} py={1} rounded="full" fontSize="xs">
+                {deadline.badgeLabel}
               </Badge>
             </HStack>
 
@@ -260,6 +301,18 @@ export default function VendorContractDetailView() {
                     <HStack spacing={2}>
                       <Icon as={FiFolder} />
                       <Text>Documents & Attachments ({contract.mediaList?.length || 0})</Text>
+                    </HStack>
+                  </Tab>
+                  <Tab rounded="xl" fontSize="xs" fontWeight="bold">
+                    <HStack spacing={2}>
+                      <Icon as={FiSliders} />
+                      <Text>Contract Settings & Edit</Text>
+                    </HStack>
+                  </Tab>
+                  <Tab rounded="xl" fontSize="xs" fontWeight="bold">
+                    <HStack spacing={2}>
+                      <Icon as={FiRotateCcw} />
+                      <Text>Revision History ({contract.historyList?.length || 0})</Text>
                     </HStack>
                   </Tab>
                 </TabList>
@@ -388,42 +441,111 @@ export default function VendorContractDetailView() {
 
                   {/* TAB 2: Payment TOP Schedule */}
                   <TabPanel p={0}>
-                    <VStack spacing={4} align="stretch">
-                      <Flex justify="space-between" align="center" wrap="wrap" gap={3} p={4} rounded="xl" bg={colorMode === "light" ? "blue.50" : "gray.800"}>
-                        <VStack align="start" spacing={0}>
-                          <Text fontSize="xs" fontWeight="bold">Schedule Total vs Work Value</Text>
-                          <Text fontSize="2xs" color="gray.500">Scheduled TOP Sum: {formatIDR(topTotalSum, showWorkValue)} / {formatIDR(contract.workValue, showWorkValue)}</Text>
-                        </VStack>
-                        <Badge colorScheme={topTotalSum === contract.workValue ? "green" : "orange"} fontSize="2xs" px={3} py={1} rounded="md">
-                          {topTotalSum === contract.workValue ? "Balanced (100%)" : "Difference Detected"}
-                        </Badge>
-                      </Flex>
+                    <VStack spacing={5} align="stretch">
+                      {/* Summary Banner */}
+                      <Box p={5} rounded="2xl" border="1px" borderColor={colorMode === "light" ? "teal.200" : "teal.800"} bg={colorMode === "light" ? "teal.50/50" : "gray.800"}>
+                        <VStack align="stretch" spacing={3}>
+                          <Flex justify="space-between" align="center" wrap="wrap" gap={2}>
+                            <HStack spacing={2}>
+                              <Icon as={FiDollarSign} color="teal.500" w={5} h={5} />
+                              <VStack align="start" spacing={0}>
+                                <Text fontSize="xs" fontWeight="bold">Payment Schedule Progression</Text>
+                                <Text fontSize="2xs" color="gray.500">
+                                  Scheduled TOP Sum: {formatIDR(topTotalSum, showWorkValue)} / {formatIDR(contract.workValue, showWorkValue)}
+                                </Text>
+                              </VStack>
+                            </HStack>
 
-                      <Box overflowX="auto" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"} rounded="xl">
-                        <Table size="sm" variant="simple">
-                          <Thead bg={colorMode === "light" ? "gray.50" : "gray.900"}>
-                            <Tr>
-                              <Th>Step Order</Th>
-                              <Th>Scheduled Due Date</Th>
-                              <Th>Payment Value (IDR)</Th>
-                              <Th>% of Total Work Value</Th>
-                            </Tr>
-                          </Thead>
-                          <Tbody>
-                            {(contract.topList || []).map((top, idx) => {
-                              const pct = contract.workValue > 0 ? Math.round((top.topValues / contract.workValue) * 100) : 0;
-                              return (
-                                <Tr key={idx}>
-                                  <Td fontWeight="bold">Step #{top.stepOrder}</Td>
-                                  <Td>{top.topDate ? new Date(top.topDate).toLocaleDateString("id-ID") : "-"}</Td>
-                                  <Td fontWeight="bold" color="secondary.700">{formatIDR(top.topValues, showWorkValue)}</Td>
-                                  <Td><Badge colorScheme="blue" fontSize="2xs">{pct}%</Badge></Td>
-                                </Tr>
-                              );
-                            })}
-                          </Tbody>
-                        </Table>
+                            <Badge
+                              colorScheme={topTotalSum === contract.workValue ? "green" : "orange"}
+                              fontSize="2xs"
+                              px={3}
+                              py={1}
+                              rounded="lg"
+                              display="flex"
+                              alignItems="center"
+                              gap={1}
+                            >
+                              <Icon as={topTotalSum === contract.workValue ? FiCheckCircle : FiAlertCircle} />
+                              {topTotalSum === contract.workValue ? "Balanced (100%)" : "Difference Detected"}
+                            </Badge>
+                          </Flex>
+
+                          <Progress
+                            value={contract.workValue > 0 ? (topTotalSum / contract.workValue) * 100 : 0}
+                            size="xs"
+                            colorScheme={topTotalSum === contract.workValue ? "teal" : "orange"}
+                            rounded="full"
+                          />
+                        </VStack>
                       </Box>
+
+                      {/* Milestone List Cards */}
+                      {(contract.topList || []).length === 0 ? (
+                        <Box p={8} textAlign="center" rounded="2xl" border="1px dashed" borderColor="gray.300">
+                          <Text fontSize="xs" color="gray.500">No payment schedule milestones recorded for this contract.</Text>
+                        </Box>
+                      ) : (
+                        <VStack spacing={3} align="stretch">
+                          {(contract.topList || []).map((top, idx) => {
+                            const pct = contract.workValue > 0 ? parseFloat(((top.topValues / contract.workValue) * 100).toFixed(1)) : 0;
+                            return (
+                              <Box
+                                key={idx}
+                                p={5}
+                                rounded="2xl"
+                                border="1px"
+                                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                                bg={colorMode === "light" ? "white" : "gray.800"}
+                                borderLeft="4px solid"
+                                borderLeftColor="teal.500"
+                                shadow="sm"
+                                _hover={{ shadow: "md", transform: "translateY(-1px)" }}
+                                transition="all 0.2s"
+                              >
+                                <VStack align="stretch" spacing={3}>
+                                  <Flex justify="space-between" align="center" wrap="wrap" gap={2}>
+                                    <HStack spacing={2}>
+                                      <Badge colorScheme="teal" px={2.5} py={0.5} rounded="md" fontSize="2xs" fontWeight="bold">
+                                        Step #{top.stepOrder}
+                                      </Badge>
+                                      <Badge colorScheme="blue" px={2.5} py={0.5} rounded="md" fontSize="2xs">
+                                        {pct}% of Work Value
+                                      </Badge>
+                                    </HStack>
+
+                                    <HStack spacing={2} fontSize="xs" color="gray.500">
+                                      <Icon as={FiCalendar} color="teal.500" />
+                                      <Text fontSize="xs" fontWeight="500">
+                                        {top.topDate ? new Date(top.topDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "No due date set"}
+                                      </Text>
+                                    </HStack>
+                                  </Flex>
+
+                                  <Flex justify="space-between" align="flex-end" wrap="wrap" gap={3} pt={1}>
+                                    <VStack align="start" spacing={1} maxW="70%">
+                                      <HStack spacing={1.5} color="gray.500">
+                                        <Icon as={FiFileText} />
+                                        <Text fontSize="2xs" fontWeight="bold" textTransform="uppercase">Milestone Description</Text>
+                                      </HStack>
+                                      <Text fontSize="xs" fontWeight="500" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                                        {top.topDescriptions || "No description provided for this step."}
+                                      </Text>
+                                    </VStack>
+
+                                    <VStack align={{ base: "start", md: "end" }} spacing={0}>
+                                      <Text fontSize="2xs" color="gray.500" fontWeight="bold" textTransform="uppercase">Payment Amount</Text>
+                                      <Text fontSize="lg" fontWeight="bold" color="secondary.600">
+                                        {formatIDR(top.topValues, showWorkValue)}
+                                      </Text>
+                                    </VStack>
+                                  </Flex>
+                                </VStack>
+                              </Box>
+                            );
+                          })}
+                        </VStack>
+                      )}
                     </VStack>
                   </TabPanel>
 
@@ -525,6 +647,16 @@ export default function VendorContractDetailView() {
                         </SimpleGrid>
                       )}
                     </VStack>
+                  </TabPanel>
+
+                  {/* TAB 5: Contract Settings & Edit */}
+                  <TabPanel p={0}>
+                    <ContractEditTabPanel contract={contract} tokenData={tokenData} onRefreshData={fetchDetail} />
+                  </TabPanel>
+
+                  {/* TAB 6: Revision History */}
+                  <TabPanel p={0}>
+                    <ContractHistoryTabPanel historyList={contract.historyList || []} />
                   </TabPanel>
 
                 </TabPanels>

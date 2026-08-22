@@ -40,6 +40,7 @@ import {
   FiClock,
   FiZap,
   FiList,
+  FiTarget,
 } from "react-icons/fi";
 import { GrHelpBook } from "react-icons/gr";
 import {
@@ -331,6 +332,16 @@ export const LinkItems: LinkItemProps[] = [
     role: ["admin"],
     menuID: "1",
     children: [
+      {
+        name: "Master RBB",
+        icon: FiTarget,
+        iconName: "FiTarget",
+        link: "/master-data/rbb",
+        role: ["admin"],
+        menuID: "1",
+        children: [],
+        isDisplaySidebar: "Y",
+      },
       {
         name: "Vendor List",
         icon: LiaFileContractSolid,
@@ -928,7 +939,7 @@ export const LinkItems: LinkItemProps[] = [
         isDisplaySidebar: "N",
       },
     ],
-    isDisplaySidebar: "N",
+    isDisplaySidebar: "Y",
   },
   {
     name: "Access Configurations",

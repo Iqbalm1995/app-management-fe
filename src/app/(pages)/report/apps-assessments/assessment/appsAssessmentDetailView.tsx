@@ -12,6 +12,8 @@ import {
   ORG_GROUP_WHITELIST_FULL_OVERRIDE,
   ORG_GROUP_WHITELIST_ASSESMENT_RTO_SUGGESTIONS,
   ORG_GROUP_WHITELIST_ASSESMENT_RPO,
+  DIVISION_ID_IT_BJB,
+  ORG_CATEGORY_KEY_GROUP,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
@@ -28,7 +30,15 @@ import useMstAppsCriteria, {
   MstAppsCriteriaResponse,
   MstAppsCriteriaValueResponse,
 } from "@/app/services/useMstAppsCriteria";
+import useOrganization, {
+  OrganizationResponse,
+} from "@/app/services/useOrganization";
+import { PaggingListPayload } from "@/app/types/masterTypes";
 import {
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
   Badge,
   Box,
   Button,
@@ -183,6 +193,42 @@ export default function AppsAssessmentDetailView() {
     appsRpoMinutes: null as number | null,
   });
 
+  // Manage Group Edit State & Options (IT Division Groups)
+  const { List: ListOrganization } = useOrganization();
+  const [itGroupOptions, setItGroupOptions] = useState<OrganizationResponse[]>([]);
+  const [selectedManageGroupId, setSelectedManageGroupId] = useState<string>("");
+  const [selectedManageGroupCode, setSelectedManageGroupCode] = useState<string>("");
+  const [selectedManageGroupName, setSelectedManageGroupName] = useState<string>("");
+
+  // Load IT Division Group options for Manage Group selector
+  useEffect(() => {
+    if (!tokenData) return;
+    const loadItGroups = async () => {
+      try {
+        const res = await ListOrganization(
+          {
+            search: "",
+            limit: 1000,
+            page: 0,
+            filterWhere: [
+              { field: "orgType", operator: "=", value: ORG_CATEGORY_KEY_GROUP },
+              { field: "parentId", operator: "=", value: DIVISION_ID_IT_BJB },
+            ],
+            fieldOrder: ["orgName"],
+            orderDir: "asc",
+          } as PaggingListPayload,
+          tokenData,
+        );
+        if (res?.statusCode === RES_CODE_OK && res.data) {
+          setItGroupOptions(res.data);
+        }
+      } catch {
+        /* silent */
+      }
+    };
+    loadItGroups();
+  }, [tokenData]);
+
   // Note: JWT encodes null as "-" — treat "-" as no group
   const userOrgGroupId = (DataAuth?.team?.orgGroupId && DataAuth.team.orgGroupId !== "-")
     ? DataAuth.team.orgGroupId
@@ -277,6 +323,9 @@ export default function AppsAssessmentDetailView() {
         isOnDevelopment: res.data.isOnDevelopment,
         isSkipReview: res.data.isSkipReview,
       });
+      setSelectedManageGroupId(res.data.appManageByGroupId || "");
+      setSelectedManageGroupCode(res.data.appManageByGroupCode || "");
+      setSelectedManageGroupName(res.data.appManageByGroupName || "");
       setRtoRpo({
         appsRtoSuggestionOperator: res.data.appsRtoSuggestionOperator || "",
         appsRtoSuggestionMinutes: res.data.appsRtoSuggestionMinutes ?? null,
@@ -354,6 +403,11 @@ export default function AppsAssessmentDetailView() {
   // - RPO-only users: read-only EXCEPT on WA2 (canEditRpoWA2) or if they own the assessment
   const isEditable = (isDraft || isDeclined || canOverrideWA2) &&
     (!isRpoOnlyUser || rpoUserOwnsAssessment);
+
+  // Manage Group can only be changed by users in ORG_GROUP_WHITELIST_FULL_OVERRIDE when form is editable
+  const canEditManageGroup = isEditable && userOrgGroupId
+    ? ORG_GROUP_WHITELIST_FULL_OVERRIDE.includes(userOrgGroupId)
+    : false;
 
   // RTO Suggestion filled = prerequisite for RTO IT in DRAFT
   const isRtoSuggestionFilled =
@@ -457,6 +511,9 @@ export default function AppsAssessmentDetailView() {
     const assessPayload: UpdateAssessmentRequest = {
       id: assessmentId,
       ...flags,
+      appManageByGroupId: selectedManageGroupId || null,
+      appManageByGroupCode: selectedManageGroupCode || null,
+      appManageByGroupName: selectedManageGroupName || null,
       appCrtCategoryId: isSkipActive ? null : (matchedCategory?.id || null),
       appCrtCategoryCode: isSkipActive ? null : (matchedCategory?.crtCategoryCode || null),
       appCrtCategoryName: isSkipActive ? null : (matchedCategory?.crtCategoryName || null),
@@ -757,6 +814,46 @@ export default function AppsAssessmentDetailView() {
             </Box>
           </Card>
 
+          {/* Alert Section: Missing App Manage Group */}
+          {(!selectedManageGroupId || !selectedManageGroupName || selectedManageGroupName === "-") && (
+            <Card
+              rounded={radiusStyle}
+              shadow="sm"
+              border="1px"
+              borderColor={isDark ? "red.600" : "red.300"}
+              bg={isDark ? "gray.800" : "red.50"}
+            >
+              <CardBody py={4} px={5}>
+                <HStack spacing={4} align="flex-start">
+                  <Box
+                    p={2.5}
+                    bg={isDark ? "red.900" : "red.100"}
+                    rounded="lg"
+                    color="red.500"
+                  >
+                    <Icon as={FiAlertTriangle} boxSize={6} />
+                  </Box>
+                  <VStack align="start" spacing={1} flex={1}>
+                    <HStack spacing={2}>
+                      <Heading
+                        size="sm"
+                        color={isDark ? "red.300" : "red.800"}
+                      >
+                        Aplikasi Belum Memiliki Group Pengelola (Unassigned Manage Group)
+                      </Heading>
+                      <Badge colorScheme="red" variant="solid" fontSize="xs">
+                        UNASSIGNED GROUP
+                      </Badge>
+                    </HStack>
+                    <Text fontSize="xs" color={isDark ? "gray.300" : "red.700"}>
+                      Aplikasi ini belum terhubung dengan Group IT Pengelola. Silakan pilih Group IT Pengelola di bagian <b>App Information</b> di bawah ini lalu klik tombol <b>Save Changes</b>.
+                    </Text>
+                  </VStack>
+                </HStack>
+              </CardBody>
+            </Card>
+          )}
+
           {/* Alert Section: Application Not Reviewed by IAG (RTO Suggestion not filled) */}
           {!isRtoSuggestionFilled && (
             <Card
@@ -1047,32 +1144,83 @@ export default function AppsAssessmentDetailView() {
               <Divider borderColor={isDark ? "gray.700" : "gray.100"} />
               <CardBody px={5} py={4}>
                 <Stack spacing={3}>
-                  {[
-                    { label: "Short Name", value: data?.appShortName },
-                    { label: "App Name", value: data?.appName || "-" },
-                    {
-                      label: "Manage Group",
-                      value: data?.appManageByGroupName || "-",
-                    },
-                  ].map(({ label, value }) => (
-                    <HStack
-                      key={label}
-                      justify="space-between"
-                      py={2}
-                      borderBottom="1px"
-                      borderColor={isDark ? "gray.700" : "gray.100"}
-                    >
-                      <Text
-                        fontSize="sm"
-                        color={isDark ? "gray.400" : "gray.500"}
+                  <HStack
+                    justify="space-between"
+                    py={2}
+                    borderBottom="1px"
+                    borderColor={isDark ? "gray.700" : "gray.100"}
+                  >
+                    <Text fontSize="sm" color={isDark ? "gray.400" : "gray.500"}>
+                      Short Name
+                    </Text>
+                    <Text fontSize="sm" fontWeight="medium">
+                      {data?.appShortName || "-"}
+                    </Text>
+                  </HStack>
+
+                  <HStack
+                    justify="space-between"
+                    py={2}
+                    borderBottom="1px"
+                    borderColor={isDark ? "gray.700" : "gray.100"}
+                  >
+                    <Text fontSize="sm" color={isDark ? "gray.400" : "gray.500"}>
+                      App Name
+                    </Text>
+                    <Text fontSize="sm" fontWeight="medium">
+                      {data?.appName || "-"}
+                    </Text>
+                  </HStack>
+
+                  <HStack
+                    justify="space-between"
+                    align="center"
+                    py={2}
+                    borderBottom="1px"
+                    borderColor={isDark ? "gray.700" : "gray.100"}
+                  >
+                    <Text fontSize="sm" color={isDark ? "gray.400" : "gray.500"}>
+                      Manage Group
+                    </Text>
+                    {canEditManageGroup ? (
+                      <Select
+                        size="sm"
+                        w="220px"
+                        rounded="md"
+                        value={selectedManageGroupId}
+                        onChange={(e) => {
+                          const id = e.target.value;
+                          setSelectedManageGroupId(id);
+                          const org = itGroupOptions.find((g) => g.id === id);
+                          if (org) {
+                            setSelectedManageGroupCode(org.orgCode || "");
+                            setSelectedManageGroupName(org.orgName || "");
+                          } else {
+                            setSelectedManageGroupCode("");
+                            setSelectedManageGroupName("");
+                          }
+                        }}
                       >
-                        {label}
-                      </Text>
+                        <option value="">-- Select IT Group --</option>
+                        {itGroupOptions.map((g) => (
+                          <option key={g.id} value={g.id}>
+                            {g.orgName} ({g.orgCode})
+                          </option>
+                        ))}
+                      </Select>
+                    ) : !selectedManageGroupId || !selectedManageGroupName || selectedManageGroupName === "-" ? (
+                      <Badge colorScheme="red" variant="subtle" rounded="md" px={2} py={0.5} fontSize="2xs">
+                        <HStack spacing={1}>
+                          <FiAlertTriangle size={10} />
+                          <Text as="span">Unassigned Group</Text>
+                        </HStack>
+                      </Badge>
+                    ) : (
                       <Text fontSize="sm" fontWeight="medium">
-                        {value}
+                        {selectedManageGroupName}
                       </Text>
-                    </HStack>
-                  ))}
+                    )}
+                  </HStack>
                 </Stack>
               </CardBody>
             </Card>

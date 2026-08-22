@@ -48,24 +48,70 @@ export const formatIDR = (value: number, showValue: boolean = true) => {
   }).format(value);
 };
 
+export interface ContractDeadlineInfo {
+  daysRemaining: number;
+  isExpired: boolean;
+  isExpiringSoon: boolean; // within 30 days
+  badgeColor: string;
+  badgeLabel: string;
+  warningMessage?: string;
+}
+
+export const getContractDeadlineStatus = (endDateStr?: string | null): ContractDeadlineInfo => {
+  if (!endDateStr) {
+    return {
+      daysRemaining: 0,
+      isExpired: false,
+      isExpiringSoon: false,
+      badgeColor: "gray",
+      badgeLabel: "ACTIVE",
+    };
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const endDate = new Date(endDateStr);
+  endDate.setHours(0, 0, 0, 0);
+
+  const diffTime = endDate.getTime() - today.getTime();
+  const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (daysRemaining < 0) {
+    const expiredDays = Math.abs(daysRemaining);
+    return {
+      daysRemaining,
+      isExpired: true,
+      isExpiringSoon: false,
+      badgeColor: "red",
+      badgeLabel: `EXPIRED (${expiredDays}d ago)`,
+      warningMessage: `This contract expired ${expiredDays} day(s) ago on ${new Date(endDateStr).toLocaleDateString("id-ID")}. Immediate action or extension required!`,
+    };
+  }
+
+  if (daysRemaining <= 30) {
+    return {
+      daysRemaining,
+      isExpired: false,
+      isExpiringSoon: true,
+      badgeColor: "orange",
+      badgeLabel: `EXPIRING SOON (${daysRemaining}d left)`,
+      warningMessage: `Contract Expiration Warning: This contract will expire in ${daysRemaining} day(s) on ${new Date(endDateStr).toLocaleDateString("id-ID")}. 1-month notice active.`,
+    };
+  }
+
+  return {
+    daysRemaining,
+    isExpired: false,
+    isExpiringSoon: false,
+    badgeColor: "teal",
+    badgeLabel: `ACTIVE (${daysRemaining}d left)`,
+  };
+};
+
 const CardContract = ({ data, showWorkValue = false }: CardContractProps) => {
   const { colorMode } = useColorMode();
-  const isExpired = new Date(data.contractEndDate) < new Date();
-
-  const getStatusColor = (status: string) => {
-    switch (status?.toUpperCase()) {
-      case "ACTIVE":
-        return "green";
-      case "COMPLETED":
-        return "blue";
-      case "EXPIRED":
-        return "orange";
-      case "TERMINATED":
-        return "red";
-      default:
-        return "gray";
-    }
-  };
+  const deadline = getContractDeadlineStatus(data.contractEndDate);
 
   return (
     <Card
@@ -117,17 +163,24 @@ const CardContract = ({ data, showWorkValue = false }: CardContractProps) => {
             </VStack>
           </HStack>
 
-          <Badge
-            colorScheme={getStatusColor(data.status)}
-            variant="solid"
-            rounded="full"
-            px={2.5}
-            py={0.5}
-            fontSize="2xs"
-            fontWeight="bold"
-          >
-            {data.status}
-          </Badge>
+          <HStack spacing={1.5}>
+            {deadline.isExpiringSoon && (
+              <Badge colorScheme="orange" variant="solid" rounded="full" px={2} py={0.5} fontSize="2xs" fontWeight="bold">
+                1-MO NOTICE
+              </Badge>
+            )}
+            <Badge
+              colorScheme={deadline.badgeColor}
+              variant="solid"
+              rounded="full"
+              px={2.5}
+              py={0.5}
+              fontSize="2xs"
+              fontWeight="bold"
+            >
+              {deadline.badgeLabel}
+            </Badge>
+          </HStack>
         </Flex>
       </CardHeader>
 
@@ -135,6 +188,9 @@ const CardContract = ({ data, showWorkValue = false }: CardContractProps) => {
         <VStack spacing={4} align="stretch">
           {/* Title */}
           <VStack align="start" spacing={1}>
+            <Text fontSize="xs" color={colorMode === "light" ? "secondary.700" : "secondary.300"} fontWeight="500">
+              Vendor: <strong>{data.vendorName || data.vendorId || "-"}</strong> {data.vendorCode ? `(${data.vendorCode})` : ""}
+            </Text>
             <Heading
               size="sm"
               color={colorMode === "light" ? "gray.800" : "white"}
@@ -184,17 +240,12 @@ const CardContract = ({ data, showWorkValue = false }: CardContractProps) => {
 
             <HStack justify="space-between" color="gray.600">
               <HStack spacing={1}>
-                <Icon as={FiLayers} boxSize={3.5} color="purple.500" />
-                <Text color="gray.500">Scope Items & TOP Steps:</Text>
+                <Icon as={FiLayers} boxSize={3.5} color="teal.500" />
+                <Text color="gray.500">TOP Payment Milestones:</Text>
               </HStack>
-              <HStack spacing={1.5}>
-                <Badge colorScheme="purple" fontSize="2xs" rounded="md" px={1.5}>
-                  {data.items?.length || 0} Items
-                </Badge>
-                <Badge colorScheme="teal" fontSize="2xs" rounded="md" px={1.5}>
-                  {data.topList?.length || 0} TOPs
-                </Badge>
-              </HStack>
+              <Badge colorScheme="teal" fontSize="2xs" rounded="md" px={2} py={0.5}>
+                {data.topList?.length || 0} Steps
+              </Badge>
             </HStack>
           </VStack>
         </VStack>
@@ -203,8 +254,12 @@ const CardContract = ({ data, showWorkValue = false }: CardContractProps) => {
         <VStack spacing={3} align="stretch" mt={4}>
           <Divider borderColor={colorMode === "light" ? "gray.100" : "gray.700"} />
           <HStack justify="space-between" align="center">
-            <Text fontSize="2xs" color={isExpired ? "red.500" : "gray.400"} fontWeight="600">
-              {isExpired ? "Expired Contract" : "Active Contract Term"}
+            <Text fontSize="2xs" color={deadline.isExpired ? "red.500" : deadline.isExpiringSoon ? "orange.500" : "gray.400"} fontWeight="700">
+              {deadline.isExpired
+                ? `Expired ${Math.abs(deadline.daysRemaining)}d ago`
+                : deadline.isExpiringSoon
+                ? `Expires in ${deadline.daysRemaining} days`
+                : `Valid (${deadline.daysRemaining}d remaining)`}
             </Text>
             <Link href={`/vendor-management/contracts/detail?id=${data.id}`}>
               <Button

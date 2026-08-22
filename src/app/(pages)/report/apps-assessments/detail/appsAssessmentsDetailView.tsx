@@ -10,6 +10,7 @@ import {
   ORG_CATEGORY_KEY_GROUP,
   DIVISION_ID_IT_BJB,
   ORG_GROUP_WHITELIST_ALL_ACCESS,
+  ORG_GROUP_WHITELIST_FULL_OVERRIDE,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
@@ -30,6 +31,7 @@ import {
   Card,
   CardBody,
   CardHeader,
+  Checkbox,
   Divider,
   Flex,
   Heading,
@@ -43,6 +45,7 @@ import {
   ModalBody,
   ModalCloseButton,
   ModalContent,
+  ModalFooter,
   ModalHeader,
   ModalOverlay,
   Select,
@@ -50,7 +53,13 @@ import {
   Spacer,
   Spinner,
   Stack,
+  Table,
+  Tbody,
+  Td,
   Text,
+  Th,
+  Thead,
+  Tr,
   Tooltip,
   useColorMode,
   useDisclosure,
@@ -68,7 +77,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { PaggingListPayload } from "@/app/types/masterTypes";
 import { FaArrowLeft } from "react-icons/fa6";
-import { FiActivity, FiEye, FiInfo, FiLock, FiX } from "react-icons/fi";
+import { FiActivity, FiAlertCircle, FiAlertTriangle, FiCheckCircle, FiClock, FiEye, FiInfo, FiLock, FiPlusCircle, FiRefreshCw, FiX } from "react-icons/fi";
 import { FaFileExcel, FaFilePdf } from "react-icons/fa6";
 
 const boolBadge = (v: string) => (
@@ -98,6 +107,8 @@ export default function AppsAssessmentsDetailView() {
     SubmitBatchForApproval,
     SyncBatchStatus,
     ReviseBatch,
+    GetUnassignedApps,
+    AssignAppsToBatch,
   } = useAppsCriticalReport();
   const { List: ListOrganization } = useOrganization();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -113,10 +124,45 @@ export default function AppsAssessmentsDetailView() {
     useState<AppsCriticalReportAssessmentViewModel | null>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
+  // Unassigned Apps Modal State & 3-Second Confirmation Countdown Safeguard State
+  const [isUnassignedModalOpen, setIsUnassignedModalOpen] = useState(false);
+  const [unassignedAppsList, setUnassignedAppsList] = useState<any[]>([]);
+  const [selectedUnassignedAppIds, setSelectedUnassignedAppIds] = useState<string[]>([]);
+  const [unassignedSearch, setUnassignedSearch] = useState("");
+  const [isFetchingUnassigned, setIsFetchingUnassigned] = useState(false);
+  const [isAssignConfirmOpen, setIsAssignConfirmOpen] = useState(false);
+  const [assignCountdown, setAssignCountdown] = useState(3);
+  const [isAssigning, setIsAssigning] = useState(false);
+
   // Group org state
   const [groupOptions, setGroupOptions] = useState<OrganizationResponse[]>([]);
   const [userOrgGroupId, setUserOrgGroupId] = useState<string | null>(null);
   const [isGroupLocked, setIsGroupLocked] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Check New Apps action button is ONLY available to users in ORG_GROUP_WHITELIST_FULL_OVERRIDE
+  const canCheckNewApps = userOrgGroupId
+    ? ORG_GROUP_WHITELIST_FULL_OVERRIDE.includes(userOrgGroupId)
+    : false;
+
+  const handleRefreshBatchData = async () => {
+    if (!batchCode || !tokenData) return;
+    setIsRefreshing(true);
+    const res = await GetBatchDetail(batchCode, tokenData);
+    setIsRefreshing(false);
+    if (res?.statusCode === RES_CODE_OK && res.data) {
+      setBatchData(res.data);
+      showToast({
+        description: "Assessment list data refreshed successfully",
+        statusToast: "success",
+      });
+    } else {
+      showToast({
+        description: res?.message || "Failed to refresh batch data",
+        statusToast: "error",
+      });
+    }
+  };
 
   // Filter states
   const [search, setSearch] = useState("");
@@ -198,6 +244,97 @@ export default function AppsAssessmentsDetailView() {
     };
     load();
   }, [tokenData, batchCode]);
+
+  // Countdown timer effect for Assign Confirmation Modal
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (isAssignConfirmOpen && assignCountdown > 0) {
+      timer = setTimeout(() => setAssignCountdown((prev) => prev - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [isAssignConfirmOpen, assignCountdown]);
+
+  // Fetch Unassigned Apps from Master Data
+  const handleFetchUnassignedApps = async () => {
+    if (!batchCode || !tokenData) return;
+    setIsFetchingUnassigned(true);
+    const res = await GetUnassignedApps(batchCode, tokenData);
+    setIsFetchingUnassigned(false);
+    if (res?.statusCode === RES_CODE_OK && res.data) {
+      setUnassignedAppsList(res.data);
+      setSelectedUnassignedAppIds([]);
+      setUnassignedSearch("");
+      setIsUnassignedModalOpen(true);
+    } else {
+      showToast({
+        description: res?.message || "Failed to fetch unassigned applications",
+        statusToast: "error",
+      });
+    }
+  };
+
+  // Client-side filtering for unassigned apps modal
+  const filteredUnassignedApps = useMemo(() => {
+    if (!unassignedSearch) return unassignedAppsList;
+    const q = unassignedSearch.toLowerCase();
+    return unassignedAppsList.filter(
+      (app) =>
+        app.appCode?.toLowerCase().includes(q) ||
+        app.appShortName?.toLowerCase().includes(q) ||
+        app.appName?.toLowerCase().includes(q) ||
+        app.appOwnerGroupName?.toLowerCase().includes(q),
+    );
+  }, [unassignedAppsList, unassignedSearch]);
+
+  const handleToggleSelectAllUnassigned = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedUnassignedAppIds(filteredUnassignedApps.map((a) => a.id));
+    } else {
+      setSelectedUnassignedAppIds([]);
+    }
+  };
+
+  const handleToggleSelectUnassignedApp = (id: string) => {
+    setSelectedUnassignedAppIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+    );
+  };
+
+  const handleOpenAssignConfirm = () => {
+    if (selectedUnassignedAppIds.length === 0) return;
+    setAssignCountdown(3);
+    setIsAssignConfirmOpen(true);
+  };
+
+  const handleExecuteAssignApps = async () => {
+    if (!batchCode || !tokenData || selectedUnassignedAppIds.length === 0) return;
+    setIsAssigning(true);
+    const res = await AssignAppsToBatch(
+      { batchCode, appIds: selectedUnassignedAppIds },
+      tokenData,
+    );
+    setIsAssigning(false);
+    if (res?.statusCode === RES_CODE_OK) {
+      showToast({
+        description: res.data || "Successfully assigned applications to batch",
+        statusToast: "success",
+      });
+      setIsAssignConfirmOpen(false);
+      setIsUnassignedModalOpen(false);
+      setSelectedUnassignedAppIds([]);
+
+      // Reload Batch Detail
+      const reload = await GetBatchDetail(batchCode, tokenData);
+      if (reload?.statusCode === RES_CODE_OK && reload.data) {
+        setBatchData(reload.data);
+      }
+    } else {
+      showToast({
+        description: res?.message || "Failed to assign applications to batch",
+        statusToast: "error",
+      });
+    }
+  };
 
   // groupOptions loaded from master org data (via useEffect above)
 
@@ -534,15 +671,32 @@ export default function AppsAssessmentsDetailView() {
       },
       {
         accessorKey: "appManageByGroupName",
-        cell: (info) => (
-          <Text
-            fontSize="sm"
-            color={isDark ? "gray.400" : "gray.600"}
-            noOfLines={1}
-          >
-            {(info.getValue() as string) || "-"}
-          </Text>
-        ),
+        cell: (info) => {
+          const groupName = info.getValue() as string;
+          const groupId = info.row.original.appManageByGroupId;
+          const hasGroup = groupId && groupName && groupName !== "-";
+
+          if (!hasGroup) {
+            return (
+              <Badge colorScheme="red" variant="subtle" rounded="md" px={2} py={0.5} fontSize="2xs">
+                <HStack spacing={1}>
+                  <FiAlertTriangle size={10} />
+                  <Text as="span">Unassigned Group</Text>
+                </HStack>
+              </Badge>
+            );
+          }
+
+          return (
+            <Text
+              fontSize="sm"
+              color={isDark ? "gray.400" : "gray.600"}
+              noOfLines={1}
+            >
+              {groupName}
+            </Text>
+          );
+        },
         header: () => <Text>Manage Group</Text>,
         footer: (p) => p.column.id,
       },
@@ -852,6 +1006,18 @@ export default function AppsAssessmentsDetailView() {
                   )}
                 </HStack>
                 <HStack spacing={2} flexWrap="wrap">
+                  {/* Refresh Data button */}
+                  <Button
+                    size="sm"
+                    bg="whiteAlpha.200"
+                    color="white"
+                    _hover={{ bg: "whiteAlpha.300" }}
+                    leftIcon={<FiRefreshCw />}
+                    isLoading={isRefreshing || loading}
+                    onClick={handleRefreshBatchData}
+                  >
+                    Refresh Data
+                  </Button>
                   {/* Export buttons */}
                   <Button
                     size="sm"
@@ -877,6 +1043,18 @@ export default function AppsAssessmentsDetailView() {
                   >
                     Export PDF
                   </Button>
+                  {/* Check New Master Data Apps Button — ONLY for FULL OVERRIDE whitelist users */}
+                  {canCheckNewApps && (
+                    <Button
+                      size="sm"
+                      colorScheme="purple"
+                      leftIcon={<FiPlusCircle />}
+                      isLoading={isFetchingUnassigned}
+                      onClick={handleFetchUnassignedApps}
+                    >
+                      Check New Apps
+                    </Button>
+                  )}
                   {/* Sync button — show when batch is DRAFT or WAITING APPROVAL 1 */}
                   {/* {(batchData?.statusReport === "DRAFT" || batchData?.statusReport === "WAITING APPROVAL 1") && (
                     <Button size="sm" bg="whiteAlpha.200" color="white" _hover={{ bg: "whiteAlpha.300" }} isLoading={isSyncing}
@@ -1217,6 +1395,195 @@ export default function AppsAssessmentsDetailView() {
         captionMsg="Submit for Approval"
         questionMsg={`Are you sure you want to submit batch "${batchCode}" for the next approval level? All remaining assessments will be advanced.`}
       />
+
+      {/* 1. Unassigned Master Data Applications Selection Modal */}
+      <Modal
+        isOpen={isUnassignedModalOpen}
+        onClose={() => setIsUnassignedModalOpen(false)}
+        size="xl"
+        isCentered
+        scrollBehavior="inside"
+      >
+        <ModalOverlay backdropFilter="blur(4px)" />
+        <ModalContent rounded="2xl" shadow="2xl">
+          <ModalHeader bg={isDark ? "gray.700" : "purple.50"} roundedTop="2xl" py={4}>
+            <HStack spacing={3}>
+              <Box w={8} h={8} bg="purple.500" rounded="lg" color="white" display="flex" alignItems="center" justifyContent="center">
+                <FiPlusCircle size={18} />
+              </Box>
+              <VStack align="start" spacing={0}>
+                <Heading size="xs" color="purple.700">Check & Assign New Applications</Heading>
+                <Text fontSize="3xs" color="gray.500">Unassigned Master Data Apps for Batch {batchCode}</Text>
+              </VStack>
+            </HStack>
+          </ModalHeader>
+          <ModalCloseButton />
+
+          <ModalBody p={5}>
+            <VStack spacing={4} align="stretch">
+              <InputGroup size="sm">
+                <InputLeftElement pointerEvents="none">
+                  <Search2Icon color="gray.400" />
+                </InputLeftElement>
+                <Input
+                  placeholder="Search app code, short name, or owner group..."
+                  rounded="lg"
+                  value={unassignedSearch}
+                  onChange={(e) => setUnassignedSearch(e.target.value)}
+                />
+              </InputGroup>
+
+              {filteredUnassignedApps.length === 0 ? (
+                <Box p={8} textAlign="center" alignContent="center">
+                  <Text color="gray.500" fontSize="sm" textAlign="center">
+                    No unassigned applications found matching Master Data records.
+                  </Text>
+                </Box>
+              ) : (
+                <Box border="1px" borderColor={isDark ? "gray.700" : "gray.200"} rounded="xl" overflow="hidden">
+                  <Table size="sm" variant="simple">
+                    <Thead bg={isDark ? "gray.800" : "gray.50"}>
+                      <Tr>
+                        <Th w="40px">
+                          <Checkbox
+                            colorScheme="purple"
+                            isChecked={
+                              filteredUnassignedApps.length > 0 &&
+                              selectedUnassignedAppIds.length === filteredUnassignedApps.length
+                            }
+                            isIndeterminate={
+                              selectedUnassignedAppIds.length > 0 &&
+                              selectedUnassignedAppIds.length < filteredUnassignedApps.length
+                            }
+                            onChange={handleToggleSelectAllUnassigned}
+                          />
+                        </Th>
+                        <Th>App Code & Name</Th>
+                        <Th>Owner Group</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {filteredUnassignedApps.map((app) => {
+                        const isSelected = selectedUnassignedAppIds.includes(app.id);
+                        return (
+                          <Tr key={app.id} _hover={{ bg: isDark ? "gray.700" : "purple.50/40" }}>
+                            <Td>
+                              <Checkbox
+                                colorScheme="purple"
+                                isChecked={isSelected}
+                                onChange={() => handleToggleSelectUnassignedApp(app.id)}
+                              />
+                            </Td>
+                            <Td>
+                              <VStack align="start" spacing={0}>
+                                <Text fontWeight="bold" fontSize="xs" color="purple.600">
+                                  {app.appShortName || app.appCode} — {app.appName}
+                                </Text>
+                                <Text fontSize="3xs" color="gray.500">Code: {app.appCode}</Text>
+                              </VStack>
+                            </Td>
+                            <Td>
+                              <Text fontSize="xs" color={isDark ? "gray.300" : "gray.600"}>
+                                {app.appOwnerGroupName || "-"}
+                              </Text>
+                            </Td>
+                          </Tr>
+                        );
+                      })}
+                    </Tbody>
+                  </Table>
+                </Box>
+              )}
+            </VStack>
+          </ModalBody>
+
+          <ModalFooter bg={isDark ? "gray.800" : "gray.50"} roundedBottom="2xl" py={3}>
+            <HStack spacing={3}>
+              <Button size="sm" variant="ghost" onClick={() => setIsUnassignedModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                colorScheme="purple"
+                leftIcon={<FiCheckCircle />}
+                isDisabled={selectedUnassignedAppIds.length === 0}
+                onClick={handleOpenAssignConfirm}
+              >
+                Proceed to Assign ({selectedUnassignedAppIds.length})
+              </Button>
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* 2. 3-Second Confirmation Countdown Safeguard Modal */}
+      <Modal
+        isOpen={isAssignConfirmOpen}
+        onClose={() => !isAssigning && setIsAssignConfirmOpen(false)}
+        isCentered
+        size="md"
+      >
+        <ModalOverlay backdropFilter="blur(4px)" />
+        <ModalContent rounded="2xl" shadow="2xl">
+          <ModalHeader bg="purple.500" color="white" roundedTop="2xl" py={4}>
+            <HStack spacing={3}>
+              <FiAlertCircle size={22} />
+              <Heading size="xs">Confirm Application Assignment</Heading>
+            </HStack>
+          </ModalHeader>
+          <ModalCloseButton color="white" isDisabled={isAssigning} />
+
+          <ModalBody p={6}>
+            <VStack spacing={4} align="center" textAlign="center">
+              <Box p={3} rounded="full" bg="purple.50" color="purple.600">
+                <FiClock size={32} />
+              </Box>
+
+              <Text fontSize="sm" fontWeight="bold" color={isDark ? "white" : "gray.800"}>
+                Assign {selectedUnassignedAppIds.length} Selected App(s) to Batch {batchCode}?
+              </Text>
+
+              <Text fontSize="xs" color="gray.500">
+                This operation will seed new criticality assessment records and criteria details for all selected apps.
+              </Text>
+
+              <Box p={3} rounded="xl" bg="orange.50" border="1px" borderColor="orange.200" w="full">
+                <HStack justify="center" spacing={2} color="orange.700">
+                  <FiAlertTriangle size={16} />
+                  <Text fontSize="xs" fontWeight="bold">
+                    {assignCountdown > 0
+                      ? `Safeguard active: Button unlocks in ${assignCountdown}s`
+                      : "Safeguard timer elapsed — Ready to submit!"}
+                  </Text>
+                </HStack>
+              </Box>
+            </VStack>
+          </ModalBody>
+
+          <ModalFooter bg={isDark ? "gray.800" : "gray.50"} roundedBottom="2xl" py={3}>
+            <HStack spacing={3} justify="flex-end" w="full">
+              <Button
+                size="sm"
+                variant="ghost"
+                isDisabled={isAssigning}
+                onClick={() => setIsAssignConfirmOpen(false)}
+              >
+                Back to Selection
+              </Button>
+              <Button
+                size="sm"
+                colorScheme="purple"
+                isDisabled={assignCountdown > 0}
+                isLoading={isAssigning}
+                loadingText="Assigning Apps..."
+                onClick={handleExecuteAssignApps}
+              >
+                {assignCountdown > 0 ? `Wait (${assignCountdown}s)` : "Confirm & Assign Now"}
+              </Button>
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </LayoutAdmin>
   );
 }
