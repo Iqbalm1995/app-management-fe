@@ -9,6 +9,7 @@ import {
   Card,
   CardBody,
   CardHeader,
+  Checkbox,
   Divider,
   Flex,
   Grid,
@@ -32,6 +33,7 @@ import {
   Tooltip,
   useColorMode,
   useDisclosure,
+  useToast,
   VStack,
 } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
@@ -44,6 +46,7 @@ import {
   FiFileText,
   FiFilter,
   FiFolder,
+  FiLayers,
   FiList,
   FiMonitor,
   FiPlusSquare,
@@ -52,6 +55,7 @@ import {
   FiShield,
   FiUser,
   FiUsers,
+  FiZap,
 } from "react-icons/fi";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -72,12 +76,14 @@ import LoadingMiniSignature from "@/app/components/loadingMini";
 import { TableComponentFull } from "@/app/components/tableComponents";
 import { StatusBadge } from "@/app/components/StatusBadge";
 import { radiusStyle } from "@/app/constants/applicationConstants";
+import { AppTabList, AppTabItem } from "@/app/components/TabsCustom";
 import { useDocumentTitle } from "@/app/hooks/useDocumentTitle";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useCabRequest from "@/app/services/useCabRequest";
-import { CabRequestItem } from "@/app/types/cabTypes";
+import { BulkScheduleCabItemPayload, CabRequestItem } from "@/app/types/cabTypes";
 import CabReportsTab from "./components/CabReportsTab";
+import BulkScheduleModal from "./components/BulkScheduleModal";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 interface CalendarStatusStyle {
@@ -449,7 +455,8 @@ const CabRequestView = () => {
   useDocumentTitle("CAB Request");
   const { colorMode } = useColorMode();
   const router = useRouter();
-  const { ListCabRequests, GetCabCalendar, loading } = useCabRequest();
+  const toast = useToast();
+  const { ListCabRequests, GetCabCalendar, BulkScheduleCabRequests, loading } = useCabRequest();
 
   // Auth
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -472,10 +479,112 @@ const CabRequestView = () => {
   const eventModal = useDisclosure();
   const categoryModal = useDisclosure();
 
-  // Table pagination
+  // Bulk Schedule state & modal
+  const [rowSelection, setRowSelection] = useState<Record<string, boolean>>({});
+  const bulkScheduleModal = useDisclosure();
+  const [bulkModalTargetRequests, setBulkModalTargetRequests] = useState<CabRequestItem[]>([]);
+  const [bulkModalInitialDate, setBulkModalInitialDate] = useState<string>("");
+  const [incomingRequestCount, setIncomingRequestCount] = useState<number | null>(null);
+
+  // Table pagination (CAB List - excludes REQUEST)
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
   const pagination = useMemo(() => ({ pageIndex, pageSize }), [pageIndex, pageSize]);
   const [globalFilter, setGlobalFilter] = useState<string>("");
+
+  // CAB List only (Exclude REQUEST items from CAB List tab)
+  const cabListOnly = useMemo(
+    () => DataList.filter((item) => String(item.status).toUpperCase() !== "REQUEST"),
+    [DataList]
+  );
+
+  // Pending Table pagination & filter (CAB Request Tab - Status REQUEST only - Scheduler only)
+  const [{ pageIndex: pendingPageIndex, pageSize: pendingPageSize }, setPendingPagination] =
+    useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
+  const pendingPagination = useMemo(
+    () => ({ pageIndex: pendingPageIndex, pageSize: pendingPageSize }),
+    [pendingPageIndex, pendingPageSize]
+  );
+  const [pendingGlobalFilter, setPendingGlobalFilter] = useState<string>("");
+
+  const pendingRequestsList = useMemo(
+    () => DataList.filter((item) => String(item.status).toUpperCase() === "REQUEST"),
+    [DataList]
+  );
+
+  // Selected requests for bulk actions
+  const selectedRequestsList = useMemo(() => {
+    const selectedIds = Object.keys(rowSelection).filter((k) => rowSelection[k]);
+    return DataList.filter((item) => selectedIds.includes(item.id));
+  }, [rowSelection, DataList]);
+
+  // Bulk Schedule Handlers
+  const handleConfirmBulkSchedule = async (items: BulkScheduleCabItemPayload[]) => {
+    const success = await BulkScheduleCabRequests(tokenData, items);
+    if (success) {
+      toast({
+        title: "Jadwal CAB Berhasil Disimpan",
+        description: `${items.length} permohonan berhasil dijadwalkan (Status ➔ SCHEDULED).`,
+        status: "success",
+        duration: 3500,
+        isClosable: true,
+        position: "top",
+      });
+      setRowSelection({});
+      bulkScheduleModal.onClose();
+      loadData();
+    } else {
+      toast({
+        title: "Gagal Menyimpan Jadwal",
+        description: "Terjadi kesalahan saat menyimpan jadwal massal.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "top",
+      });
+    }
+  };
+
+  const handleOpenBulkForUnscheduled = () => {
+    const unscheduled = DataList.filter(
+      (r) => r.status === "REQUEST" || r.status === "IN_REVIEW" || !r.scheduledDate
+    );
+    if (unscheduled.length === 0) {
+      toast({
+        title: "Semua Permohonan Terjadwal",
+        description: "Tidak ada permohonan CAB berstatus Request yang perlu dijadwalkan.",
+        status: "info",
+        duration: 2500,
+        isClosable: true,
+        position: "top",
+      });
+      return;
+    }
+    setBulkModalTargetRequests(unscheduled);
+    setBulkModalInitialDate("");
+    bulkScheduleModal.onOpen();
+  };
+
+  const handleCalendarDateClick = (dateStr: string) => {
+    if (!canSchedule) return;
+    const eligible = DataList.filter(
+      (r) => r.status === "REQUEST" || r.status === "IN_REVIEW" || !r.scheduledDate
+    );
+    if (eligible.length === 0) {
+      toast({
+        title: "Semua Permohonan Terjadwal",
+        description: "Tidak ada permohonan CAB berstatus Request yang perlu dijadwalkan.",
+        status: "info",
+        duration: 2500,
+        isClosable: true,
+        position: "top",
+      });
+      return;
+    }
+    const targetList = selectedRequestsList.length > 0 ? selectedRequestsList : eligible;
+    setBulkModalTargetRequests(targetList);
+    setBulkModalInitialDate(dateStr);
+    bulkScheduleModal.onOpen();
+  };
 
   // Calendar ref & filter states
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -559,7 +668,17 @@ const CabRequestView = () => {
       ListCabRequests(tokenData),
       GetCabCalendar(tokenData),
     ]);
-    if (listRes) setDataList(listRes.data);
+    if (listRes) {
+      setDataList(listRes.data);
+      // Prepared for backend incoming request counter from response
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const incomingFromBackend =
+        (listRes as any).incomingRequestCount ??
+        (listRes as any).totalIncomingRequest ??
+        (listRes as any).meta?.incomingRequests ??
+        listRes.data.filter((item) => String(item.status).toUpperCase() === "REQUEST").length;
+      setIncomingRequestCount(incomingFromBackend);
+    }
     if (calRes) setDataCalendar(calRes.data);
     setIsLoadingProcess(false);
   };
@@ -567,6 +686,7 @@ const CabRequestView = () => {
   const RefreshAction = useCallback(() => {
     setDataList([]);
     setDataCalendar([]);
+    setIncomingRequestCount(null);
     setRefreshData((p) => p + 1);
   }, []);
 
@@ -848,7 +968,7 @@ const CabRequestView = () => {
     eventModal.onOpen();
   };
 
-  // Table columns
+  // Table columns (CAB List tab - no checkbox)
   const columns = useMemo<ColumnDef<CabRequestItem>[]>(
     () => [
       {
@@ -968,9 +1088,10 @@ const CabRequestView = () => {
   );
 
   const table = useReactTable({
-    data: DataList,
+    data: cabListOnly,
     columns,
     state: { globalFilter, pagination },
+    getRowId: (row) => row.id,
     onPaginationChange: setPagination,
     globalFilterFn: (row, columnId, filterValue) => {
       const safeFilter = String(filterValue || "").toLowerCase();
@@ -989,6 +1110,168 @@ const CabRequestView = () => {
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     onGlobalFilterChange: setGlobalFilter,
+  });
+
+  // Pending Table columns (Status REQUEST only)
+  const pendingColumns = useMemo<ColumnDef<CabRequestItem>[]>(
+    () => [
+      {
+        id: "select",
+        header: ({ table }: { table: any }) => {
+          const selectableRows = table.getRowModel().rows;
+          const isAllSelected =
+            selectableRows.length > 0 &&
+            selectableRows.every((r: any) => r.getIsSelected());
+          const isSomeSelected =
+            selectableRows.some((r: any) => r.getIsSelected()) && !isAllSelected;
+
+          return (
+            <Flex justify="center" align="center" px={1}>
+              <Tooltip
+                label={isAllSelected ? "Batal pilih semua" : "Pilih semua permohonan"}
+                placement="top"
+              >
+                <Checkbox
+                  colorScheme="blue"
+                  isChecked={isAllSelected}
+                  isIndeterminate={isSomeSelected}
+                  isDisabled={selectableRows.length === 0}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    const newSelection = { ...rowSelection };
+                    selectableRows.forEach((r: any) => {
+                      if (checked) {
+                        newSelection[r.id] = true;
+                      } else {
+                        delete newSelection[r.id];
+                      }
+                    });
+                    setRowSelection(newSelection);
+                  }}
+                />
+              </Tooltip>
+            </Flex>
+          );
+        },
+        cell: ({ row }: { row: any }) => (
+          <Flex justify="center" align="center" px={1}>
+            <Checkbox
+              colorScheme="blue"
+              isChecked={row.getIsSelected()}
+              onChange={row.getToggleSelectedHandler()}
+            />
+          </Flex>
+        ),
+      },
+      {
+        id: "rowNumber",
+        header: "NO.",
+        cell: (info) => (
+          <Text fontSize="sm" textAlign="center">
+            {info.row.index + 1 + pendingPagination.pageIndex * pendingPagination.pageSize}.
+          </Text>
+        ),
+      },
+      {
+        accessorKey: "requestNo",
+        header: "REQUEST NO",
+        cell: (info) => (
+          <Text fontSize="sm" fontWeight="semibold" color="secondary.600">
+            {info.getValue() as string}
+          </Text>
+        ),
+      },
+      {
+        accessorKey: "requestTitle",
+        header: "TITLE",
+        cell: (info) => (
+          <VStack align="start" spacing={0}>
+            <Text fontSize="sm" fontWeight="medium" noOfLines={1}>
+              {info.getValue() as string}
+            </Text>
+            <Text fontSize="xs" color="gray.500">
+              {info.row.original.projectName}
+            </Text>
+          </VStack>
+        ),
+      },
+      {
+        accessorKey: "requestType",
+        header: "TYPE",
+        cell: (info) => (
+          <Badge colorScheme="purple" variant="subtle" rounded="full" px={2} fontSize="xs">
+            {info.getValue() as string}
+          </Badge>
+        ),
+      },
+      {
+        accessorKey: "requesterName",
+        header: "REQUESTER",
+        cell: (info) => <Text fontSize="sm">{info.getValue() as string}</Text>,
+      },
+      {
+        accessorKey: "requestDate",
+        header: "REQ DATE",
+        cell: (info) => {
+          const val = info.getValue() as string | null | undefined;
+          if (!val) return <Text fontSize="sm" color="gray.400">-</Text>;
+          const d = new Date(val);
+          return (
+            <Text fontSize="sm">
+              {isNaN(d.getTime()) ? val : d.toLocaleDateString("id-ID")}
+            </Text>
+          );
+        },
+      },
+      {
+        accessorKey: "status",
+        header: "STATUS",
+        cell: (info) => <StatusBadge status={info.getValue() as string} rounded="full" px={3} py={1} fontSize="xs" />,
+      },
+      {
+        id: "actions",
+        header: "ACTION",
+        cell: (info) => (
+          <Button
+            size="xs"
+            colorScheme="blue"
+            variant="outline"
+            leftIcon={<FiEye />}
+            onClick={() => router.push(`/cab/cab-request/detail?id=${info.row.original.id}`)}
+          >
+            Detail
+          </Button>
+        ),
+      },
+    ],
+    [router, pendingPagination, rowSelection]
+  );
+
+  const pendingTable = useReactTable({
+    data: pendingRequestsList,
+    columns: pendingColumns,
+    state: { globalFilter: pendingGlobalFilter, pagination: pendingPagination, rowSelection },
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
+    getRowId: (row) => row.id,
+    onPaginationChange: setPendingPagination,
+    globalFilterFn: (row, columnId, filterValue) => {
+      const safeFilter = String(filterValue || "").toLowerCase();
+      if (!safeFilter) return true;
+      const original = row.original;
+      return (
+        String(original.requestNo || "").toLowerCase().includes(safeFilter) ||
+        String(original.requestTitle || "").toLowerCase().includes(safeFilter) ||
+        String(original.projectName || "").toLowerCase().includes(safeFilter) ||
+        String(original.requesterName || "").toLowerCase().includes(safeFilter) ||
+        String(original.status || "").toLowerCase().includes(safeFilter) ||
+        String(original.requestType || "").toLowerCase().includes(safeFilter)
+      );
+    },
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    onGlobalFilterChange: setPendingGlobalFilter,
   });
 
   return (
@@ -1049,78 +1332,223 @@ const CabRequestView = () => {
 
               <Divider />
 
-              {/* Tabs: Table + Calendar + Reports */}
-              <Tabs variant="enclosed" colorScheme="blue" w="full" size="sm" isLazy>
-                <TabList>
-                  <Tab><HStack spacing={2}><FiList /><Text>CAB List</Text></HStack></Tab>
-                  <Tab><HStack spacing={2}><FiCalendar /><Text>Schedule Calendar</Text></HStack></Tab>
-                  {(canSchedule || canApprove) && (
-                    <Tab>
-                      <HStack spacing={2}>
-                        <FiFileText />
-                        <Text>CAB Reports</Text>
-                        {DataList.filter((i) => i.isCabDone === "Y" || ["IMPLEMENT", "WAITING APPROVAL", "COMPLETED"].includes(String(i.status).toUpperCase())).length > 0 && (
-                          <Badge colorScheme="green" variant="subtle" rounded="full" px={1.5} fontSize="3xs">
-                            {DataList.filter((i) => i.isCabDone === "Y" || ["IMPLEMENT", "WAITING APPROVAL", "COMPLETED"].includes(String(i.status).toUpperCase())).length}
-                          </Badge>
-                        )}
-                      </HStack>
-                    </Tab>
+              {/* Tabs: Table + Pending Requests + Calendar + Reports */}
+              <Tabs variant="unstyled" w="full" size="sm" isLazy>
+                <AppTabList mb={2}>
+                  <AppTabItem icon={FiList} label="CAB List" />
+                  {canSchedule && (
+                    <AppTabItem
+                      icon={FiClock}
+                      label="CAB Request"
+                      badge={incomingRequestCount ?? pendingRequestsList.length}
+                      badgeColorScheme="red"
+                    />
                   )}
-                </TabList>
+                  <AppTabItem icon={FiCalendar} label="Schedule Calendar" />
+                  {(canSchedule || canApprove) && (
+                    <AppTabItem
+                      icon={FiFileText}
+                      label="CAB Reports"
+                      badge={
+                        DataList.filter(
+                          (i) =>
+                            i.isCabDone === "Y" ||
+                            ["IMPLEMENT", "WAITING APPROVAL", "COMPLETED"].includes(
+                              String(i.status).toUpperCase()
+                            )
+                        ).length || undefined
+                      }
+                      badgeColorScheme="green"
+                    />
+                  )}
+                </AppTabList>
 
                 <TabPanels>
-                  {/* ─── Tab 1: Table ─── */}
+                  {/* ─── Tab 1: All CAB List (Excludes REQUEST) ─── */}
                   <TabPanel px={0} pt={4}>
                     {IsLoadingProcess ? (
                       <VStack spacing={4} py={16}>
                         <LoadingMiniSignature />
                         <Text color="gray.500" fontWeight="medium">Loading requests...</Text>
                       </VStack>
-                    ) : DataList.length === 0 ? (
+                    ) : cabListOnly.length === 0 ? (
                       <VStack spacing={6} py={20}>
                         <Box w={20} h={20} bg={colorMode === "light" ? "gray.100" : "gray.700"} rounded="full" display="flex" alignItems="center" justifyContent="center">
                           <Icon as={FiFolder} boxSize={10} color="gray.400" />
                         </Box>
                         <VStack spacing={2}>
-                          <Heading size="md" color="gray.500">No Requests Found</Heading>
+                          <Heading size="md" color="gray.500">No CAB List Found</Heading>
                           <Text color="gray.400" fontSize="sm" textAlign="center" maxW="400px">
-                            No CAB requests yet. Click &apos;Create Request&apos; to get started.
+                            Belum ada permohonan CAB yang telah dijadwalkan atau diproses.
                           </Text>
                         </VStack>
                       </VStack>
                     ) : (
-                      <Box w="full" overflowX="auto">
-                        <Box minW="1100px">
-                          <TableComponentFull table={table} />
+                      <Box w="full">
+                        <Box w="full" overflowX="auto">
+                          <Box minW="1100px">
+                            <TableComponentFull table={table} />
+                          </Box>
                         </Box>
                       </Box>
                     )}
                   </TabPanel>
 
-                  {/* ─── Tab 2: Calendar ─── */}
+                  {/* ─── Tab 2: Pending Requests (Status REQUEST Only - Scheduler Only) ─── */}
+                  {canSchedule && (
+                    <TabPanel px={0} pt={4}>
+                      {IsLoadingProcess ? (
+                        <VStack spacing={4} py={16}>
+                          <LoadingMiniSignature />
+                          <Text color="gray.500" fontWeight="medium">Loading pending requests...</Text>
+                        </VStack>
+                      ) : pendingRequestsList.length === 0 ? (
+                        <VStack spacing={6} py={20}>
+                          <Box w={20} h={20} bg={colorMode === "light" ? "blue.50" : "gray.700"} rounded="full" display="flex" alignItems="center" justifyContent="center">
+                            <Icon as={FiCheckCircle} boxSize={10} color="blue.500" />
+                          </Box>
+                          <VStack spacing={2}>
+                            <Heading size="md" color="gray.500">Semua Permohonan Terjadwal</Heading>
+                            <Text color="gray.400" fontSize="sm" textAlign="center" maxW="420px">
+                              Saat ini tidak ada permohonan berstatus <b>REQUEST</b> yang menunggu penjadwalan sidang CAB.
+                            </Text>
+                          </VStack>
+                        </VStack>
+                      ) : (
+                        <Box w="full" position="relative">
+                          <Box w="full" overflowX="auto">
+                            <Box minW="1100px">
+                              <TableComponentFull table={pendingTable} />
+                            </Box>
+                          </Box>
+
+                          {/* Floating Bulk Action Bar */}
+                          {selectedRequestsList.length > 0 && (
+                            <Box
+                              position="sticky"
+                              bottom={4}
+                              zIndex={20}
+                              mt={4}
+                              mx="auto"
+                              maxW="680px"
+                              w="full"
+                              boxShadow="0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)"
+                              rounded="xl"
+                              overflow="hidden"
+                            >
+                              <Box
+                                p={3}
+                                bg={isDark ? "gray.850" : "white"}
+                                border="1.5px solid"
+                                borderColor={isDark ? "blue.600" : "blue.400"}
+                                rounded="xl"
+                                backdropFilter="blur(8px)"
+                              >
+                                <Flex
+                                  justify="space-between"
+                                  align="center"
+                                  wrap="wrap"
+                                  gap={3}
+                                >
+                                  <HStack spacing={3}>
+                                    <Box
+                                      w={9}
+                                      h={9}
+                                      rounded="lg"
+                                      bg="blue.500"
+                                      color="white"
+                                      display="flex"
+                                      alignItems="center"
+                                      justifyContent="center"
+                                      flexShrink={0}
+                                    >
+                                      <Icon as={FiLayers} boxSize={4} />
+                                    </Box>
+                                    <VStack align="start" spacing={0}>
+                                      <HStack spacing={1.5}>
+                                        <Text fontSize="sm" fontWeight="bold" color={isDark ? "white" : "gray.800"}>
+                                          {selectedRequestsList.length} Permohonan Terpilih
+                                        </Text>
+                                        <Badge colorScheme="blue" variant="solid" fontSize="3xs" rounded="full" px={2}>
+                                          Siap Dijadwalkan
+                                        </Badge>
+                                      </HStack>
+                                      <Text fontSize="2xs" color="gray.500">
+                                        Pilih tanggal & waktu sidang CAB serentak atau berurutan.
+                                      </Text>
+                                    </VStack>
+                                  </HStack>
+
+                                  <HStack spacing={2}>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      fontSize="xs"
+                                      onClick={() => setRowSelection({})}
+                                    >
+                                      Batal Pilihan
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      colorScheme="blue"
+                                      leftIcon={<FiCalendar />}
+                                      fontWeight="bold"
+                                      fontSize="xs"
+                                      px={4}
+                                      onClick={() => {
+                                        setBulkModalTargetRequests(selectedRequestsList);
+                                        setBulkModalInitialDate("");
+                                        bulkScheduleModal.onOpen();
+                                      }}
+                                    >
+                                      Schedule Chosen({selectedRequestsList.length}) ➔
+                                    </Button>
+                                  </HStack>
+                                </Flex>
+                              </Box>
+                            </Box>
+                          )}
+                        </Box>
+                      )}
+                    </TabPanel>
+                  )}
+
+                  {/* ─── Tab 3: Calendar ─── */}
                   <TabPanel px={0} pt={4}>
                     {IsLoadingProcess ? (
                       <Flex justify="center" py={16}><LoadingMiniSignature /></Flex>
                     ) : (
                       <VStack spacing={3} align="stretch">
-                        {/* Unscheduled inline notice (Subtle pill - disappears when 0) */}
+                        {/* Unscheduled inline notice + Quick Action */}
                         {unscheduledCount > 0 && (
-                          <HStack
-                            spacing={2}
-                            px={3}
-                            py={1.5}
-                            bg={isDark ? "orange.950" : "orange.50"}
-                            border="1px solid"
-                            borderColor={isDark ? "orange.800" : "orange.200"}
-                            rounded="full"
-                            alignSelf="flex-start"
-                          >
-                            <Box w="6px" h="6px" rounded="full" bg="orange.500" flexShrink={0} />
-                            <Text fontSize="xs" color={isDark ? "orange.300" : "orange.800"} fontWeight="medium">
-                              {unscheduledCount} request belum dijadwalkan
-                            </Text>
-                          </HStack>
+                          <Flex justify="space-between" align="center" wrap="wrap" gap={2}>
+                            <HStack
+                              spacing={2}
+                              px={3}
+                              py={1.5}
+                              bg={isDark ? "orange.950" : "orange.50"}
+                              border="1px solid"
+                              borderColor={isDark ? "orange.800" : "orange.200"}
+                              rounded="full"
+                            >
+                              <Box w="6px" h="6px" rounded="full" bg="orange.500" flexShrink={0} />
+                              <Text fontSize="xs" color={isDark ? "orange.300" : "orange.800"} fontWeight="medium">
+                                {unscheduledCount} permohonan belum dijadwalkan
+                              </Text>
+                            </HStack>
+
+                            {canSchedule && (
+                              <Button
+                                size="xs"
+                                colorScheme="blue"
+                                variant="solid"
+                                leftIcon={<FiCalendar />}
+                                onClick={handleOpenBulkForUnscheduled}
+                              >
+                                Jadwalkan {unscheduledCount} Permohonan Tertunda
+                              </Button>
+                            )}
+                          </Flex>
                         )}
 
                         {/* Date Range & View Control Filter Bar */}
@@ -1419,6 +1847,7 @@ const CabRequestView = () => {
                                 }}
                                 events={calendarEvents}
                                 eventClick={handleEventClick}
+                                dateClick={(info) => handleCalendarDateClick(info.dateStr)}
                                 eventContent={renderEventContent}
                                 height="auto"
                                 contentHeight={560}
@@ -1567,6 +1996,16 @@ const CabRequestView = () => {
           </ModalBody>
         </ModalContent>
       </Modal>
+
+      {/* ─── Bulk Schedule Modal ─── */}
+      <BulkScheduleModal
+        isOpen={bulkScheduleModal.isOpen}
+        onClose={bulkScheduleModal.onClose}
+        selectedRequests={bulkModalTargetRequests}
+        initialDate={bulkModalInitialDate}
+        onConfirmSchedule={handleConfirmBulkSchedule}
+        isLoading={loading}
+      />
     </LayoutAdmin>
   );
 };

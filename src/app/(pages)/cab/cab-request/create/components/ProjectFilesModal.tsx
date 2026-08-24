@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Badge,
   Box,
@@ -21,6 +21,7 @@ import {
   SimpleGrid,
   Tag,
   Text,
+  Tooltip,
   useColorMode,
   VStack,
   Wrap,
@@ -28,22 +29,28 @@ import {
 } from "@chakra-ui/react";
 import {
   FiCheck,
+  FiExternalLink,
   FiFile,
   FiFileText,
   FiFolder,
   FiImage,
+  FiInfo,
   FiSearch,
 } from "react-icons/fi";
 import { radiusStyle } from "@/app/constants/applicationConstants";
 import { MOCK_PROJECT_FILES, ProjectFileItem } from "@/app/json/cabRequestMock";
 
-interface ProjectFilesModalProps {
+export interface ProjectFilesModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectFile: (file: ProjectFileItem) => void;
   selectedFileId?: string;
   projectContext?: string;
+  projectCode?: string;
+  projectId?: string;
   categoryFilter?: string;
+  fieldTitle?: string;
+  projectUrl?: string;
 }
 
 const CATEGORIES = [
@@ -55,13 +62,26 @@ const CATEGORIES = [
   "Manual & Runbook",
 ];
 
+export const getProjectRouteUrl = (
+  projectIdOrCode?: string,
+  tab: string = "documentation"
+): string => {
+  if (!projectIdOrCode) return `/projects/manage?tab=${tab}`;
+  const clean = projectIdOrCode.replace(/^\[(BRD|RFC|PROJECT)\]\s*/i, "").trim();
+  return `/projects/manage?projectId=${encodeURIComponent(clean)}&tab=${tab}`;
+};
+
 export const ProjectFilesModal = ({
   isOpen,
   onClose,
   onSelectFile,
   selectedFileId,
   projectContext,
+  projectCode,
+  projectId,
   categoryFilter: initialCategory,
+  fieldTitle,
+  projectUrl,
 }: ProjectFilesModalProps) => {
   const { colorMode } = useColorMode();
   const isDark = colorMode === "dark";
@@ -70,6 +90,21 @@ export const ProjectFilesModal = ({
   const [activeCategory, setActiveCategory] = useState<string>(
     initialCategory || "Semua"
   );
+
+  // Sync category filter when modal opens with a new initialCategory
+  useEffect(() => {
+    if (isOpen) {
+      setActiveCategory(initialCategory || "Semua");
+      setSearchTerm("");
+    }
+  }, [isOpen, initialCategory]);
+
+  const targetProjectRoute = useMemo(() => {
+    return (
+      projectUrl ||
+      getProjectRouteUrl(projectId || projectCode || projectContext, "documentation")
+    );
+  }, [projectUrl, projectId, projectCode, projectContext]);
 
   const filteredFiles = useMemo(() => {
     return MOCK_PROJECT_FILES.filter((file) => {
@@ -96,6 +131,8 @@ export const ProjectFilesModal = ({
     }
   };
 
+  const displayProjectName = projectContext || projectCode || "Proyek Terpilih";
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="4xl" scrollBehavior="inside">
       <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(2px)" />
@@ -109,13 +146,18 @@ export const ProjectFilesModal = ({
           <HStack spacing={3}>
             <Icon as={FiFolder} color="blue.500" boxSize={6} />
             <VStack align="start" spacing={0}>
-              <Text fontSize="lg" fontWeight="bold">
-                Pilih Dokumen dari Proyek Terkait
-              </Text>
+              <HStack spacing={2}>
+                <Text fontSize="lg" fontWeight="bold">
+                  Pilih Dokumen dari Proyek Terkait
+                </Text>
+                {fieldTitle && (
+                  <Badge colorScheme="blue" variant="subtle" fontSize="xs" px={2} py={0.5} rounded="md">
+                    Untuk: {fieldTitle}
+                  </Badge>
+                )}
+              </HStack>
               <Text fontSize="xs" color="gray.500" fontWeight="normal">
-                {projectContext
-                  ? `Referensi Proyek: ${projectContext}`
-                  : "Daftar dokumen & artefak proyek yang telah terunggah pada sistem"}
+                Pilih berkas yang telah terunggah pada proyek terpilih untuk dilampirkan ke formulir permohonan CAB.
               </Text>
             </VStack>
           </HStack>
@@ -124,6 +166,59 @@ export const ProjectFilesModal = ({
 
         <ModalBody py={4}>
           <VStack spacing={4} align="stretch">
+            {/* Project Context & Direct Routing Banner */}
+            <Box
+              p={3.5}
+              rounded="lg"
+              bg={isDark ? "blue.950" : "blue.50"}
+              border="1px solid"
+              borderColor={isDark ? "blue.800" : "blue.200"}
+            >
+              <Flex
+                direction={{ base: "column", md: "row" }}
+                justify="space-between"
+                align={{ base: "start", md: "center" }}
+                gap={3}
+              >
+                <HStack spacing={3} align="start" flex={1}>
+                  <Icon as={FiInfo} color="blue.500" boxSize={5} mt={0.5} />
+                  <VStack align="start" spacing={0.5}>
+                    <HStack spacing={2} wrap="wrap">
+                      <Text fontSize="xs" fontWeight="bold" color={isDark ? "blue.200" : "blue.800"}>
+                        Proyek Utama Terpilih:
+                      </Text>
+                      <Badge colorScheme="blue" fontSize="2xs" px={2} py={0.5} rounded="md">
+                        {displayProjectName}
+                      </Badge>
+                    </HStack>
+                    <Text fontSize="2xs" color={isDark ? "blue.300" : "blue.600"}>
+                      Berkas di bawah berasal dari repositori artefak & dokumen proyek ini.
+                    </Text>
+                  </VStack>
+                </HStack>
+
+                <Tooltip
+                  label="Buka tab Work Documentation proyek ini di tab baru untuk mengunggah atau melihat dokumen"
+                  placement="top"
+                >
+                  <Button
+                    as="a"
+                    href={targetProjectRoute}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    size="xs"
+                    colorScheme="blue"
+                    variant="solid"
+                    rightIcon={<FiExternalLink />}
+                    fontWeight="semibold"
+                    flexShrink={0}
+                  >
+                    Buka Work Documentation ↗
+                  </Button>
+                </Tooltip>
+              </Flex>
+            </Box>
+
             {/* Search & Category Filter */}
             <Flex
               direction={{ base: "column", md: "row" }}
@@ -143,13 +238,15 @@ export const ProjectFilesModal = ({
                 />
               </InputGroup>
 
-              <Wrap spacing={2}>
+              <Wrap spacing={1.5}>
                 {CATEGORIES.map((cat) => (
                   <WrapItem key={cat}>
                     <Button
                       size="xs"
                       variant={activeCategory === cat ? "solid" : "outline"}
                       colorScheme="blue"
+                      rounded="full"
+                      px={3}
                       onClick={() => setActiveCategory(cat)}
                     >
                       {cat}
@@ -171,17 +268,29 @@ export const ProjectFilesModal = ({
               >
                 <Icon as={FiFile} boxSize={8} color="gray.400" mb={2} />
                 <Text fontSize="sm" color="gray.500" fontWeight="medium">
-                  Tidak ada dokumen yang sesuai dengan pencarian
+                  Tidak ada dokumen yang sesuai dengan pencarian / kategori &ldquo;{activeCategory}&rdquo;
                 </Text>
+                <Button
+                  size="xs"
+                  mt={2}
+                  variant="ghost"
+                  colorScheme="blue"
+                  onClick={() => {
+                    setActiveCategory("Semua");
+                    setSearchTerm("");
+                  }}
+                >
+                  Tampilkan Semua Dokumen
+                </Button>
               </Box>
             ) : (
-              <SimpleGrid columns={{ base: 1, md: 1 }} spacing={3}>
+              <SimpleGrid columns={{ base: 1, md: 1 }} spacing={2.5}>
                 {filteredFiles.map((file) => {
                   const isSelected = selectedFileId === file.id;
                   return (
                     <Box
                       key={file.id}
-                      p={4}
+                      p={3.5}
                       rounded="lg"
                       borderWidth="1px"
                       borderColor={
@@ -214,7 +323,7 @@ export const ProjectFilesModal = ({
                       >
                         <HStack spacing={3} align="start" flex={1}>
                           <Box mt={1}>{getFileIcon(file.fileType)}</Box>
-                          <VStack align="start" spacing={1} flex={1}>
+                          <VStack align="start" spacing={0.5} flex={1}>
                             <Text
                               fontSize="sm"
                               fontWeight="semibold"
@@ -253,7 +362,7 @@ export const ProjectFilesModal = ({
                         </HStack>
 
                         <Button
-                          size="sm"
+                          size="xs"
                           colorScheme={isSelected ? "green" : "blue"}
                           variant={isSelected ? "solid" : "outline"}
                           leftIcon={isSelected ? <FiCheck /> : undefined}
@@ -262,6 +371,8 @@ export const ProjectFilesModal = ({
                             onClose();
                           }}
                           flexShrink={0}
+                          h="32px"
+                          px={3}
                         >
                           {isSelected ? "Terpilih" : "Gunakan Dokumen Ini"}
                         </Button>

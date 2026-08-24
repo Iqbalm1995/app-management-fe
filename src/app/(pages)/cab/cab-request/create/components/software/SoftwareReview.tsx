@@ -78,6 +78,16 @@ const SoftwareReview = ({ step1, step2, step3, step4, step5 }: SoftwareReviewPro
         </FormControl>
         <FormControl>
           <InputLayout>
+            <FormLabel h="full" mt={2}>Kategori Aplikasi</FormLabel>
+            <Stack spacing={0}>
+              <Badge colorScheme="blue" variant="subtle" rounded="full" px={2.5} py={0.5} fontSize="xs">
+                {step1.aplikasiKategori || "N/A"}
+              </Badge>
+            </Stack>
+          </InputLayout>
+        </FormControl>
+        <FormControl>
+          <InputLayout>
             <FormLabel h="full" mt={2}>Sisi Aplikasi</FormLabel>
             <Stack spacing={0}>
               <Badge colorScheme="teal" variant="subtle" rounded="full" px={2.5} py={0.5} fontSize="xs">
@@ -159,7 +169,7 @@ const SoftwareReview = ({ step1, step2, step3, step4, step5 }: SoftwareReviewPro
                       </Text>
                     </HStack>
                     {app.aplikasiKategori && (
-                      <Badge colorScheme="purple" variant="subtle" rounded="full" px={1.5} fontSize="3xs">
+                      <Badge colorScheme="blue" variant="subtle" rounded="full" px={2} py={0.5} fontSize="3xs" fontWeight="semibold">
                         {app.aplikasiKategori}
                       </Badge>
                     )}

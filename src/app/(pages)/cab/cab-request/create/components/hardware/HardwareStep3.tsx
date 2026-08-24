@@ -24,6 +24,7 @@ import {
   Text,
   Th,
   Thead,
+  Tooltip,
   Tr,
   useColorMode,
   useDisclosure,
@@ -31,15 +32,26 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import React, { useState } from "react";
-import { FiCheckCircle, FiDownloadCloud, FiFileText } from "react-icons/fi";
+import { FiCheckCircle, FiDownloadCloud, FiExternalLink, FiFileText, FiFolder, FiInfo } from "react-icons/fi";
 
 import { InputGroupPanel } from "@/app/components/customPanels";
 import { CabHardwareStep3 } from "@/app/types/cabTypes";
 import { RadioAdaTidak, RadioYaTidak } from "../RadioGroupField";
+import ProjectFilesModal, { getProjectRouteUrl } from "../ProjectFilesModal";
+import { ProjectFileItem } from "@/app/json/cabRequestMock";
 
 interface HardwareStep3Props {
   data: CabHardwareStep3;
   onChange: (data: CabHardwareStep3) => void;
+  mainProjectId?: string;
+  mainProjectCode?: string;
+  mainProjectName?: string;
+}
+
+interface HardwareActiveFieldTarget {
+  fieldKey: keyof CabHardwareStep3;
+  label: string;
+  category: string;
 }
 
 interface HardwareProjectDocItem {
@@ -109,15 +121,57 @@ const AVAILABLE_HARDWARE_PROJECT_DOCS: HardwareProjectDocItem[] = [
   },
 ];
 
-const HardwareStep3 = ({ data, onChange }: HardwareStep3Props) => {
+const HardwareStep3 = ({
+  data,
+  onChange,
+  mainProjectId,
+  mainProjectCode,
+  mainProjectName,
+}: HardwareStep3Props) => {
   const { colorMode } = useColorMode();
   const isDark = colorMode === "dark";
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
 
+  const [activeFieldTarget, setActiveFieldTarget] = useState<HardwareActiveFieldTarget | null>(null);
+
   const [selectedDocIds, setSelectedDocIds] = useState<string[]>(
     AVAILABLE_HARDWARE_PROJECT_DOCS.map((d) => d.id)
   );
+
+  const projectContextLabel = mainProjectName || mainProjectCode || "Proyek Hardware Terpilih";
+  const projectRouteUrl = getProjectRouteUrl(
+    mainProjectId || mainProjectCode || mainProjectName,
+    "documentation"
+  );
+
+  const handleSelectFileForField = (file: ProjectFileItem) => {
+    if (!activeFieldTarget) return;
+
+    const updatedData = { ...data, [activeFieldTarget.fieldKey]: file.fileName };
+    if (activeFieldTarget.fieldKey === "checklistFile") updatedData.checklist = "ADA";
+    else if (activeFieldTarget.fieldKey === "dokumenArsitekturFile") updatedData.dokumenArsitektur = "ADA";
+    else if (activeFieldTarget.fieldKey === "testFungsionalFile") updatedData.testFungsional = "ADA";
+    else if (activeFieldTarget.fieldKey === "rollbackPlanFile") updatedData.rollbackPlan = "ADA";
+    else if (activeFieldTarget.fieldKey === "perangkatMonitoringFile") {
+      updatedData.perangkatMonitoring = "YA";
+      if (!updatedData.perangkatMonitoringDetail) {
+        updatedData.perangkatMonitoringDetail = "Zabbix & Grafana HW Sensor Monitoring";
+      }
+    } else if (activeFieldTarget.fieldKey === "persetujuanItSecurityFile") updatedData.persetujuanItSecurity = "YA";
+
+    onChange(updatedData);
+
+    toast({
+      title: "Dokumen Berhasil Dipilih",
+      description: `Berkas "${file.fileName}" berhasil dilampirkan untuk ${activeFieldTarget.label}.`,
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+      position: "top",
+    });
+    setActiveFieldTarget(null);
+  };
 
   const handleToggleDoc = (docId: string) => {
     setSelectedDocIds((prev) =>
@@ -172,7 +226,7 @@ const HardwareStep3 = ({ data, onChange }: HardwareStep3Props) => {
       status: "success",
       duration: 3500,
       isClosable: true,
-      position: "top-right",
+      position: "top",
     });
   };
 
@@ -183,26 +237,44 @@ const HardwareStep3 = ({ data, onChange }: HardwareStep3Props) => {
         <Flex
           justify="space-between"
           align="center"
-          p={3}
-          bg={isDark ? "blue.900" : "blue.50"}
+          wrap="wrap"
+          gap={3}
+          p={3.5}
+          bg={isDark ? "blue.950" : "blue.50"}
           border="1px solid"
-          borderColor={isDark ? "blue.700" : "blue.200"}
+          borderColor={isDark ? "blue.800" : "blue.200"}
           rounded="lg"
           mb={2}
         >
-          <HStack spacing={3}>
-            <Icon as={FiDownloadCloud} color="blue.500" boxSize={5} />
-            <VStack align="start" spacing={0}>
+          <VStack align="start" spacing={0.5}>
+            <HStack spacing={2} wrap="wrap">
               <Text fontSize="xs" fontWeight="bold" color={isDark ? "blue.200" : "blue.800"}>
-                Kelengkapan Berkas Otomatis
+                Proyek Hardware:
               </Text>
-              <Text fontSize="2xs" color={isDark ? "blue.300" : "blue.600"}>
-                Tersedia 6 berkas teknis hardware dari project terkait yang siap dilampirkan.
-              </Text>
-            </VStack>
-          </HStack>
+              <Badge colorScheme="blue" fontSize="2xs" px={2} py={0.5} rounded="md">
+                {projectContextLabel}
+              </Badge>
+              <Tooltip label="Buka halaman proyek di tab baru">
+                <Button
+                  as="a"
+                  href={projectRouteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="2xs"
+                  variant="link"
+                  colorScheme="blue"
+                  rightIcon={<FiExternalLink />}
+                >
+                  Buka Proyek
+                </Button>
+              </Tooltip>
+            </HStack>
+            <Text fontSize="2xs" color={isDark ? "blue.300" : "blue.600"}>
+              Tersedia 6 berkas teknis hardware dari repositori proyek terkait yang siap dilampirkan otomatis atau dipilih per butir.
+            </Text>
+          </VStack>
 
-          <Button
+          {/* <Button
             size="xs"
             colorScheme="blue"
             variant="solid"
@@ -210,7 +282,7 @@ const HardwareStep3 = ({ data, onChange }: HardwareStep3Props) => {
             onClick={onOpen}
           >
             Ambil File dari Project Sebelumnya
-          </Button>
+          </Button> */}
         </Flex>
 
         <RadioAdaTidak
@@ -220,6 +292,13 @@ const HardwareStep3 = ({ data, onChange }: HardwareStep3Props) => {
           onChange={(val) => onChange({ ...data, checklist: val as any })}
           fileAttachment={data.checklistFile}
           onFileChange={(file) => onChange({ ...data, checklistFile: file })}
+          onOpenProjectFilesModal={() =>
+            setActiveFieldTarget({
+              fieldKey: "checklistFile",
+              label: "Checklist Hardware",
+              category: "Manual & Runbook",
+            })
+          }
           isRequired
         />
 
@@ -230,6 +309,13 @@ const HardwareStep3 = ({ data, onChange }: HardwareStep3Props) => {
           onChange={(val) => onChange({ ...data, dokumenArsitektur: val as any })}
           fileAttachment={data.dokumenArsitekturFile}
           onFileChange={(file) => onChange({ ...data, dokumenArsitekturFile: file })}
+          onOpenProjectFilesModal={() =>
+            setActiveFieldTarget({
+              fieldKey: "dokumenArsitekturFile",
+              label: "Dokumen Arsitektur Hardware",
+              category: "Arsitektur",
+            })
+          }
           isRequired
         />
 
@@ -240,6 +326,13 @@ const HardwareStep3 = ({ data, onChange }: HardwareStep3Props) => {
           onChange={(val) => onChange({ ...data, testFungsional: val as any })}
           fileAttachment={data.testFungsionalFile}
           onFileChange={(file) => onChange({ ...data, testFungsionalFile: file })}
+          onOpenProjectFilesModal={() =>
+            setActiveFieldTarget({
+              fieldKey: "testFungsionalFile",
+              label: "Test Fungsional Hardware",
+              category: "UAT & QA",
+            })
+          }
           isRequired
         />
 
@@ -250,6 +343,13 @@ const HardwareStep3 = ({ data, onChange }: HardwareStep3Props) => {
           onChange={(val) => onChange({ ...data, rollbackPlan: val as any })}
           fileAttachment={data.rollbackPlanFile}
           onFileChange={(file) => onChange({ ...data, rollbackPlanFile: file })}
+          onOpenProjectFilesModal={() =>
+            setActiveFieldTarget({
+              fieldKey: "rollbackPlanFile",
+              label: "Rollback Plan Hardware",
+              category: "Manual & Runbook",
+            })
+          }
           isRequired
         />
 
@@ -260,6 +360,13 @@ const HardwareStep3 = ({ data, onChange }: HardwareStep3Props) => {
           onChange={(val) => onChange({ ...data, perangkatMonitoring: val as any })}
           fileAttachment={data.perangkatMonitoringFile}
           onFileChange={(file) => onChange({ ...data, perangkatMonitoringFile: file })}
+          onOpenProjectFilesModal={() =>
+            setActiveFieldTarget({
+              fieldKey: "perangkatMonitoringFile",
+              label: "Perangkat Monitoring",
+              category: "Manual & Runbook",
+            })
+          }
           isRequired
           showChildren={data.perangkatMonitoring === "YA"}
         >
@@ -280,6 +387,13 @@ const HardwareStep3 = ({ data, onChange }: HardwareStep3Props) => {
           onChange={(val) => onChange({ ...data, persetujuanItSecurity: val as any })}
           fileAttachment={data.persetujuanItSecurityFile}
           onFileChange={(file) => onChange({ ...data, persetujuanItSecurityFile: file })}
+          onOpenProjectFilesModal={() =>
+            setActiveFieldTarget({
+              fieldKey: "persetujuanItSecurityFile",
+              label: "Persetujuan Divisi IT Security",
+              category: "Security & SAST",
+            })
+          }
           isRequired
         />
       </InputGroupPanel>
@@ -302,6 +416,37 @@ const HardwareStep3 = ({ data, onChange }: HardwareStep3Props) => {
           <ModalCloseButton />
 
           <ModalBody py={2}>
+            {/* Project Context Info in Modal */}
+            <Box
+              p={3}
+              mb={3}
+              rounded="lg"
+              bg={isDark ? "blue.950" : "blue.50"}
+              border="1px solid"
+              borderColor={isDark ? "blue.800" : "blue.200"}
+            >
+              <Flex justify="space-between" align="center">
+                <HStack spacing={2}>
+                  <Icon as={FiInfo} color="blue.500" />
+                  <Text fontSize="xs" fontWeight="semibold" color={isDark ? "blue.200" : "blue.800"}>
+                    Referensi: {projectContextLabel}
+                  </Text>
+                </HStack>
+                <Button
+                  as="a"
+                  href={projectRouteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="2xs"
+                  colorScheme="blue"
+                  variant="solid"
+                  rightIcon={<FiExternalLink />}
+                >
+                  Buka Proyek ↗
+                </Button>
+              </Flex>
+            </Box>
+
             <Box
               border="1px solid"
               borderColor={isDark ? "gray.700" : "gray.200"}
@@ -412,6 +557,19 @@ const HardwareStep3 = ({ data, onChange }: HardwareStep3Props) => {
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* ─── Modal Pilih Dokumen Spesifik Per Pertanyaan ─── */}
+      <ProjectFilesModal
+        isOpen={!!activeFieldTarget}
+        onClose={() => setActiveFieldTarget(null)}
+        onSelectFile={handleSelectFileForField}
+        projectContext={projectContextLabel}
+        projectCode={mainProjectCode}
+        projectId={mainProjectId}
+        categoryFilter={activeFieldTarget?.category}
+        fieldTitle={activeFieldTarget?.label}
+        projectUrl={projectRouteUrl}
+      />
     </VStack>
   );
 };

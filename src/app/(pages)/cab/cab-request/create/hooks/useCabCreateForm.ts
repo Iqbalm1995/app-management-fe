@@ -228,7 +228,7 @@ const useCabCreateForm = () => {
   const fetchApplications = async (search: string, token: string): Promise<ApplicationMasterResponse[]> => {
     const payload: PaggingListPayload = {
       search,
-      limit: 20,
+      limit: MAX_SIZE_TABLE,
       page: 0,
       filterWhere: [{ field: "appsStatus", operator: "=", value: "ACTIVE" }],
       fieldOrder: ["appName"],
@@ -246,7 +246,7 @@ const useCabCreateForm = () => {
     if (reqType) filterWhere.push({ field: "requirementType", operator: "=", value: reqType });
     const payload: PaggingListPayload = {
       search,
-      limit: 30,
+      limit: MAX_SIZE_TABLE,
       page: 0,
       filterWhere,
       fieldOrder: ["reqNumber"],
@@ -264,7 +264,7 @@ const useCabCreateForm = () => {
     if (reqParentId) filterWhere.push({ field: "reqParentId", operator: "=", value: reqParentId });
     const payload: PaggingListPayload = {
       search,
-      limit: 30,
+      limit: MAX_SIZE_TABLE,
       page: 0,
       filterWhere,
       fieldOrder: ["projectCode"],

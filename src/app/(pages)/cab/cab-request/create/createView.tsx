@@ -165,6 +165,25 @@ const CreateView = () => {
                           dataStep4={form.swStep4}
                           onChangeStep3={form.setSwStep3}
                           onChangeStep4={form.setSwStep4}
+                          mainProjectId={
+                            form.swStep1.applications?.[0]?.projectId ||
+                            form.swStep1.projectId ||
+                            form.swStep1.applications?.[0]?.rfcKodeProject ||
+                            form.swStep1.rfcKodeProject ||
+                            ""
+                          }
+                          mainProjectCode={
+                            form.swStep1.applications?.[0]?.rfcKodeProject ||
+                            form.swStep1.rfcKodeProject ||
+                            ""
+                          }
+                          mainProjectName={
+                            form.swStep1.applications?.[0]?.applicationName ||
+                            form.swStep1.applicationName ||
+                            form.swStep1.applications?.[0]?.rfcKodeProject ||
+                            form.swStep1.rfcKodeProject ||
+                            ""
+                          }
                         />
                       )}
                       {form.currentStep === 3 && (
@@ -200,7 +219,19 @@ const CreateView = () => {
                         <HardwareStep2 data={form.hwStep2} onChange={form.setHwStep2} />
                       )}
                       {form.currentStep === 2 && (
-                        <HardwareStep3 data={form.hwStep3} onChange={form.setHwStep3} />
+                        <HardwareStep3
+                          data={form.hwStep3}
+                          onChange={form.setHwStep3}
+                          mainProjectId={
+                            form.hwStep1.projectId ||
+                            form.hwStep1.kodeProject ||
+                            ""
+                          }
+                          mainProjectCode={form.hwStep1.kodeProject || ""}
+                          mainProjectName={
+                            form.hwStep1.namaHardware || form.hwStep1.kodeProject || ""
+                          }
+                        />
                       )}
                       {form.currentStep === 3 && (
                         <HardwareStep4

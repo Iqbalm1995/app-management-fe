@@ -47,6 +47,7 @@ interface ProjectOption {
   label: string;
   value: string;
   type: string;
+  projectId?: string;
 }
 
 const SoftwareStep1 = ({
@@ -96,6 +97,7 @@ const SoftwareStep1 = ({
         pOptions.push({
           label: `[BRD] ${r.reqNumber} — ${r.reqNarative || r.appInitialName || "BRD Document"}`,
           value: r.reqNumber,
+          projectId: r.id || r.reqNumber,
           type: "BRD",
         })
       );
@@ -103,6 +105,7 @@ const SoftwareStep1 = ({
         pOptions.push({
           label: `[RFC] ${r.reqNumber} — ${r.reqNarative || r.appInitialName || "RFC Change Request"}`,
           value: r.reqNumber,
+          projectId: r.id || r.reqNumber,
           type: "RFC",
         })
       );
@@ -110,6 +113,7 @@ const SoftwareStep1 = ({
         pOptions.push({
           label: `[PROJECT] ${p.projectCode} — ${p.projectName}`,
           value: p.projectCode,
+          projectId: p.id,
           type: "PROJECT",
         })
       );
@@ -130,6 +134,27 @@ const SoftwareStep1 = ({
     data: a,
   }));
 
+  // Multi-field smart filter for application dropdown to handle large list of apps
+  const filterAppOption = (candidate: any, input: string) => {
+    if (!input) return true;
+    const search = input.toLowerCase().trim();
+    const app = candidate.data?.data;
+    const label = (candidate.label || "").toLowerCase();
+    const shortName = (app?.appShortName || "").toLowerCase();
+    const appName = (app?.appName || "").toLowerCase();
+    const appInitial = (app?.appInitialName || "").toLowerCase();
+    const appTypes = (app?.appTypes || "").toLowerCase();
+    const appCode = (app?.appCode || "").toLowerCase();
+    return (
+      label.includes(search) ||
+      shortName.includes(search) ||
+      appName.includes(search) ||
+      appInitial.includes(search) ||
+      appTypes.includes(search) ||
+      appCode.includes(search)
+    );
+  };
+
   // Applications list from state or initialized with 1 item
   const rawApplications: CabSoftwareApplicationItem[] =
     data.applications && data.applications.length > 0
@@ -142,6 +167,7 @@ const SoftwareStep1 = ({
             applicationName: data.applicationName,
             aplikasiKategori: data.aplikasiKategori,
             rfcKodeProject: data.rfcKodeProject,
+            projectId: data.projectId || data.rfcKodeProject || "",
             itspKode: data.itspKode,
           },
         ]
@@ -152,6 +178,7 @@ const SoftwareStep1 = ({
             applicationName: "",
             aplikasiKategori: "",
             rfcKodeProject: "",
+            projectId: "",
             itspKode: "",
           },
         ];
@@ -163,6 +190,7 @@ const SoftwareStep1 = ({
       applicationName: "",
       aplikasiKategori: "",
       rfcKodeProject: "",
+      projectId: "",
       itspKode: "",
     };
 
@@ -171,8 +199,9 @@ const SoftwareStep1 = ({
       applications: newList,
       applicationId: firstApp.applicationId,
       applicationName: firstApp.applicationName,
-      aplikasiKategori: firstApp.aplikasiKategori || "",
+      aplikasiKategori: data.aplikasiKategori || firstApp.aplikasiKategori || "",
       rfcKodeProject: firstApp.rfcKodeProject || "",
+      projectId: firstApp.projectId || firstApp.rfcKodeProject || "",
       itspKode: firstApp.itspKode || data.itspKode || "",
     });
   };
@@ -255,6 +284,7 @@ const SoftwareStep1 = ({
         const mappedSpecific: ProjectOption[] = specificProjects.map((p) => ({
           label: `[PROJECT] ${p.projectCode} — ${p.projectName}`,
           value: p.projectCode,
+          projectId: p.id,
           type: "PROJECT",
         }));
         setAppProjectMap((prev) => ({ ...prev, [app.id]: mappedSpecific }));
@@ -358,6 +388,11 @@ const SoftwareStep1 = ({
                     type: "RFC",
                   }
                 : null;
+              const appCategory =
+                appItem.aplikasiKategori ||
+                appList.find((a) => a.id === appItem.applicationId)?.appTypes ||
+                appList.find((a) => a.id === appItem.applicationId)?.appTypeCustom ||
+                "";
 
               return (
                 <Box
@@ -392,9 +427,9 @@ const SoftwareStep1 = ({
                           {appItem.applicationName}
                         </Text>
                       )}
-                      {appItem.aplikasiKategori && (
-                        <Badge colorScheme="purple" variant="subtle" rounded="full" px={1.5} fontSize="3xs">
-                          {appItem.aplikasiKategori}
+                      {appCategory && (
+                        <Badge colorScheme="blue" variant="subtle" rounded="full" px={2} py={0.5} fontSize="3xs" fontWeight="semibold">
+                          {appCategory}
                         </Badge>
                       )}
                     </HStack>
@@ -421,15 +456,61 @@ const SoftwareStep1 = ({
                         {isMainApp ? "Aplikasi Utama*" : "Aplikasi Terkait"}
                       </FormLabel>
                       <ChakraSelect
-                        placeholder={isMainApp ? "Pilih aplikasi utama..." : "Pilih aplikasi terkait..."}
+                        placeholder={
+                          appLoading
+                            ? "Memuat data aplikasi..."
+                            : isMainApp
+                            ? `Cari & pilih aplikasi utama (${appList.length} tersedia)...`
+                            : `Cari & pilih aplikasi terkait (${appList.length} tersedia)...`
+                        }
                         options={appOptions}
                         isLoading={appLoading}
                         value={selectedAppOpt}
                         onChange={(opt) => handleSelectApp(index, opt)}
                         isClearable={!isMainApp}
                         isSearchable
+                        filterOption={filterAppOption}
                         chakraStyles={selectStyles}
                         menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
+                        noOptionsMessage={({ inputValue }) =>
+                          inputValue
+                            ? `Aplikasi "${inputValue}" tidak ditemukan`
+                            : "Tidak ada data aplikasi"
+                        }
+                        formatOptionLabel={(opt: any) => {
+                          const app = opt.data;
+                          return (
+                            <Flex justify="space-between" align="center" w="full" py={0.5}>
+                              <VStack align="start" spacing={0} maxW="80%">
+                                <HStack spacing={2}>
+                                  <Text fontSize="xs" fontWeight="bold">
+                                    {app?.appShortName || opt.label}
+                                  </Text>
+                                  {app?.appTypes && (
+                                    <Badge
+                                      colorScheme="blue"
+                                      variant="subtle"
+                                      fontSize="3xs"
+                                      rounded="full"
+                                      px={1.5}
+                                    >
+                                      {app.appTypes}
+                                    </Badge>
+                                  )}
+                                </HStack>
+                                {app?.appName && app?.appName !== app?.appShortName && (
+                                  <Text
+                                    fontSize="2xs"
+                                    color={isDark ? "gray.400" : "gray.600"}
+                                    noOfLines={1}
+                                  >
+                                    {app.appName}
+                                  </Text>
+                                )}
+                              </VStack>
+                            </Flex>
+                          );
+                        }}
                       />
                     </FormControl>
 
@@ -447,9 +528,15 @@ const SoftwareStep1 = ({
                         options={currentProjectOptions}
                         isLoading={projectLoading}
                         value={selectedProjectOpt}
-                        onChange={(opt: any) =>
-                          handleAppItemChange(index, "rfcKodeProject", opt?.value || "")
-                        }
+                        onChange={(opt: any) => {
+                          const newList = [...rawApplications];
+                          newList[index] = {
+                            ...newList[index],
+                            rfcKodeProject: opt?.value || "",
+                            projectId: opt?.projectId || opt?.value || "",
+                          };
+                          updateApplications(newList);
+                        }}
                         isClearable
                         isSearchable
                         chakraStyles={selectStyles}
@@ -528,6 +615,25 @@ const SoftwareStep1 = ({
                 <option value="ENHANCEMENT">Enhancement</option>
                 <option value="BUG FIXING">Bug Fixing</option>
                 <option value="TOOLS">Tools</option>
+              </Select>
+            </Stack>
+          </InputLayout>
+        </FormControl>
+
+        <FormControl isRequired>
+          <InputLayout>
+            <FormLabel h="full" mt={2}>Kategori Aplikasi</FormLabel>
+            <Stack spacing={0}>
+              <Select
+                placeholder="Pilih Kategori Aplikasi"
+                rounded="md"
+                value={data.aplikasiKategori || ""}
+                onChange={(e) => onChange({ ...data, aplikasiKategori: e.target.value })}
+              >
+                <option value="Monitoring">Monitoring</option>
+                <option value="Transaksional">Transaksional</option>
+                <option value="Regulatory">Regulatory</option>
+                <option value="Pelaporan">Pelaporan</option>
               </Select>
             </Stack>
           </InputLayout>

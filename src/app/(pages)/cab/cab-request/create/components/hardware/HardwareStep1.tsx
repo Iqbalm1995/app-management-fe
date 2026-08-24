@@ -29,20 +29,20 @@ interface HardwareStep1Props {
 }
 
 const HardwareStep1 = ({ data, onChange, fetchRequirements, fetchProjects, tokenData }: HardwareStep1Props) => {
-  const [projectOptions, setProjectOptions] = useState<{ label: string; value: string }[]>([]);
+  const [projectOptions, setProjectOptions] = useState<{ label: string; value: string; projectId?: string }[]>([]);
   const [projectSearching, setProjectSearching] = useState(false);
 
   const handleProjectTypeChange = async (type: string) => {
-    onChange({ ...data, kodeProjectType: type as any, kodeProject: "" });
+    onChange({ ...data, kodeProjectType: type as any, kodeProject: "", projectId: "" });
     if (!type) { setProjectOptions([]); return; }
 
     setProjectSearching(true);
     if (type === "PROCUREMENT") {
       const projects = await fetchProjects("", tokenData);
-      setProjectOptions(projects.map((p) => ({ label: `${p.projectCode} — ${p.projectName}`, value: p.projectCode })));
+      setProjectOptions(projects.map((p) => ({ label: `${p.projectCode} — ${p.projectName}`, value: p.projectCode, projectId: p.id })));
     } else {
       const reqs = await fetchRequirements("", tokenData, type);
-      setProjectOptions(reqs.map((r) => ({ label: r.reqNumber, value: r.reqNumber })));
+      setProjectOptions(reqs.map((r) => ({ label: r.reqNumber, value: r.reqNumber, projectId: r.id || r.reqNumber })));
     }
     setProjectSearching(false);
   };
@@ -83,7 +83,7 @@ const HardwareStep1 = ({ data, onChange, fetchRequirements, fetchProjects, token
                       placeholder="Pilih kode project..."
                       options={projectOptions}
                       isLoading={projectSearching}
-                      onChange={(opt: any) => onChange({ ...data, kodeProject: opt?.value || "" })}
+                      onChange={(opt: any) => onChange({ ...data, kodeProject: opt?.value || "", projectId: opt?.projectId || opt?.value || "" })}
                       value={data.kodeProject ? { label: data.kodeProject, value: data.kodeProject } : null}
                       isClearable
                     />

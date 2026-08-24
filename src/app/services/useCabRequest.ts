@@ -3,9 +3,11 @@
 
 import { useState } from "react";
 import { DELAY_LOW } from "../constants/applicationConstants";
-import { MOCK_CAB_LIST, MOCK_CAB_DETAIL, DEFAULT_CAB_ACTIVITIES } from "../json/cabRequestMock";
+import { MOCK_CAB_LIST, MOCK_CAB_DETAIL, DEFAULT_CAB_ACTIVITIES, getDynamicCabActivities } from "../json/cabRequestMock";
 import {
   ApproveCabPayload,
+  BulkScheduleCabItemPayload,
+  BulkScheduleCabPayload,
   CabActivityItem,
   CabCategory,
   CabCommitteeMember,
@@ -121,7 +123,7 @@ const useCabRequest = () => {
               impactAnalysis: "Sistem akan mengalami controlled downtime sekitar 60 menit pada periode maintenance window non-operasional (01:00 - 02:00 WIB).",
               rollbackPlan: "Rollback ke snapshot VM/DB sebelum deployment. Estimasi waktu rollback: 15 menit.",
               approvalHistory: [],
-              activityChecklist: DEFAULT_CAB_ACTIVITIES.map((act) => ({ ...act })),
+              activityChecklist: getDynamicCabActivities(listItem as any),
             };
             MOCK_CAB_DETAIL[id] = detail;
           }
@@ -167,9 +169,7 @@ const useCabRequest = () => {
               { type: "INTERNAL_BJB", userName: "Refan Hidayat", asalDivisi: "Divisi Risk Management" },
             ],
             isCabDone: detail.isCabDone || "N",
-            activityChecklist: detail.activityChecklist && detail.activityChecklist.length > 0
-              ? detail.activityChecklist
-              : DEFAULT_CAB_ACTIVITIES.map((act) => ({ ...act })),
+            activityChecklist: getDynamicCabActivities(detail, detail.activityChecklist),
           };
 
           const mergedDetail: CabRequestDetail = { ...defaultDetail, ...detail } as CabRequestDetail;
@@ -305,7 +305,7 @@ const useCabRequest = () => {
         };
 
         MOCK_CAB_LIST.unshift(newItem);
-        MOCK_CAB_DETAIL[id] = {
+        const newDetail: CabRequestDetail = {
           ...newItem,
           category: isHw ? "HARDWARE" : "SOFTWARE",
           tipeCab: isSw ? formPayload.step1?.tipeCab : undefined,
@@ -365,8 +365,10 @@ const useCabRequest = () => {
           picMigrasi,
           committeeCab,
           approvalHistory: [],
-          activityChecklist: DEFAULT_CAB_ACTIVITIES.map((act) => ({ ...act })),
+          activityChecklist: [],
         };
+        newDetail.activityChecklist = getDynamicCabActivities(newDetail);
+        MOCK_CAB_DETAIL[id] = newDetail;
         setLoading(false);
         resolve(true);
       }, DELAY_LOW);
@@ -395,6 +397,38 @@ const useCabRequest = () => {
           MOCK_CAB_DETAIL[id].status = "SCHEDULED";
           MOCK_CAB_DETAIL[id].isCabDone = MOCK_CAB_DETAIL[id].isCabDone || "N";
         }
+        setLoading(false);
+        resolve(true);
+      }, DELAY_LOW);
+    });
+  };
+
+  const BulkScheduleCabRequests = async (
+    _token: string,
+    payload: BulkScheduleCabPayload | BulkScheduleCabItemPayload[]
+  ): Promise<boolean> => {
+    setLoading(true);
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const items = Array.isArray(payload) ? payload : payload.items;
+        items.forEach((item) => {
+          const idx = MOCK_CAB_LIST.findIndex((r) => r.id === item.id);
+          if (idx !== -1) {
+            MOCK_CAB_LIST[idx].scheduledDate = item.scheduledDate;
+            MOCK_CAB_LIST[idx].scheduledEndDate = item.scheduledEndDate;
+            MOCK_CAB_LIST[idx].status = "SCHEDULED";
+            MOCK_CAB_LIST[idx].isCabDone = MOCK_CAB_LIST[idx].isCabDone || "N";
+          }
+          if (MOCK_CAB_DETAIL[item.id]) {
+            MOCK_CAB_DETAIL[item.id].scheduledDate = item.scheduledDate;
+            MOCK_CAB_DETAIL[item.id].scheduledEndDate = item.scheduledEndDate;
+            if (item.cabLocation) {
+              MOCK_CAB_DETAIL[item.id].cabLocation = item.cabLocation;
+            }
+            MOCK_CAB_DETAIL[item.id].status = "SCHEDULED";
+            MOCK_CAB_DETAIL[item.id].isCabDone = MOCK_CAB_DETAIL[item.id].isCabDone || "N";
+          }
+        });
         setLoading(false);
         resolve(true);
       }, DELAY_LOW);
@@ -576,6 +610,7 @@ const useCabRequest = () => {
     CreateCabRequest,
     UpdateCabRequest,
     ScheduleCabRequest,
+    BulkScheduleCabRequests,
     ConfirmCabMeeting,
     SetCabImplementStatus,
     SetCabDoneStatus,

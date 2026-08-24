@@ -35,10 +35,12 @@ export type CabPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 export interface CabActivityItem {
   id: string;
   label: string;
+  shortLabel?: string;
   description?: string;
   isDone: boolean;
   doneAt?: string | null;
   doneBy?: string | null;
+  isPendingInitial?: boolean;
 }
 
 // ─── List Item (untuk tabel & kalender) ──────────────────────────────────────
@@ -142,10 +144,19 @@ export interface CabRequestDetail extends CabRequestItem {
   deskripsiPerubahan?: string;
   dampakOperasional?: string;
   dasarUpgrade?: string;
+  checklist?: "ADA" | "TIDAK_ADA" | "TIDAK" | "";
+  checklistFile?: string | null;
+  testFungsional?: "ADA" | "TIDAK_ADA" | "TIDAK" | "";
+  testFungsionalFile?: string | null;
+  perangkatMonitoring?: "YA" | "TIDAK" | "";
+  perangkatMonitoringFile?: string | null;
+  // Scheduler Commitment & Migration Decision (Step 2 / SCHEDULED stage)
+  pir?: "ADA" | "TIDAK_ADA" | "YA" | "TIDAK" | string;
+  ketersediaanWaktuMigrasiDc?: string;
   keputusanMigrasi?: "YA" | "TIDAK" | "";
   kesepakatanWaktuPelaksanaan?: string;
-  testFungsional?: "ADA" | "TIDAK_ADA" | "";
-  perangkatMonitoring?: "YA" | "TIDAK" | "";
+  kesepakatanWaktuPelaksanaanMigrasi?: string;
+  catatanKomitmen?: string;
 
   // PIC & Committee
   picMigrasi?: CabPicInternalIT[] | CabPic | null;
@@ -190,6 +201,17 @@ export interface ScheduleCabPayload {
   scheduledDate: string;
   scheduledEndDate: string;
   cabLocation?: string;
+}
+
+export interface BulkScheduleCabItemPayload {
+  id: string;
+  scheduledDate: string;
+  scheduledEndDate: string;
+  cabLocation?: string;
+}
+
+export interface BulkScheduleCabPayload {
+  items: BulkScheduleCabItemPayload[];
 }
 
 export interface UpdateCabResultPayload {
@@ -244,6 +266,7 @@ export interface CabSoftwareApplicationItem {
   applicationName: string;
   aplikasiKategori?: string;
   rfcKodeProject: string;
+  projectId?: string;
   rfcKodeProjectLabel?: string;
   itspKode?: string;
 }
@@ -254,6 +277,7 @@ export interface CabSoftwareStep1 {
   applicationId: string;
   applicationName: string;
   rfcKodeProject: string;
+  projectId?: string;
   itspKode: string;
   aplikasiKategori: string;
   tipeCab?: CabTipeCab | string;
@@ -336,6 +360,7 @@ export interface CabSoftwareFormData {
 export interface CabHardwareStep1 {
   dayDate: string;
   kodeProject: string;
+  projectId?: string;
   kodeProjectType: "BRD" | "RFC" | "PROCUREMENT" | "";
   namaHardware: string;
   deskripsiPerubahan: string;

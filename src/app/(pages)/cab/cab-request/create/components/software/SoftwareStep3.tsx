@@ -29,6 +29,7 @@ import {
   Textarea,
   Th,
   Thead,
+  Tooltip,
   Tr,
   useColorMode,
   useDisclosure,
@@ -36,19 +37,30 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import React, { useState } from "react";
-import { FiCheckCircle, FiDownloadCloud, FiFileText } from "react-icons/fi";
+import { FiCheckCircle, FiDownloadCloud, FiExternalLink, FiFileText, FiFolder, FiInfo } from "react-icons/fi";
 
 import { InputGroupPanel } from "@/app/components/customPanels";
 import { InputLayoutFull } from "@/app/components/layoutContentBody";
 import { CabSoftwareStep3, CabSoftwareStep4 } from "@/app/types/cabTypes";
 import RadioGroupField, { RadioAdaTidak, RadioAdaTidakSimple, RadioYaTidak } from "../RadioGroupField";
 import { CreatableSelect } from "chakra-react-select";
+import ProjectFilesModal, { getProjectRouteUrl } from "../ProjectFilesModal";
+import { ProjectFileItem } from "@/app/json/cabRequestMock";
 
 interface SoftwareStep3Props {
   dataStep3: CabSoftwareStep3;
   dataStep4: CabSoftwareStep4;
   onChangeStep3: (data: CabSoftwareStep3) => void;
   onChangeStep4: (data: CabSoftwareStep4) => void;
+  mainProjectId?: string;
+  mainProjectCode?: string;
+  mainProjectName?: string;
+}
+
+interface SoftwareActiveFieldTarget {
+  fieldKey: keyof CabSoftwareStep4 | "ceklistMigrasiFile";
+  label: string;
+  category: string;
 }
 
 interface ProjectDocItem {
@@ -154,10 +166,20 @@ const AVAILABLE_PROJECT_DOCS: ProjectDocItem[] = [
   },
 ];
 
-const SoftwareStep3 = ({ dataStep3, dataStep4, onChangeStep3, onChangeStep4 }: SoftwareStep3Props) => {
+const SoftwareStep3 = ({
+  dataStep3,
+  dataStep4,
+  onChangeStep3,
+  onChangeStep4,
+  mainProjectId,
+  mainProjectCode,
+  mainProjectName,
+}: SoftwareStep3Props) => {
   const { colorMode } = useColorMode();
   const isDark = colorMode === "dark";
   const toast = useToast();
+
+  const [activeFieldTarget, setActiveFieldTarget] = useState<SoftwareActiveFieldTarget | null>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   const [selectedDocIds, setSelectedDocIds] = useState<string[]>(
@@ -177,6 +199,48 @@ const SoftwareStep3 = ({ dataStep3, dataStep4, onChangeStep3, onChangeStep4 }: S
       setSelectedDocIds(AVAILABLE_PROJECT_DOCS.map((d) => d.id));
     }
   };
+
+  const handleSelectFileForField = (file: ProjectFileItem) => {
+    if (!activeFieldTarget) return;
+
+    if (activeFieldTarget.fieldKey === "ceklistMigrasiFile") {
+      onChangeStep3({
+        ...dataStep3,
+        ceklistMigrasi: "ADA",
+        ceklistMigrasiFile: file.fileName,
+      });
+    } else {
+      const updatedStep4 = { ...dataStep4, [activeFieldTarget.fieldKey]: file.fileName };
+      if (activeFieldTarget.fieldKey === "sastFile") updatedStep4.sast = "ADA";
+      else if (activeFieldTarget.fieldKey === "dokumenArsitekturFile") updatedStep4.dokumenArsitektur = "ADA";
+      else if (activeFieldTarget.fieldKey === "kesiapanInfrastrukturFile") updatedStep4.kesiapanInfrastruktur = "YA";
+      else if (activeFieldTarget.fieldKey === "sourceAplikasiFile") updatedStep4.sourceAplikasi = "ADA";
+      else if (activeFieldTarget.fieldKey === "userMatriksFile") updatedStep4.userMatriks = "ADA";
+      else if (activeFieldTarget.fieldKey === "rollbackPlanFile") updatedStep4.rollbackPlan = "ADA";
+      else if (activeFieldTarget.fieldKey === "toolsMonitoringFile") updatedStep4.toolsMonitoring = "ADA";
+      else if (activeFieldTarget.fieldKey === "securityChecklistFile") updatedStep4.securityChecklist = "ADA";
+      else if (activeFieldTarget.fieldKey === "persetujuanItSecurityFile") updatedStep4.persetujuanItSecurity = "YA";
+      else if (activeFieldTarget.fieldKey === "petunjukTeknisFile") updatedStep4.petunjukTeknis = "ADA";
+
+      onChangeStep4(updatedStep4);
+    }
+
+    toast({
+      title: "Dokumen Berhasil Dipilih",
+      description: `Berkas "${file.fileName}" berhasil dilampirkan untuk ${activeFieldTarget.label}.`,
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+      position: "top",
+    });
+    setActiveFieldTarget(null);
+  };
+
+  const projectContextLabel = mainProjectName || mainProjectCode || "Proyek Terpilih";
+  const projectRouteUrl = getProjectRouteUrl(
+    mainProjectId || mainProjectCode || mainProjectName,
+    "documentation"
+  );
 
   const handleApplyImportedDocs = () => {
     const updatedStep4 = { ...dataStep4 };
@@ -227,7 +291,7 @@ const SoftwareStep3 = ({ dataStep3, dataStep4, onChangeStep3, onChangeStep4 }: S
       status: "success",
       duration: 3500,
       isClosable: true,
-      position: "top-right",
+      position: "top",
     });
   };
 
@@ -356,6 +420,13 @@ const SoftwareStep3 = ({ dataStep3, dataStep4, onChangeStep3, onChangeStep4 }: S
           onChange={(val) => onChangeStep3({ ...dataStep3, ceklistMigrasi: val as any })}
           fileAttachment={dataStep3.ceklistMigrasiFile}
           onFileChange={(file) => onChangeStep3({ ...dataStep3, ceklistMigrasiFile: file })}
+          onOpenProjectFilesModal={() =>
+            setActiveFieldTarget({
+              fieldKey: "ceklistMigrasiFile",
+              label: "Ceklist Migrasi (SW) & Rundown",
+              category: "Manual & Runbook",
+            })
+          }
           isRequired
           showChildren={dataStep3.ceklistMigrasi === "ADA"}
         >
@@ -386,10 +457,32 @@ const SoftwareStep3 = ({ dataStep3, dataStep4, onChangeStep3, onChangeStep4 }: S
           borderColor={isDark ? "gray.700" : "gray.200"}
           mb={2}
         >
-          <Text fontSize="xs" color={isDark ? "gray.400" : "gray.600"}>
-            Lengkapi data kepatuhan teknis dan lampirkan dokumen pendukung untuk setiap butir persyaratan.
-          </Text>
-          <Button
+          <VStack align="start" spacing={0.5}>
+            <Text fontSize="xs" color={isDark ? "gray.300" : "gray.700"} fontWeight="medium">
+              Lengkapi data kepatuhan teknis atau pilih dokumen dari repositori proyek terkait:
+            </Text>
+            <HStack spacing={2}>
+              <Badge colorScheme="blue" fontSize="2xs" px={2} py={0.5} rounded="md">
+                Proyek: {projectContextLabel}
+              </Badge>
+              <Tooltip label="Buka halaman proyek di tab baru">
+                <Button
+                  as="a"
+                  href={projectRouteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="2xs"
+                  variant="link"
+                  colorScheme="blue"
+                  rightIcon={<FiExternalLink />}
+                >
+                  Buka Proyek
+                </Button>
+              </Tooltip>
+            </HStack>
+          </VStack>
+
+          {/* <Button
             size="sm"
             variant="outline"
             colorScheme="blue"
@@ -399,7 +492,7 @@ const SoftwareStep3 = ({ dataStep3, dataStep4, onChangeStep3, onChangeStep4 }: S
             fontWeight="medium"
           >
             Ambil File dari Project Sebelumnya
-          </Button>
+          </Button> */}
         </Flex>
 
         {/* 1. SAST */}
@@ -410,6 +503,13 @@ const SoftwareStep3 = ({ dataStep3, dataStep4, onChangeStep3, onChangeStep4 }: S
           onChange={(val) => onChangeStep4({ ...dataStep4, sast: val as any })}
           fileAttachment={dataStep4.sastFile}
           onFileChange={(file) => onChangeStep4({ ...dataStep4, sastFile: file })}
+          onOpenProjectFilesModal={() =>
+            setActiveFieldTarget({
+              fieldKey: "sastFile",
+              label: "SAST",
+              category: "Security & SAST",
+            })
+          }
           isRequired
         />
 
@@ -421,6 +521,13 @@ const SoftwareStep3 = ({ dataStep3, dataStep4, onChangeStep3, onChangeStep4 }: S
           onChange={(val) => onChangeStep4({ ...dataStep4, dokumenArsitektur: val as any })}
           fileAttachment={dataStep4.dokumenArsitekturFile}
           onFileChange={(file) => onChangeStep4({ ...dataStep4, dokumenArsitekturFile: file })}
+          onOpenProjectFilesModal={() =>
+            setActiveFieldTarget({
+              fieldKey: "dokumenArsitekturFile",
+              label: "Dokumen Arsitektur",
+              category: "Arsitektur",
+            })
+          }
           isRequired
           showChildren={dataStep4.dokumenArsitektur === "ADA"}
         >
@@ -449,6 +556,13 @@ const SoftwareStep3 = ({ dataStep3, dataStep4, onChangeStep3, onChangeStep4 }: S
           onChange={(val) => onChangeStep4({ ...dataStep4, kesiapanInfrastruktur: val as any })}
           fileAttachment={dataStep4.kesiapanInfrastrukturFile}
           onFileChange={(file) => onChangeStep4({ ...dataStep4, kesiapanInfrastrukturFile: file })}
+          onOpenProjectFilesModal={() =>
+            setActiveFieldTarget({
+              fieldKey: "kesiapanInfrastrukturFile",
+              label: "Kesiapan Infrastruktur",
+              category: "Arsitektur",
+            })
+          }
           isRequired
         />
 
@@ -460,6 +574,13 @@ const SoftwareStep3 = ({ dataStep3, dataStep4, onChangeStep3, onChangeStep4 }: S
           onChange={(val) => onChangeStep4({ ...dataStep4, sourceAplikasi: val as any })}
           fileAttachment={dataStep4.sourceAplikasiFile}
           onFileChange={(file) => onChangeStep4({ ...dataStep4, sourceAplikasiFile: file })}
+          onOpenProjectFilesModal={() =>
+            setActiveFieldTarget({
+              fieldKey: "sourceAplikasiFile",
+              label: "Source Aplikasi",
+              category: "Manual & Runbook",
+            })
+          }
           isRequired
         />
 
@@ -471,6 +592,13 @@ const SoftwareStep3 = ({ dataStep3, dataStep4, onChangeStep3, onChangeStep4 }: S
           onChange={(val) => onChangeStep4({ ...dataStep4, userMatriks: val as any })}
           fileAttachment={dataStep4.userMatriksFile}
           onFileChange={(file) => onChangeStep4({ ...dataStep4, userMatriksFile: file })}
+          onOpenProjectFilesModal={() =>
+            setActiveFieldTarget({
+              fieldKey: "userMatriksFile",
+              label: "User Matriks",
+              category: "Security & SAST",
+            })
+          }
           isRequired
         />
 
@@ -482,6 +610,13 @@ const SoftwareStep3 = ({ dataStep3, dataStep4, onChangeStep3, onChangeStep4 }: S
           onChange={(val) => onChangeStep4({ ...dataStep4, rollbackPlan: val as any })}
           fileAttachment={dataStep4.rollbackPlanFile}
           onFileChange={(file) => onChangeStep4({ ...dataStep4, rollbackPlanFile: file })}
+          onOpenProjectFilesModal={() =>
+            setActiveFieldTarget({
+              fieldKey: "rollbackPlanFile",
+              label: "Rollback / Fallback Plan",
+              category: "Manual & Runbook",
+            })
+          }
           isRequired
         />
 
@@ -493,6 +628,13 @@ const SoftwareStep3 = ({ dataStep3, dataStep4, onChangeStep3, onChangeStep4 }: S
           onChange={(val) => onChangeStep4({ ...dataStep4, toolsMonitoring: val as any })}
           fileAttachment={dataStep4.toolsMonitoringFile}
           onFileChange={(file) => onChangeStep4({ ...dataStep4, toolsMonitoringFile: file })}
+          onOpenProjectFilesModal={() =>
+            setActiveFieldTarget({
+              fieldKey: "toolsMonitoringFile",
+              label: "Tools / Cara Monitoring",
+              category: "Manual & Runbook",
+            })
+          }
           isRequired
         />
 
@@ -504,6 +646,13 @@ const SoftwareStep3 = ({ dataStep3, dataStep4, onChangeStep3, onChangeStep4 }: S
           onChange={(val) => onChangeStep4({ ...dataStep4, securityChecklist: val as any })}
           fileAttachment={dataStep4.securityChecklistFile}
           onFileChange={(file) => onChangeStep4({ ...dataStep4, securityChecklistFile: file })}
+          onOpenProjectFilesModal={() =>
+            setActiveFieldTarget({
+              fieldKey: "securityChecklistFile",
+              label: "Security Checklist",
+              category: "Security & SAST",
+            })
+          }
           isRequired
         />
 
@@ -515,6 +664,13 @@ const SoftwareStep3 = ({ dataStep3, dataStep4, onChangeStep3, onChangeStep4 }: S
           onChange={(val) => onChangeStep4({ ...dataStep4, persetujuanItSecurity: val as any })}
           fileAttachment={dataStep4.persetujuanItSecurityFile}
           onFileChange={(file) => onChangeStep4({ ...dataStep4, persetujuanItSecurityFile: file })}
+          onOpenProjectFilesModal={() =>
+            setActiveFieldTarget({
+              fieldKey: "persetujuanItSecurityFile",
+              label: "Persetujuan Divisi IT Security",
+              category: "Security & SAST",
+            })
+          }
           isRequired
           showChildren={dataStep4.persetujuanItSecurity === "TIDAK"}
         >
@@ -541,6 +697,13 @@ const SoftwareStep3 = ({ dataStep3, dataStep4, onChangeStep3, onChangeStep4 }: S
           onChange={(val) => onChangeStep4({ ...dataStep4, petunjukTeknis: val as any })}
           fileAttachment={dataStep4.petunjukTeknisFile}
           onFileChange={(file) => onChangeStep4({ ...dataStep4, petunjukTeknisFile: file })}
+          onOpenProjectFilesModal={() =>
+            setActiveFieldTarget({
+              fieldKey: "petunjukTeknisFile",
+              label: "Petunjuk Teknis",
+              category: "Manual & Runbook",
+            })
+          }
           isRequired
         />
       </InputGroupPanel>
@@ -564,6 +727,37 @@ const SoftwareStep3 = ({ dataStep3, dataStep4, onChangeStep3, onChangeStep4 }: S
           <Divider />
 
           <ModalBody py={4}>
+            {/* Project Context Info in Modal */}
+            <Box
+              p={3}
+              mb={3}
+              rounded="lg"
+              bg={isDark ? "blue.950" : "blue.50"}
+              border="1px solid"
+              borderColor={isDark ? "blue.800" : "blue.200"}
+            >
+              <Flex justify="space-between" align="center">
+                <HStack spacing={2}>
+                  <Icon as={FiInfo} color="blue.500" />
+                  <Text fontSize="xs" fontWeight="semibold" color={isDark ? "blue.200" : "blue.800"}>
+                    Referensi: {projectContextLabel}
+                  </Text>
+                </HStack>
+                <Button
+                  as="a"
+                  href={projectRouteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="2xs"
+                  colorScheme="blue"
+                  variant="solid"
+                  rightIcon={<FiExternalLink />}
+                >
+                  Buka Proyek ↗
+                </Button>
+              </Flex>
+            </Box>
+
             <Flex justify="space-between" align="center" mb={3}>
               <Text fontSize="xs" fontWeight="semibold" color="gray.500">
                 Dokumen Tersedia ({AVAILABLE_PROJECT_DOCS.length} Berkas)
@@ -653,6 +847,19 @@ const SoftwareStep3 = ({ dataStep3, dataStep4, onChangeStep3, onChangeStep4 }: S
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* ─── Modal Pilih Dokumen Spesifik Per Pertanyaan ─── */}
+      <ProjectFilesModal
+        isOpen={!!activeFieldTarget}
+        onClose={() => setActiveFieldTarget(null)}
+        onSelectFile={handleSelectFileForField}
+        projectContext={projectContextLabel}
+        projectCode={mainProjectCode}
+        projectId={mainProjectId}
+        categoryFilter={activeFieldTarget?.category}
+        fieldTitle={activeFieldTarget?.label}
+        projectUrl={projectRouteUrl}
+      />
     </VStack>
   );
 };

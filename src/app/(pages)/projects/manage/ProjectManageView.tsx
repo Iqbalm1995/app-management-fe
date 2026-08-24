@@ -225,6 +225,73 @@ export default function ProjectManageView() {
   const showFeaturesTab = isInternalDev || (isProcurement && hasRequirement);
   const showWorkstageTab = isProcurement;
 
+  // Tab navigation & query param handling
+  const [selectedTabIndex, setSelectedTabIndex] = useState<number>(0);
+
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (!tabParam) return;
+    const lowerTab = tabParam.toLowerCase().trim();
+
+    if (
+      lowerTab === "documentation" ||
+      lowerTab === "work-documentation" ||
+      lowerTab === "docs" ||
+      lowerTab === "workdocumentation" ||
+      lowerTab === "document"
+    ) {
+      let idx = 2; // after Overview(0), Details(1)
+      if (showFeaturesTab) idx++;
+      if (showWorkstageTab) idx++;
+      setSelectedTabIndex(idx);
+    } else if (lowerTab === "overview") {
+      setSelectedTabIndex(0);
+    } else if (lowerTab === "details") {
+      setSelectedTabIndex(1);
+    } else if (
+      lowerTab === "work-progress" ||
+      lowerTab === "progress" ||
+      lowerTab === "features"
+    ) {
+      if (showFeaturesTab) setSelectedTabIndex(2);
+    } else if (lowerTab === "procurements" || lowerTab === "procurement") {
+      let idx = 2;
+      if (showFeaturesTab) idx++;
+      if (showWorkstageTab) setSelectedTabIndex(idx);
+    } else if (lowerTab === "sdlc" || lowerTab === "sdlc-progress") {
+      let idx = 3;
+      if (showFeaturesTab) idx++;
+      if (showWorkstageTab) idx++;
+      setSelectedTabIndex(idx);
+    } else if (lowerTab === "team") {
+      let idx = 4;
+      if (showFeaturesTab) idx++;
+      if (showWorkstageTab) idx++;
+      setSelectedTabIndex(idx);
+    } else if (lowerTab === "analytics") {
+      let idx = 5;
+      if (showFeaturesTab) idx++;
+      if (showWorkstageTab) idx++;
+      setSelectedTabIndex(idx);
+    } else if (lowerTab === "timeline") {
+      let idx = 6;
+      if (showFeaturesTab) idx++;
+      if (showWorkstageTab) idx++;
+      setSelectedTabIndex(idx);
+    } else if (
+      lowerTab === "options" ||
+      lowerTab === "edit" ||
+      lowerTab === "settings"
+    ) {
+      let idx = 7;
+      if (showFeaturesTab) idx++;
+      if (showWorkstageTab) idx++;
+      setSelectedTabIndex(idx);
+    } else if (!isNaN(Number(tabParam))) {
+      setSelectedTabIndex(Number(tabParam));
+    }
+  }, [searchParams, showFeaturesTab, showWorkstageTab]);
+
   if (!isInitialized) {
     return (
       <LayoutAdmin>
@@ -270,7 +337,13 @@ export default function ProjectManageView() {
       <Box w="full" overflow="hidden">
         <Grid templateColumns="repeat(12, 1fr)" w="full" gap={5}>
           <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 9 }} w={"full"}>
-            <Tabs variant={"unstyled"} colorScheme={"secondary"} size={"lg"}>
+            <Tabs
+              index={selectedTabIndex}
+              onChange={(idx) => setSelectedTabIndex(idx)}
+              variant={"unstyled"}
+              colorScheme={"secondary"}
+              size={"lg"}
+            >
               <Box mb={4}>
                 <TabList
                   ref={tabsRef}

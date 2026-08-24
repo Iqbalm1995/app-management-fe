@@ -19,7 +19,7 @@ import {
 } from "@chakra-ui/react";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useRef } from "react";
-import { FiFileText, FiPaperclip, FiX } from "react-icons/fi";
+import { FiFileText, FiFolder, FiPaperclip, FiX } from "react-icons/fi";
 
 import { InputLayout } from "@/app/components/layoutContentBody";
 
@@ -40,7 +40,8 @@ interface RadioGroupFieldProps {
   showChildren?: boolean;
   error?: string;
   fileAttachment?: File | string | null;
-  onFileChange?: (file: File | null) => void;
+  onFileChange?: (file: File | string | null) => void;
+  onOpenProjectFilesModal?: () => void;
   fileAccept?: string;
 }
 
@@ -57,6 +58,7 @@ const RadioGroupField = ({
   error,
   fileAttachment,
   onFileChange,
+  onOpenProjectFilesModal,
   fileAccept = ".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg",
 }: RadioGroupFieldProps) => {
   const { colorMode } = useColorMode();
@@ -77,26 +79,14 @@ const RadioGroupField = ({
         <FormLabel h="full" mt={2}>{label}</FormLabel>
         <Stack spacing={0} h="full">
           <RadioGroup onChange={onChange} value={value}>
-            <Flex w="full" as={HStack} spacing={6} align="center" wrap="wrap">
+            <Flex w="full" as={HStack} spacing={4} align="center" wrap="wrap">
               {options.map((opt) => (
                 <Radio key={opt.value} value={opt.value}>{opt.label}</Radio>
               ))}
 
-              {/* Add File text link / Attached file chip when value is ADA or YA and onFileChange is provided */}
-              {isPositiveValue && onFileChange && (
-                <Box pl={2}>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    accept={fileAccept}
-                    style={{ display: "none" }}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0] || null;
-                      onFileChange(file);
-                      if (fileInputRef.current) fileInputRef.current.value = "";
-                    }}
-                  />
-
+              {/* Choose from Project when value is ADA or YA */}
+              {isPositiveValue && (onFileChange || onOpenProjectFilesModal) && (
+                <HStack spacing={2} pl={2} wrap="wrap">
                   {fileAttachment ? (
                     <HStack
                       spacing={1.5}
@@ -112,34 +102,53 @@ const RadioGroupField = ({
                         fontSize="xs"
                         fontWeight="semibold"
                         color={isDark ? "blue.200" : "blue.700"}
-                        maxW={{ base: "140px", md: "240px" }}
+                        maxW={{ base: "140px", md: "220px" }}
                         isTruncated
                         title={getFileName(fileAttachment)}
                       >
                         {getFileName(fileAttachment)}
                       </Text>
+                      {onOpenProjectFilesModal && (
+                        <Button
+                          size="2xs"
+                          variant="ghost"
+                          colorScheme="blue"
+                          fontSize="2xs"
+                          h="20px"
+                          px={1.5}
+                          onClick={onOpenProjectFilesModal}
+                          title="Ganti dokumen dari project"
+                        >
+                          Ganti
+                        </Button>
+                      )}
                       <IconButton
                         size="2xs"
                         icon={<FiX />}
                         aria-label="Hapus file"
                         variant="ghost"
                         colorScheme="red"
-                        onClick={() => onFileChange(null)}
+                        onClick={() => onFileChange?.(null)}
                       />
                     </HStack>
                   ) : (
-                    <Button
-                      variant="link"
-                      size="xs"
-                      colorScheme="blue"
-                      leftIcon={<FiPaperclip />}
-                      fontWeight="semibold"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      Add File
-                    </Button>
+                    onOpenProjectFilesModal && (
+                      <Button
+                        variant="outline"
+                        size="xs"
+                        colorScheme="blue"
+                        leftIcon={<FiFolder />}
+                        fontWeight="semibold"
+                        rounded="md"
+                        h="28px"
+                        px={2.5}
+                        onClick={onOpenProjectFilesModal}
+                      >
+                        Pilih dari Dokumen Project
+                      </Button>
+                    )
                   )}
-                </Box>
+                </HStack>
               )}
             </Flex>
           </RadioGroup>

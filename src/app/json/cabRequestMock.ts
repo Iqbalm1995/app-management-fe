@@ -3,49 +3,388 @@
 
 import { CabActivityItem, CabRequestDetail, CabRequestItem } from "../types/cabTypes";
 
-// ─── Default Activity Checklist for CAB ──────────────────────────────────────
-export const DEFAULT_CAB_ACTIVITIES: CabActivityItem[] = [
+// ─── Default Activity Checklist for CAB (Divided by Software / Hardware & Step 3 items) ───
+export const DEFAULT_SOFTWARE_CAB_ACTIVITIES: CabActivityItem[] = [
   {
-    id: "act-1",
-    label: "Verifikasi Dokumen Permohonan & Kelengkapan RFC/BRD",
-    description: "Memastikan form permohonan CAB, rincian teknis, dan dokumen RFC/BRD telah lengkap dan valid.",
+    id: "act-sw-sast",
+    label: "SAST (Security Scan)",
+    shortLabel: "SAST",
+    description: "Verifikasi laporan scanning SAST bebas dari kerentanan critical/high.",
     isDone: false,
     doneAt: null,
     doneBy: null,
   },
   {
-    id: "act-2",
-    label: "Review Analisis Dampak & Validasi Rencana Rollback",
-    description: "Memvalidasi mitigasi risiko downtime, estimasi RTO/RPO, dan ketersediaan script rollback snapshot.",
+    id: "act-sw-arsitektur",
+    label: "Dokumen Arsitektur",
+    shortLabel: "Arsitektur",
+    description: "Verifikasi diagram sistem, integrasi API, dan standar arsitektur.",
     isDone: false,
     doneAt: null,
     doneBy: null,
   },
   {
-    id: "act-3",
-    label: "Konfirmasi Kesiapan Environment & Ketersediaan Backup",
-    description: "Pengecekan kesiapan staging/production, backup snapshot database, dan resource server.",
+    id: "act-sw-infra",
+    label: "Kesiapan Infrastruktur",
+    shortLabel: "Infrastruktur",
+    description: "Pengecekan kapasitas server, alokasi DB, port, dan environment.",
     isDone: false,
     doneAt: null,
     doneBy: null,
   },
   {
-    id: "act-4",
-    label: "Konfirmasi Kehadiran Tim Komite CAB & PIC Migrasi",
-    description: "Memastikan seluruh stakeholder, perwakilan tim pengembang, QA, dan PIC operasional siap hadir.",
+    id: "act-sw-source",
+    label: "Source Aplikasi (Git Tag)",
+    shortLabel: "Source Git",
+    description: "Verifikasi branch release repository git dan checksum build binary.",
     isDone: false,
     doneAt: null,
     doneBy: null,
   },
   {
-    id: "act-5",
-    label: "Verifikasi Hasil UAT & Sign-off Pengujian",
-    description: "Memastikan pengujian fungsional, non-fungsional, dan security assessment telah ditandatangani.",
+    id: "act-sw-matriks",
+    label: "User Matriks & Hak Akses",
+    shortLabel: "User Matriks",
+    description: "Validasi matriks hak akses pengguna dan segregation of duties.",
+    isDone: false,
+    doneAt: null,
+    doneBy: null,
+  },
+  {
+    id: "act-sw-rollback",
+    label: "Rollback / Fallback Plan",
+    shortLabel: "Rollback Plan",
+    description: "Validasi snapshot database, backup konfigurasi, dan SOP rollback.",
+    isDone: false,
+    doneAt: null,
+    doneBy: null,
+  },
+  {
+    id: "act-sw-monitoring",
+    label: "Tools / Dashboard Monitoring",
+    shortLabel: "Monitoring",
+    description: "Memastikan APM, log monitoring, dan alert service aktif.",
+    isDone: false,
+    doneAt: null,
+    doneBy: null,
+  },
+  {
+    id: "act-sw-security-check",
+    label: "Security Checklist",
+    shortLabel: "Security Checklist",
+    description: "Kepatuhan standar keamanan sistem dan hardening aplikasi.",
+    isDone: false,
+    doneAt: null,
+    doneBy: null,
+  },
+  {
+    id: "act-sw-approval-sec",
+    label: "Persetujuan IT Security",
+    shortLabel: "IT Security",
+    description: "Sign-off dan clearance dari Divisi IT Security.",
+    isDone: false,
+    doneAt: null,
+    doneBy: null,
+  },
+  {
+    id: "act-sw-juknis",
+    label: "Petunjuk Teknis (Juknis)",
+    shortLabel: "Juknis & SOP",
+    description: "Manual pengoperasian sistem dan deployment runbook.",
+    isDone: false,
+    doneAt: null,
+    doneBy: null,
+  },
+  {
+    id: "act-sw-ceklist-migrasi",
+    label: "Ceklist & Rundown Migrasi",
+    shortLabel: "Rundown Migrasi",
+    description: "Rundown jadwal deployment per menit dan PIC pelaksana.",
     isDone: false,
     doneAt: null,
     doneBy: null,
   },
 ];
+
+export const DEFAULT_HARDWARE_CAB_ACTIVITIES: CabActivityItem[] = [
+  {
+    id: "act-hw-checklist",
+    label: "Checklist Hardware & DC",
+    shortLabel: "Checklist HW",
+    description: "Kelengkapan fisik perangkat, part cadangan, dan alokasi rak DC.",
+    isDone: false,
+    doneAt: null,
+    doneBy: null,
+  },
+  {
+    id: "act-hw-arsitektur",
+    label: "Dokumen Arsitektur Hardware",
+    shortLabel: "Arsitektur HW",
+    description: "Diagram pengkabelan, topologi SAN/LAN/Switch, dan daya listrik.",
+    isDone: false,
+    doneAt: null,
+    doneBy: null,
+  },
+  {
+    id: "act-hw-test",
+    label: "Test Fungsional Hardware",
+    shortLabel: "Test Fungsional",
+    description: "Diagnostic hardware, burn-in test, dan failover modul redundant.",
+    isDone: false,
+    doneAt: null,
+    doneBy: null,
+  },
+  {
+    id: "act-hw-rollback",
+    label: "Rollback Plan Hardware",
+    shortLabel: "Rollback HW",
+    description: "SOP fallback ke perangkat cadangan/hot-spare jika terjadi kendala.",
+    isDone: false,
+    doneAt: null,
+    doneBy: null,
+  },
+  {
+    id: "act-hw-monitoring",
+    label: "Perangkat Monitoring Hardware",
+    shortLabel: "Monitoring HW",
+    description: "Sensor hardware, IPMI/iLO/iDRAC, dan alerting NMS datacenter.",
+    isDone: false,
+    doneAt: null,
+    doneBy: null,
+  },
+  {
+    id: "act-hw-security",
+    label: "Persetujuan IT Security",
+    shortLabel: "IT Security HW",
+    description: "Hardening port fisik, firmware baseline, dan sign-off IT Security.",
+    isDone: false,
+    doneAt: null,
+    doneBy: null,
+  },
+];
+
+export const DEFAULT_CAB_ACTIVITIES: CabActivityItem[] = DEFAULT_SOFTWARE_CAB_ACTIVITIES;
+
+/**
+ * Generate dynamic CAB activity checklist based on Step 3 inputs (Software vs Hardware).
+ * Focuses on verifying items that were not "ADA" / "YA" in the submission,
+ * or provides the complete verification list if all were submitted.
+ */
+export const getDynamicCabActivities = (
+  detail: Partial<CabRequestDetail>,
+  existingActivities?: CabActivityItem[]
+): CabActivityItem[] => {
+  const isHardware =
+    detail.category === "HARDWARE" ||
+    detail.requestType?.toUpperCase().includes("INFRA") ||
+    detail.requestType?.toUpperCase().includes("HARDWARE");
+
+  const existingMap = new Map<string, { isDone: boolean; doneAt?: string | null; doneBy?: string | null }>();
+  if (existingActivities && existingActivities.length > 0) {
+    existingActivities.forEach((act) => {
+      existingMap.set(act.id, { isDone: act.isDone, doneAt: act.doneAt, doneBy: act.doneBy });
+    });
+  }
+
+  const items: CabActivityItem[] = [];
+
+  if (isHardware) {
+    const hwFields = [
+      {
+        id: "act-hw-checklist",
+        key: "checklist",
+        val: detail.checklist,
+        label: "Checklist Hardware & DC",
+        shortLabel: "Checklist HW",
+        desc: "Kelengkapan fisik perangkat, part cadangan, dan alokasi rak server DC.",
+        isPositive: detail.checklist === "ADA",
+      },
+      {
+        id: "act-hw-arsitektur",
+        key: "dokumenArsitektur",
+        val: detail.dokumenArsitektur,
+        label: "Dokumen Arsitektur Hardware",
+        shortLabel: "Arsitektur HW",
+        desc: "Diagram pengkabelan, topologi SAN/LAN/Switch, dan kapasitas daya listrik.",
+        isPositive: detail.dokumenArsitektur === "ADA",
+      },
+      {
+        id: "act-hw-test",
+        key: "testFungsional",
+        val: detail.testFungsional,
+        label: "Test Fungsional Hardware",
+        shortLabel: "Test Fungsional",
+        desc: "Diagnostic hardware, burn-in test, dan failover redundant komponen.",
+        isPositive: detail.testFungsional === "ADA",
+      },
+      {
+        id: "act-hw-rollback",
+        key: "rollbackPlan",
+        val: detail.rollbackPlan,
+        label: "Rollback Plan Hardware",
+        shortLabel: "Rollback HW",
+        desc: "SOP fallback, perangkat cadangan (hot-spare), dan mitigasi kegagalan.",
+        isPositive: Boolean(detail.rollbackPlan && detail.rollbackPlan.trim().length > 0),
+      },
+      {
+        id: "act-hw-monitoring",
+        key: "perangkatMonitoring",
+        val: detail.perangkatMonitoring,
+        label: "Perangkat Monitoring Hardware",
+        shortLabel: "Monitoring HW",
+        desc: "Integrasi sensor hardware, IPMI/iLO/iDRAC, dan alerting monitoring datacenter.",
+        isPositive: detail.perangkatMonitoring === "YA",
+      },
+      {
+        id: "act-hw-security",
+        key: "persetujuanItSecurity",
+        val: detail.persetujuanItSecurity,
+        label: "Persetujuan IT Security",
+        shortLabel: "IT Security HW",
+        desc: "Hardening port fisik, baseline firmware, dan sign-off Divisi IT Security.",
+        isPositive: detail.persetujuanItSecurity === "YA",
+      },
+    ];
+
+    const nonPositive = hwFields.filter((f) => !f.isPositive);
+    const targetFields = nonPositive.length > 0 ? nonPositive : hwFields;
+
+    targetFields.forEach((f) => {
+      const existing = existingMap.get(f.id);
+      items.push({
+        id: f.id,
+        label: f.label,
+        shortLabel: f.shortLabel,
+        description: f.desc,
+        isDone: existing ? existing.isDone : false,
+        doneAt: existing ? existing.doneAt : null,
+        doneBy: existing ? existing.doneBy : null,
+        isPendingInitial: !f.isPositive,
+      });
+    });
+  } else {
+    const swFields = [
+      {
+        id: "act-sw-sast",
+        key: "sast",
+        val: detail.sast,
+        label: "SAST (Security Scan)",
+        shortLabel: "SAST",
+        desc: "Laporan scanning SAST, pastikan temuan critical/high telah diperbaiki.",
+        isPositive: detail.sast === "ADA",
+      },
+      {
+        id: "act-sw-arsitektur",
+        key: "dokumenArsitektur",
+        val: detail.dokumenArsitektur,
+        label: "Dokumen Arsitektur",
+        shortLabel: "Arsitektur",
+        desc: "Diagram alur data, rancangan integrasi API, dan standar arsitektur.",
+        isPositive: detail.dokumenArsitektur === "ADA",
+      },
+      {
+        id: "act-sw-infra",
+        key: "kesiapanInfrastruktur",
+        val: detail.kesiapanInfrastruktur,
+        label: "Kesiapan Infrastruktur",
+        shortLabel: "Infrastruktur",
+        desc: "Alokasi server, resource database, network port, dan environment.",
+        isPositive: detail.kesiapanInfrastruktur === "YA",
+      },
+      {
+        id: "act-sw-source",
+        key: "sourceAplikasi",
+        val: detail.sourceAplikasi,
+        label: "Source Aplikasi (Git Tag)",
+        shortLabel: "Source Git",
+        desc: "Release tag pada repository source code dan checksum integritas build binary.",
+        isPositive: detail.sourceAplikasi === "ADA",
+      },
+      {
+        id: "act-sw-matriks",
+        key: "userMatriks",
+        val: detail.userMatriks,
+        label: "User Matriks & Hak Akses",
+        shortLabel: "User Matriks",
+        desc: "Pemetaan role pengguna, hak akses menu/fitur, dan segregation of duties.",
+        isPositive: detail.userMatriks === "ADA",
+      },
+      {
+        id: "act-sw-rollback",
+        key: "rollbackPlan",
+        val: detail.rollbackPlan,
+        label: "Rollback / Fallback Plan",
+        shortLabel: "Rollback Plan",
+        desc: "SOP rollback, script restore database/snapshot, dan durasi RTO.",
+        isPositive: Boolean(detail.rollbackPlan && detail.rollbackPlan.trim().length > 0),
+      },
+      {
+        id: "act-sw-monitoring",
+        key: "toolsMonitoring",
+        val: detail.toolsMonitoring,
+        label: "Tools / Dashboard Monitoring",
+        shortLabel: "Monitoring",
+        desc: "APM monitoring, health-check endpoint, dan alerting notifikasi insiden.",
+        isPositive: detail.toolsMonitoring === "ADA",
+      },
+      {
+        id: "act-sw-security-check",
+        key: "securityChecklist",
+        val: detail.securityChecklist,
+        label: "Security Checklist",
+        shortLabel: "Security Checklist",
+        desc: "Compliance standar keamanan aplikasi, OWASP top 10 hardening, dan credential.",
+        isPositive: detail.securityChecklist === "ADA",
+      },
+      {
+        id: "act-sw-approval-sec",
+        key: "persetujuanItSecurity",
+        val: detail.persetujuanItSecurity,
+        label: "Persetujuan IT Security",
+        shortLabel: "IT Security",
+        desc: "Sign-off dan clearance persetujuan keamanan dari Tim IT Security.",
+        isPositive: detail.persetujuanItSecurity === "YA",
+      },
+      {
+        id: "act-sw-juknis",
+        key: "petunjukTeknis",
+        val: detail.petunjukTeknis,
+        label: "Petunjuk Teknis (Juknis)",
+        shortLabel: "Juknis & SOP",
+        desc: "Dokumen panduan teknis deployment, petunjuk pengoperasian, dan SOP.",
+        isPositive: detail.petunjukTeknis === "ADA",
+      },
+      {
+        id: "act-sw-ceklist-migrasi",
+        key: "ceklistMigrasi",
+        val: detail.ceklistMigrasi,
+        label: "Ceklist & Rundown Migrasi",
+        shortLabel: "Rundown Migrasi",
+        desc: "Rundown waktu migrasi per jam/menit dan daftar PIC pelaksana deployment.",
+        isPositive: detail.ceklistMigrasi === "ADA",
+      },
+    ];
+
+    const nonPositive = swFields.filter((f) => !f.isPositive);
+    const targetFields = nonPositive.length > 0 ? nonPositive : swFields;
+
+    targetFields.forEach((f) => {
+      const existing = existingMap.get(f.id);
+      items.push({
+        id: f.id,
+        label: f.label,
+        shortLabel: f.shortLabel,
+        description: f.desc,
+        isDone: existing ? existing.isDone : false,
+        doneAt: existing ? existing.doneAt : null,
+        doneBy: existing ? existing.doneBy : null,
+        isPendingInitial: !f.isPositive,
+      });
+    });
+  }
+
+  return items;
+};
 
 // ─── Mock: Internal BJB Users (non-IT, no real API) ──────────────────────────
 export const MOCK_INTERNAL_BJB_USERS = [
@@ -789,5 +1128,137 @@ export const MOCK_PROJECT_FILES: ProjectFileItem[] = [
     downloadUrl: "https://kobra.bankbjb.co.id/docs/matrix/User_Access_Matrix_2026.xlsx",
     projectCode: "PRJ-2026-001",
     description: "Pemetaan hak akses role operator, supervisor, dan administrator sistem.",
+  },
+  {
+    id: "doc-08",
+    fileName: "Security_Hardening_Checklist_Compliant.pdf",
+    fileSize: "920 KB",
+    fileType: "pdf",
+    category: "Security & SAST",
+    uploadedAt: "2026-08-15 11:30",
+    uploadedBy: "IT Security Compliance",
+    downloadUrl: "https://kobra.bankbjb.co.id/docs/security/Security_Hardening_2026.pdf",
+    projectCode: "PRJ-2026-001",
+    description: "Daftar checklist verifikasi keamanan server, network ports, dan firewall rules.",
+  },
+  {
+    id: "doc-09",
+    fileName: "Approval_Memo_Divisi_IT_Security_Signed.pdf",
+    fileSize: "510 KB",
+    fileType: "pdf",
+    category: "Security & SAST",
+    uploadedAt: "2026-08-16 16:00",
+    uploadedBy: "Divisi IT Security",
+    downloadUrl: "https://kobra.bankbjb.co.id/docs/security/IT_Security_Clearance.pdf",
+    projectCode: "PRJ-2026-001",
+    description: "Surat rekomendasi dan persetujuan deployment dari Kepala Divisi IT Security.",
+  },
+  {
+    id: "doc-10",
+    fileName: "Infrastructure_Readiness_Checklist_DRC.pdf",
+    fileSize: "840 KB",
+    fileType: "pdf",
+    category: "Arsitektur",
+    uploadedAt: "2026-08-14 16:30",
+    uploadedBy: "Tim Infrastruktur & Database",
+    downloadUrl: "https://kobra.bankbjb.co.id/docs/infra/Infra_Readiness_Report.pdf",
+    projectCode: "PRJ-2026-001",
+    description: "Laporan kesiapan resource compute, RAM, storage, dan sinkronisasi DRC.",
+  },
+  {
+    id: "doc-11",
+    fileName: "Application_Source_Code_Hash_Verification.pdf",
+    fileSize: "420 KB",
+    fileType: "pdf",
+    category: "Manual & Runbook",
+    uploadedAt: "2026-08-17 08:45",
+    uploadedBy: "DevOps Engineer",
+    downloadUrl: "https://kobra.bankbjb.co.id/docs/build/Release_Tag_SHA256.pdf",
+    projectCode: "PRJ-2026-001",
+    description: "Verifikasi hash integritas Git tag build commit release.",
+  },
+  {
+    id: "doc-12",
+    fileName: "Disaster_Recovery_Rollback_Execution_Plan.docx",
+    fileSize: "680 KB",
+    fileType: "docx",
+    category: "Manual & Runbook",
+    uploadedAt: "2026-08-16 14:15",
+    uploadedBy: "Lead Engineer",
+    downloadUrl: "https://kobra.bankbjb.co.id/docs/plan/DR_Rollback_Plan.docx",
+    projectCode: "PRJ-2026-001",
+    description: "Rencana snapshot database rollback & blue-green traffic diversion jika migrasi gagal.",
+  },
+  {
+    id: "doc-13",
+    fileName: "Monitoring_APM_Grafana_Prometheus_Guide.pdf",
+    fileSize: "1.1 MB",
+    fileType: "pdf",
+    category: "Manual & Runbook",
+    uploadedAt: "2026-08-15 13:00",
+    uploadedBy: "Site Reliability Engineer",
+    downloadUrl: "https://kobra.bankbjb.co.id/docs/monitoring/Monitoring_Setup_Guide.pdf",
+    projectCode: "PRJ-2026-001",
+    description: "Dashboard URL, alert threshold, dan alerting rule kanal Telegram/Slack.",
+  },
+  {
+    id: "doc-14",
+    fileName: "Hardware_Deployment_PreChecklist_DC_v2.pdf",
+    fileSize: "1.1 MB",
+    fileType: "pdf",
+    category: "Manual & Runbook",
+    uploadedAt: "2026-08-15 10:00",
+    uploadedBy: "Hardware & DC Ops",
+    downloadUrl: "https://kobra.bankbjb.co.id/docs/hardware/HW_PreChecklist_DC.pdf",
+    projectCode: "PRJ-2026-001",
+    description: "Daftar periksa instalasi fisik rack, cabling PDU, dan pendingin ruang server.",
+  },
+  {
+    id: "doc-15",
+    fileName: "Topology_Hardware_Network_Storage_v3.1.pdf",
+    fileSize: "3.2 MB",
+    fileType: "pdf",
+    category: "Arsitektur",
+    uploadedAt: "2026-08-14 11:20",
+    uploadedBy: "Network & Storage Architect",
+    downloadUrl: "https://kobra.bankbjb.co.id/docs/hardware/HW_Topology_Storage.pdf",
+    projectCode: "PRJ-2026-001",
+    description: "Diagram interkoneksi SAN switch, HBA card port, dan VLAN isolasi.",
+  },
+  {
+    id: "doc-16",
+    fileName: "Hardware_Diagnostic_Functional_Test_Passed.xlsx",
+    fileSize: "890 KB",
+    fileType: "xlsx",
+    category: "UAT & QA",
+    uploadedAt: "2026-08-16 15:40",
+    uploadedBy: "QA & HW Tester",
+    downloadUrl: "https://kobra.bankbjb.co.id/docs/hardware/Diagnostic_Passed.xlsx",
+    projectCode: "PRJ-2026-001",
+    description: "Hasil stress test memori, disk I/O benchmark, dan power failover redundancy.",
+  },
+  {
+    id: "doc-17",
+    fileName: "Hardware_Fallback_HotSpare_SOP_v1.0.pdf",
+    fileSize: "1.3 MB",
+    fileType: "pdf",
+    category: "Manual & Runbook",
+    uploadedAt: "2026-08-15 17:10",
+    uploadedBy: "DC Operations Lead",
+    downloadUrl: "https://kobra.bankbjb.co.id/docs/hardware/HotSpare_Fallback_SOP.pdf",
+    projectCode: "PRJ-2026-001",
+    description: "Prosedur aktivasi modul hot-spare cadangan jika terjadi kegagalan modul hardware utama.",
+  },
+  {
+    id: "doc-18",
+    fileName: "Zabbix_Grafana_HW_Monitoring_Dashboard_Spec.pdf",
+    fileSize: "750 KB",
+    fileType: "pdf",
+    category: "Manual & Runbook",
+    uploadedAt: "2026-08-15 14:00",
+    uploadedBy: "NOC & Monitoring Team",
+    downloadUrl: "https://kobra.bankbjb.co.id/docs/hardware/HW_Monitoring_Spec.pdf",
+    projectCode: "PRJ-2026-001",
+    description: "Konfigurasi sensor SNMP, temperatur chassis, dan fan speed threshold alerting.",
   },
 ];

@@ -46,6 +46,7 @@ import {
 } from "react-icons/fi";
 
 import { radiusStyle } from "@/app/constants/applicationConstants";
+import { AppTabList, AppTabItem } from "@/app/components/TabsCustom";
 import { CabRequestItem } from "@/app/types/cabTypes";
 import { exportCabReportsGroupPdf, exportSingleCabMeetingPdf } from "@/app/helper/CabReportPdfExport";
 
@@ -348,8 +349,7 @@ const CabReportsTab = ({ items }: CabReportsTabProps) => {
       >
         <CardBody p={3}>
           <Tabs
-            variant="soft-rounded"
-            colorScheme="blue"
+            variant="unstyled"
             size="sm"
             index={periodMode === "DAY" ? 0 : periodMode === "WEEK" ? 1 : periodMode === "MONTH" ? 2 : 3}
             onChange={(idx) => {
@@ -358,32 +358,12 @@ const CabReportsTab = ({ items }: CabReportsTabProps) => {
               setCurrentPage(1);
             }}
           >
-            <TabList>
-              <Tab fontWeight="semibold">
-                <HStack spacing={1.5}>
-                  <Icon as={FiCalendar} />
-                  <Text>Per Hari</Text>
-                </HStack>
-              </Tab>
-              <Tab fontWeight="semibold">
-                <HStack spacing={1.5}>
-                  <Icon as={FiClock} />
-                  <Text>Per Minggu</Text>
-                </HStack>
-              </Tab>
-              <Tab fontWeight="semibold">
-                <HStack spacing={1.5}>
-                  <Icon as={FiGrid} />
-                  <Text>Per Bulan</Text>
-                </HStack>
-              </Tab>
-              <Tab fontWeight="semibold">
-                <HStack spacing={1.5}>
-                  <Icon as={FiLayers} />
-                  <Text>Per Kuartal (Q)</Text>
-                </HStack>
-              </Tab>
-            </TabList>
+            <AppTabList variant="segmented">
+              <AppTabItem icon={FiCalendar} label="Per Hari" />
+              <AppTabItem icon={FiClock} label="Per Minggu" />
+              <AppTabItem icon={FiGrid} label="Per Bulan" />
+              <AppTabItem icon={FiLayers} label="Per Kuartal (Q)" />
+            </AppTabList>
           </Tabs>
         </CardBody>
       </Card>
