@@ -77,6 +77,7 @@ import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useCabRequest from "@/app/services/useCabRequest";
 import { CabRequestItem } from "@/app/types/cabTypes";
+import CabReportsTab from "./components/CabReportsTab";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 interface CalendarStatusStyle {
@@ -89,24 +90,45 @@ interface CalendarStatusStyle {
 const getStatusCalendarStyle = (status?: string | null, isDark?: boolean): CalendarStatusStyle => {
   const safeStatus = String(status || "").toUpperCase();
   switch (safeStatus) {
-    case "WAITING APPROVE":
-    case "WAITING APPROVAL":
-    case "SCHEDULED":
+    case "REQUEST":
+    case "IN_REVIEW":
       return {
         bg: isDark ? "#1E3A8A" : "#DBEAFE",
         borderColor: isDark ? "#3B82F6" : "#93C5FD",
-        textColor: isDark ? "#EFF6FF" : "#1E40AF",
+        textColor: isDark ? "#EFF6FF" : "#1D4ED8",
         dotColor: "#3B82F6",
       };
-    case "REQUEST":
+    case "SCHEDULED":
     case "SUBMITTED":
-    case "IN_REVIEW":
       return {
         bg: isDark ? "#581C87" : "#F3E8FF",
         borderColor: isDark ? "#A855F7" : "#D8B4FE",
         textColor: isDark ? "#FAF5FF" : "#6B21A8",
         dotColor: "#9333EA",
       };
+    case "CONFIRM":
+      return {
+        bg: isDark ? "#115E59" : "#CCFBF1",
+        borderColor: isDark ? "#14B8A6" : "#5EEAD4",
+        textColor: isDark ? "#F0FDFA" : "#0F766E",
+        dotColor: "#14B8A6",
+      };
+    case "IMPLEMENT":
+      return {
+        bg: isDark ? "#7C2D12" : "#FFEDD5",
+        borderColor: isDark ? "#F97316" : "#FDBA74",
+        textColor: isDark ? "#FFF7ED" : "#C2410C",
+        dotColor: "#EA580C",
+      };
+    case "WAITING APPROVE":
+    case "WAITING APPROVAL":
+      return {
+        bg: isDark ? "#713F12" : "#FEF9C3",
+        borderColor: isDark ? "#EAB308" : "#FDE047",
+        textColor: isDark ? "#FEFCE8" : "#A16207",
+        dotColor: "#CA8A04",
+      };
+    case "COMPLETED":
     case "APPROVED":
       return {
         bg: isDark ? "#14532D" : "#DCFCE7",
@@ -242,7 +264,7 @@ const UpcomingSummaryPanel = ({
               <Flex justify="space-between" align="center" pt={1.5} borderTop="1px solid" borderColor={isDark ? "gray.700" : "gray.100"}>
                 <StatusBadge status={item.status} fontSize="2xs" px={2} py={0.5} rounded="full" />
 
-                {item.status === "REQUEST" || item.status === "SUBMITTED" || item.status === "IN_REVIEW" ? (
+                {item.status === "REQUEST" ? (
                   <Button
                     size="xs"
                     colorScheme="purple"
@@ -258,6 +280,24 @@ const UpcomingSummaryPanel = ({
                     }}
                   >
                     SCHEDULE
+                  </Button>
+                ) : item.status === "SUBMITTED" || item.status === "SCHEDULED" ? (
+                  <Button
+                    size="xs"
+                    colorScheme="cyan"
+                    variant="solid"
+                    rounded="md"
+                    px={2.5}
+                    h="24px"
+                    fontSize="2xs"
+                    fontWeight="bold"
+                    leftIcon={<FiEye />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onNavigate(item.id);
+                    }}
+                  >
+                    DETAIL
                   </Button>
                 ) : (
                   <Button
@@ -418,6 +458,8 @@ const CabRequestView = () => {
   // Role switcher
   const [mockRole, setMockRole] = useState<MockRole>("scheduler");
   const canMake = mockRole === "maker";
+  const canSchedule = mockRole === "scheduler";
+  const canApprove = mockRole === "approver";
 
   // Data
   const [DataList, setDataList] = useState<CabRequestItem[]>([]);
@@ -444,7 +486,7 @@ const CabRequestView = () => {
   const [calendarViewMode, setCalendarViewMode] = useState<"dayGridMonth" | "timeGridWeek">("dayGridMonth");
 
   const unscheduledCount = useMemo(
-    () => DataList.filter((r) => r.status === "REQUEST" || r.status === "SUBMITTED").length,
+    () => DataList.filter((r) => r.status === "REQUEST" || r.scheduledDate === null).length,
     [DataList]
   );
 
@@ -811,54 +853,112 @@ const CabRequestView = () => {
     () => [
       {
         id: "rowNumber",
-        header: "No.",
-        cell: (info) => <Text fontSize="sm" textAlign="center">{info.row.index + 1 + pagination.pageIndex * pagination.pageSize}.</Text>,
+        header: "NO.",
+        cell: (info) => (
+          <Text fontSize="sm" textAlign="center">
+            {info.row.index + 1 + pagination.pageIndex * pagination.pageSize}.
+          </Text>
+        ),
       },
       {
         accessorKey: "requestNo",
-        header: "Request No",
-        cell: (info) => <Text fontSize="sm" fontWeight="semibold" color="secondary.600">{info.getValue() as string}</Text>,
+        header: "REQUEST NO",
+        cell: (info) => (
+          <Text fontSize="sm" fontWeight="semibold" color="secondary.600">
+            {info.getValue() as string}
+          </Text>
+        ),
       },
       {
         accessorKey: "requestTitle",
-        header: "Title",
+        header: "TITLE",
         cell: (info) => (
           <VStack align="start" spacing={0}>
-            <Text fontSize="sm" fontWeight="medium" noOfLines={1}>{info.getValue() as string}</Text>
-            <Text fontSize="xs" color="gray.500">{info.row.original.projectName}</Text>
+            <Text fontSize="sm" fontWeight="medium" noOfLines={1}>
+              {info.getValue() as string}
+            </Text>
+            <Text fontSize="xs" color="gray.500">
+              {info.row.original.projectName}
+            </Text>
           </VStack>
         ),
       },
       {
         accessorKey: "requestType",
-        header: "Type",
-        cell: (info) => <Badge colorScheme="purple" variant="subtle" rounded="full" px={2} fontSize="xs">{info.getValue() as string}</Badge>,
-      },
-      {
-        accessorKey: "requestDate",
-        header: "Request Date",
-        cell: (info) => <Text fontSize="sm">{new Date(info.getValue() as string).toLocaleDateString("id-ID")}</Text>,
-      },
-      {
-        accessorKey: "targetDate",
-        header: "Target Date",
-        cell: (info) => <Text fontSize="sm">{new Date(info.getValue() as string).toLocaleDateString("id-ID")}</Text>,
+        header: "TYPE",
+        cell: (info) => (
+          <Badge colorScheme="purple" variant="subtle" rounded="full" px={2} fontSize="xs">
+            {info.getValue() as string}
+          </Badge>
+        ),
       },
       {
         accessorKey: "requesterName",
-        header: "Requester",
+        header: "REQUESTER",
         cell: (info) => <Text fontSize="sm">{info.getValue() as string}</Text>,
       },
       {
+        accessorKey: "requestDate",
+        header: "REQ DATE",
+        cell: (info) => {
+          const val = info.getValue() as string | null | undefined;
+          if (!val) return <Text fontSize="sm" color="gray.400">-</Text>;
+          const d = new Date(val);
+          return (
+            <Text fontSize="sm">
+              {isNaN(d.getTime()) ? val : d.toLocaleDateString("id-ID")}
+            </Text>
+          );
+        },
+      },
+      {
+        accessorKey: "scheduledDate",
+        header: "CAB DATE",
+        cell: (info) => {
+          const val = info.getValue() as string | null | undefined;
+          if (!val) {
+            return <Text fontSize="sm" color="gray.400" textAlign="center">-</Text>;
+          }
+          const d = new Date(val);
+          if (isNaN(d.getTime())) {
+            return <Text fontSize="sm" color="gray.400" textAlign="center">-</Text>;
+          }
+          const dateStr = d.toLocaleDateString("id-ID", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          });
+          const timeStr = val.includes("T") ? ` ${val.slice(11, 16)} WIB` : "";
+          return (
+            <VStack align="start" spacing={0}>
+              <Text fontSize="sm" fontWeight="medium" color="blue.600">
+                {dateStr}
+              </Text>
+              {timeStr && (
+                <Text fontSize="2xs" color="gray.500">
+                  {timeStr}
+                </Text>
+              )}
+            </VStack>
+          );
+        },
+      },
+      {
         accessorKey: "status",
-        header: "Status",
+        header: "STATUS",
         cell: (info) => <StatusBadge status={info.getValue() as string} rounded="full" px={3} py={1} fontSize="xs" />,
       },
       {
         id: "actions",
-        header: "Action",
+        header: "ACTION",
         cell: (info) => (
-          <Button size="xs" colorScheme="blue" variant="outline" leftIcon={<FiEye />} onClick={() => router.push(`/cab/cab-request/detail?id=${info.row.original.id}`)}>
+          <Button
+            size="xs"
+            colorScheme="blue"
+            variant="outline"
+            leftIcon={<FiEye />}
+            onClick={() => router.push(`/cab/cab-request/detail?id=${info.row.original.id}`)}
+          >
             Detail
           </Button>
         ),
@@ -893,7 +993,7 @@ const CabRequestView = () => {
 
   return (
     <LayoutAdmin>
-      <HeaderContent titleName="CAB Request" breadCrumb={["CAB", "CAB Request"]} />
+      <HeaderContent titleName="Change Advisory Board Request" breadCrumb={["CAB", "CAB Request"]} />
 
       {/* ─── Role Switcher ─── */}
       <Box mx={{ base: 4, sm: 5, md: 6 }} mt={3} mb={2}>
@@ -933,7 +1033,7 @@ const CabRequestView = () => {
                     <Icon as={FiFileText} boxSize={5} />
                   </Box>
                   <VStack align="start" spacing={0}>
-                    <Heading size="md" color={colorMode === "light" ? "gray.800" : "white"}>CAB Request</Heading>
+                    <Heading size="md" color={colorMode === "light" ? "gray.800" : "white"}>List Request</Heading>
                     <Text fontSize="sm" color="gray.500">{DataList.length} total requests • {DataCalendar.length} scheduled</Text>
                   </VStack>
                 </HStack>
@@ -949,11 +1049,24 @@ const CabRequestView = () => {
 
               <Divider />
 
-              {/* Tabs: Table + Calendar */}
+              {/* Tabs: Table + Calendar + Reports */}
               <Tabs variant="enclosed" colorScheme="blue" w="full" size="sm" isLazy>
                 <TabList>
                   <Tab><HStack spacing={2}><FiList /><Text>CAB List</Text></HStack></Tab>
                   <Tab><HStack spacing={2}><FiCalendar /><Text>Schedule Calendar</Text></HStack></Tab>
+                  {(canSchedule || canApprove) && (
+                    <Tab>
+                      <HStack spacing={2}>
+                        <FiFileText />
+                        <Text>CAB Reports</Text>
+                        {DataList.filter((i) => i.isCabDone === "Y" || ["IMPLEMENT", "WAITING APPROVAL", "COMPLETED"].includes(String(i.status).toUpperCase())).length > 0 && (
+                          <Badge colorScheme="green" variant="subtle" rounded="full" px={1.5} fontSize="3xs">
+                            {DataList.filter((i) => i.isCabDone === "Y" || ["IMPLEMENT", "WAITING APPROVAL", "COMPLETED"].includes(String(i.status).toUpperCase())).length}
+                          </Badge>
+                        )}
+                      </HStack>
+                    </Tab>
+                  )}
                 </TabList>
 
                 <TabPanels>
@@ -1326,6 +1439,13 @@ const CabRequestView = () => {
                       </VStack>
                     )}
                   </TabPanel>
+
+                  {/* ─── Tab 3: CAB Reports (Scheduler & Approver only) ─── */}
+                  {(canSchedule || canApprove) && (
+                    <TabPanel px={0} pt={4}>
+                      <CabReportsTab items={DataList} onRefresh={RefreshAction} />
+                    </TabPanel>
+                  )}
                 </TabPanels>
               </Tabs>
 

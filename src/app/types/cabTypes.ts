@@ -3,18 +3,31 @@
 export type CabStatus =
   | "DRAFT"
   | "REQUEST"
-  | "WAITING APPROVE"
-  | "APPROVED"
+  | "SCHEDULED"
+  | "CONFIRM"
+  | "IMPLEMENT"
+  | "WAITING APPROVAL"
+  | "COMPLETED"
   | "REJECTED"
-  | "CANCELED";
+  | "CANCELED"
+  | "SUBMITTED"
+  | "WAITING APPROVE"
+  | "APPROVED";
 
 export type CabRequestType =
+  | "NEW FEATURE"
+  | "ENHANCEMENT"
+  | "BUG FIXING"
+  | "TOOLS"
   | "DEPLOYMENT"
   | "CHANGE REQUEST"
   | "INFRASTRUCTURE"
   | "MAINTENANCE"
   | "HOTFIX"
-  | "EMERGENCY CHANGE";
+  | "EMERGENCY CHANGE"
+  | string;
+
+export type CabTipeCab = "NEW FEATURE" | "ENHANCEMENT" | "BUG FIXING" | "TOOLS";
 
 export type CabPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 
@@ -43,7 +56,12 @@ export interface CabRequestItem {
   requesterName: string;
   approverName: string;
   projectName: string;
+  category?: "SOFTWARE" | "HARDWARE" | string;
   priority?: CabPriority | string;
+  isCabDone?: "Y" | "N" | null;
+  cabResult?: string;
+  cabNotes?: string;
+  cabLocation?: string;
 }
 
 // ─── Detail (untuk halaman detail) ───────────────────────────────────────────
@@ -59,6 +77,79 @@ export interface CabRequestDetail extends CabRequestItem {
   approvalHistory: CabApprovalStep[];
   checklistItems?: CabChecklistItem[];
   activityChecklist?: CabActivityItem[];
+
+  // ─── Extended fields from Create Request ───
+  category?: CabCategory;
+  tipeCab?: CabTipeCab | string;
+  appSide?: "WEB" | "APP" | "DB" | "OTHER" | string;
+  appSideOther?: string;
+  applications?: CabSoftwareApplicationItem[];
+  rfcKodeProject?: string;
+  itspKode?: string;
+  aplikasiKategori?: string;
+  jenisCab?: CabJenisCab | "";
+  jenisCabEmergencyAlasan?: string;
+  
+  // UAT & Implementation Step
+  hasilUat?: ("BERHASIL_BAIK" | "BERHASIL_CATATAN" | "TIDAK_BERHASIL")[];
+  hasilUatCatatan?: string;
+  rekomendasiUat?: "REKOMENDASI_MIGRASI" | "PENGUJIAN_ULANG" | "";
+  isHaveMemo?: "Y" | "N";
+  perihalSementara?: string;
+  memoDirektoratPengirim?: string;
+  memoDivisiPengirim?: string;
+  memoNomor?: string;
+  memoPerihal?: string;
+  memoTanggal?: string;
+  memoTanggalDiterima?: string;
+  memoDurasiHari?: number;
+  tanggalPermohonanMigrasi?: string;
+  
+  // Downtime & Execution Step
+  ceklistMigrasi?: "ADA" | "TIDAK" | "TIDAK_ADA" | "";
+  ceklistMigrasiFile?: string | null;
+  ceklistMigrasiRundown?: string;
+  downtime?: "TIDAK" | "ADA" | "";
+  downtimeDurasi?: string;
+  risikoKonflik?: "ADA" | "TIDAK_ADA" | "YA" | "TIDAK" | "";
+  risikoKonflikAplikasi?: string[];
+  instalasiAreaDrc?: "YA" | "TIDAK" | "";
+  
+  // Readiness & Security Assessment Step
+  sast?: "ADA" | "TIDAK" | "";
+  sastFile?: string | null;
+  dokumenArsitektur?: "ADA" | "TIDAK" | "TIDAK_ADA" | "";
+  dokumenArsitekturLink?: string;
+  dokumenArsitekturFile?: string | null;
+  kesiapanInfrastruktur?: "YA" | "TIDAK" | "";
+  kesiapanInfrastrukturFile?: string | null;
+  sourceAplikasi?: "ADA" | "TIDAK" | "";
+  sourceAplikasiFile?: string | null;
+  userMatriks?: "ADA" | "TIDAK" | "";
+  userMatriksFile?: string | null;
+  toolsMonitoring?: "ADA" | "TIDAK_ADA" | "";
+  toolsMonitoringFile?: string | null;
+  securityChecklist?: "ADA" | "TIDAK_ADA" | "";
+  securityChecklistFile?: string | null;
+  persetujuanItSecurity?: "YA" | "TIDAK" | "";
+  persetujuanItSecurityAlasan?: string;
+  persetujuanItSecurityFile?: string | null;
+  petunjukTeknis?: "ADA" | "TIDAK_ADA" | "";
+  petunjukTeknisFile?: string | null;
+  
+  // Hardware specific fields
+  namaHardware?: string;
+  deskripsiPerubahan?: string;
+  dampakOperasional?: string;
+  dasarUpgrade?: string;
+  keputusanMigrasi?: "YA" | "TIDAK" | "";
+  kesepakatanWaktuPelaksanaan?: string;
+  testFungsional?: "ADA" | "TIDAK_ADA" | "";
+  perangkatMonitoring?: "YA" | "TIDAK" | "";
+
+  // PIC & Committee
+  picMigrasi?: CabPicInternalIT[] | CabPic | null;
+  committeeCab?: CabCommitteeMember[];
 }
 
 // ─── Approval Step ────────────────────────────────────────────────────────────
@@ -67,7 +158,7 @@ export interface CabApprovalStep {
   stepOrder: number;
   approverName: string;
   approverRole: string;
-  status: "PENDING" | "APPROVED" | "REJECTED";
+  status: "PENDING" | "APPROVED" | "REJECTED" | "COMPLETED" | "WAITING APPROVAL";
   actionDate: string | null;
   note: string | null;
 }
@@ -146,6 +237,17 @@ export interface CabCommitteeMember {
   asalDivisi?: string;
 }
 
+// ─── Software Application Item (Multiple Applications per Request) ───────────
+export interface CabSoftwareApplicationItem {
+  id?: string;
+  applicationId: string;
+  applicationName: string;
+  aplikasiKategori?: string;
+  rfcKodeProject: string;
+  rfcKodeProjectLabel?: string;
+  itspKode?: string;
+}
+
 // ─── Software Step Interfaces ────────────────────────────────────────────────
 export interface CabSoftwareStep1 {
   dayDate: string;
@@ -154,6 +256,10 @@ export interface CabSoftwareStep1 {
   rfcKodeProject: string;
   itspKode: string;
   aplikasiKategori: string;
+  tipeCab?: CabTipeCab | string;
+  appSide?: "WEB" | "APP" | "DB" | "OTHER" | string;
+  appSideOther?: string;
+  applications?: CabSoftwareApplicationItem[];
   requestedCabDate: string;
   jenisCab: CabJenisCab | "";
   jenisCabEmergencyAlasan?: string;
@@ -161,36 +267,59 @@ export interface CabSoftwareStep1 {
 
 export interface CabSoftwareStep2 {
   hasilUat: ("BERHASIL_BAIK" | "BERHASIL_CATATAN" | "TIDAK_BERHASIL")[];
+  hasilUatCatatan?: string;
   rekomendasiUat: "REKOMENDASI_MIGRASI" | "PENGUJIAN_ULANG" | "";
+  isHaveMemo?: "Y" | "N";
+  perihalSementara?: string;
+  memoDirektoratPengirim?: string;
+  memoDivisiPengirim?: string;
+  memoNomor?: string;
+  memoPerihal?: string;
+  memoTanggal?: string;
+  memoTanggalDiterima?: string;
+  memoDurasiHari?: number;
   tanggalPermohonanMigrasi?: string;
 }
 
 export interface CabSoftwareStep3 {
+  ceklistMigrasi: "ADA" | "TIDAK" | "";
+  ceklistMigrasiFile?: File | string | null;
   ceklistMigrasiRundown: string;
   downtime: "TIDAK" | "ADA" | "";
   downtimeDurasi?: string;
-  risikoKonflik: "ADA" | "TIDAK_ADA" | "";
+  risikoKonflik: "ADA" | "TIDAK_ADA" | "YA" | "TIDAK" | "";
+  risikoKonflikAplikasi?: string[];
   instalasiAreaDrc: "YA" | "TIDAK" | "";
 }
 
 export interface CabSoftwareStep4 {
   sast: "ADA" | "TIDAK" | "";
+  sastLink?: string;
+  sastFile?: File | string | null;
   dokumenArsitektur: "ADA" | "TIDAK" | "";
   dokumenArsitekturLink?: string;
-  dokumenArsitekturFile?: File | null;
+  dokumenArsitekturFile?: File | string | null;
   kesiapanInfrastruktur: "YA" | "TIDAK" | "";
+  kesiapanInfrastrukturFile?: File | string | null;
   sourceAplikasi: "ADA" | "TIDAK" | "";
+  sourceAplikasiFile?: File | string | null;
   userMatriks: "ADA" | "TIDAK" | "";
+  userMatriksFile?: File | string | null;
   rollbackPlan: "ADA" | "TIDAK_ADA" | "";
+  rollbackPlanFile?: File | string | null;
   toolsMonitoring: "ADA" | "TIDAK_ADA" | "";
+  toolsMonitoringFile?: File | string | null;
   securityChecklist: "ADA" | "TIDAK_ADA" | "";
+  securityChecklistFile?: File | string | null;
   persetujuanItSecurity: "YA" | "TIDAK" | "";
   persetujuanItSecurityAlasan?: string;
+  persetujuanItSecurityFile?: File | string | null;
   petunjukTeknis: "ADA" | "TIDAK_ADA" | "";
+  petunjukTeknisFile?: File | string | null;
 }
 
 export interface CabSoftwareStep5 {
-  picMigrasi: CabPic | null;
+  picMigrasi: CabPicInternalIT[];
   committeeCab: CabCommitteeMember[];
 }
 
@@ -226,16 +355,22 @@ export interface CabHardwareStep2 {
 
 export interface CabHardwareStep3 {
   checklist: "ADA" | "TIDAK_ADA" | "";
+  checklistFile?: File | string | null;
   dokumenArsitektur: "ADA" | "TIDAK_ADA" | "";
+  dokumenArsitekturFile?: File | string | null;
   testFungsional: "ADA" | "TIDAK_ADA" | "";
+  testFungsionalFile?: File | string | null;
   rollbackPlan: "ADA" | "TIDAK_ADA" | "";
+  rollbackPlanFile?: File | string | null;
   perangkatMonitoring: "YA" | "TIDAK" | "";
   perangkatMonitoringDetail?: string;
+  perangkatMonitoringFile?: File | string | null;
   persetujuanItSecurity: "YA" | "TIDAK" | "";
+  persetujuanItSecurityFile?: File | string | null;
 }
 
 export interface CabHardwareStep4 {
-  picMigrasi: CabPic | null;
+  picMigrasi: CabPicInternalIT[];
   committeeCab: CabCommitteeMember[];
 }
 

@@ -4,25 +4,34 @@ import { useEffect, useState } from "react";
 import {
   Badge,
   Box,
+  Button,
+  Card,
+  CardBody,
+  Flex,
   FormControl,
   FormLabel,
   HStack,
+  Icon,
+  IconButton,
   Input,
+  Select,
+  SimpleGrid,
   Stack,
   Text,
   Textarea,
+  Tooltip,
   useColorMode,
   VStack,
 } from "@chakra-ui/react";
 import { Select as ChakraSelect } from "chakra-react-select";
-import { AnimatePresence, motion } from "framer-motion";
+import { FiLayers, FiPlus, FiTrash2 } from "react-icons/fi";
 
 import { InputGroupPanel } from "@/app/components/customPanels";
-import { InputLayout, InputLayoutFull } from "@/app/components/layoutContentBody";
+import { InputLayout } from "@/app/components/layoutContentBody";
 import { ApplicationMasterResponse } from "@/app/services/useApps";
 import { RequirementsResponse } from "@/app/services/useRequirements";
 import { ProjectDataResponse } from "@/app/services/useProjects";
-import { CabSoftwareStep1 } from "@/app/types/cabTypes";
+import { CabSoftwareApplicationItem, CabSoftwareStep1 } from "@/app/types/cabTypes";
 import RadioGroupField from "../RadioGroupField";
 
 interface SoftwareStep1Props {
@@ -40,7 +49,14 @@ interface ProjectOption {
   type: string;
 }
 
-const SoftwareStep1 = ({ data, onChange, fetchApplications, fetchRequirements, fetchProjects, tokenData }: SoftwareStep1Props) => {
+const SoftwareStep1 = ({
+  data,
+  onChange,
+  fetchApplications,
+  fetchRequirements,
+  fetchProjects,
+  tokenData,
+}: SoftwareStep1Props) => {
   const { colorMode } = useColorMode();
   const isDark = colorMode === "dark";
 
@@ -48,63 +64,216 @@ const SoftwareStep1 = ({ data, onChange, fetchApplications, fetchRequirements, f
   const [appList, setAppList] = useState<ApplicationMasterResponse[]>([]);
   const [appLoading, setAppLoading] = useState(false);
 
-  // Project/RFC options
-  const [projectOptions, setProjectOptions] = useState<ProjectOption[]>([]);
+  // Global Project/RFC/BRD options pool
+  const [globalProjectOptions, setGlobalProjectOptions] = useState<ProjectOption[]>([]);
   const [projectLoading, setProjectLoading] = useState(false);
 
-  // Load apps on mount
+  // Map of per-app specific project options
+  const [appProjectMap, setAppProjectMap] = useState<Record<string, ProjectOption[]>>({});
+
+  // Load apps & global projects on mount
   useEffect(() => {
-    if (tokenData) loadApps();
+    if (tokenData) {
+      loadAppsAndProjects();
+    }
   }, [tokenData]);
 
-  const loadApps = async () => {
+  const loadAppsAndProjects = async () => {
     setAppLoading(true);
-    const apps = await fetchApplications("", tokenData);
-    setAppList(apps);
-    setAppLoading(false);
+    setProjectLoading(true);
+    try {
+      const [apps, brdReqs, rfcReqs, projects] = await Promise.all([
+        fetchApplications("", tokenData),
+        fetchRequirements("", tokenData, "BRD"),
+        fetchRequirements("", tokenData, "RFC"),
+        fetchProjects("", tokenData),
+      ]);
+
+      setAppList(apps || []);
+
+      const pOptions: ProjectOption[] = [];
+      (brdReqs || []).forEach((r) =>
+        pOptions.push({
+          label: `[BRD] ${r.reqNumber} — ${r.reqNarative || r.appInitialName || "BRD Document"}`,
+          value: r.reqNumber,
+          type: "BRD",
+        })
+      );
+      (rfcReqs || []).forEach((r) =>
+        pOptions.push({
+          label: `[RFC] ${r.reqNumber} — ${r.reqNarative || r.appInitialName || "RFC Change Request"}`,
+          value: r.reqNumber,
+          type: "RFC",
+        })
+      );
+      (projects || []).forEach((p) =>
+        pOptions.push({
+          label: `[PROJECT] ${p.projectCode} — ${p.projectName}`,
+          value: p.projectCode,
+          type: "PROJECT",
+        })
+      );
+
+      setGlobalProjectOptions(pOptions);
+    } catch (err) {
+      console.error("Failed loading apps or project requirements", err);
+    } finally {
+      setAppLoading(false);
+      setProjectLoading(false);
+    }
   };
 
   // Map apps to chakra-react-select options
   const appOptions = appList.map((a) => ({
     label: `${a.appShortName} — ${a.appName}`,
     value: a.id,
+    data: a,
   }));
 
-  // When app is selected, load related projects
-  const handleAppSelect = async (option: { label: string; value: string } | null) => {
-    if (!option) {
-      onChange({ ...data, applicationId: "", applicationName: "", aplikasiKategori: "", rfcKodeProject: "" });
-      setProjectOptions([]);
-      return;
-    }
+  // Applications list from state or initialized with 1 item
+  const rawApplications: CabSoftwareApplicationItem[] =
+    data.applications && data.applications.length > 0
+      ? data.applications
+      : data.applicationId
+      ? [
+          {
+            id: `app-item-0`,
+            applicationId: data.applicationId,
+            applicationName: data.applicationName,
+            aplikasiKategori: data.aplikasiKategori,
+            rfcKodeProject: data.rfcKodeProject,
+            itspKode: data.itspKode,
+          },
+        ]
+      : [
+          {
+            id: `app-item-0`,
+            applicationId: "",
+            applicationName: "",
+            aplikasiKategori: "",
+            rfcKodeProject: "",
+            itspKode: "",
+          },
+        ];
 
-    const app = appList.find((a) => a.id === option.value);
-    if (!app) return;
+  // Helper to commit application list updates & sync primary fields
+  const updateApplications = (newList: CabSoftwareApplicationItem[]) => {
+    const firstApp = newList[0] || {
+      applicationId: "",
+      applicationName: "",
+      aplikasiKategori: "",
+      rfcKodeProject: "",
+      itspKode: "",
+    };
 
     onChange({
       ...data,
-      applicationId: app.id,
-      applicationName: app.appName,
-      aplikasiKategori: app.appTypes || "",
-      rfcKodeProject: "",
+      applications: newList,
+      applicationId: firstApp.applicationId,
+      applicationName: firstApp.applicationName,
+      aplikasiKategori: firstApp.aplikasiKategori || "",
+      rfcKodeProject: firstApp.rfcKodeProject || "",
+      itspKode: firstApp.itspKode || data.itspKode || "",
     });
+  };
 
-    // Load related BRD/RFC/Projects
-    setProjectLoading(true);
-    const options: ProjectOption[] = [];
+  // Add new application item
+  const handleAddApplication = () => {
+    const newItem: CabSoftwareApplicationItem = {
+      id: `app-item-${Date.now()}`,
+      applicationId: "",
+      applicationName: "",
+      aplikasiKategori: "",
+      rfcKodeProject: "",
+      itspKode: data.itspKode || "",
+    };
+    updateApplications([...rawApplications, newItem]);
+  };
 
-    const [brdReqs, rfcReqs, projects] = await Promise.all([
-      fetchRequirements("", tokenData, "BRD"),
-      fetchRequirements("", tokenData, "RFC"),
-      app.reqParentId ? fetchProjects("", tokenData, app.reqParentId) : Promise.resolve([]),
-    ]);
+  // Remove application item
+  const handleRemoveApplication = (index: number) => {
+    if (rawApplications.length <= 1) {
+      updateApplications([
+        {
+          id: `app-item-0`,
+          applicationId: "",
+          applicationName: "",
+          aplikasiKategori: "",
+          rfcKodeProject: "",
+          itspKode: "",
+        },
+      ]);
+      return;
+    }
+    const newList = rawApplications.filter((_, idx) => idx !== index);
+    updateApplications(newList);
+  };
 
-    brdReqs.forEach((r) => options.push({ label: `[BRD] ${r.reqNumber}`, value: r.reqNumber, type: "BRD" }));
-    rfcReqs.forEach((r) => options.push({ label: `[RFC] ${r.reqNumber}`, value: r.reqNumber, type: "RFC" }));
-    projects.forEach((p) => options.push({ label: `[PROJECT] ${p.projectCode} — ${p.projectName}`, value: p.projectCode, type: "PROJECT" }));
+  // Change single application item field
+  const handleAppItemChange = async (
+    index: number,
+    field: keyof CabSoftwareApplicationItem,
+    value: string
+  ) => {
+    const newList = [...rawApplications];
+    newList[index] = { ...newList[index], [field]: value };
+    updateApplications(newList);
+  };
 
-    setProjectOptions(options);
-    setProjectLoading(false);
+  // When application select changes for an item
+  const handleSelectApp = async (index: number, selectedOpt: any) => {
+    const newList = [...rawApplications];
+    if (!selectedOpt) {
+      newList[index] = {
+        ...newList[index],
+        applicationId: "",
+        applicationName: "",
+        aplikasiKategori: "",
+        rfcKodeProject: "",
+      };
+      updateApplications(newList);
+      return;
+    }
+
+    const app = appList.find((a) => a.id === selectedOpt.value);
+    const appName = app?.appName || selectedOpt.label;
+    const category = app?.appTypes || "";
+
+    newList[index] = {
+      ...newList[index],
+      applicationId: selectedOpt.value,
+      applicationName: appName,
+      aplikasiKategori: category,
+      rfcKodeProject: "",
+    };
+    updateApplications(newList);
+
+    // If app has specific reqParentId, fetch its specific project options
+    if (app?.reqParentId && !appProjectMap[app.id]) {
+      try {
+        const specificProjects = await fetchProjects("", tokenData, app.reqParentId);
+        const mappedSpecific: ProjectOption[] = specificProjects.map((p) => ({
+          label: `[PROJECT] ${p.projectCode} — ${p.projectName}`,
+          value: p.projectCode,
+          type: "PROJECT",
+        }));
+        setAppProjectMap((prev) => ({ ...prev, [app.id]: mappedSpecific }));
+      } catch (e) {
+        console.error("Failed fetching app-specific projects", e);
+      }
+    }
+  };
+
+  // Get project options for a specific application row
+  const getProjectOptionsForRow = (appId: string): ProjectOption[] => {
+    if (!appId) return globalProjectOptions;
+    const specific = appProjectMap[appId];
+    if (specific && specific.length > 0) {
+      const specificValues = new Set(specific.map((s) => s.value));
+      const rest = globalProjectOptions.filter((g) => !specificValues.has(g.value));
+      return [...specific, ...rest];
+    }
+    return globalProjectOptions;
   };
 
   // Styles for chakra-react-select
@@ -113,111 +282,305 @@ const SoftwareStep1 = ({ data, onChange, fetchApplications, fetchRequirements, f
       ...provided,
       bg: isDark ? "gray.700" : "white",
       borderColor: isDark ? "gray.600" : "gray.200",
+      rounded: "md",
     }),
     menu: (provided: any) => ({
       ...provided,
       bg: isDark ? "gray.700" : "white",
+      zIndex: 9999,
     }),
   };
 
+  const selectedAppsCount = rawApplications.filter((a) => a.applicationId).length;
+
   return (
     <VStack spacing={5} align="stretch" w="full">
-      <InputGroupPanel headerTitle="Identitas Request">
-        {/* <FormControl isRequired>
+      {/* ─── SECTION 1: APLIKASI & PROJECT TERKAIT ─── */}
+      <Card
+        rounded="lg"
+        border="1px solid"
+        borderColor={isDark ? "gray.700" : "gray.200"}
+        bg={isDark ? "gray.800" : "white"}
+        shadow="none"
+      >
+        {/* Section Header with Blue Background */}
+        <Box
+          px={5}
+          py={3.5}
+          bg={isDark ? "#1E3A8A" : "#1D4ED8"}
+          borderTopRadius="lg"
+        >
+          <Flex justify="space-between" align="center" wrap="wrap" gap={3}>
+            <HStack spacing={3}>
+              <Icon as={FiLayers} color="white" fontSize="md" />
+              <VStack align="start" spacing={0}>
+                <HStack spacing={2}>
+                  <Text fontSize="sm" fontWeight="bold" color="white">
+                    Aplikasi & Project Terkait
+                  </Text>
+                  <Badge
+                    bg="whiteAlpha.250"
+                    color="white"
+                    border="1px solid"
+                    borderColor="whiteAlpha.400"
+                    rounded="full"
+                    px={2}
+                    py={0.5}
+                    fontSize="3xs"
+                  >
+                    {selectedAppsCount} Terpilih
+                  </Badge>
+                </HStack>
+                <Text fontSize="xs" color="blue.100">
+                  Pilih aplikasi utama yang diajukan beserta sistem terkait lainnya.
+                </Text>
+              </VStack>
+            </HStack>
+          </Flex>
+        </Box>
+
+        {/* Applications List */}
+        <CardBody p={5}>
+          <VStack spacing={3.5} align="stretch">
+            {rawApplications.map((appItem, index) => {
+              const isMainApp = index === 0;
+              const currentProjectOptions = getProjectOptionsForRow(appItem.applicationId);
+              const selectedAppOpt = appItem.applicationId
+                ? appOptions.find((o) => o.value === appItem.applicationId) || {
+                    label: appItem.applicationName,
+                    value: appItem.applicationId,
+                  }
+                : null;
+              const selectedProjectOpt = appItem.rfcKodeProject
+                ? currentProjectOptions.find((o) => o.value === appItem.rfcKodeProject) || {
+                    label: appItem.rfcKodeProject,
+                    value: appItem.rfcKodeProject,
+                    type: "RFC",
+                  }
+                : null;
+
+              return (
+                <Box
+                  key={appItem.id || index}
+                  p={4}
+                  rounded="md"
+                  border="1px solid"
+                  borderColor={isDark ? "gray.700" : "gray.200"}
+                  bg={isDark ? "gray.750" : "gray.50"}
+                >
+                  {/* Row Header */}
+                  <Flex justify="space-between" align="center" mb={3}>
+                    <HStack spacing={2}>
+                      <Badge
+                        colorScheme={isMainApp ? "blue" : "gray"}
+                        variant={isMainApp ? "solid" : "subtle"}
+                        rounded="md"
+                        px={2}
+                        py={0.5}
+                        fontSize="2xs"
+                        fontWeight="semibold"
+                      >
+                        {isMainApp ? "Aplikasi Utama" : `Aplikasi Terkait #${index}`}
+                      </Badge>
+
+                      {appItem.applicationName && (
+                        <Text
+                          fontSize="xs"
+                          fontWeight="semibold"
+                          color={isDark ? "gray.200" : "gray.800"}
+                        >
+                          {appItem.applicationName}
+                        </Text>
+                      )}
+                      {appItem.aplikasiKategori && (
+                        <Badge colorScheme="purple" variant="subtle" rounded="full" px={1.5} fontSize="3xs">
+                          {appItem.aplikasiKategori}
+                        </Badge>
+                      )}
+                    </HStack>
+
+                    {!isMainApp && (
+                      <Tooltip label="Hapus baris ini" placement="top" hasArrow>
+                        <IconButton
+                          aria-label="Hapus aplikasi"
+                          icon={<FiTrash2 />}
+                          size="xs"
+                          colorScheme="red"
+                          variant="ghost"
+                          onClick={() => handleRemoveApplication(index)}
+                        />
+                      </Tooltip>
+                    )}
+                  </Flex>
+
+                  {/* Clean 2-Field Grid: Pilih Aplikasi & Related Project */}
+                  <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3.5}>
+                    {/* 1. Pilih Aplikasi */}
+                    <FormControl isRequired={isMainApp}>
+                      <FormLabel fontSize="xs" fontWeight="medium" color={isDark ? "gray.300" : "gray.600"} mb={1}>
+                        {isMainApp ? "Aplikasi Utama*" : "Aplikasi Terkait"}
+                      </FormLabel>
+                      <ChakraSelect
+                        placeholder={isMainApp ? "Pilih aplikasi utama..." : "Pilih aplikasi terkait..."}
+                        options={appOptions}
+                        isLoading={appLoading}
+                        value={selectedAppOpt}
+                        onChange={(opt) => handleSelectApp(index, opt)}
+                        isClearable={!isMainApp}
+                        isSearchable
+                        chakraStyles={selectStyles}
+                        menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
+                      />
+                    </FormControl>
+
+                    {/* 2. Related Project / RFC / BRD */}
+                    <FormControl isRequired={isMainApp}>
+                      <FormLabel fontSize="xs" fontWeight="medium" color={isDark ? "gray.300" : "gray.600"} mb={1}>
+                        {isMainApp ? "Project / RFC / BRD*" : "Project / RFC / BRD"}
+                      </FormLabel>
+                      <ChakraSelect
+                        placeholder={
+                          appItem.applicationId
+                            ? "Pilih project terkait..."
+                            : "Pilih aplikasi terlebih dahulu..."
+                        }
+                        options={currentProjectOptions}
+                        isLoading={projectLoading}
+                        value={selectedProjectOpt}
+                        onChange={(opt: any) =>
+                          handleAppItemChange(index, "rfcKodeProject", opt?.value || "")
+                        }
+                        isClearable
+                        isSearchable
+                        chakraStyles={selectStyles}
+                        menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
+                        formatOptionLabel={(opt: any) => (
+                          <HStack spacing={2}>
+                            <Badge
+                              colorScheme={
+                                opt.type === "BRD"
+                                  ? "blue"
+                                  : opt.type === "RFC"
+                                  ? "orange"
+                                  : "green"
+                              }
+                              fontSize="3xs"
+                              rounded="sm"
+                              px={1}
+                            >
+                              {opt.type || "RFC"}
+                            </Badge>
+                            <Text fontSize="xs">
+                              {String(opt.label || "").replace(/^\[(BRD|RFC|PROJECT)\]\s*/, "")}
+                            </Text>
+                          </HStack>
+                        )}
+                      />
+                    </FormControl>
+                  </SimpleGrid>
+                </Box>
+              );
+            })}
+
+            {/* Bottom Add Button */}
+            <Button
+              size="sm"
+              variant="outline"
+              colorScheme="blue"
+              rounded="md"
+              leftIcon={<FiPlus />}
+              onClick={handleAddApplication}
+              w="full"
+            >
+              Tambah Aplikasi Terkait
+            </Button>
+          </VStack>
+        </CardBody>
+      </Card>
+
+      {/* ─── SECTION 2: INFORMASI PERMOHONAN CAB ─── */}
+      <InputGroupPanel headerTitle="Informasi Permohonan CAB">
+        <FormControl isRequired>
           <InputLayout>
             <FormLabel h="full" mt={2}>Tanggal Permohonan CAB</FormLabel>
             <Stack spacing={0}>
-              <Input type="date" value={data.dayDate} onChange={(e) => onChange({ ...data, dayDate: e.target.value })} />
-            </Stack>
-          </InputLayout>
-        </FormControl> */}
-
-        <FormControl isRequired>
-          <InputLayoutFull>
-            <FormLabel h="full" mt={2}>Pilih Aplikasi</FormLabel>
-            <Stack spacing={0}>
-              <ChakraSelect
-                placeholder="Pilih"
-                options={appOptions}
-                isLoading={appLoading}
-                value={data.applicationId ? appOptions.find((o) => o.value === data.applicationId) || null : null}
-                onChange={(opt) => handleAppSelect(opt as { label: string; value: string } | null)}
-                isClearable
-                isSearchable
-                chakraStyles={selectStyles}
-                menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
+              <Input
+                type="datetime-local"
+                rounded="md"
+                value={data.requestedCabDate}
+                onChange={(e) => onChange({ ...data, requestedCabDate: e.target.value })}
               />
             </Stack>
-          </InputLayoutFull>
-        </FormControl>
-
-        <AnimatePresence>
-          {data.applicationId && (
-            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }}>
-              <FormControl isRequired>
-                <InputLayoutFull>
-                  <FormLabel h="full" mt={2}>Related Project / RFC / BRD</FormLabel>
-                  <Stack spacing={0}>
-                    <ChakraSelect
-                      placeholder="Pilih project terkait..."
-                      options={projectOptions}
-                      isLoading={projectLoading}
-                      value={data.rfcKodeProject ? projectOptions.find((o) => o.value === data.rfcKodeProject) || null : null}
-                      onChange={(opt) => onChange({ ...data, rfcKodeProject: (opt as ProjectOption | null)?.value || "" })}
-                      isClearable
-                      isSearchable
-                      chakraStyles={selectStyles}
-                      menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
-                      formatOptionLabel={(opt: any) => (
-                        <HStack spacing={2}>
-                          <Badge
-                            colorScheme={opt.type === "BRD" ? "blue" : opt.type === "RFC" ? "orange" : "green"}
-                            fontSize="2xs"
-                            rounded="sm"
-                          >
-                            {opt.type}
-                          </Badge>
-                          <Text fontSize="sm">
-                            {String(opt.label || "").replace(/^\[(BRD|RFC|PROJECT)\]\s*/, "")}
-                          </Text>
-                        </HStack>
-                      )}
-                    />
-                    {projectOptions.length > 0 && (
-                      <Text fontSize="xs" color="gray.500" mt={1}>
-                        {projectOptions.filter((o) => o.type === "BRD").length} BRD • {projectOptions.filter((o) => o.type === "RFC").length} RFC • {projectOptions.filter((o) => o.type === "PROJECT").length} Project
-                      </Text>
-                    )}
-                  </Stack>
-                </InputLayoutFull>
-              </FormControl>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        <FormControl isRequired>
-          <InputLayout>
-            <FormLabel h="full" mt={2}>ITSP Kode</FormLabel>
-            <Stack spacing={0}>
-              <Input placeholder="Masukkan kode ITSP" value={data.itspKode} onChange={(e) => onChange({ ...data, itspKode: e.target.value })} />
-            </Stack>
           </InputLayout>
         </FormControl>
 
-        <FormControl>
+        <FormControl isRequired>
           <InputLayout>
-            <FormLabel h="full" mt={2}>Kategori Aplikasi</FormLabel>
+            <FormLabel h="full" mt={2}>Tipe CAB</FormLabel>
             <Stack spacing={0}>
-              <Input value={data.aplikasiKategori} isReadOnly bg={isDark ? "gray.600" : "gray.100"} placeholder="Auto-fill dari aplikasi" />
+              <Select
+                placeholder="Pilih Tipe CAB"
+                rounded="md"
+                value={data.tipeCab || ""}
+                onChange={(e) => onChange({ ...data, tipeCab: e.target.value })}
+              >
+                <option value="NEW FEATURE">New Feature</option>
+                <option value="ENHANCEMENT">Enhancement</option>
+                <option value="BUG FIXING">Bug Fixing</option>
+                <option value="TOOLS">Tools</option>
+              </Select>
             </Stack>
           </InputLayout>
         </FormControl>
 
         <FormControl isRequired>
           <InputLayout>
-            <FormLabel h="full" mt={2}>Tanggal Permohonan CAB</FormLabel>
+            <FormLabel h="full" mt={2}>App Side</FormLabel>
+            <Stack spacing={2}>
+              <Select
+                placeholder="Pilih App Side"
+                rounded="md"
+                value={data.appSide || ""}
+                onChange={(e) => onChange({ ...data, appSide: e.target.value })}
+              >
+                <option value="WEB">WEB</option>
+                <option value="APP">APP</option>
+                <option value="DB">DB</option>
+                <option value="OTHER">OTHER (Lainnya)</option>
+              </Select>
+              {data.appSide === "OTHER" && (
+                <Input
+                  placeholder="Tuliskan app side"
+                  rounded="md"
+                  size="sm"
+                  value={data.appSideOther || ""}
+                  onChange={(e) => onChange({ ...data, appSideOther: e.target.value })}
+                />
+              )}
+            </Stack>
+          </InputLayout>
+        </FormControl>
+
+        <FormControl isRequired>
+          <InputLayout>
+            <FormLabel h="full" mt={2}>Kode ITSP</FormLabel>
             <Stack spacing={0}>
-              <Input type="datetime-local" value={data.requestedCabDate} onChange={(e) => onChange({ ...data, requestedCabDate: e.target.value })} />
+              <Input
+                placeholder="Contoh: ITSP-BJB-990"
+                rounded="md"
+                value={data.itspKode}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  onChange({
+                    ...data,
+                    itspKode: val,
+                    applications: rawApplications.map((app) => ({
+                      ...app,
+                      itspKode: app.itspKode || val,
+                    })),
+                  });
+                }}
+              />
             </Stack>
           </InputLayout>
         </FormControl>
@@ -227,13 +590,24 @@ const SoftwareStep1 = ({ data, onChange, fetchApplications, fetchRequirements, f
           name="jenisCab"
           value={data.jenisCab}
           onChange={(val) => onChange({ ...data, jenisCab: val as any })}
-          options={[{ label: "Weekly", value: "WEEKLY" }, { label: "Emergency", value: "EMERGENCY" }]}
+          options={[
+            { label: "Weekly", value: "WEEKLY" },
+            { label: "Emergency", value: "EMERGENCY" },
+          ]}
           isRequired
           showChildren={data.jenisCab === "EMERGENCY"}
         >
           <FormControl isRequired>
             <FormLabel fontSize="sm">Alasan Emergency</FormLabel>
-            <Textarea placeholder="Jelaskan alasan emergency..." rows={3} value={data.jenisCabEmergencyAlasan || ""} onChange={(e) => onChange({ ...data, jenisCabEmergencyAlasan: e.target.value })} />
+            <Textarea
+              placeholder="Jelaskan alasan pengajuan emergency..."
+              rows={3}
+              rounded="md"
+              value={data.jenisCabEmergencyAlasan || ""}
+              onChange={(e) =>
+                onChange({ ...data, jenisCabEmergencyAlasan: e.target.value })
+              }
+            />
           </FormControl>
         </RadioGroupField>
       </InputGroupPanel>

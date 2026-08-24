@@ -135,14 +135,16 @@ export const getStatusColor = (status?: string | null): string => {
   const s = String(status).toUpperCase();
   // Handle CAB specific statuses
   if (s === "DRAFT") return "gray";
-  if (s === "REQUEST" || s === "SUBMITTED") return "purple";
-  if (s === "WAITING APPROVE" || s === "WAITING APPROVAL" || s === "SCHEDULED" || s === "IN_REVIEW") return "blue";
-  if (s === "APPROVED") return "green";
+  if (s === "REQUEST") return "blue";
+  if (s === "SCHEDULED" || s === "SUBMITTED") return "purple";
+  if (s === "CONFIRM") return "teal";
+  if (s === "IMPLEMENT") return "orange";
+  if (s === "WAITING APPROVE" || s === "WAITING APPROVAL" || s === "IN_REVIEW") return "yellow";
+  if (s === "APPROVED" || s === "COMPLETED") return "green";
   if (s === "REJECTED") return "red";
   if (s === "CANCELED") return "red";
   if (s === "ON HOLD") return "orange";
   if (s === "INITIATING") return "blue";
-  if (s === "COMPLETED") return "green";
 
   return STATUS_COLORS[s as keyof typeof STATUS_COLORS] || "gray";
 };

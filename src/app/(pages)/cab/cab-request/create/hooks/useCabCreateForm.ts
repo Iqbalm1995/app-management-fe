@@ -37,6 +37,10 @@ const INITIAL_SW_STEP1: CabSoftwareStep1 = {
   rfcKodeProject: "",
   itspKode: "",
   aplikasiKategori: "",
+  tipeCab: "",
+  appSide: "",
+  appSideOther: "",
+  applications: [],
   requestedCabDate: "",
   jenisCab: "",
   jenisCabEmergencyAlasan: "",
@@ -44,15 +48,28 @@ const INITIAL_SW_STEP1: CabSoftwareStep1 = {
 
 const INITIAL_SW_STEP2: CabSoftwareStep2 = {
   hasilUat: [],
+  hasilUatCatatan: "",
   rekomendasiUat: "",
+  isHaveMemo: "" as any,
+  perihalSementara: "",
+  memoDirektoratPengirim: "Direktorat IT & Operasional",
+  memoDivisiPengirim: "",
+  memoNomor: "",
+  memoPerihal: "",
+  memoTanggal: "",
+  memoTanggalDiterima: "",
+  memoDurasiHari: 0,
   tanggalPermohonanMigrasi: "",
 };
 
 const INITIAL_SW_STEP3: CabSoftwareStep3 = {
+  ceklistMigrasi: "",
+  ceklistMigrasiFile: null,
   ceklistMigrasiRundown: "",
   downtime: "",
   downtimeDurasi: "",
   risikoKonflik: "",
+  risikoKonflikAplikasi: [],
   instalasiAreaDrc: "",
 };
 
@@ -73,7 +90,7 @@ const INITIAL_SW_STEP4: CabSoftwareStep4 = {
 };
 
 const INITIAL_SW_STEP5: CabSoftwareStep5 = {
-  picMigrasi: null,
+  picMigrasi: [],
   committeeCab: [],
 };
 
@@ -99,16 +116,22 @@ const INITIAL_HW_STEP2: CabHardwareStep2 = {
 
 const INITIAL_HW_STEP3: CabHardwareStep3 = {
   checklist: "",
+  checklistFile: null,
   dokumenArsitektur: "",
+  dokumenArsitekturFile: null,
   testFungsional: "",
+  testFungsionalFile: null,
   rollbackPlan: "",
+  rollbackPlanFile: null,
   perangkatMonitoring: "",
   perangkatMonitoringDetail: "",
+  perangkatMonitoringFile: null,
   persetujuanItSecurity: "",
+  persetujuanItSecurityFile: null,
 };
 
 const INITIAL_HW_STEP4: CabHardwareStep4 = {
-  picMigrasi: null,
+  picMigrasi: [],
   committeeCab: [],
 };
 
