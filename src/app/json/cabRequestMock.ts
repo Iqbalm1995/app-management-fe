@@ -397,7 +397,7 @@ export const MOCK_INTERNAL_BJB_USERS = [
 
 // ─── MOCK CAB LIST (With 4 standard CAB Types: NEW FEATURE, ENHANCEMENT, BUG FIXING, TOOLS) ───
 export const MOCK_CAB_LIST: CabRequestItem[] = [
-  // ── SCHEDULED (Scheduled by Scheduler, waiting for CAB meeting) ──
+  // ── PELAKSANAAN (Scheduled by Scheduler, meeting session) ──
   {
     id: "cab-001",
     requestNo: "0001/CAB/08/2026",
@@ -409,7 +409,7 @@ export const MOCK_CAB_LIST: CabRequestItem[] = [
     requestedCabDate: "2026-08-19T09:00:00",
     scheduledDate: "2026-08-21T09:00:00",
     scheduledEndDate: "2026-08-21T10:30:00",
-    status: "SCHEDULED",
+    status: "PELAKSANAAN",
     isCabDone: "N",
     cabLocation: "Ruang Rapat IT Lt. 3",
     requesterName: "Iqbal Maulana",
@@ -439,7 +439,7 @@ export const MOCK_CAB_LIST: CabRequestItem[] = [
     projectName: "Core Banking Modernization",
     priority: "CRITICAL",
   },
-  // ── REQUEST (Submitted by Maker, waiting for Scheduler) ──
+  // ── PENGAJUAN (Submitted by Maker, waiting for Scheduler) ──
   {
     id: "cab-003",
     requestNo: "0003/CAB/08/2026",
@@ -451,14 +451,14 @@ export const MOCK_CAB_LIST: CabRequestItem[] = [
     requestedCabDate: "2026-08-22T14:00:00",
     scheduledDate: null,
     scheduledEndDate: null,
-    status: "REQUEST",
+    status: "PENGAJUAN",
     isCabDone: "N",
     requesterName: "Deni Saputra",
     approverName: "Budi Santoso",
     projectName: "Network Security Hardening",
     priority: "MEDIUM",
   },
-  // ── SCHEDULED ──
+  // ── PELAKSANAAN ──
   {
     id: "cab-004",
     requestNo: "0004/CAB/08/2026",
@@ -470,7 +470,7 @@ export const MOCK_CAB_LIST: CabRequestItem[] = [
     requestedCabDate: "2026-08-20T10:00:00",
     scheduledDate: "2026-08-22T10:00:00",
     scheduledEndDate: "2026-08-22T11:30:00",
-    status: "SCHEDULED",
+    status: "PELAKSANAAN",
     isCabDone: "N",
     cabLocation: "Online - Microsoft Teams",
     requesterName: "Rina Marlina",
@@ -478,7 +478,7 @@ export const MOCK_CAB_LIST: CabRequestItem[] = [
     projectName: "Infrastructure Maintenance Q3",
     priority: "LOW",
   },
-  // ── WAITING APPROVAL (Evaluated, waiting sign-off from Approver) ──
+  // ── SEND TO APPROVAL (Evaluated, waiting sign-off from Approver) ──
   {
     id: "cab-005",
     requestNo: "0005/CAB/08/2026",
@@ -490,7 +490,7 @@ export const MOCK_CAB_LIST: CabRequestItem[] = [
     requestedCabDate: "2026-08-18T15:00:00",
     scheduledDate: "2026-08-20T13:30:00",
     scheduledEndDate: "2026-08-20T14:30:00",
-    status: "WAITING APPROVAL",
+    status: "SEND TO APPROVAL",
     isCabDone: "Y",
     cabResult: "APPROVED",
     cabNotes: "Patch JWT session expiry fix telah disetujui komite, menunggu sign-off approver.",
@@ -566,7 +566,7 @@ export const MOCK_CAB_LIST: CabRequestItem[] = [
     projectName: "Notification Services v3",
     priority: "MEDIUM",
   },
-  // ── CONFIRM (Pelaksanaan Rapat CAB terkonfirmasi bersama tim) ──
+  // ── PELAKSANAAN (Pelaksanaan Rapat CAB terkonfirmasi bersama tim) ──
   {
     id: "cab-009",
     requestNo: "0009/CAB/08/2026",
@@ -578,7 +578,7 @@ export const MOCK_CAB_LIST: CabRequestItem[] = [
     requestedCabDate: "2026-08-20T14:00:00",
     scheduledDate: "2026-08-21T13:30:00",
     scheduledEndDate: "2026-08-21T15:00:00",
-    status: "CONFIRM",
+    status: "PELAKSANAAN",
     isCabDone: "N",
     cabLocation: "Ruang Rapat IT Lt. 2",
     requesterName: "Hendra Wijaya",
@@ -712,7 +712,7 @@ export const MOCK_CAB_LIST: CabRequestItem[] = [
     projectName: "Redis Cluster Capacity Scale-out",
     priority: "MEDIUM",
   },
-  // ── REQUEST ──
+  // ── PENGAJUAN ──
   {
     id: "cab-016",
     requestNo: "0013/CAB/08/2026",
@@ -724,14 +724,14 @@ export const MOCK_CAB_LIST: CabRequestItem[] = [
     requestedCabDate: "2026-08-25T09:00:00",
     scheduledDate: null,
     scheduledEndDate: null,
-    status: "REQUEST",
+    status: "PENGAJUAN",
     isCabDone: "N",
     requesterName: "Refan Hidayat",
     approverName: "Ahmad Fauzi",
     projectName: "BI-FAST Settlement Phase 4",
     priority: "CRITICAL",
   },
-  // ── SCHEDULED ──
+  // ── PELAKSANAAN ──
   {
     id: "cab-017",
     requestNo: "0014/CAB/08/2026",
@@ -743,7 +743,7 @@ export const MOCK_CAB_LIST: CabRequestItem[] = [
     requestedCabDate: "2026-08-24T14:00:00",
     scheduledDate: "2026-08-25T14:00:00",
     scheduledEndDate: "2026-08-25T15:30:00",
-    status: "SCHEDULED",
+    status: "PELAKSANAAN",
     isCabDone: "N",
     cabLocation: "Ruang Rapat IT Lt. 4",
     requesterName: "Deni Saputra",
@@ -751,7 +751,7 @@ export const MOCK_CAB_LIST: CabRequestItem[] = [
     projectName: "SAN Storage Datacenter Upgrade",
     priority: "HIGH",
   },
-  // ── IMPLEMENT (Evaluasi Migrasi / Mark as Done) ──
+  // ── IMPLEMENTASI (Evaluasi Migrasi / Mark as Done) ──
   {
     id: "cab-018",
     requestNo: "0015/CAB/08/2026",
@@ -763,7 +763,7 @@ export const MOCK_CAB_LIST: CabRequestItem[] = [
     requestedCabDate: "2026-08-20T10:00:00",
     scheduledDate: "2026-08-21T10:00:00",
     scheduledEndDate: "2026-08-21T11:00:00",
-    status: "IMPLEMENT",
+    status: "IMPLEMENTASI",
     isCabDone: "Y",
     cabResult: "APPROVED",
     cabNotes: "Pengujian integrasi point engine sukses. Evaluasi migrasi selesai.",
@@ -831,7 +831,7 @@ export const MOCK_CAB_DETAIL: Record<string, CabRequestDetail> = {
     requestedCabDate: "2026-08-19T09:00:00",
     scheduledDate: "2026-08-21T09:00:00",
     scheduledEndDate: "2026-08-21T10:30:00",
-    status: "SCHEDULED",
+    status: "PELAKSANAAN",
     isCabDone: "N",
     requesterName: "Iqbal Maulana",
     requesterEmail: "iqbal.maulana@bjb.co.id",
@@ -893,7 +893,7 @@ export const MOCK_CAB_DETAIL: Record<string, CabRequestDetail> = {
     requestedCabDate: "2026-08-22T14:00:00",
     scheduledDate: null,
     scheduledEndDate: null,
-    status: "REQUEST",
+    status: "PENGAJUAN",
     isCabDone: "N",
     requesterName: "Deni Saputra",
     requesterEmail: "deni.saputra@bjb.co.id",
@@ -917,7 +917,7 @@ export const MOCK_CAB_DETAIL: Record<string, CabRequestDetail> = {
     requestedCabDate: "2026-08-18T15:00:00",
     scheduledDate: "2026-08-20T13:30:00",
     scheduledEndDate: "2026-08-20T14:30:00",
-    status: "WAITING APPROVAL",
+    status: "SEND TO APPROVAL",
     isCabDone: "Y",
     cabResult: "APPROVED",
     cabNotes: "Patch JWT session expiry fix telah disetujui komite, menunggu sign-off approver.",

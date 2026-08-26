@@ -160,7 +160,7 @@ const SoftwareStep1 = ({
     data.applications && data.applications.length > 0
       ? data.applications
       : data.applicationId
-      ? [
+        ? [
           {
             id: `app-item-0`,
             applicationId: data.applicationId,
@@ -171,7 +171,7 @@ const SoftwareStep1 = ({
             itspKode: data.itspKode,
           },
         ]
-      : [
+        : [
           {
             id: `app-item-0`,
             applicationId: "",
@@ -377,16 +377,16 @@ const SoftwareStep1 = ({
               const currentProjectOptions = getProjectOptionsForRow(appItem.applicationId);
               const selectedAppOpt = appItem.applicationId
                 ? appOptions.find((o) => o.value === appItem.applicationId) || {
-                    label: appItem.applicationName,
-                    value: appItem.applicationId,
-                  }
+                  label: appItem.applicationName,
+                  value: appItem.applicationId,
+                }
                 : null;
               const selectedProjectOpt = appItem.rfcKodeProject
                 ? currentProjectOptions.find((o) => o.value === appItem.rfcKodeProject) || {
-                    label: appItem.rfcKodeProject,
-                    value: appItem.rfcKodeProject,
-                    type: "RFC",
-                  }
+                  label: appItem.rfcKodeProject,
+                  value: appItem.rfcKodeProject,
+                  type: "RFC",
+                }
                 : null;
               const appCategory =
                 appItem.aplikasiKategori ||
@@ -460,8 +460,8 @@ const SoftwareStep1 = ({
                           appLoading
                             ? "Memuat data aplikasi..."
                             : isMainApp
-                            ? `Cari & pilih aplikasi utama (${appList.length} tersedia)...`
-                            : `Cari & pilih aplikasi terkait (${appList.length} tersedia)...`
+                              ? `Cari & pilih aplikasi utama (${appList.length} tersedia)...`
+                              : `Cari & pilih aplikasi terkait (${appList.length} tersedia)...`
                         }
                         options={appOptions}
                         isLoading={appLoading}
@@ -548,8 +548,8 @@ const SoftwareStep1 = ({
                                 opt.type === "BRD"
                                   ? "blue"
                                   : opt.type === "RFC"
-                                  ? "orange"
-                                  : "green"
+                                    ? "orange"
+                                    : "green"
                               }
                               fontSize="3xs"
                               rounded="sm"
@@ -603,6 +603,25 @@ const SoftwareStep1 = ({
 
         <FormControl isRequired>
           <InputLayout>
+            <FormLabel h="full" mt={2}>Kategori Aplikasi</FormLabel>
+            <Stack spacing={0}>
+              <Select
+                placeholder="Pilih Kategori Aplikasi"
+                rounded="md"
+                value={data.aplikasiKategori || ""}
+                onChange={(e) => onChange({ ...data, aplikasiKategori: e.target.value })}
+              >
+                <option value="Monitoring">Monitoring</option>
+                <option value="Transaksional">Transaksional</option>
+                <option value="Regulatory">Regulatory</option>
+                <option value="Pelaporan">Pelaporan</option>
+              </Select>
+            </Stack>
+          </InputLayout>
+        </FormControl>
+        
+        <FormControl isRequired>
+          <InputLayout>
             <FormLabel h="full" mt={2}>Tipe CAB</FormLabel>
             <Stack spacing={0}>
               <Select
@@ -622,25 +641,6 @@ const SoftwareStep1 = ({
 
         <FormControl isRequired>
           <InputLayout>
-            <FormLabel h="full" mt={2}>Kategori Aplikasi</FormLabel>
-            <Stack spacing={0}>
-              <Select
-                placeholder="Pilih Kategori Aplikasi"
-                rounded="md"
-                value={data.aplikasiKategori || ""}
-                onChange={(e) => onChange({ ...data, aplikasiKategori: e.target.value })}
-              >
-                <option value="Monitoring">Monitoring</option>
-                <option value="Transaksional">Transaksional</option>
-                <option value="Regulatory">Regulatory</option>
-                <option value="Pelaporan">Pelaporan</option>
-              </Select>
-            </Stack>
-          </InputLayout>
-        </FormControl>
-
-        <FormControl isRequired>
-          <InputLayout>
             <FormLabel h="full" mt={2}>App Side</FormLabel>
             <Stack spacing={2}>
               <Select
@@ -652,6 +652,7 @@ const SoftwareStep1 = ({
                 <option value="WEB">WEB</option>
                 <option value="APP">APP</option>
                 <option value="DB">DB</option>
+                <option value="ALL">ALL</option>
                 <option value="OTHER">OTHER (Lainnya)</option>
               </Select>
               {data.appSide === "OTHER" && (

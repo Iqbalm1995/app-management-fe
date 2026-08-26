@@ -180,7 +180,7 @@ export const BulkSendToApprovalModal = ({
               <HStack spacing={2.5} align="start">
                 <Icon as={FiCheckSquare} color="blue.500" boxSize={4} mt={0.5} />
                 <Text fontSize="xs" color={isDark ? "blue.200" : "blue.800"} lineHeight="tall">
-                  Sebanyak <b>{selectedRequests.length}</b> permohonan berstatus <b>CONFIRM</b> akan diajukan ke antrean persetujuan (<i>Approval Inbox</i>).
+                  Sebanyak <b>{selectedRequests.length}</b> permohonan berstatus <b>Pelaksanaan</b> akan diajukan ke antrean persetujuan (<i>Approval Inbox</i>).
                 </Text>
               </HStack>
             </Box>

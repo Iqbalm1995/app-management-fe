@@ -10,13 +10,20 @@ import {
   Icon,
   SimpleGrid,
   Stack,
-  Tag,
-  TagLabel,
+  Table,
+  TableContainer,
+  Tbody,
+  Td,
   Text,
+  Th,
+  Thead,
+  Tr,
   useColorMode,
   VStack,
   Wrap,
   WrapItem,
+  Tag,
+  TagLabel,
 } from "@chakra-ui/react";
 import { FiFileText } from "react-icons/fi";
 
@@ -323,17 +330,12 @@ const SoftwareReview = ({ step1, step2, step3, step4, step5 }: SoftwareReviewPro
           <InputLayoutFull>
             <FormLabel h="full" mt={2}>Ceklist Migrasi (SW) & Rundown</FormLabel>
             <Stack spacing={1}>
-              <Text>{renderYesNo(step3.ceklistMigrasi || (step3.ceklistMigrasiRundown ? "ADA" : "TIDAK"))}</Text>
+              <Text>{renderYesNo(step3.ceklistMigrasi || "TIDAK")}</Text>
               {step3.ceklistMigrasiFile && (
                 <HStack spacing={1.5} color="blue.500" fontSize="xs">
                   <Icon as={FiFileText} />
                   <Text fontWeight="medium">{typeof step3.ceklistMigrasiFile === "string" ? step3.ceklistMigrasiFile : step3.ceklistMigrasiFile.name}</Text>
                 </HStack>
-              )}
-              {step3.ceklistMigrasiRundown && (
-                <Text fontSize="xs" whiteSpace="pre-wrap" color="gray.600" mt={1}>
-                  {step3.ceklistMigrasiRundown}
-                </Text>
               )}
             </Stack>
           </InputLayoutFull>
@@ -535,7 +537,7 @@ const SoftwareReview = ({ step1, step2, step3, step4, step5 }: SoftwareReviewPro
                     <WrapItem key={idx}>
                       <Tag size="md" rounded="full" colorScheme="blue" variant="subtle">
                         <TagLabel fontSize="xs">
-                          {pic.userName} {pic.divisi ? `(${pic.divisi})` : ""}
+                          {pic.userName} 
                         </TagLabel>
                       </Tag>
                     </WrapItem>
@@ -550,21 +552,82 @@ const SoftwareReview = ({ step1, step2, step3, step4, step5 }: SoftwareReviewPro
         <FormControl>
           <InputLayoutFull>
             <FormLabel h="full" mt={2}>Committee CAB ({step5.committeeCab.length})</FormLabel>
-            <Stack spacing={2}>
+            <Box w="full" mt={1}>
               {step5.committeeCab.length > 0 ? (
-                <Wrap spacing={2}>
-                  {step5.committeeCab.map((m, idx) => (
-                    <WrapItem key={idx}>
-                      <Tag size="md" rounded="full" colorScheme={m.type === "INTERNAL_IT" ? "blue" : m.type === "INTERNAL_BJB" ? "green" : "purple"} variant="subtle">
-                        <TagLabel fontSize="xs">{m.userName}{m.type === "EXTERNAL" ? (m.asalInstitusi ? ` (${m.asalInstitusi})` : "") : (m.asalDivisi ? ` (${m.asalDivisi})` : "")}</TagLabel>
-                      </Tag>
-                    </WrapItem>
-                  ))}
-                </Wrap>
+                <TableContainer
+                  w="full"
+                  border="1px"
+                  borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                  rounded="lg"
+                  overflow="hidden"
+                >
+                  <Table size="sm" variant="simple">
+                    <Thead bg={colorMode === "light" ? "gray.50" : "gray.750"}>
+                      <Tr>
+                        <Th w="60px" textAlign="center" fontSize="2xs" color="gray.500">
+                          NO
+                        </Th>
+                        <Th fontSize="2xs" color="gray.500">
+                          NAME
+                        </Th>
+                        <Th fontSize="2xs" color="gray.500">
+                          ASAL DIVISI
+                        </Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {step5.committeeCab.map((m, idx) => {
+                        const divisionOrInstitution =
+                          m.type === "EXTERNAL"
+                            ? m.asalInstitusi || m.asalDivisi || "-"
+                            : m.asalDivisi || "-";
+                        return (
+                          <Tr
+                            key={idx}
+                            _hover={{ bg: colorMode === "light" ? "gray.50" : "gray.700" }}
+                          >
+                            <Td textAlign="center" fontSize="xs" fontWeight="semibold" color="gray.500">
+                              {idx + 1}
+                            </Td>
+                            <Td fontSize="xs">
+                              <HStack spacing={2}>
+                                <Text fontWeight="semibold">{m.userName}</Text>
+                                <Badge
+                                  fontSize="3xs"
+                                  rounded="full"
+                                  px={2}
+                                  colorScheme={
+                                    m.type === "INTERNAL_IT"
+                                      ? "blue"
+                                      : m.type === "INTERNAL_BJB"
+                                      ? "green"
+                                      : "purple"
+                                  }
+                                  variant="subtle"
+                                >
+                                  {m.type === "INTERNAL_IT"
+                                    ? "IT"
+                                    : m.type === "INTERNAL_BJB"
+                                    ? "BJB"
+                                    : "Eksternal"}
+                                </Badge>
+                              </HStack>
+                            </Td>
+                            <Td fontSize="xs" color={colorMode === "light" ? "gray.600" : "gray.300"}>
+                              {divisionOrInstitution}
+                            </Td>
+                          </Tr>
+                        );
+                      })}
+                    </Tbody>
+                  </Table>
+                </TableContainer>
               ) : (
-                <Text color="gray.400">Belum ada anggota</Text>
+                <Text color="gray.400" fontSize="sm">
+                  Belum ada anggota
+                </Text>
               )}
-            </Stack>
+            </Box>
           </InputLayoutFull>
         </FormControl>
       </InputGroupPanel>

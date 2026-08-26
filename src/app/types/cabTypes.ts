@@ -2,10 +2,15 @@
 
 export type CabStatus =
   | "DRAFT"
+  | "PENGAJUAN"
   | "REQUEST"
+  | "PENJADWALAN"
   | "SCHEDULED"
+  | "PELAKSANAAN"
   | "CONFIRM"
+  | "IMPLEMENTASI"
   | "IMPLEMENT"
+  | "SEND TO APPROVAL"
   | "WAITING APPROVAL"
   | "COMPLETED"
   | "REJECTED"
@@ -89,6 +94,8 @@ export interface CabRequestDetail extends CabRequestItem {
   tipeCab?: CabTipeCab | string;
   appSide?: "WEB" | "APP" | "DB" | "OTHER" | string;
   appSideOther?: string;
+  applicationId?: string;
+  applicationName?: string;
   applications?: CabSoftwareApplicationItem[];
   rfcKodeProject?: string;
   itspKode?: string;

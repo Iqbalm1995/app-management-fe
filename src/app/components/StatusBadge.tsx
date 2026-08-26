@@ -1,7 +1,7 @@
 "use client";
 
 import { Badge, BadgeProps } from "@chakra-ui/react";
-import { getStatusColor } from "@/app/constants/masterStatusConstants";
+import { formatCabStatusLabel, getStatusColor } from "@/app/constants/masterStatusConstants";
 
 interface StatusBadgeProps extends Omit<BadgeProps, 'colorScheme'> {
   status: string;
@@ -10,13 +10,16 @@ interface StatusBadgeProps extends Omit<BadgeProps, 'colorScheme'> {
 
 export function StatusBadge({ status = "", variant = "subtle", ...props }: StatusBadgeProps) {
   const safeStatus = String(status || "");
+  const color = getStatusColor(safeStatus);
+  const label = formatCabStatusLabel(safeStatus);
+
   return (
     <Badge
-      colorScheme={getStatusColor(safeStatus)}
+      colorScheme={color}
       variant={variant}
       {...props}
     >
-      {safeStatus || "—"}
+      {label || "—"}
     </Badge>
   );
 }

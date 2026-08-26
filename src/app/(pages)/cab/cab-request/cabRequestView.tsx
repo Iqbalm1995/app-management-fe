@@ -103,6 +103,7 @@ interface CalendarStatusStyle {
 const getStatusCalendarStyle = (status?: string | null, isDark?: boolean): CalendarStatusStyle => {
   const safeStatus = String(status || "").toUpperCase();
   switch (safeStatus) {
+    case "PENGAJUAN":
     case "REQUEST":
     case "IN_REVIEW":
       return {
@@ -111,6 +112,7 @@ const getStatusCalendarStyle = (status?: string | null, isDark?: boolean): Calen
         textColor: isDark ? "#EFF6FF" : "#1D4ED8",
         dotColor: "#3B82F6",
       };
+    case "PENJADWALAN":
     case "SCHEDULED":
     case "SUBMITTED":
       return {
@@ -119,6 +121,7 @@ const getStatusCalendarStyle = (status?: string | null, isDark?: boolean): Calen
         textColor: isDark ? "#FAF5FF" : "#6B21A8",
         dotColor: "#9333EA",
       };
+    case "PELAKSANAAN":
     case "CONFIRM":
       return {
         bg: isDark ? "#115E59" : "#CCFBF1",
@@ -126,6 +129,7 @@ const getStatusCalendarStyle = (status?: string | null, isDark?: boolean): Calen
         textColor: isDark ? "#F0FDFA" : "#0F766E",
         dotColor: "#14B8A6",
       };
+    case "IMPLEMENTASI":
     case "IMPLEMENT":
       return {
         bg: isDark ? "#7C2D12" : "#FFEDD5",
@@ -133,6 +137,8 @@ const getStatusCalendarStyle = (status?: string | null, isDark?: boolean): Calen
         textColor: isDark ? "#FFF7ED" : "#C2410C",
         dotColor: "#EA580C",
       };
+    case "SEND TO APPROVAL":
+    case "SEND_TO_APPROVAL":
     case "WAITING APPROVE":
     case "WAITING APPROVAL":
       return {
@@ -277,7 +283,7 @@ const UpcomingSummaryPanel = ({
               <Flex justify="space-between" align="center" pt={1.5} borderTop="1px solid" borderColor={isDark ? "gray.700" : "gray.100"}>
                 <StatusBadge status={item.status} fontSize="2xs" px={2} py={0.5} rounded="full" />
 
-                {item.status === "REQUEST" ? (
+                {item.status === "PENGAJUAN" || item.status === "REQUEST" ? (
                   <Button
                     size="xs"
                     colorScheme="purple"
@@ -727,20 +733,24 @@ const CabRequestView = () => {
 
   // Bulk Approval state & modal (for CONFIRM status)
   const bulkApprovalModal = useDisclosure();
-  const [schedulerStatusFilter, setSchedulerStatusFilter] = useState<"ALL" | "REQUEST" | "CONFIRM">("ALL");
+  const [schedulerStatusFilter, setSchedulerStatusFilter] = useState<"ALL" | "REQUEST" | "CONFIRM" | "IMPLEMENTASI">("ALL");
 
   // Table pagination (CAB List - excludes REQUEST)
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
   const pagination = useMemo(() => ({ pageIndex, pageSize }), [pageIndex, pageSize]);
   const [globalFilter, setGlobalFilter] = useState<string>("");
 
-  // CAB List only (Exclude REQUEST items from CAB List tab)
+  // CAB List only (Exclude REQUEST/PENGAJUAN items from CAB List tab)
   const cabListOnly = useMemo(
-    () => DataList.filter((item) => String(item.status).toUpperCase() !== "REQUEST"),
+    () =>
+      DataList.filter((item) => {
+        const s = String(item.status).toUpperCase();
+        return s !== "REQUEST" && s !== "PENGAJUAN";
+      }),
     [DataList]
   );
 
-  // Pending Table pagination & filter (CAB Request Tab - Status REQUEST & CONFIRM - Scheduler only)
+  // Pending Table pagination & filter (CAB Request Tab - Status REQUEST/PENGAJUAN, CONFIRM/PELAKSANAAN, IMPLEMENTASI/IMPLEMENT - Scheduler only)
   const [{ pageIndex: pendingPageIndex, pageSize: pendingPageSize }, setPendingPagination] =
     useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
   const pendingPagination = useMemo(
@@ -750,21 +760,41 @@ const CabRequestView = () => {
   const [pendingGlobalFilter, setPendingGlobalFilter] = useState<string>("");
 
   const countRequest = useMemo(
-    () => DataList.filter((item) => String(item.status).toUpperCase() === "REQUEST").length,
+    () =>
+      DataList.filter((item) => {
+        const s = String(item.status).toUpperCase();
+        return s === "REQUEST" || s === "PENGAJUAN";
+      }).length,
     [DataList]
   );
   const countConfirm = useMemo(
-    () => DataList.filter((item) => String(item.status).toUpperCase() === "CONFIRM").length,
+    () =>
+      DataList.filter((item) => {
+        const s = String(item.status).toUpperCase();
+        return s === "CONFIRM" || s === "PELAKSANAAN" || s === "PENJADWALAN" || s === "SCHEDULED" || s === "SUBMITTED";
+      }).length,
     [DataList]
   );
-  const totalSchedulerQueue = countRequest + countConfirm;
+  const countImplementasi = useMemo(
+    () =>
+      DataList.filter((item) => {
+        const s = String(item.status).toUpperCase();
+        return s === "IMPLEMENTASI" || s === "IMPLEMENT";
+      }).length,
+    [DataList]
+  );
+  const totalSchedulerQueue = countRequest + countConfirm + countImplementasi;
 
   const pendingRequestsList = useMemo(() => {
     return DataList.filter((item) => {
       const st = String(item.status).toUpperCase();
-      if (schedulerStatusFilter === "REQUEST") return st === "REQUEST";
-      if (schedulerStatusFilter === "CONFIRM") return st === "CONFIRM";
-      return st === "REQUEST" || st === "CONFIRM";
+      const isReq = st === "REQUEST" || st === "PENGAJUAN";
+      const isConf = st === "CONFIRM" || st === "PELAKSANAAN" || st === "PENJADWALAN" || st === "SCHEDULED" || st === "SUBMITTED";
+      const isImp = st === "IMPLEMENTASI" || st === "IMPLEMENT";
+      if (schedulerStatusFilter === "REQUEST") return isReq;
+      if (schedulerStatusFilter === "CONFIRM") return isConf;
+      if (schedulerStatusFilter === "IMPLEMENTASI") return isImp;
+      return isReq || isConf || isImp;
     });
   }, [DataList, schedulerStatusFilter]);
 
@@ -774,19 +804,40 @@ const CabRequestView = () => {
     return DataList.filter((item) => selectedIds.includes(item.id));
   }, [rowSelection, DataList]);
 
-  // Active selected status lock: "REQUEST" | "CONFIRM" | null
+  // Active selected status lock: "REQUEST" | "CONFIRM" | "IMPLEMENTASI" | null
   const activeSelectedStatus = useMemo(() => {
     if (selectedRequestsList.length === 0) return null;
-    return String(selectedRequestsList[0]?.status || "").toUpperCase();
+    const s = String(selectedRequestsList[0]?.status || "").toUpperCase();
+    if (s === "PENGAJUAN" || s === "REQUEST") return "REQUEST";
+    if (s === "PELAKSANAAN" || s === "CONFIRM" || s === "PENJADWALAN" || s === "SCHEDULED") return "CONFIRM";
+    if (s === "IMPLEMENTASI" || s === "IMPLEMENT") return "IMPLEMENTASI";
+    return s;
   }, [selectedRequestsList]);
 
   const selectedRequestItems = useMemo(
-    () => selectedRequestsList.filter((i) => String(i.status).toUpperCase() === "REQUEST"),
+    () =>
+      selectedRequestsList.filter((i) => {
+        const s = String(i.status).toUpperCase();
+        return s === "REQUEST" || s === "PENGAJUAN";
+      }),
     [selectedRequestsList]
   );
 
   const selectedConfirmItems = useMemo(
-    () => selectedRequestsList.filter((i) => String(i.status).toUpperCase() === "CONFIRM"),
+    () =>
+      selectedRequestsList.filter((i) => {
+        const s = String(i.status).toUpperCase();
+        return s === "CONFIRM" || s === "PELAKSANAAN" || s === "PENJADWALAN" || s === "SCHEDULED" || s === "SUBMITTED";
+      }),
+    [selectedRequestsList]
+  );
+
+  const selectedImplementasiItems = useMemo(
+    () =>
+      selectedRequestsList.filter((i) => {
+        const s = String(i.status).toUpperCase();
+        return s === "IMPLEMENTASI" || s === "IMPLEMENT";
+      }),
     [selectedRequestsList]
   );
 
@@ -796,7 +847,7 @@ const CabRequestView = () => {
     if (success) {
       toast({
         title: "Jadwal CAB Berhasil Disimpan",
-        description: `${items.length} permohonan berhasil dijadwalkan (Status ➔ SCHEDULED).`,
+        description: `${items.length} permohonan berhasil dijadwalkan (Status ➔ Pelaksanaan).`,
         status: "success",
         duration: 3500,
         isClosable: true,
@@ -846,12 +897,12 @@ const CabRequestView = () => {
 
   const handleOpenBulkForUnscheduled = () => {
     const unscheduled = DataList.filter(
-      (r) => r.status === "REQUEST" || r.status === "IN_REVIEW" || !r.scheduledDate
+      (r) => r.status === "PENGAJUAN" || r.status === "REQUEST" || r.status === "IN_REVIEW" || !r.scheduledDate
     );
     if (unscheduled.length === 0) {
       toast({
         title: "Semua Permohonan Terjadwal",
-        description: "Tidak ada permohonan CAB berstatus Request yang perlu dijadwalkan.",
+        description: "Tidak ada permohonan CAB berstatus Pengajuan yang perlu dijadwalkan.",
         status: "info",
         duration: 2500,
         isClosable: true,
@@ -867,12 +918,12 @@ const CabRequestView = () => {
   const handleCalendarDateClick = (dateStr: string) => {
     if (!canSchedule) return;
     const eligible = DataList.filter(
-      (r) => r.status === "REQUEST" || r.status === "IN_REVIEW" || !r.scheduledDate
+      (r) => r.status === "PENGAJUAN" || r.status === "REQUEST" || r.status === "IN_REVIEW" || !r.scheduledDate
     );
     if (eligible.length === 0) {
       toast({
         title: "Semua Permohonan Terjadwal",
-        description: "Tidak ada permohonan CAB berstatus Request yang perlu dijadwalkan.",
+        description: "Tidak ada permohonan CAB berstatus Pengajuan yang perlu dijadwalkan.",
         status: "info",
         duration: 2500,
         isClosable: true,
@@ -894,10 +945,10 @@ const CabRequestView = () => {
   const [activeQuickFilter, setActiveQuickFilter] = useState<string>("This Month");
   const [calendarViewMode, setCalendarViewMode] = useState<"dayGridMonth" | "timeGridWeek">("dayGridMonth");
 
-  // Filter calendar data: exclude REQUEST and DRAFT, and for Maker role filter by requesterName
+  // Filter calendar data: exclude REQUEST/PENGAJUAN and DRAFT, and for Maker role filter by requesterName
   const visibleCalendarData = useMemo(() => {
     const nonRequestData = DataCalendar.filter(
-      (item) => item.status !== "REQUEST" && item.status !== "DRAFT"
+      (item) => item.status !== "PENGAJUAN" && item.status !== "REQUEST" && item.status !== "DRAFT"
     );
     if (!canMake) return nonRequestData;
     const currentName = String(DataAuth?.nama || DataAuth?.username || "Iqbal Maulana").toLowerCase().trim();
@@ -917,13 +968,21 @@ const CabRequestView = () => {
     if (canApprove) {
       return DataList.filter((item) => {
         const s = String(item.status).toUpperCase();
-        return s === "WAITING APPROVAL" || s === "WAITING APPROVE" || s === "CONFIRM";
+        return (
+          s === "SEND TO APPROVAL" ||
+          s === "SEND_TO_APPROVAL" ||
+          s === "WAITING APPROVAL" ||
+          s === "WAITING APPROVE" ||
+          s === "PELAKSANAAN" ||
+          s === "CONFIRM"
+        );
       });
     }
 
-    const allRequested = DataList.filter(
-      (item) => String(item.status).toUpperCase() === "REQUEST"
-    );
+    const allRequested = DataList.filter((item) => {
+      const s = String(item.status).toUpperCase();
+      return s === "PENGAJUAN" || s === "REQUEST";
+    });
 
     if (canMake) {
       const currentName = String(DataAuth?.nama || DataAuth?.username || "Iqbal Maulana").toLowerCase().trim();
@@ -954,7 +1013,7 @@ const CabRequestView = () => {
           );
         })
       : DataList;
-    return baseList.filter((r) => r.status === "REQUEST" || r.scheduledDate === null).length;
+    return baseList.filter((r) => r.status === "PENGAJUAN" || r.status === "REQUEST" || r.scheduledDate === null).length;
   }, [DataList, canMake, DataAuth]);
 
   const handleViewChange = (view: "dayGridMonth" | "timeGridWeek") => {
@@ -1034,7 +1093,10 @@ const CabRequestView = () => {
         (listRes as any).incomingRequestCount ??
         (listRes as any).totalIncomingRequest ??
         (listRes as any).meta?.incomingRequests ??
-        listRes.data.filter((item) => String(item.status).toUpperCase() === "REQUEST").length;
+        listRes.data.filter((item) => {
+          const s = String(item.status).toUpperCase();
+          return s === "PENGAJUAN" || s === "REQUEST";
+        }).length;
       setIncomingRequestCount(incomingFromBackend);
     }
     if (calRes) setDataCalendar(calRes.data);
@@ -1394,12 +1456,12 @@ const CabRequestView = () => {
         header: "CAB DATE",
         cell: (info) => {
           const val = info.getValue() as string | null | undefined;
-          if (!val) {
-            return <Text fontSize="sm" color="gray.400" textAlign="center">-</Text>;
+          if (!val || typeof val !== "string" || !val.trim()) {
+            return <Text fontSize="sm" color="gray.400">-</Text>;
           }
           const d = new Date(val);
           if (isNaN(d.getTime())) {
-            return <Text fontSize="sm" color="gray.400" textAlign="center">-</Text>;
+            return <Text fontSize="sm" color="gray.400">-</Text>;
           }
           const dateStr = d.toLocaleDateString("id-ID", {
             day: "2-digit",
@@ -1610,6 +1672,38 @@ const CabRequestView = () => {
         },
       },
       {
+        accessorKey: "scheduledDate",
+        header: "CAB DATE",
+        cell: (info) => {
+          const val = info.getValue() as string | null | undefined;
+          if (!val || typeof val !== "string" || !val.trim()) {
+            return <Text fontSize="sm" color="gray.400">-</Text>;
+          }
+          const d = new Date(val);
+          if (isNaN(d.getTime())) {
+            return <Text fontSize="sm" color="gray.400">-</Text>;
+          }
+          const dateStr = d.toLocaleDateString("id-ID", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          });
+          const timeStr = val.includes("T") ? ` ${val.slice(11, 16)} WIB` : "";
+          return (
+            <VStack align="start" spacing={0}>
+              <Text fontSize="sm" fontWeight="medium" color="blue.600">
+                {dateStr}
+              </Text>
+              {timeStr && (
+                <Text fontSize="2xs" color="gray.500">
+                  {timeStr}
+                </Text>
+              )}
+            </VStack>
+          );
+        },
+      },
+      {
         accessorKey: "status",
         header: "STATUS",
         cell: (info) => <StatusBadge status={info.getValue() as string} rounded="full" px={3} py={1} fontSize="xs" />,
@@ -1802,13 +1896,16 @@ const CabRequestView = () => {
                               ? 0
                               : schedulerStatusFilter === "REQUEST"
                               ? 1
-                              : 2
+                              : schedulerStatusFilter === "CONFIRM"
+                              ? 2
+                              : 3
                           }
                           onChange={(idx) => {
-                            const filters: ("ALL" | "REQUEST" | "CONFIRM")[] = [
+                            const filters: ("ALL" | "REQUEST" | "CONFIRM" | "IMPLEMENTASI")[] = [
                               "ALL",
                               "REQUEST",
                               "CONFIRM",
+                              "IMPLEMENTASI",
                             ];
                             setSchedulerStatusFilter(filters[idx]);
                             setRowSelection({});
@@ -1823,15 +1920,21 @@ const CabRequestView = () => {
                             />
                             <AppTabItem
                               icon={FiClock}
-                              label="Request"
+                              label="Pengajuan"
                               badge={countRequest}
-                              badgeColorScheme="orange"
+                              badgeColorScheme="blue"
                             />
                             <AppTabItem
                               icon={FiCheckSquare}
-                              label="Confirm"
+                              label="Pelaksanaan"
                               badge={countConfirm}
                               badgeColorScheme="teal"
+                            />
+                            <AppTabItem
+                              icon={FiFileText}
+                              label="Implementasi"
+                              badge={countImplementasi}
+                              badgeColorScheme="purple"
                             />
                           </AppTabList>
                         </Tabs>
@@ -1875,10 +1978,12 @@ const CabRequestView = () => {
                             <Heading size="md" color="gray.500">Tidak Ada Antrean</Heading>
                             <Text color="gray.400" fontSize="sm" textAlign="center" maxW="420px">
                               {schedulerStatusFilter === "REQUEST"
-                                ? "Saat ini tidak ada permohonan berstatus REQUEST yang menunggu penjadwalan."
+                                ? "Saat ini tidak ada permohonan berstatus Pengajuan yang menunggu penjadwalan."
                                 : schedulerStatusFilter === "CONFIRM"
-                                ? "Saat ini tidak ada permohonan berstatus CONFIRM yang menunggu pengajuan ke approval."
-                                : "Saat ini tidak ada permohonan aktif berstatus REQUEST maupun CONFIRM."}
+                                ? "Saat ini tidak ada permohonan berstatus Pelaksanaan."
+                                : schedulerStatusFilter === "IMPLEMENTASI"
+                                ? "Saat ini tidak ada permohonan berstatus Implementasi yang menunggu verifikasi dan pengajuan approval."
+                                : "Saat ini tidak ada permohonan aktif berstatus Pengajuan, Pelaksanaan, maupun Implementasi."}
                             </Text>
                           </VStack>
                         </VStack>
@@ -1938,13 +2043,18 @@ const CabRequestView = () => {
                                           {selectedRequestsList.length} Permohonan Terpilih
                                         </Text>
                                         {selectedRequestItems.length > 0 && (
-                                          <Badge colorScheme="orange" variant="subtle" fontSize="3xs" rounded="full" px={2}>
-                                            {selectedRequestItems.length} Request
+                                          <Badge colorScheme="blue" variant="subtle" fontSize="3xs" rounded="full" px={2}>
+                                            {selectedRequestItems.length} Pengajuan
                                           </Badge>
                                         )}
                                         {selectedConfirmItems.length > 0 && (
+                                          <Badge colorScheme="teal" variant="subtle" fontSize="3xs" rounded="full" px={2}>
+                                            {selectedConfirmItems.length} Pelaksanaan
+                                          </Badge>
+                                        )}
+                                        {selectedImplementasiItems.length > 0 && (
                                           <Badge colorScheme="purple" variant="subtle" fontSize="3xs" rounded="full" px={2}>
-                                            {selectedConfirmItems.length} Confirm
+                                            {selectedImplementasiItems.length} Implementasi
                                           </Badge>
                                         )}
                                       </HStack>
@@ -1964,7 +2074,7 @@ const CabRequestView = () => {
                                       Batal
                                     </Button>
 
-                                    {/* Action 1: Bulk Schedule (for REQUEST items) */}
+                                    {/* Action 1: Bulk Schedule (for REQUEST/PENGAJUAN items) */}
                                     {selectedRequestItems.length > 0 && (
                                       <Button
                                         size="sm"
@@ -1979,11 +2089,11 @@ const CabRequestView = () => {
                                           bulkScheduleModal.onOpen();
                                         }}
                                       >
-                                        Schedule ({selectedRequestItems.length})
+                                        Penjadwalan ({selectedRequestItems.length})
                                       </Button>
                                     )}
 
-                                    {/* Action 2: Bulk Send to Approval (for CONFIRM items) */}
+                                    {/* Action 2: Bulk Send to Approval (for CONFIRM/PELAKSANAAN items) */}
                                     {selectedConfirmItems.length > 0 && (
                                       <Button
                                         size="sm"

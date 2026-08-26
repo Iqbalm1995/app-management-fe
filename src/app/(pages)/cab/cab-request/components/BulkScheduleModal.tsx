@@ -65,6 +65,7 @@ export interface BulkScheduleModalProps {
 type SchedulingMode = "UNIFIED" | "STAGGERED";
 
 interface StaggeredSlot {
+  date?: string;
   startTime: string;
   endTime: string;
   customLocation?: string;
@@ -146,12 +147,13 @@ export const BulkScheduleModal = ({
       setStaggerDuration(30);
       setOrderedRequests([...selectedRequests]);
 
-      // Initialize staggered slots
+      // Initialize staggered slots with date
       const initialSlots: Record<string, StaggeredSlot> = {};
       let currentStart = "09:00";
       selectedRequests.forEach((req) => {
         const nextEnd = addMinutesToTime(currentStart, 30);
         initialSlots[req.id] = {
+          date: defaultDate,
           startTime: currentStart,
           endTime: nextEnd,
         };
@@ -161,8 +163,39 @@ export const BulkScheduleModal = ({
     }
   }, [isOpen, initialDate, selectedRequests]);
 
+  // Check if there are different requested CAB dates among selected items
+  const uniqueRequestedDates = useMemo(() => {
+    const dates = orderedRequests
+      .map((r) => getRequestedCabDateTimeInfo(r).datePart)
+      .filter((d) => d && d !== "-");
+    return Array.from(new Set(dates));
+  }, [orderedRequests]);
+
+  // Check if slots currently have different dates assigned
+  const uniqueSlotDates = useMemo(() => {
+    const dates = orderedRequests
+      .map((r) => staggerSlots[r.id]?.date || scheduledDate)
+      .filter(Boolean);
+    return Array.from(new Set(dates));
+  }, [orderedRequests, staggerSlots, scheduledDate]);
+
+  const hasDifferentDates = uniqueRequestedDates.length > 1 || uniqueSlotDates.length > 1;
+
   // Handler: Auto-generate staggered slots sequentially based on orderedRequests
   const handleAutoGenerateStaggered = (customList?: CabRequestItem[]) => {
+    if (hasDifferentDates && !customList) {
+      toast({
+        title: "Tidak Dapat Auto-Urutkan",
+        description:
+          "Terdapat perbedaan tanggal pada permohonan yang dipilih. Auto-urutkan hanya dapat digunakan jika seluruh permohonan berada pada tanggal yang sama.",
+        status: "warning",
+        duration: 3500,
+        position: "top",
+        isClosable: true,
+      });
+      return;
+    }
+
     const list = customList || orderedRequests;
     let currentStart = staggerBaseStartTime || "09:00";
     const updated: Record<string, StaggeredSlot> = {};
@@ -170,6 +203,7 @@ export const BulkScheduleModal = ({
     list.forEach((req) => {
       const nextEnd = addMinutesToTime(currentStart, Number(staggerDuration) || 30);
       updated[req.id] = {
+        date: staggerSlots[req.id]?.date || scheduledDate,
         startTime: currentStart,
         endTime: nextEnd,
         customLocation: staggerSlots[req.id]?.customLocation,
@@ -199,7 +233,7 @@ export const BulkScheduleModal = ({
     nextList[index - 1] = temp;
     setOrderedRequests(nextList);
 
-    if (mode === "STAGGERED") {
+    if (mode === "STAGGERED" && !hasDifferentDates) {
       handleAutoGenerateStaggered(nextList);
     }
   };
@@ -213,7 +247,7 @@ export const BulkScheduleModal = ({
     nextList[index + 1] = temp;
     setOrderedRequests(nextList);
 
-    if (mode === "STAGGERED") {
+    if (mode === "STAGGERED" && !hasDifferentDates) {
       handleAutoGenerateStaggered(nextList);
     }
   };
@@ -221,7 +255,7 @@ export const BulkScheduleModal = ({
   // Handler: Update individual staggered slot
   const handleSlotChange = (
     reqId: string,
-    field: "startTime" | "endTime" | "customLocation",
+    field: "date" | "startTime" | "endTime" | "customLocation",
     val: string
   ) => {
     setStaggerSlots((prev) => ({
@@ -235,15 +269,17 @@ export const BulkScheduleModal = ({
 
   // Validation
   const isValid = useMemo(() => {
-    if (!scheduledDate) return false;
     if (orderedRequests.length === 0) return false;
 
     if (mode === "UNIFIED") {
+      if (!scheduledDate) return false;
       if (!unifiedStartTime || !unifiedEndTime) return false;
       return unifiedStartTime < unifiedEndTime;
     } else {
       for (const req of orderedRequests) {
         const slot = staggerSlots[req.id];
+        const itemDate = slot?.date || scheduledDate;
+        if (!itemDate) return false;
         if (!slot?.startTime || !slot?.endTime) return false;
         if (slot.startTime >= slot.endTime) return false;
       }
@@ -256,7 +292,7 @@ export const BulkScheduleModal = ({
     if (!isValid) {
       toast({
         title: "Periksa Isian Jadwal",
-        description: "Pastikan tanggal dan jam mulai lebih awal dari jam selesai.",
+        description: "Pastikan tanggal dan jam mulai lebih awal dari jam selesai pada setiap permohonan.",
         status: "warning",
         duration: 3000,
         position: "top",
@@ -275,13 +311,15 @@ export const BulkScheduleModal = ({
         };
       } else {
         const slot = staggerSlots[req.id] || {
+          date: scheduledDate,
           startTime: unifiedStartTime,
           endTime: unifiedEndTime,
         };
+        const itemDate = slot.date || scheduledDate;
         return {
           id: req.id,
-          scheduledDate: `${scheduledDate}T${slot.startTime}:00`,
-          scheduledEndDate: `${scheduledDate}T${slot.endTime}:00`,
+          scheduledDate: `${itemDate}T${slot.startTime}:00`,
+          scheduledEndDate: `${itemDate}T${slot.endTime}:00`,
           cabLocation: (slot.customLocation || cabLocation).trim() || undefined,
         };
       }
@@ -395,7 +433,7 @@ export const BulkScheduleModal = ({
             <Flex direction={{ base: "column", md: "row" }} gap={4}>
               <FormControl isRequired flex={1}>
                 <FormLabel fontSize="xs" fontWeight="bold">
-                  Tanggal Sidang CAB
+                  Tanggal CAB
                 </FormLabel>
                 <InputGroup size="sm">
                   <InputLeftElement pointerEvents="none">
@@ -548,20 +586,47 @@ export const BulkScheduleModal = ({
                         </Select>
                       </FormControl>
 
-                      <Button
-                        size="xs"
-                        colorScheme="blue"
-                        leftIcon={<FiZap />}
-                        mt={4}
-                        onClick={() => handleAutoGenerateStaggered()}
+                      <Tooltip
+                        label={
+                          hasDifferentDates
+                            ? "Auto-Urutkan dinonaktifkan karena permohonan memiliki tanggal yang berbeda."
+                            : "Urutkan jam pelaksanaan secara otomatis berdasarkan durasi"
+                        }
+                        hasArrow
                       >
-                        Auto-Urutkan
-                      </Button>
+                        <Box mt={4}>
+                          <Button
+                            size="xs"
+                            colorScheme="blue"
+                            leftIcon={<FiZap />}
+                            isDisabled={hasDifferentDates}
+                            onClick={() => handleAutoGenerateStaggered()}
+                          >
+                            Auto-Urutkan
+                          </Button>
+                        </Box>
+                      </Tooltip>
                     </HStack>
                   </Flex>
 
+                  {hasDifferentDates && (
+                    <HStack
+                      p={2.5}
+                      bg={isDark ? "orange.950" : "orange.50"}
+                      border="1px solid"
+                      borderColor={isDark ? "orange.800" : "orange.200"}
+                      rounded="md"
+                      spacing={2.5}
+                    >
+                      <Icon as={FiAlertCircle} color="orange.500" boxSize={4} flexShrink={0} />
+                      <Text fontSize="2xs" color={isDark ? "orange.200" : "orange.900"}>
+                        <b>Perhatian:</b> Permohonan memiliki tanggal yang berbeda ({uniqueRequestedDates.length > 1 ? `Tanggal Pengajuan: ${uniqueRequestedDates.join(", ")}` : `Tanggal Jadwal: ${uniqueSlotDates.join(", ")}`}). Fitur <b>Auto-Urutkan</b> dinonaktifkan. Silakan sesuaikan tanggal dan jam masing-masing secara manual pada tabel di bawah.
+                      </Text>
+                    </HStack>
+                  )}
+
                   <Text fontSize="2xs" color="gray.500">
-                    Anda dapat mengubah jam mulai dan selesai masing-masing permohonan secara langsung pada tabel daftar permohonan di bawah ini.
+                    Anda dapat mengubah tanggal serta jam mulai dan selesai masing-masing permohonan secara langsung pada tabel daftar permohonan di bawah ini.
                   </Text>
                 </VStack>
               </Box>
@@ -574,7 +639,7 @@ export const BulkScheduleModal = ({
                   Daftar Urutan Permohonan ({orderedRequests.length}):
                 </Text>
                 <Text fontSize="2xs" color="gray.500">
-                  Tanggal: {formattedTargetDate}
+                  Tanggal Utama: {formattedTargetDate}
                 </Text>
               </Flex>
 
@@ -583,7 +648,7 @@ export const BulkScheduleModal = ({
                 borderColor={isDark ? "gray.700" : "gray.200"}
                 rounded="lg"
                 overflow="hidden"
-                maxH="280px"
+                maxH="300px"
                 overflowY="auto"
               >
                 <Table size="sm" variant="simple">
@@ -594,22 +659,24 @@ export const BulkScheduleModal = ({
                       </Th>
                       <Th fontSize="2xs">Permohonan CAB</Th>
                       <Th fontSize="2xs">Pemohon / Aplikasi</Th>
-                      <Th fontSize="2xs" w="155px">
+                      <Th fontSize="2xs" w="140px">
                         Waktu Request CAB
                       </Th>
-                      <Th fontSize="2xs" w={mode === "STAGGERED" ? "220px" : "150px"}>
-                        Slot Waktu (WIB)
+                      <Th fontSize="2xs" w={mode === "STAGGERED" ? "240px" : "180px"}>
+                        Tanggal & Waktu Jadwal
                       </Th>
                     </Tr>
                   </Thead>
                   <Tbody>
                     {orderedRequests.map((req, idx) => {
                       const slot = staggerSlots[req.id] || {
+                        date: scheduledDate,
                         startTime: unifiedStartTime,
                         endTime: unifiedEndTime,
                       };
 
                       const dtInfo = getRequestedCabDateTimeInfo(req);
+                      const itemDate = slot.date || scheduledDate;
 
                       return (
                         <Tr key={req.id} _hover={{ bg: isDark ? "gray.750" : "gray.50" }}>
@@ -714,49 +781,78 @@ export const BulkScheduleModal = ({
                                   </Text>
                                 </HStack>
                               )}
-                              {dtInfo.targetDate && (
-                                <Text fontSize="3xs" color="gray.500">
-                                  Target: <b>{dtInfo.targetDate}</b>
-                                </Text>
-                              )}
                             </VStack>
                           </Td>
                           <Td>
                             {mode === "UNIFIED" ? (
-                              <Badge
-                                colorScheme="blue"
-                                variant="outline"
-                                fontSize="xs"
-                                px={2}
-                                py={0.5}
-                                rounded="md"
-                              >
-                                {unifiedStartTime} - {unifiedEndTime} WIB
-                              </Badge>
+                              <VStack align="start" spacing={1}>
+                                <HStack spacing={1}>
+                                  <Icon as={FiCalendar} boxSize={3} color="purple.500" />
+                                  <Text fontSize="2xs" fontWeight="bold" color={isDark ? "purple.300" : "purple.700"}>
+                                    {scheduledDate || "-"}
+                                  </Text>
+                                </HStack>
+                                <Badge
+                                  colorScheme="blue"
+                                  variant="outline"
+                                  fontSize="2xs"
+                                  px={1.5}
+                                  py={0.5}
+                                  rounded="md"
+                                >
+                                  {unifiedStartTime} - {unifiedEndTime} WIB
+                                </Badge>
+                              </VStack>
                             ) : (
-                              <HStack spacing={1.5}>
-                                <Input
-                                  type="time"
-                                  size="xs"
-                                  value={slot.startTime}
-                                  onChange={(e) =>
-                                    handleSlotChange(req.id, "startTime", e.target.value)
-                                  }
-                                  rounded="md"
-                                  w="90px"
-                                />
-                                <Text fontSize="xs" color="gray.400">-</Text>
-                                <Input
-                                  type="time"
-                                  size="xs"
-                                  value={slot.endTime}
-                                  onChange={(e) =>
-                                    handleSlotChange(req.id, "endTime", e.target.value)
-                                  }
-                                  rounded="md"
-                                  w="90px"
-                                />
-                              </HStack>
+                              <VStack align="start" spacing={1.5} py={0.5}>
+                                <InputGroup size="xs" w="140px">
+                                  <InputLeftElement pointerEvents="none" h="24px">
+                                    <Icon as={FiCalendar} boxSize={3} color="blue.500" />
+                                  </InputLeftElement>
+                                  <Input
+                                    type="date"
+                                    size="xs"
+                                    h="24px"
+                                    pl="26px"
+                                    value={itemDate}
+                                    onChange={(e) =>
+                                      handleSlotChange(req.id, "date", e.target.value)
+                                    }
+                                    rounded="md"
+                                    bg={isDark ? "gray.800" : "white"}
+                                    fontSize="2xs"
+                                  />
+                                </InputGroup>
+                                <HStack spacing={1}>
+                                  <Input
+                                    type="time"
+                                    size="xs"
+                                    h="24px"
+                                    value={slot.startTime}
+                                    onChange={(e) =>
+                                      handleSlotChange(req.id, "startTime", e.target.value)
+                                    }
+                                    rounded="md"
+                                    w="75px"
+                                    bg={isDark ? "gray.800" : "white"}
+                                    fontSize="2xs"
+                                  />
+                                  <Text fontSize="xs" color="gray.400">-</Text>
+                                  <Input
+                                    type="time"
+                                    size="xs"
+                                    h="24px"
+                                    value={slot.endTime}
+                                    onChange={(e) =>
+                                      handleSlotChange(req.id, "endTime", e.target.value)
+                                    }
+                                    rounded="md"
+                                    w="75px"
+                                    bg={isDark ? "gray.800" : "white"}
+                                    fontSize="2xs"
+                                  />
+                                </HStack>
+                              </VStack>
                             )}
                           </Td>
                         </Tr>

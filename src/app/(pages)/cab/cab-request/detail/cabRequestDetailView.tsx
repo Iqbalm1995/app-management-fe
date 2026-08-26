@@ -20,17 +20,25 @@ import {
   Heading,
   HStack,
   Icon,
+  IconButton,
   Input,
   Progress,
   Radio,
   RadioGroup,
   Select,
   SimpleGrid,
+  Table,
+  TableContainer,
   Tag,
   TagLabel,
+  Tbody,
+  Td,
   Text,
   Textarea,
+  Th,
+  Thead,
   Tooltip,
+  Tr,
   useColorMode,
   VStack,
   Wrap,
@@ -51,12 +59,15 @@ import {
   FiEdit2,
   FiFileText,
   FiInfo,
+  FiLayers,
   FiList,
   FiMapPin,
+  FiPlus,
   FiRefreshCcw,
   FiSave,
   FiSend,
   FiShield,
+  FiTrash2,
   FiUser,
   FiUsers,
   FiX,
@@ -76,43 +87,60 @@ import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useCabRequest from "@/app/services/useCabRequest";
 import useUsers, { UsersResponse } from "@/app/services/useUsers";
-import { CabCommitteeMember, CabPicInternalIT, CabRequestDetail } from "@/app/types/cabTypes";
+import useApps, { ApplicationMasterResponse } from "@/app/services/useApps";
+import useRequirements, { RequirementsResponse } from "@/app/services/useRequirements";
+import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
+import { MAX_SIZE_TABLE, RES_CODE_OK } from "@/app/constants/applicationConstants";
+import { PaggingListPayload } from "@/app/types/masterTypes";
+import { CabCommitteeMember, CabPicInternalIT, CabRequestDetail, CabSoftwareApplicationItem } from "@/app/types/cabTypes";
 import { getDynamicCabActivities } from "@/app/json/cabRequestMock";
 import PicMigrasiField from "../create/components/PicMigrasiField";
 import CommitteeCabField from "../create/components/CommitteeCabField";
 
+interface ProjectOption {
+  label: string;
+  value: string;
+  projectId?: string;
+  type?: "BRD" | "RFC" | "PROJECT";
+}
+
 type MockRole = "maker" | "scheduler" | "approver";
 
 export const CAB_LIFECYCLE_STAGES = [
-  { stage: 1, key: "REQUEST", label: "Pengajuan CAB", role: "Maker", desc: "Pengajuan Permohonan" },
-  { stage: 2, key: "SCHEDULED", label: "Penjadwalan", role: "Scheduler", desc: "Penjadwalan Rapat" },
-  { stage: 3, key: "CONFIRM", label: "Pelaksanaan", role: "Scheduler & Tim", desc: "Pelaksanaan Sidang CAB" },
-  { stage: 4, key: "IMPLEMENT", label: "Evaluasi Migrasi", role: "Scheduler", desc: "Mark as Done" },
-  { stage: 5, key: "WAITING APPROVAL", label: "Send to Approval", role: "Scheduler", desc: "Menunggu Persetujuan" },
-  { stage: 6, key: "COMPLETED", label: "Approve / Selesai", role: "Approver", desc: "Keputusan Final" },
+  { stage: 1, key: "PENGAJUAN", label: "Pengajuan", role: "Maker", desc: "Pengajuan Permohonan" },
+  { stage: 2, key: "PELAKSANAAN", label: "Pelaksanaan", role: "Scheduler & Tim", desc: "Pelaksanaan Sidang CAB" },
+  { stage: 3, key: "IMPLEMENTASI", label: "Implementasi", role: "Scheduler", desc: "Evaluasi & Checklist Implementasi" },
+  { stage: 4, key: "SEND TO APPROVAL", label: "Send to Approval", role: "Scheduler", desc: "Menunggu Persetujuan" },
+  { stage: 5, key: "COMPLETED", label: "Completed", role: "Approver", desc: "Keputusan Final" },
 ];
 
 export const getStageIndex = (status?: string): number => {
   const s = String(status || "").toUpperCase();
   switch (s) {
+    case "PENGAJUAN":
     case "REQUEST":
       return 1;
+    case "PELAKSANAAN":
+    case "CONFIRM":
+    case "PENJADWALAN":
     case "SCHEDULED":
     case "SUBMITTED":
       return 2;
-    case "CONFIRM":
-      return 3;
+    case "IMPLEMENTASI":
     case "IMPLEMENT":
-      return 4;
+      return 3;
+    case "SEND TO APPROVAL":
+    case "SEND_TO_APPROVAL":
     case "WAITING APPROVAL":
     case "WAITING APPROVE":
     case "PENDING_APPROVAL":
-      return 5;
+    case "IN_REVIEW":
+      return 4;
     case "COMPLETED":
     case "APPROVED":
-      return 6;
     case "REJECTED":
-      return 6;
+    case "CANCELED":
+      return 5;
     default:
       return 1;
   }
@@ -121,18 +149,24 @@ export const getStageIndex = (status?: string): number => {
 export const getStep2Title = (status?: string): string => {
   const s = String(status || "").toUpperCase();
   switch (s) {
+    case "PENGAJUAN":
     case "REQUEST":
       return "Penetapan Jadwal";
+    case "PELAKSANAAN":
+    case "CONFIRM":
+    case "PENJADWALAN":
     case "SCHEDULED":
     case "SUBMITTED":
       return "Pelaksanaan Rapat";
-    case "CONFIRM":
-      return "Evaluasi Migrasi";
+    case "IMPLEMENTASI":
     case "IMPLEMENT":
-      return "Verifikasi & Send to Approval";
+      return "Evaluasi & Checklist Implementasi";
+    case "SEND TO APPROVAL":
+    case "SEND_TO_APPROVAL":
     case "WAITING APPROVAL":
     case "WAITING APPROVE":
     case "PENDING_APPROVAL":
+    case "IN_REVIEW":
       return "Keputusan Persetujuan";
     case "COMPLETED":
     case "APPROVED":
@@ -147,18 +181,24 @@ export const getStep2Title = (status?: string): string => {
 export const getStep2Desc = (status?: string): string => {
   const s = String(status || "").toUpperCase();
   switch (s) {
+    case "PENGAJUAN":
     case "REQUEST":
       return "Penetapan jadwal sidang & link meeting oleh Scheduler";
+    case "PELAKSANAAN":
+    case "CONFIRM":
+    case "PENJADWALAN":
     case "SCHEDULED":
     case "SUBMITTED":
-      return "Konfirmasi pelaksanaan sidang CAB bersama tim";
-    case "CONFIRM":
-      return "Pencatatan hasil evaluasi migrasi & status implementasi";
+      return "Pencatatan kesepakatan & komitmen pelaksanaan migrasi bersama tim";
+    case "IMPLEMENTASI":
     case "IMPLEMENT":
-      return "Verifikasi pra-approval checklist & pengiriman ke Approver";
+      return "Evaluasi hasil sidang CAB, verifikasi checklist & pengiriman ke Approver";
+    case "SEND TO APPROVAL":
+    case "SEND_TO_APPROVAL":
     case "WAITING APPROVAL":
     case "WAITING APPROVE":
     case "PENDING_APPROVAL":
+    case "IN_REVIEW":
       return "Tinjauan berkas & keputusan resmi Approver";
     case "COMPLETED":
     case "APPROVED":
@@ -179,6 +219,9 @@ const CabRequestDetailView = () => {
   const requestId = searchParams.get("id");
   const showToast = useToastHelper();
   const { List: ListUsers } = useUsers();
+  const { List: ListApps } = useApps();
+  const { List: ListRequirements } = useRequirements();
+  const { List: ListProjects } = useProjects();
   const {
     GetCabRequestById,
     ScheduleCabRequest,
@@ -192,6 +235,181 @@ const CabRequestDetailView = () => {
     ToggleCabActivity,
     loading,
   } = useCabRequest();
+
+  // Master App and Project options for editing
+  const [appList, setAppList] = useState<ApplicationMasterResponse[]>([]);
+  const [appLoading, setAppLoading] = useState(false);
+  const [globalProjectOptions, setGlobalProjectOptions] = useState<ProjectOption[]>([]);
+  const [projectLoading, setProjectLoading] = useState(false);
+  const [appProjectMap, setAppProjectMap] = useState<Record<string, ProjectOption[]>>({});
+
+  const loadAppsAndProjects = async (token: string) => {
+    if (!token) return;
+    setAppLoading(true);
+    setProjectLoading(true);
+    try {
+      const appPayload: PaggingListPayload = {
+        search: "",
+        limit: MAX_SIZE_TABLE,
+        page: 0,
+        filterWhere: [{ field: "appsStatus", operator: "=", value: "ACTIVE" }],
+        fieldOrder: ["appName"],
+        orderDir: "asc",
+      };
+      const brdPayload: PaggingListPayload = {
+        search: "",
+        limit: MAX_SIZE_TABLE,
+        page: 0,
+        filterWhere: [{ field: "requirementType", operator: "=", value: "BRD" }],
+        fieldOrder: ["reqNumber"],
+        orderDir: "desc",
+      };
+      const rfcPayload: PaggingListPayload = {
+        search: "",
+        limit: MAX_SIZE_TABLE,
+        page: 0,
+        filterWhere: [{ field: "requirementType", operator: "=", value: "RFC" }],
+        fieldOrder: ["reqNumber"],
+        orderDir: "desc",
+      };
+      const projPayload: PaggingListPayload = {
+        search: "",
+        limit: MAX_SIZE_TABLE,
+        page: 0,
+        filterWhere: [],
+        fieldOrder: ["projectCode"],
+        orderDir: "desc",
+      };
+
+      const [appsRes, brdRes, rfcRes, projRes] = await Promise.all([
+        ListApps(appPayload, token),
+        ListRequirements(brdPayload, token),
+        ListRequirements(rfcPayload, token),
+        ListProjects(projPayload, token),
+      ]);
+
+      if (appsRes?.statusCode === RES_CODE_OK && appsRes.data) {
+        setAppList(appsRes.data as ApplicationMasterResponse[]);
+      }
+
+      const pOptions: ProjectOption[] = [];
+      if (brdRes?.statusCode === RES_CODE_OK && brdRes.data) {
+        (brdRes.data as RequirementsResponse[]).forEach((r) =>
+          pOptions.push({
+            label: `[BRD] ${r.reqNumber} — ${r.reqNarative || r.appInitialName || "BRD Document"}`,
+            value: r.reqNumber,
+            projectId: r.id || r.reqNumber,
+            type: "BRD",
+          })
+        );
+      }
+      if (rfcRes?.statusCode === RES_CODE_OK && rfcRes.data) {
+        (rfcRes.data as RequirementsResponse[]).forEach((r) =>
+          pOptions.push({
+            label: `[RFC] ${r.reqNumber} — ${r.reqNarative || r.appInitialName || "RFC Change Request"}`,
+            value: r.reqNumber,
+            projectId: r.id || r.reqNumber,
+            type: "RFC",
+          })
+        );
+      }
+      if (projRes?.statusCode === RES_CODE_OK && projRes.data) {
+        (projRes.data as ProjectDataResponse[]).forEach((p) =>
+          pOptions.push({
+            label: `[PROJECT] ${p.projectCode} — ${p.projectName}`,
+            value: p.projectCode,
+            projectId: p.id,
+            type: "PROJECT",
+          })
+        );
+      }
+      setGlobalProjectOptions(pOptions);
+    } catch (e) {
+      console.error("Failed loading master apps and projects", e);
+    } finally {
+      setAppLoading(false);
+      setProjectLoading(false);
+    }
+  };
+
+  const fetchAppSpecificProjects = async (appId: string, reqParentId?: string) => {
+    if (!tokenData || !reqParentId || appProjectMap[appId]) return;
+    try {
+      const payload: PaggingListPayload = {
+        search: "",
+        limit: MAX_SIZE_TABLE,
+        page: 0,
+        filterWhere: [{ field: "reqParentId", operator: "=", value: reqParentId }],
+        fieldOrder: ["projectCode"],
+        orderDir: "desc",
+      };
+      const res = await ListProjects(payload, tokenData);
+      if (res?.statusCode === RES_CODE_OK && res.data) {
+        const mapped: ProjectOption[] = (res.data as ProjectDataResponse[]).map((p) => ({
+          label: `[PROJECT] ${p.projectCode} — ${p.projectName}`,
+          value: p.projectCode,
+          projectId: p.id,
+          type: "PROJECT",
+        }));
+        setAppProjectMap((prev) => ({ ...prev, [appId]: mapped }));
+      }
+    } catch (e) {
+      console.error("Error fetching app-specific projects", e);
+    }
+  };
+
+  const getProjectOptionsForRow = (appId?: string): ProjectOption[] => {
+    if (!appId) return globalProjectOptions;
+    const specific = appProjectMap[appId];
+    if (specific && specific.length > 0) {
+      const specificValues = new Set(specific.map((s) => s.value));
+      const rest = globalProjectOptions.filter((g) => !specificValues.has(g.value));
+      return [...specific, ...rest];
+    }
+    return globalProjectOptions;
+  };
+
+  const appOptions = appList.map((a) => ({
+    label: `${a.appShortName} — ${a.appName}`,
+    value: a.id,
+    data: a,
+  }));
+
+  const filterAppOption = (candidate: any, input: string) => {
+    if (!input) return true;
+    const search = input.toLowerCase().trim();
+    const app = candidate.data?.data;
+    const label = (candidate.label || "").toLowerCase();
+    const shortName = (app?.appShortName || "").toLowerCase();
+    const appName = (app?.appName || "").toLowerCase();
+    const appInitial = (app?.appInitialName || "").toLowerCase();
+    const appTypes = (app?.appTypes || "").toLowerCase();
+    const appCode = (app?.appCode || "").toLowerCase();
+    return (
+      label.includes(search) ||
+      shortName.includes(search) ||
+      appName.includes(search) ||
+      appInitial.includes(search) ||
+      appTypes.includes(search) ||
+      appCode.includes(search)
+    );
+  };
+
+  const selectStyles = {
+    control: (provided: any) => ({
+      ...provided,
+      bg: colorMode === "dark" ? "gray.700" : "white",
+      borderColor: colorMode === "dark" ? "gray.600" : "gray.200",
+      rounded: "md",
+      minHeight: "36px",
+      fontSize: "xs",
+    }),
+    menu: (provided: any) => ({
+      ...provided,
+      bg: colorMode === "dark" ? "gray.700" : "white",
+      zIndex: 9999,
+    }),
+  };
 
   const fetchUsers = async (search: string, token: string): Promise<UsersResponse[]> => {
     const payload = {
@@ -231,6 +449,9 @@ const CabRequestDetailView = () => {
   const [requestEditForm, setRequestEditForm] = useState({
     requestTitle: "",
     requestType: "DEPLOYMENT",
+    applicationId: "",
+    applicationName: "",
+    applications: [] as CabSoftwareApplicationItem[],
     projectName: "",
     targetDate: "",
     rfcKodeProject: "",
@@ -282,7 +503,7 @@ const CabRequestDetailView = () => {
 
   // Commitment & Migration Decision form (Scheduler - Step 2 / SCHEDULED status)
   const [commitmentForm, setCommitmentForm] = useState({
-    pir: "ADA",
+    pir: "",
     ketersediaanWaktuMigrasiDc: "",
     keputusanMigrasi: "YA" as "YA" | "TIDAK" | "",
     kesepakatanWaktuPelaksanaanMigrasi: "",
@@ -308,7 +529,10 @@ const CabRequestDetailView = () => {
       const UserData: AuthDataResponse = StorageAuth.dataLogin as AuthDataResponse;
       setDataAuth(UserData);
     }
-    if (token) setTokenData(token);
+    if (token) {
+      setTokenData(token);
+      loadAppsAndProjects(token);
+    }
   }, []);
 
   useEffect(() => {
@@ -316,54 +540,75 @@ const CabRequestDetailView = () => {
     loadDetail();
   }, [DataAuth, requestId, tokenData]);
 
-  const mapDetailToEditForm = (d: CabRequestDetail) => ({
-    requestTitle: d.requestTitle || "",
-    requestType: d.requestType || "DEPLOYMENT",
-    projectName: d.projectName || "",
-    targetDate: d.targetDate ? d.targetDate.slice(0, 10) : "",
-    rfcKodeProject: d.rfcKodeProject || "RFC-2026-088",
-    itspKode: d.itspKode || "ITSP-BJB-990",
-    aplikasiKategori: d.aplikasiKategori || "CORE_BANKING",
-    jenisCab: d.jenisCab || "WEEKLY",
-    jenisCabEmergencyAlasan: d.jenisCabEmergencyAlasan || "",
-    description: d.description || "",
-    impactAnalysis: d.impactAnalysis || "",
-    rollbackPlan: d.rollbackPlan || "",
-    hasilUat: (Array.isArray(d.hasilUat) ? d.hasilUat[0] : (d.hasilUat as any)) || "BERHASIL_BAIK",
-    hasilUatCatatan: d.hasilUatCatatan || "",
-    rekomendasiUat: d.rekomendasiUat || "REKOMENDASI_MIGRASI",
-    isHaveMemo: d.isHaveMemo || (d.memoNomor ? "Y" : "Y"),
-    perihalSementara: d.perihalSementara || d.memoPerihal || "",
-    memoDirektoratPengirim: d.memoDirektoratPengirim || "Direktorat IT & Operasional",
-    memoDivisiPengirim: d.memoDivisiPengirim || "Divisi IT Digital Banking",
-    memoNomor: d.memoNomor || "0128/IT-DB/MEMO/2026",
-    memoPerihal: d.memoPerihal || "Permohonan Migrasi Perubahan Sistem ke Lingkungan Production",
-    memoTanggal: d.memoTanggal || (d.requestDate ? d.requestDate.slice(0, 10) : "2026-08-15"),
-    memoTanggalDiterima: d.memoTanggalDiterima || (d.targetDate ? d.targetDate.slice(0, 10) : "2026-08-16"),
-    tanggalPermohonanMigrasi: d.tanggalPermohonanMigrasi || (d.targetDate ? d.targetDate.slice(0, 10) : ""),
-    downtime: d.downtime || "ADA",
-    downtimeDurasi: d.downtimeDurasi || "60 Menit",
-    risikoKonflik: d.risikoKonflik || "TIDAK_ADA",
-    risikoKonflikAplikasi: d.risikoKonflikAplikasi || [],
-    instalasiAreaDrc: d.instalasiAreaDrc || "YA",
-    ceklistMigrasi: d.ceklistMigrasi || "ADA",
-    ceklistMigrasiRundown: d.ceklistMigrasiRundown || "1. Backup database snapshot (01:00)\n2. Stop service gateway (01:30)\n3. Deploy release binary (01:45)\n4. Database migration script (02:00)\n5. Smoke test & health check (02:20)\n6. Start traffic routing (02:30)",
-    sast: d.sast || "ADA",
-    dokumenArsitektur: (d.dokumenArsitektur as any) || "ADA",
-    kesiapanInfrastruktur: d.kesiapanInfrastruktur || "YA",
-    sourceAplikasi: d.sourceAplikasi || "ADA",
-    userMatriks: d.userMatriks || "ADA",
-    toolsMonitoring: (d.toolsMonitoring as any) || "ADA",
-    securityChecklist: (d.securityChecklist as any) || "ADA",
-    persetujuanItSecurity: d.persetujuanItSecurity || "YA",
-    petunjukTeknis: (d.petunjukTeknis as any) || "ADA",
-    picMigrasi: (Array.isArray(d.picMigrasi)
-      ? d.picMigrasi
-      : d.picMigrasi
-        ? [d.picMigrasi as any]
-        : [{ type: "INTERNAL_IT", userId: "usr-01", userName: d.requesterName || "Iqbal Maulana", divisi: "Divisi IT Digital Banking" }]) as CabPicInternalIT[],
-    committeeCab: d.committeeCab || [],
-  });
+  const mapDetailToEditForm = (d: CabRequestDetail) => {
+    const rawApps: CabSoftwareApplicationItem[] =
+      d.applications && d.applications.length > 0
+        ? d.applications
+        : (d.applicationName || d.projectName)
+          ? [
+              {
+                id: "app-main-0",
+                applicationId: d.applicationId || "app-001",
+                applicationName: d.applicationName || d.projectName || "",
+                aplikasiKategori: d.aplikasiKategori || "Transaksional",
+                rfcKodeProject: d.rfcKodeProject || "RFC-2026-088",
+                itspKode: d.itspKode || "ITSP-BJB-990",
+              },
+            ]
+          : [];
+
+    return {
+      requestTitle: d.requestTitle || "",
+      requestType: d.requestType || "DEPLOYMENT",
+      applicationId: d.applicationId || rawApps[0]?.applicationId || "app-001",
+      applicationName: d.applicationName || rawApps[0]?.applicationName || d.projectName || "",
+      applications: rawApps,
+      projectName: d.projectName || rawApps[0]?.applicationName || "",
+      targetDate: d.targetDate ? d.targetDate.slice(0, 10) : "",
+      rfcKodeProject: d.rfcKodeProject || rawApps[0]?.rfcKodeProject || "RFC-2026-088",
+      itspKode: d.itspKode || rawApps[0]?.itspKode || "ITSP-BJB-990",
+      aplikasiKategori: d.aplikasiKategori || rawApps[0]?.aplikasiKategori || "Transaksional",
+      jenisCab: d.jenisCab || "WEEKLY",
+      jenisCabEmergencyAlasan: d.jenisCabEmergencyAlasan || "",
+      description: d.description || "",
+      impactAnalysis: d.impactAnalysis || "",
+      rollbackPlan: d.rollbackPlan || "",
+      hasilUat: (Array.isArray(d.hasilUat) ? d.hasilUat[0] : (d.hasilUat as any)) || "BERHASIL_BAIK",
+      hasilUatCatatan: d.hasilUatCatatan || "",
+      rekomendasiUat: d.rekomendasiUat || "REKOMENDASI_MIGRASI",
+      isHaveMemo: d.isHaveMemo || (d.memoNomor ? "Y" : "Y"),
+      perihalSementara: d.perihalSementara || d.memoPerihal || "",
+      memoDirektoratPengirim: d.memoDirektoratPengirim || "Direktorat IT & Operasional",
+      memoDivisiPengirim: d.memoDivisiPengirim || "Divisi IT Digital Banking",
+      memoNomor: d.memoNomor || "0128/IT-DB/MEMO/2026",
+      memoPerihal: d.memoPerihal || "Permohonan Migrasi Perubahan Sistem ke Lingkungan Production",
+      memoTanggal: d.memoTanggal || (d.requestDate ? d.requestDate.slice(0, 10) : "2026-08-15"),
+      memoTanggalDiterima: d.memoTanggalDiterima || (d.targetDate ? d.targetDate.slice(0, 10) : "2026-08-16"),
+      tanggalPermohonanMigrasi: d.tanggalPermohonanMigrasi || (d.targetDate ? d.targetDate.slice(0, 10) : ""),
+      downtime: d.downtime || "ADA",
+      downtimeDurasi: d.downtimeDurasi || "60 Menit",
+      risikoKonflik: d.risikoKonflik || "TIDAK_ADA",
+      risikoKonflikAplikasi: d.risikoKonflikAplikasi || [],
+      instalasiAreaDrc: d.instalasiAreaDrc || "YA",
+      ceklistMigrasi: d.ceklistMigrasi || "ADA",
+      ceklistMigrasiRundown: d.ceklistMigrasiRundown || "",
+      sast: d.sast || "ADA",
+      dokumenArsitektur: (d.dokumenArsitektur as any) || "ADA",
+      kesiapanInfrastruktur: d.kesiapanInfrastruktur || "YA",
+      sourceAplikasi: d.sourceAplikasi || "ADA",
+      userMatriks: d.userMatriks || "ADA",
+      toolsMonitoring: (d.toolsMonitoring as any) || "ADA",
+      securityChecklist: (d.securityChecklist as any) || "ADA",
+      persetujuanItSecurity: d.persetujuanItSecurity || "YA",
+      petunjukTeknis: (d.petunjukTeknis as any) || "ADA",
+      picMigrasi: (Array.isArray(d.picMigrasi)
+        ? d.picMigrasi
+        : d.picMigrasi
+          ? [d.picMigrasi as any]
+          : [{ type: "INTERNAL_IT", userId: "usr-01", userName: d.requesterName || "Iqbal Maulana", divisi: "Divisi IT Digital Banking" }]) as CabPicInternalIT[],
+      committeeCab: d.committeeCab || [],
+    };
+  };
 
   const loadDetail = async (silent = false) => {
     if (!silent) setIsLoading(true);
@@ -398,7 +643,7 @@ const CabRequestDetailView = () => {
       }
       // Pre-fill commitment form if data exists or default
       setCommitmentForm({
-        pir: res.data.pir || "ADA",
+        pir: res.data.pir || "",
         ketersediaanWaktuMigrasiDc: res.data.ketersediaanWaktuMigrasiDc ? res.data.ketersediaanWaktuMigrasiDc.slice(0, 16) : "",
         keputusanMigrasi: (res.data.keputusanMigrasi as "YA" | "TIDAK") || "YA",
         kesepakatanWaktuPelaksanaanMigrasi: res.data.kesepakatanWaktuPelaksanaanMigrasi
@@ -416,8 +661,13 @@ const CabRequestDetailView = () => {
     if (!silent) setIsLoading(false);
   };
 
+  const canEditRequest = Boolean(
+    Data &&
+    !["COMPLETED", "REJECTED", "APPROVED"].includes(String(Data.status || "").toUpperCase())
+  );
+
   const startEditRequest = () => {
-    if (!Data || Data.status === "REQUEST") return;
+    if (!Data || ["COMPLETED", "REJECTED", "APPROVED"].includes(String(Data.status || "").toUpperCase())) return;
     setRequestEditForm(mapDetailToEditForm(Data));
     setIsEditingRequest(true);
   };
@@ -427,8 +677,16 @@ const CabRequestDetailView = () => {
       showToast({ description: "Judul request wajib diisi", statusToast: "error" });
       return;
     }
+    const firstApp = requestEditForm.applications?.[0];
     const payloadToSave: Partial<CabRequestDetail> = {
       ...requestEditForm,
+      applicationId: firstApp?.applicationId || requestEditForm.applicationId,
+      applicationName: firstApp?.applicationName || requestEditForm.applicationName || requestEditForm.projectName,
+      projectName: firstApp?.applicationName || requestEditForm.projectName,
+      aplikasiKategori: firstApp?.aplikasiKategori || requestEditForm.aplikasiKategori,
+      rfcKodeProject: firstApp?.rfcKodeProject || requestEditForm.rfcKodeProject,
+      itspKode: firstApp?.itspKode || requestEditForm.itspKode,
+      applications: requestEditForm.applications,
       isHaveMemo: (requestEditForm.isHaveMemo || "Y") as "Y" | "N",
       jenisCab: requestEditForm.jenisCab as any,
       ceklistMigrasi: requestEditForm.ceklistMigrasi as any,
@@ -449,7 +707,7 @@ const CabRequestDetailView = () => {
     };
     const success = await UpdateCabRequest(tokenData, requestId!, payloadToSave);
     if (success) {
-      showToast({ description: "Data request CAB (termasuk durasi downtime & detail teknis) berhasil diperbarui", statusToast: "success" });
+      showToast({ description: "Data request CAB (termasuk aplikasi utama & terkait) berhasil diperbarui", statusToast: "success" });
       setIsEditingRequest(false);
       loadDetail();
     }
@@ -486,12 +744,9 @@ const CabRequestDetailView = () => {
       return { ...prev, activityChecklist: updatedChecklist };
     });
 
-    // 2. Persist in background
+    // 2. Persist in background silently (no page refresh or full state reload)
     const success = await ToggleCabActivity(tokenData, requestId, activityId, userDoneBy);
-    if (success) {
-      // Background silent sync without flashing loading skeleton
-      loadDetail(true);
-    } else {
+    if (!success) {
       // Revert if failed
       setData((prev) => {
         if (!prev) return prev;
@@ -538,7 +793,6 @@ const CabRequestDetailView = () => {
         await ToggleCabActivity(tokenData, requestId, act.id, userDoneBy);
       }
     }
-    loadDetail(true);
   };
 
   const handleToggleCabDone = async () => {
@@ -646,7 +900,7 @@ const CabRequestDetailView = () => {
 
     const success = await ScheduleCabRequest(tokenData, requestId!, scheduleForm);
     if (success) {
-      showToast({ description: "Jadwal CAB berhasil disimpan. Status sekarang SCHEDULED.", statusToast: "success" });
+      showToast({ description: "Jadwal CAB berhasil disimpan. Status sekarang Pelaksanaan.", statusToast: "success" });
       loadDetail();
     }
   };
@@ -689,7 +943,7 @@ const CabRequestDetailView = () => {
     const success = await ConfirmCabMeeting(tokenData, requestId);
     if (success) {
       showToast({
-        description: "Status berhasil diubah menjadi CONFIRM. Sidang rapat CAB siap dilaksanakan bersama tim.",
+        description: "Kesepakatan migrasi berhasil disimpan. Status sekarang Implementasi.",
         statusToast: "success",
       });
       loadDetail();
@@ -708,7 +962,7 @@ const CabRequestDetailView = () => {
     const success = await SetCabImplementStatus(tokenData, requestId);
     if (success) {
       showToast({
-        description: "Pelaksanaan rapat dan evaluasi migrasi telah ditandai selesai (Status: IMPLEMENT, isCabDone = Y).",
+        description: "Pelaksanaan rapat dan evaluasi migrasi telah ditandai selesai (Status: Implementasi, isCabDone = Y).",
         statusToast: "success",
       });
       loadDetail();
@@ -729,9 +983,16 @@ const CabRequestDetailView = () => {
   };
 
   const handleSendToApproval = async () => {
-    if (Data?.status !== "IMPLEMENT" && Data?.isCabDone !== "Y") {
+    if (Data?.status !== "IMPLEMENTASI" && Data?.status !== "IMPLEMENT") {
       showToast({
-        description: "Scheduler wajib menandai evaluasi migrasi selesai (Status: IMPLEMENT) sebelum mengirim request ini ke Approver.",
+        description: "Status permohonan harus Implementasi sebelum mengirim request ini ke Approver.",
+        statusToast: "warning",
+      });
+      return;
+    }
+    if (!resultForm.cabResult || !resultForm.implementationStatus) {
+      showToast({
+        description: "Hasil Evaluasi dan Status Implementasi wajib diisi sebelum mengirim ke Approver.",
         statusToast: "warning",
       });
       return;
@@ -775,7 +1036,7 @@ const CabRequestDetailView = () => {
     }
     const success = await SendToApproval(tokenData, requestId!);
     if (success) {
-      showToast({ description: "Request berhasil dikirim ke approver (Status: WAITING APPROVAL)", statusToast: "success" });
+      showToast({ description: "Request berhasil dikirim ke approver (Status: Send to Approval)", statusToast: "success" });
       setIsEditingRequest(false);
       loadDetail();
     }
@@ -861,7 +1122,7 @@ const CabRequestDetailView = () => {
                 <Badge colorScheme="blue" variant="solid" px={2} rounded="full" fontSize="xs">{Data.requestNo}</Badge>
                 <Badge colorScheme="purple" variant="solid" px={2} rounded="full" fontSize="xs">{Data.requestType}</Badge>
                 <StatusBadge status={Data.status} variant="solid" px={2} rounded="full" fontSize="xs" />
-                {Data.status !== "DRAFT" && Data.status !== "REQUEST" && (
+                {Data.status !== "DRAFT" && Data.status !== "REQUEST" && Data.status !== "PENGAJUAN" && (
                   <Badge
                     colorScheme={Data.isCabDone === "Y" ? "green" : "yellow"}
                     variant="solid"
@@ -1151,7 +1412,7 @@ const CabRequestDetailView = () => {
                           <Heading size="sm">Identitas Permohonan CAB</Heading>
                         </HStack>
 
-                        {!isApproved && canSchedule && Data.status !== "REQUEST" && ["SCHEDULED", "CONFIRM", "IMPLEMENT", "SUBMITTED", "WAITING APPROVAL", "WAITING APPROVE", "IN_REVIEW"].includes(Data.status) && (
+                        {canEditRequest && (
                           !isEditingRequest ? (
                             <Button
                               size="xs"
@@ -1194,7 +1455,7 @@ const CabRequestDetailView = () => {
                     </CardHeader>
                     <CardBody px={5} py={4}>
                       {isEditingRequest ? (
-                        <VStack spacing={4} align="stretch">
+                        <VStack spacing={5} align="stretch">
                           <FormControl isRequired>
                             <FormLabel fontSize="xs" fontWeight="semibold" color="gray.500" mb={1}>Judul Permohonan</FormLabel>
                             <Input
@@ -1226,39 +1487,7 @@ const CabRequestDetailView = () => {
                                 <option value="EMERGENCY CHANGE">EMERGENCY CHANGE</option>
                               </Select>
                             </FormControl>
-                            <FormControl>
-                              <FormLabel fontSize="xs" fontWeight="semibold" color="gray.500" mb={1}>RFC / Kode Project</FormLabel>
-                              <Input
-                                size="sm"
-                                rounded="lg"
-                                value={requestEditForm.rfcKodeProject}
-                                onChange={(e) => setRequestEditForm({ ...requestEditForm, rfcKodeProject: e.target.value })}
-                              />
-                            </FormControl>
-                            <FormControl>
-                              <FormLabel fontSize="xs" fontWeight="semibold" color="gray.500" mb={1}>Kode ITSP</FormLabel>
-                              <Input
-                                size="sm"
-                                rounded="lg"
-                                value={requestEditForm.itspKode}
-                                onChange={(e) => setRequestEditForm({ ...requestEditForm, itspKode: e.target.value })}
-                              />
-                            </FormControl>
-                            <FormControl>
-                              <FormLabel fontSize="xs" fontWeight="semibold" color="gray.500" mb={1}>Kategori Aplikasi</FormLabel>
-                              <Select
-                                size="sm"
-                                rounded="lg"
-                                placeholder="Pilih Kategori Aplikasi"
-                                value={requestEditForm.aplikasiKategori}
-                                onChange={(e) => setRequestEditForm({ ...requestEditForm, aplikasiKategori: e.target.value })}
-                              >
-                                <option value="Monitoring">Monitoring</option>
-                                <option value="Transaksional">Transaksional</option>
-                                <option value="Regulatory">Regulatory</option>
-                                <option value="Pelaporan">Pelaporan</option>
-                              </Select>
-                            </FormControl>
+                            <InfoItem label="Sisi Aplikasi" value={Data.appSide === "OTHER" ? `OTHER (${Data.appSideOther || "-"})` : (Data.appSide || "WEB")} />
                             <FormControl>
                               <FormLabel fontSize="xs" fontWeight="semibold" color="gray.500" mb={1}>Jenis CAB</FormLabel>
                               <Select
@@ -1281,55 +1510,567 @@ const CabRequestDetailView = () => {
                                 onChange={(e) => setRequestEditForm({ ...requestEditForm, targetDate: e.target.value })}
                               />
                             </FormControl>
-                            <FormControl>
-                              <FormLabel fontSize="xs" fontWeight="semibold" color="gray.500" mb={1}>Nama Project / Aplikasi</FormLabel>
-                              <Input
-                                size="sm"
-                                rounded="lg"
-                                value={requestEditForm.projectName}
-                                onChange={(e) => setRequestEditForm({ ...requestEditForm, projectName: e.target.value })}
-                              />
-                            </FormControl>
+                            <InfoItem label="Requester" value={`${Data.requesterName} (${Data.requesterEmail})`} />
+                            <InfoItem label="Tanggal Request" value={new Date(Data.requestDate).toLocaleDateString("id-ID")} />
                           </SimpleGrid>
+
+                          {/* ─── EDIT APLIKASI UTAMA & APLIKASI TERKAIT ─── */}
+                          <Divider borderColor={colorMode === "light" ? "gray.200" : "gray.700"} />
+
+                          {(() => {
+                            const apps = requestEditForm.applications && requestEditForm.applications.length > 0
+                              ? requestEditForm.applications
+                              : [
+                                  {
+                                    id: "app-main-0",
+                                    applicationId: requestEditForm.applicationId || "app-001",
+                                    applicationName: requestEditForm.applicationName || requestEditForm.projectName || "",
+                                    aplikasiKategori: requestEditForm.aplikasiKategori || "Transaksional",
+                                    rfcKodeProject: requestEditForm.rfcKodeProject || "",
+                                    itspKode: requestEditForm.itspKode || "",
+                                  },
+                                ];
+
+                            const handleUpdateApp = (index: number, field: keyof CabSoftwareApplicationItem, val: string) => {
+                              const updated = [...apps];
+                              updated[index] = { ...updated[index], [field]: val };
+                              const first = updated[0];
+                              setRequestEditForm({
+                                ...requestEditForm,
+                                applications: updated,
+                                applicationId: first?.applicationId || requestEditForm.applicationId,
+                                applicationName: first?.applicationName || requestEditForm.applicationName,
+                                projectName: first?.applicationName || requestEditForm.projectName,
+                                aplikasiKategori: first?.aplikasiKategori || requestEditForm.aplikasiKategori,
+                                rfcKodeProject: first?.rfcKodeProject || requestEditForm.rfcKodeProject,
+                                itspKode: first?.itspKode || requestEditForm.itspKode,
+                              });
+                            };
+
+                            const handleSelectApp = (index: number, selectedOpt: any) => {
+                              const updated = [...apps];
+                              if (!selectedOpt) {
+                                updated[index] = {
+                                  ...updated[index],
+                                  applicationId: "",
+                                  applicationName: "",
+                                  aplikasiKategori: "",
+                                  rfcKodeProject: "",
+                                };
+                              } else {
+                                const foundApp = appList.find((a) => a.id === selectedOpt.value);
+                                const appName = foundApp?.appName || selectedOpt.label;
+                                const category = foundApp?.appTypes || updated[index]?.aplikasiKategori || "Transaksional";
+                                updated[index] = {
+                                  ...updated[index],
+                                  applicationId: selectedOpt.value,
+                                  applicationName: appName,
+                                  aplikasiKategori: category,
+                                  rfcKodeProject: "",
+                                };
+                                if (foundApp?.reqParentId) {
+                                  fetchAppSpecificProjects(foundApp.id, foundApp.reqParentId);
+                                }
+                              }
+
+                              const first = updated[0];
+                              setRequestEditForm({
+                                ...requestEditForm,
+                                applications: updated,
+                                applicationId: first?.applicationId || requestEditForm.applicationId,
+                                applicationName: first?.applicationName || requestEditForm.applicationName,
+                                projectName: first?.applicationName || requestEditForm.projectName,
+                                aplikasiKategori: first?.aplikasiKategori || requestEditForm.aplikasiKategori,
+                                rfcKodeProject: first?.rfcKodeProject || requestEditForm.rfcKodeProject,
+                                itspKode: first?.itspKode || requestEditForm.itspKode,
+                              });
+                            };
+
+                            const handleSelectProject = (index: number, opt: any) => {
+                              const updated = [...apps];
+                              const projectVal = typeof opt === "string" ? opt : opt?.value || "";
+                              updated[index] = {
+                                ...updated[index],
+                                rfcKodeProject: projectVal,
+                              };
+                              const first = updated[0];
+                              setRequestEditForm({
+                                ...requestEditForm,
+                                applications: updated,
+                                rfcKodeProject: first?.rfcKodeProject || requestEditForm.rfcKodeProject,
+                              });
+                            };
+
+                            const handleAddApp = () => {
+                              const newItem: CabSoftwareApplicationItem = {
+                                id: `app-item-${Date.now()}`,
+                                applicationId: `app-${Date.now()}`,
+                                applicationName: "",
+                                aplikasiKategori: "Transaksional",
+                                rfcKodeProject: "",
+                                itspKode: requestEditForm.itspKode || "",
+                              };
+                              const updated = [...apps, newItem];
+                              setRequestEditForm({
+                                ...requestEditForm,
+                                applications: updated,
+                              });
+                            };
+
+                            const handleRemoveApp = (index: number) => {
+                              if (index === 0) return;
+                              const updated = apps.filter((_, i) => i !== index);
+                              setRequestEditForm({
+                                ...requestEditForm,
+                                applications: updated,
+                              });
+                            };
+
+                            return (
+                              <VStack spacing={4} align="stretch">
+                                {/* 1. Edit Aplikasi Utama */}
+                                <Box
+                                  p={4}
+                                  bg={colorMode === "light" ? "blue.50/40" : "gray.750"}
+                                  rounded="lg"
+                                  border="1.5px solid"
+                                  borderColor={colorMode === "light" ? "blue.200" : "blue.800"}
+                                >
+                                  <Flex justify="space-between" align="center" mb={3}>
+                                    <HStack spacing={2}>
+                                      <Badge colorScheme="blue" variant="solid" rounded="md" px={2} py={0.5} fontSize="2xs" fontWeight="bold">
+                                        Aplikasi Utama
+                                      </Badge>
+                                      {apps[0]?.applicationName && (
+                                        <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "blue.800" : "blue.200"}>
+                                          {apps[0].applicationName}
+                                        </Text>
+                                      )}
+                                    </HStack>
+                                    {apps[0]?.aplikasiKategori && (
+                                      <Badge colorScheme="teal" variant="subtle" rounded="md" px={2} py={0.5} fontSize="3xs">
+                                        {apps[0].aplikasiKategori}
+                                      </Badge>
+                                    )}
+                                  </Flex>
+
+                                  <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
+                                    <FormControl isRequired>
+                                      <FormLabel fontSize="xs" fontWeight="semibold" color="gray.500" mb={1}>
+                                        Pilih Aplikasi Utama
+                                      </FormLabel>
+                                      <ChakraReactSelect
+                                        isClearable
+                                        isLoading={appLoading}
+                                        placeholder="Cari atau pilih aplikasi..."
+                                        options={appOptions}
+                                        value={
+                                          apps[0]?.applicationId
+                                            ? appOptions.find((opt) => opt.value === apps[0].applicationId) || {
+                                                label: apps[0].applicationName || "Aplikasi",
+                                                value: apps[0].applicationId,
+                                                data: { appName: apps[0].applicationName } as any,
+                                              }
+                                            : null
+                                        }
+                                        onChange={(opt: any) => handleSelectApp(0, opt)}
+                                        filterOption={filterAppOption}
+                                        chakraStyles={selectStyles}
+                                      />
+                                    </FormControl>
+
+                                    <FormControl>
+                                      <FormLabel fontSize="xs" fontWeight="semibold" color="gray.500" mb={1}>
+                                        Project / RFC / BRD Terkait
+                                      </FormLabel>
+                                      <CreatableSelect
+                                        isClearable
+                                        isLoading={projectLoading}
+                                        placeholder="Pilih atau ketik Project/RFC/BRD..."
+                                        options={getProjectOptionsForRow(apps[0]?.applicationId)}
+                                        value={
+                                          apps[0]?.rfcKodeProject
+                                            ? {
+                                                label: apps[0].rfcKodeProject,
+                                                value: apps[0].rfcKodeProject,
+                                              }
+                                            : null
+                                        }
+                                        onChange={(opt: any) => handleSelectProject(0, opt)}
+                                        onCreateOption={(val: string) => handleSelectProject(0, val)}
+                                        chakraStyles={selectStyles}
+                                      />
+                                    </FormControl>
+
+                                    <FormControl>
+                                      <FormLabel fontSize="xs" fontWeight="semibold" color="gray.500" mb={1}>
+                                        Kategori Aplikasi
+                                      </FormLabel>
+                                      <Select
+                                        size="sm"
+                                        rounded="lg"
+                                        value={apps[0]?.aplikasiKategori || "Transaksional"}
+                                        onChange={(e) => handleUpdateApp(0, "aplikasiKategori", e.target.value)}
+                                      >
+                                        <option value="Transaksional">Transaksional</option>
+                                        <option value="Monitoring">Monitoring</option>
+                                        <option value="Regulatory">Regulatory</option>
+                                        <option value="Pelaporan">Pelaporan</option>
+                                        <option value="CORE_BANKING">CORE_BANKING</option>
+                                        <option value="PAYMENT_GATEWAY">PAYMENT_GATEWAY</option>
+                                      </Select>
+                                    </FormControl>
+
+                                    <FormControl>
+                                      <FormLabel fontSize="xs" fontWeight="semibold" color="gray.500" mb={1}>
+                                        Kode ITSP
+                                      </FormLabel>
+                                      <Input
+                                        size="sm"
+                                        rounded="lg"
+                                        placeholder="Contoh: ITSP-BJB-990"
+                                        value={apps[0]?.itspKode || ""}
+                                        onChange={(e) => handleUpdateApp(0, "itspKode", e.target.value)}
+                                      />
+                                    </FormControl>
+                                  </SimpleGrid>
+                                </Box>
+
+                                {/* 2. Edit Aplikasi Terkait */}
+                                <Box>
+                                  <Flex justify="space-between" align="center" mb={2.5}>
+                                    <HStack spacing={2}>
+                                      <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase" letterSpacing="wider">
+                                        Aplikasi Terkait
+                                      </Text>
+                                      <Badge colorScheme="purple" variant="subtle" rounded="full" px={2} fontSize="3xs">
+                                        {apps.slice(1).length} Terpilih
+                                      </Badge>
+                                    </HStack>
+                                    <Button
+                                      size="xs"
+                                      leftIcon={<FiPlus />}
+                                      colorScheme="purple"
+                                      variant="outline"
+                                      rounded="md"
+                                      onClick={handleAddApp}
+                                    >
+                                      Tambah Aplikasi Terkait
+                                    </Button>
+                                  </Flex>
+
+                                  {apps.slice(1).length > 0 ? (
+                                    <VStack spacing={3} align="stretch">
+                                      {apps.slice(1).map((app, relIdx) => {
+                                        const actualIndex = relIdx + 1;
+                                        return (
+                                          <Box
+                                            key={app.id || actualIndex}
+                                            p={3.5}
+                                            bg={colorMode === "light" ? "purple.50/20" : "gray.750"}
+                                            rounded="lg"
+                                            border="1px solid"
+                                            borderColor={colorMode === "light" ? "purple.200" : "purple.900"}
+                                          >
+                                            <Flex justify="space-between" align="center" mb={2.5}>
+                                              <HStack spacing={2}>
+                                                <Badge colorScheme="purple" variant="solid" rounded="md" px={2} py={0.5} fontSize="3xs" fontWeight="bold">
+                                                  Aplikasi Terkait #{relIdx + 1}
+                                                </Badge>
+                                                {app.applicationName && (
+                                                  <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "purple.800" : "purple.200"}>
+                                                    {app.applicationName}
+                                                  </Text>
+                                                )}
+                                                {app.aplikasiKategori && (
+                                                  <Badge colorScheme="teal" variant="subtle" rounded="md" px={2} py={0.5} fontSize="3xs">
+                                                    {app.aplikasiKategori}
+                                                  </Badge>
+                                                )}
+                                              </HStack>
+                                              <IconButton
+                                                aria-label="Hapus aplikasi terkait"
+                                                icon={<FiTrash2 />}
+                                                size="xs"
+                                                colorScheme="red"
+                                                variant="ghost"
+                                                onClick={() => handleRemoveApp(actualIndex)}
+                                              />
+                                            </Flex>
+
+                                            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
+                                              <FormControl isRequired>
+                                                <FormLabel fontSize="xs" fontWeight="semibold" color="gray.500" mb={1}>
+                                                  Pilih Aplikasi Terkait
+                                                </FormLabel>
+                                                <ChakraReactSelect
+                                                  isClearable
+                                                  isLoading={appLoading}
+                                                  placeholder="Cari atau pilih aplikasi terkait..."
+                                                  options={appOptions}
+                                                  value={
+                                                    app.applicationId
+                                                      ? appOptions.find((opt) => opt.value === app.applicationId) || {
+                                                          label: app.applicationName || "Aplikasi",
+                                                          value: app.applicationId,
+                                                          data: { appName: app.applicationName } as any,
+                                                        }
+                                                      : null
+                                                  }
+                                                  onChange={(opt: any) => handleSelectApp(actualIndex, opt)}
+                                                  filterOption={filterAppOption}
+                                                  chakraStyles={selectStyles}
+                                                />
+                                              </FormControl>
+
+                                              <FormControl>
+                                                <FormLabel fontSize="xs" fontWeight="semibold" color="gray.500" mb={1}>
+                                                  Project / RFC / BRD Terkait
+                                                </FormLabel>
+                                                <CreatableSelect
+                                                  isClearable
+                                                  isLoading={projectLoading}
+                                                  placeholder="Pilih atau ketik Project/RFC/BRD..."
+                                                  options={getProjectOptionsForRow(app.applicationId)}
+                                                  value={
+                                                    app.rfcKodeProject
+                                                      ? {
+                                                          label: app.rfcKodeProject,
+                                                          value: app.rfcKodeProject,
+                                                        }
+                                                      : null
+                                                  }
+                                                  onChange={(opt: any) => handleSelectProject(actualIndex, opt)}
+                                                  onCreateOption={(val: string) => handleSelectProject(actualIndex, val)}
+                                                  chakraStyles={selectStyles}
+                                                />
+                                              </FormControl>
+
+                                              <FormControl>
+                                                <FormLabel fontSize="xs" fontWeight="semibold" color="gray.500" mb={1}>
+                                                  Kategori Aplikasi
+                                                </FormLabel>
+                                                <Select
+                                                  size="sm"
+                                                  rounded="lg"
+                                                  value={app.aplikasiKategori || "Transaksional"}
+                                                  onChange={(e) => handleUpdateApp(actualIndex, "aplikasiKategori", e.target.value)}
+                                                >
+                                                  <option value="Transaksional">Transaksional</option>
+                                                  <option value="Monitoring">Monitoring</option>
+                                                  <option value="Regulatory">Regulatory</option>
+                                                  <option value="Pelaporan">Pelaporan</option>
+                                                  <option value="CORE_BANKING">CORE_BANKING</option>
+                                                  <option value="PAYMENT_GATEWAY">PAYMENT_GATEWAY</option>
+                                                </Select>
+                                              </FormControl>
+
+                                              <FormControl>
+                                                <FormLabel fontSize="xs" fontWeight="semibold" color="gray.500" mb={1}>
+                                                  Kode ITSP
+                                                </FormLabel>
+                                                <Input
+                                                  size="sm"
+                                                  rounded="lg"
+                                                  placeholder="Kode ITSP"
+                                                  value={app.itspKode || ""}
+                                                  onChange={(e) => handleUpdateApp(actualIndex, "itspKode", e.target.value)}
+                                                />
+                                              </FormControl>
+                                            </SimpleGrid>
+                                          </Box>
+                                        );
+                                      })}
+                                    </VStack>
+                                  ) : (
+                                    <Box
+                                      p={3}
+                                      bg={colorMode === "light" ? "gray.50" : "gray.800"}
+                                      rounded="md"
+                                      border="1px dashed"
+                                      borderColor={colorMode === "light" ? "gray.300" : "gray.650"}
+                                    >
+                                      <Text fontSize="xs" color="gray.500" fontStyle="italic">
+                                        Belum ada aplikasi terkait. Klik tombol &ldquo;Tambah Aplikasi Terkait&rdquo; di atas untuk menambahkan.
+                                      </Text>
+                                    </Box>
+                                  )}
+                                </Box>
+                              </VStack>
+                            );
+                          })()}
                         </VStack>
                       ) : (
-                        <VStack spacing={4} align="stretch">
+                        <VStack spacing={5} align="stretch">
+                          {/* General Information Grid */}
                           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                             <InfoItem label="Nomor Request" value={Data.requestNo} />
                             <InfoItem label="Tipe Perubahan" value={Data.requestType} />
                             <InfoItem label="Sisi Aplikasi" value={Data.appSide === "OTHER" ? `OTHER (${Data.appSideOther || "-"})` : (Data.appSide || "WEB")} />
-                            <InfoItem label="RFC / Kode Project" value={Data.rfcKodeProject || "RFC-2026-088"} />
-                            <InfoItem label="Kode ITSP" value={Data.itspKode || "ITSP-BJB-990"} />
-                            <InfoItem label="Kategori Aplikasi" value={Data.aplikasiKategori || "CORE_BANKING"} />
                             <InfoItem label="Jenis CAB" value={Data.jenisCab || "WEEKLY"} />
-                            <InfoItem label="Nama Project" value={Data.projectName} />
                             <InfoItem label="Target Date" value={new Date(Data.targetDate).toLocaleDateString("id-ID")} />
                             <InfoItem label="Requester" value={`${Data.requesterName} (${Data.requesterEmail})`} />
                             <InfoItem label="Tanggal Request" value={new Date(Data.requestDate).toLocaleDateString("id-ID")} />
                           </SimpleGrid>
 
-                          {Data.applications && Data.applications.length > 0 && (
-                            <Box mt={2} p={3.5} bg={colorMode === "light" ? "blue.50/40" : "gray.750"} rounded="lg" border="1px solid" borderColor={colorMode === "light" ? "blue.100" : "gray.650"}>
-                              <Text fontSize="xs" fontWeight="bold" color="blue.600" textTransform="uppercase" letterSpacing="wider" mb={2}>
-                                Daftar Aplikasi & Proyek Terkait ({Data.applications.length})
-                              </Text>
-                              <VStack spacing={2} align="stretch">
-                                {Data.applications.map((app, idx) => (
-                                  <Flex key={idx} justify="space-between" align="center" p={2} bg={colorMode === "light" ? "white" : "gray.700"} rounded="md" border="1px solid" borderColor={colorMode === "light" ? "gray.200" : "gray.600"}>
+                          {/* ─── APLIKASI UTAMA & APLIKASI TERKAIT ─── */}
+                          <Divider borderColor={colorMode === "light" ? "gray.200" : "gray.700"} />
+
+                          {(() => {
+                            const appsList: CabSoftwareApplicationItem[] =
+                              Data.applications && Data.applications.length > 0
+                                ? Data.applications
+                                : (Data.applicationName || Data.projectName)
+                                  ? [
+                                      {
+                                        id: "app-main-0",
+                                        applicationId: Data.applicationId || "app-001",
+                                        applicationName: Data.applicationName || Data.projectName || "-",
+                                        aplikasiKategori: Data.aplikasiKategori || "CORE_BANKING",
+                                        rfcKodeProject: Data.rfcKodeProject || "-",
+                                        itspKode: Data.itspKode || "-",
+                                      },
+                                    ]
+                                  : [];
+
+                            const mainApp = appsList[0] || {
+                              applicationId: Data.applicationId || "app-001",
+                              applicationName: Data.applicationName || Data.projectName || "-",
+                              aplikasiKategori: Data.aplikasiKategori || "CORE_BANKING",
+                              rfcKodeProject: Data.rfcKodeProject || "-",
+                              itspKode: Data.itspKode || "-",
+                            };
+
+                            const relatedApps = appsList.slice(1);
+
+                            return (
+                              <VStack spacing={4} align="stretch">
+                                {/* 1. Aplikasi Utama Section */}
+                                <Box>
+                                  <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase" letterSpacing="wider" mb={2}>
+                                    Aplikasi Utama
+                                  </Text>
+                                  <Box
+                                    p={4}
+                                    bg={colorMode === "light" ? "blue.50/50" : "gray.750"}
+                                    rounded="lg"
+                                    border="1.5px solid"
+                                    borderColor={colorMode === "light" ? "blue.200" : "blue.800"}
+                                    position="relative"
+                                  >
+                                    <Flex justify="space-between" align="center" wrap="wrap" gap={2} mb={3}>
+                                      <HStack spacing={2.5}>
+                                        <Badge colorScheme="blue" variant="solid" rounded="md" px={2.5} py={0.5} fontSize="2xs" fontWeight="bold">
+                                          Aplikasi Utama
+                                        </Badge>
+                                        <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "blue.900" : "blue.100"}>
+                                          {mainApp.applicationName || Data.projectName || "-"}
+                                        </Text>
+                                      </HStack>
+                                      {(mainApp.aplikasiKategori || Data.aplikasiKategori) && (
+                                        <Badge colorScheme="blue" variant="subtle" rounded="full" px={2.5} py={0.5} fontSize="3xs" fontWeight="semibold">
+                                          {mainApp.aplikasiKategori || Data.aplikasiKategori}
+                                        </Badge>
+                                      )}
+                                    </Flex>
+
+                                    <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={3} fontSize="xs">
+                                      <Box p={2.5} bg={colorMode === "light" ? "white" : "gray.700"} rounded="md" border="1px solid" borderColor={colorMode === "light" ? "gray.200" : "gray.600"}>
+                                        <Text color="gray.500" fontSize="2xs" fontWeight="semibold" mb={0.5}>Kategori Aplikasi</Text>
+                                        <Text fontWeight="semibold" color={colorMode === "light" ? "gray.800" : "gray.100"}>
+                                          {mainApp.aplikasiKategori || Data.aplikasiKategori || "-"}
+                                        </Text>
+                                      </Box>
+                                      <Box p={2.5} bg={colorMode === "light" ? "white" : "gray.700"} rounded="md" border="1px solid" borderColor={colorMode === "light" ? "gray.200" : "gray.600"}>
+                                        <Text color="gray.500" fontSize="2xs" fontWeight="semibold" mb={0.5}>RFC / Kode Project</Text>
+                                        <Text fontWeight="semibold" color={colorMode === "light" ? "gray.800" : "gray.100"}>
+                                          {mainApp.rfcKodeProject || Data.rfcKodeProject || "-"}
+                                        </Text>
+                                      </Box>
+                                      <Box p={2.5} bg={colorMode === "light" ? "white" : "gray.700"} rounded="md" border="1px solid" borderColor={colorMode === "light" ? "gray.200" : "gray.600"}>
+                                        <Text color="gray.500" fontSize="2xs" fontWeight="semibold" mb={0.5}>Kode ITSP</Text>
+                                        <Text fontWeight="semibold" color={colorMode === "light" ? "gray.800" : "gray.100"}>
+                                          {mainApp.itspKode || Data.itspKode || "-"}
+                                        </Text>
+                                      </Box>
+                                    </SimpleGrid>
+                                  </Box>
+                                </Box>
+
+                                {/* 2. Aplikasi Terkait Section */}
+                                <Box>
+                                  <Flex justify="space-between" align="center" mb={2}>
                                     <HStack spacing={2}>
-                                      <Badge colorScheme="blue" fontSize="3xs" rounded="md">#{idx + 1}</Badge>
-                                      <Text fontSize="xs" fontWeight="semibold">{app.applicationName || "Aplikasi"}</Text>
-                                      {app.aplikasiKategori && <Badge colorScheme="blue" fontSize="3xs" rounded="full">{app.aplikasiKategori}</Badge>}
-                                    </HStack>
-                                    <HStack spacing={3} fontSize="xs" color="gray.500">
-                                      {app.rfcKodeProject && <Text><Text as="span" fontWeight="medium">Project:</Text> {app.rfcKodeProject}</Text>}
-                                      {app.itspKode && <Text><Text as="span" fontWeight="medium">ITSP:</Text> {app.itspKode}</Text>}
+                                      <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase" letterSpacing="wider">
+                                        Aplikasi Terkait
+                                      </Text>
+                                      <Badge colorScheme={relatedApps.length > 0 ? "purple" : "gray"} variant="subtle" rounded="full" px={2} fontSize="3xs">
+                                        {relatedApps.length} Terpilih
+                                      </Badge>
                                     </HStack>
                                   </Flex>
-                                ))}
+
+                                  {relatedApps.length > 0 ? (
+                                    <VStack spacing={2.5} align="stretch">
+                                      {relatedApps.map((app, idx) => (
+                                        <Box
+                                          key={app.id || idx}
+                                          p={3.5}
+                                          bg={colorMode === "light" ? "purple.50/25" : "gray.750"}
+                                          rounded="lg"
+                                          border="1px solid"
+                                          borderColor={colorMode === "light" ? "purple.200" : "purple.900"}
+                                        >
+                                          <Flex justify="space-between" align="center" wrap="wrap" gap={2} mb={2.5}>
+                                            <HStack spacing={2}>
+                                              <Badge colorScheme="purple" variant="solid" rounded="md" px={2} py={0.5} fontSize="3xs" fontWeight="bold">
+                                                Aplikasi Terkait #{idx + 1}
+                                              </Badge>
+                                              <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "gray.100"}>
+                                                {app.applicationName || "Aplikasi"}
+                                              </Text>
+                                            </HStack>
+                                            {app.aplikasiKategori && (
+                                              <Badge colorScheme="purple" variant="subtle" rounded="full" px={2} py={0.5} fontSize="3xs" fontWeight="semibold">
+                                                {app.aplikasiKategori}
+                                              </Badge>
+                                            )}
+                                          </Flex>
+
+                                          <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={2.5} fontSize="xs">
+                                            <Box p={2} bg={colorMode === "light" ? "white" : "gray.700"} rounded="md" border="1px solid" borderColor={colorMode === "light" ? "gray.200" : "gray.600"}>
+                                              <Text color="gray.500" fontSize="2xs" fontWeight="semibold" mb={0.5}>Kategori Aplikasi</Text>
+                                              <Text fontWeight="medium" color={colorMode === "light" ? "gray.800" : "gray.200"}>{app.aplikasiKategori || "-"}</Text>
+                                            </Box>
+                                            <Box p={2} bg={colorMode === "light" ? "white" : "gray.700"} rounded="md" border="1px solid" borderColor={colorMode === "light" ? "gray.200" : "gray.600"}>
+                                              <Text color="gray.500" fontSize="2xs" fontWeight="semibold" mb={0.5}>RFC / Kode Project</Text>
+                                              <Text fontWeight="medium" color={colorMode === "light" ? "gray.800" : "gray.200"}>{app.rfcKodeProject || "-"}</Text>
+                                            </Box>
+                                            <Box p={2} bg={colorMode === "light" ? "white" : "gray.700"} rounded="md" border="1px solid" borderColor={colorMode === "light" ? "gray.200" : "gray.600"}>
+                                              <Text color="gray.500" fontSize="2xs" fontWeight="semibold" mb={0.5}>Kode ITSP</Text>
+                                              <Text fontWeight="medium" color={colorMode === "light" ? "gray.800" : "gray.200"}>{app.itspKode || "-"}</Text>
+                                            </Box>
+                                          </SimpleGrid>
+                                        </Box>
+                                      ))}
+                                    </VStack>
+                                  ) : (
+                                    <Box
+                                      p={3}
+                                      bg={colorMode === "light" ? "gray.50" : "gray.800"}
+                                      rounded="md"
+                                      border="1px dashed"
+                                      borderColor={colorMode === "light" ? "gray.300" : "gray.650"}
+                                    >
+                                      <Text fontSize="xs" color="gray.500" fontStyle="italic">
+                                        Tidak ada aplikasi terkait yang dipilih pada permohonan ini.
+                                      </Text>
+                                    </Box>
+                                  )}
+                                </Box>
                               </VStack>
-                            </Box>
-                          )}
+                            );
+                          })()}
                         </VStack>
                       )}
                     </CardBody>
@@ -1856,7 +2597,7 @@ const CabRequestDetailView = () => {
                               <Select
                                 size="sm"
                                 rounded="lg"
-                                value={requestEditForm.ceklistMigrasi || (requestEditForm.ceklistMigrasiRundown ? "ADA" : "TIDAK")}
+                                value={requestEditForm.ceklistMigrasi || "ADA"}
                                 onChange={(e) => setRequestEditForm({ ...requestEditForm, ceklistMigrasi: e.target.value as any })}
                               >
                                 <option value="ADA">ADA</option>
@@ -1864,20 +2605,6 @@ const CabRequestDetailView = () => {
                               </Select>
                             </FormControl>
                           </SimpleGrid>
-
-                          {(requestEditForm.ceklistMigrasi === "ADA" || requestEditForm.ceklistMigrasiRundown) && (
-                            <FormControl>
-                              <FormLabel fontSize="xs" fontWeight="semibold" color="gray.500" mb={1}>Rundown & Langkah Eksekusi Migrasi</FormLabel>
-                              <Textarea
-                                size="sm"
-                                rows={4}
-                                rounded="lg"
-                                value={requestEditForm.ceklistMigrasiRundown}
-                                onChange={(e) => setRequestEditForm({ ...requestEditForm, ceklistMigrasiRundown: e.target.value })}
-                                placeholder="Rundown langkah eksekusi migrasi..."
-                              />
-                            </FormControl>
-                          )}
                         </VStack>
                       ) : (
                         <VStack spacing={3} align="stretch">
@@ -1923,25 +2650,12 @@ const CabRequestDetailView = () => {
                             <InfoItem
                               label="Ceklist Migrasi (SW) & Rundown"
                               value={
-                                <Badge colorScheme={(Data.ceklistMigrasi === "ADA" || Data.ceklistMigrasiRundown) ? "green" : "gray"} variant="subtle" rounded="full" px={2}>
-                                  {Data.ceklistMigrasi || (Data.ceklistMigrasiRundown ? "ADA" : "TIDAK")}
+                                <Badge colorScheme={Data.ceklistMigrasi === "TIDAK" ? "gray" : "green"} variant="subtle" rounded="full" px={2}>
+                                  {Data.ceklistMigrasi === "TIDAK" ? "TIDAK ADA" : "ADA"}
                                 </Badge>
                               }
                             />
                           </SimpleGrid>
-                          {Data.ceklistMigrasiRundown && (
-                            <>
-                              <Divider />
-                              <Box>
-                                <Text fontSize="xs" fontWeight="semibold" color="gray.500" mb={1.5}>Rundown Langkah Eksekusi Migrasi:</Text>
-                                <Box p={3} rounded="md" bg={colorMode === "light" ? "gray.50" : "gray.750"} border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
-                                  <Text fontSize="xs" fontFamily="mono" whiteSpace="pre-line" color={colorMode === "light" ? "gray.800" : "gray.200"}>
-                                    {Data.ceklistMigrasiRundown}
-                                  </Text>
-                                </Box>
-                              </Box>
-                            </>
-                          )}
                         </VStack>
                       )}
                     </CardBody>
@@ -2124,71 +2838,219 @@ const CabRequestDetailView = () => {
                           </Flex>
                         </VStack>
                       ) : (
-                        <VStack spacing={4} align="stretch">
-                          <Box>
-                            <Text fontSize="xs" fontWeight="semibold" color="gray.500" mb={2}>
-                              PIC Pelaksana Migrasi (Internal IT):
-                            </Text>
-                            {Array.isArray(Data.picMigrasi) && Data.picMigrasi.length > 0 ? (
-                              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={2.5}>
-                                {Data.picMigrasi.map((pic, idx) => (
-                                  <HStack
-                                    key={idx}
-                                    p={2.5}
-                                    bg={colorMode === "light" ? "blue.50" : "gray.750"}
-                                    border="1px solid"
-                                    borderColor={colorMode === "light" ? "blue.200" : "blue.800"}
-                                    rounded="lg"
-                                    justify="space-between"
-                                  >
-                                    <HStack spacing={2.5}>
-                                      <Avatar size="xs" name={pic.userName} bg="blue.400" />
-                                      <VStack align="start" spacing={0}>
-                                        <Text fontSize="xs" fontWeight="bold">
-                                          {pic.userName}
-                                        </Text>
-                                        <Text fontSize="3xs" color="gray.500">
-                                          {pic.divisi || "Divisi IT"}
-                                        </Text>
-                                      </VStack>
-                                    </HStack>
-                                    <Badge colorScheme="blue" fontSize="3xs" rounded="full" px={1.5}>
-                                      Internal IT
+                        <VStack spacing={5} align="stretch">
+                          {/* 1. PIC Pelaksana Migrasi Table */}
+                          {(() => {
+                            const picList = Array.isArray(Data.picMigrasi) && Data.picMigrasi.length > 0
+                              ? Data.picMigrasi
+                              : (Data.picMigrasi as any)?.userName
+                                ? [Data.picMigrasi as any]
+                                : Data.requesterName
+                                  ? [{ userName: Data.requesterName, divisi: "Divisi IT Digital Banking", type: "INTERNAL_IT" }]
+                                  : [];
+
+                            return (
+                              <Box>
+                                <Flex justify="space-between" align="center" mb={2.5}>
+                                  <HStack spacing={2}>
+                                    <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase" letterSpacing="wider">
+                                      PIC Pelaksana Migrasi (Internal IT)
+                                    </Text>
+                                    <Badge colorScheme="blue" variant="subtle" rounded="full" px={2} fontSize="3xs">
+                                      {picList.length} PIC
                                     </Badge>
                                   </HStack>
-                                ))}
-                              </SimpleGrid>
-                            ) : (
-                              <HStack spacing={3} p={2.5} bg={colorMode === "light" ? "gray.50" : "gray.750"} rounded="lg">
-                                <Icon as={FiUser} color="secondary.500" />
-                                <VStack align="start" spacing={0}>
-                                  <Text fontSize="sm" fontWeight="bold">
-                                    {(Data.picMigrasi as any)?.userName || Data.requesterName || "Iqbal Maulana"}
-                                  </Text>
-                                  <Text fontSize="xs" color="gray.500">
-                                    {(Data.picMigrasi as any)?.divisi || "Divisi IT Digital Banking"}
-                                  </Text>
-                                </VStack>
-                              </HStack>
-                            )}
-                          </Box>
+                                </Flex>
 
-                          {Data.committeeCab && Data.committeeCab.length > 0 && (
-                            <Box>
-                              <Text fontSize="xs" fontWeight="semibold" color="gray.500" mb={2}>Anggota Komite CAB yang Hadir / Terlibat:</Text>
-                              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={2.5}>
-                                {Data.committeeCab.map((cm, idx) => (
-                                  <HStack key={idx} p={2} bg={colorMode === "light" ? "white" : "gray.800"} border="1px solid" borderColor={colorMode === "light" ? "gray.200" : "gray.700"} rounded="md">
-                                    <Box w="6px" h="6px" rounded="full" bg="teal.400" />
-                                    <VStack align="start" spacing={0}>
-                                      <Text fontSize="xs" fontWeight="semibold">{cm.userName}</Text>
-                                      <Text fontSize="3xs" color="gray.500">{cm.asalDivisi || cm.asalInstitusi || cm.type}</Text>
-                                    </VStack>
+                                {picList.length > 0 ? (
+                                  <TableContainer
+                                    w="full"
+                                    border="1px solid"
+                                    borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                                    rounded="lg"
+                                    overflow="hidden"
+                                    bg={colorMode === "light" ? "white" : "gray.800"}
+                                  >
+                                    <Table size="sm" variant="simple">
+                                      <Thead bg={colorMode === "light" ? "gray.50" : "gray.750"}>
+                                        <Tr>
+                                          <Th w="60px" textAlign="center" fontSize="2xs" color="gray.500">
+                                            NO
+                                          </Th>
+                                          <Th fontSize="2xs" color="gray.500">
+                                            NAMA PIC
+                                          </Th>
+                                          <Th fontSize="2xs" color="gray.500">
+                                            ASAL DIVISI
+                                          </Th>
+                                          <Th w="120px" textAlign="center" fontSize="2xs" color="gray.500">
+                                            TIPE
+                                          </Th>
+                                        </Tr>
+                                      </Thead>
+                                      <Tbody>
+                                        {picList.map((pic, idx) => (
+                                          <Tr
+                                            key={idx}
+                                            _hover={{ bg: colorMode === "light" ? "blue.50/40" : "gray.750" }}
+                                            transition="background 0.15s ease"
+                                          >
+                                            <Td textAlign="center" fontSize="xs" fontWeight="semibold" color="gray.500">
+                                              {idx + 1}
+                                            </Td>
+                                            <Td fontSize="xs">
+                                              <HStack spacing={2.5}>
+                                                <Avatar size="xs" name={pic.userName} bg="blue.500" color="white" />
+                                                <Text fontWeight="semibold" color={colorMode === "light" ? "gray.800" : "gray.100"}>
+                                                  {pic.userName}
+                                                </Text>
+                                              </HStack>
+                                            </Td>
+                                            <Td fontSize="xs" color={colorMode === "light" ? "gray.600" : "gray.300"}>
+                                              {pic.divisi || "Divisi IT"}
+                                            </Td>
+                                            <Td textAlign="center">
+                                              <Badge colorScheme="blue" variant="subtle" fontSize="3xs" rounded="full" px={2} py={0.5}>
+                                                Internal IT
+                                              </Badge>
+                                            </Td>
+                                          </Tr>
+                                        ))}
+                                      </Tbody>
+                                    </Table>
+                                  </TableContainer>
+                                ) : (
+                                  <Box
+                                    p={3}
+                                    bg={colorMode === "light" ? "gray.50" : "gray.800"}
+                                    rounded="md"
+                                    border="1px dashed"
+                                    borderColor={colorMode === "light" ? "gray.300" : "gray.650"}
+                                  >
+                                    <Text fontSize="xs" color="gray.500" fontStyle="italic">
+                                      Belum ada PIC pelaksana migrasi yang ditentukan.
+                                    </Text>
+                                  </Box>
+                                )}
+                              </Box>
+                            );
+                          })()}
+
+                          {/* 2. Anggota Komite CAB Table */}
+                          {(() => {
+                            const committeeList = Array.isArray(Data.committeeCab) && Data.committeeCab.length > 0
+                              ? Data.committeeCab
+                              : [];
+
+                            return (
+                              <Box>
+                                <Flex justify="space-between" align="center" mb={2.5}>
+                                  <HStack spacing={2}>
+                                    <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase" letterSpacing="wider">
+                                      Anggota Komite CAB yang Hadir / Terlibat
+                                    </Text>
+                                    <Badge colorScheme="teal" variant="subtle" rounded="full" px={2} fontSize="3xs">
+                                      {committeeList.length} Anggota
+                                    </Badge>
                                   </HStack>
-                                ))}
-                              </SimpleGrid>
-                            </Box>
-                          )}
+                                </Flex>
+
+                                {committeeList.length > 0 ? (
+                                  <TableContainer
+                                    w="full"
+                                    border="1px solid"
+                                    borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                                    rounded="lg"
+                                    overflow="hidden"
+                                    bg={colorMode === "light" ? "white" : "gray.800"}
+                                  >
+                                    <Table size="sm" variant="simple">
+                                      <Thead bg={colorMode === "light" ? "gray.50" : "gray.750"}>
+                                        <Tr>
+                                          <Th w="60px" textAlign="center" fontSize="2xs" color="gray.500">
+                                            NO
+                                          </Th>
+                                          <Th fontSize="2xs" color="gray.500">
+                                            NAMA ANGGOTA
+                                          </Th>
+                                          <Th fontSize="2xs" color="gray.500">
+                                            ASAL DIVISI / INSTITUSI
+                                          </Th>
+                                          <Th w="120px" textAlign="center" fontSize="2xs" color="gray.500">
+                                            KATEGORI
+                                          </Th>
+                                        </Tr>
+                                      </Thead>
+                                      <Tbody>
+                                        {committeeList.map((cm, idx) => {
+                                          const divisionOrInstitution =
+                                            cm.type === "EXTERNAL"
+                                              ? cm.asalInstitusi || cm.asalDivisi || "-"
+                                              : cm.asalDivisi || "-";
+                                          return (
+                                            <Tr
+                                              key={idx}
+                                              _hover={{ bg: colorMode === "light" ? "teal.50/40" : "gray.750" }}
+                                              transition="background 0.15s ease"
+                                            >
+                                              <Td textAlign="center" fontSize="xs" fontWeight="semibold" color="gray.500">
+                                                {idx + 1}
+                                              </Td>
+                                              <Td fontSize="xs">
+                                                <HStack spacing={2}>
+                                                  <Avatar size="xs" name={cm.userName} bg="teal.500" color="white" />
+                                                  <Text fontWeight="semibold" color={colorMode === "light" ? "gray.800" : "gray.100"}>
+                                                    {cm.userName}
+                                                  </Text>
+                                                </HStack>
+                                              </Td>
+                                              <Td fontSize="xs" color={colorMode === "light" ? "gray.600" : "gray.300"}>
+                                                {divisionOrInstitution}
+                                              </Td>
+                                              <Td textAlign="center">
+                                                <Badge
+                                                  fontSize="3xs"
+                                                  rounded="full"
+                                                  px={2}
+                                                  py={0.5}
+                                                  colorScheme={
+                                                    cm.type === "INTERNAL_IT"
+                                                      ? "blue"
+                                                      : cm.type === "INTERNAL_BJB"
+                                                      ? "green"
+                                                      : "purple"
+                                                  }
+                                                  variant="subtle"
+                                                >
+                                                  {cm.type === "INTERNAL_IT"
+                                                    ? "Internal IT"
+                                                    : cm.type === "INTERNAL_BJB"
+                                                    ? "Internal BJB"
+                                                    : "Eksternal"}
+                                                </Badge>
+                                              </Td>
+                                            </Tr>
+                                          );
+                                        })}
+                                      </Tbody>
+                                    </Table>
+                                  </TableContainer>
+                                ) : (
+                                  <Box
+                                    p={3}
+                                    bg={colorMode === "light" ? "gray.50" : "gray.800"}
+                                    rounded="md"
+                                    border="1px dashed"
+                                    borderColor={colorMode === "light" ? "gray.300" : "gray.650"}
+                                  >
+                                    <Text fontSize="xs" color="gray.500" fontStyle="italic">
+                                      Belum ada anggota komite CAB yang ditambahkan.
+                                    </Text>
+                                  </Box>
+                                )}
+                              </Box>
+                            );
+                          })()}
                         </VStack>
                       )}
                     </CardBody>
@@ -2221,7 +3083,7 @@ const CabRequestDetailView = () => {
                             shadow="sm"
                             fontWeight="bold"
                           >
-                            Lanjut ke Evaluasi & Aksi →
+                           Selanjutnya
                           </Button>
                         </Flex>
                       </CardBody>
@@ -2310,14 +3172,14 @@ const CabRequestDetailView = () => {
               {!isApproved && activeDetailStep === 2 && (
                 <>
                   {/* Top Context & Summary Dossier Card */}
-                  <Card
+                  {/* <Card
                     rounded={radiusStyle}
                     shadow="sm"
                     border="1px"
                     borderColor={colorMode === "light" ? "blue.200" : "blue.800"}
                     bg={colorMode === "light" ? "blue.50" : "gray.850"}
-                  >
-                    <CardBody px={5} py={4}>
+                  > */}
+                    {/* <CardBody px={5} py={4}>
                       <Flex justify="space-between" align="center" wrap="wrap" gap={3} mb={3.5}>
                         <HStack spacing={2.5}>
                           <Box w="4px" h="20px" bg="blue.500" rounded="full" />
@@ -2358,11 +3220,11 @@ const CabRequestDetailView = () => {
                           </Text>
                         </Box>
                       </SimpleGrid>
-                    </CardBody>
-                  </Card>
+                    </CardBody> */}
+                  
 
-                  {/* ─── STAGE 2: Penjadwalan Rapat CAB (Status: REQUEST) ─── */}
-                  {Data.status === "REQUEST" && (
+                  {/* ─── STAGE 2: Penjadwalan Rapat CAB (Status: REQUEST / PENGAJUAN) ─── */}
+                  {(Data.status === "PENGAJUAN" || Data.status === "REQUEST") && (
                     canSchedule ? (
                       (() => {
                         const isDateDifferent = Boolean(
@@ -2674,8 +3536,8 @@ const CabRequestDetailView = () => {
                     )
                   )}
 
-                  {/* ─── STAGE 3: Pelaksanaan Rapat CAB (Status: SCHEDULED / SUBMITTED) ─── */}
-                  {(Data.status === "SCHEDULED" || Data.status === "SUBMITTED") && (
+                  {/* ─── STAGE 2: Pelaksanaan Rapat CAB (Status: PELAKSANAAN / CONFIRM) ─── */}
+                  {(Data.status === "PELAKSANAAN" || Data.status === "CONFIRM" || Data.status === "PENJADWALAN" || Data.status === "SCHEDULED" || Data.status === "SUBMITTED") && (
                     <Card rounded={radiusStyle} shadow="sm" border="2px solid" borderColor="teal.300" bg={colorMode === "light" ? "teal.50" : "gray.800"}>
                       <CardHeader py={3} px={5} borderBottom="1px" borderColor={colorMode === "light" ? "teal.100" : "gray.700"}>
                         <Flex justify="space-between" align="center" w="full">
@@ -2683,9 +3545,9 @@ const CabRequestDetailView = () => {
                             <Icon as={FiUsers} color="teal.500" />
                             <Heading size="sm" color="teal.700">Pelaksanaan Rapat CAB (Scheduler & All Tim)</Heading>
                           </HStack>
-                          {/* <Badge colorScheme="teal" variant="solid" rounded="full" px={2.5} py={0.5} fontSize="2xs">
-                            STAGE 3: CONFIRM
-                          </Badge> */}
+                          <Badge colorScheme="teal" variant="solid" rounded="full" px={2.5} py={0.5} fontSize="2xs">
+                            TAHAP: PELAKSANAAN
+                          </Badge>
                         </Flex>
                       </CardHeader>
                       <CardBody px={5} py={4}>
@@ -2736,22 +3598,6 @@ const CabRequestDetailView = () => {
                               {canSchedule ? (
                                 <VStack spacing={3.5} align="stretch">
                                   <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3.5}>
-                                    {/* PIR */}
-                                    <FormControl isRequired>
-                                      <FormLabel fontSize="xs" fontWeight="semibold" color={colorMode === "light" ? "gray.700" : "gray.300"} mb={1}>
-                                        PIR (Post Implementation Review)
-                                      </FormLabel>
-                                      <RadioGroup
-                                        value={commitmentForm.pir || "ADA"}
-                                        onChange={(val) => setCommitmentForm((prev) => ({ ...prev, pir: val }))}
-                                      >
-                                        <HStack spacing={6} h="32px">
-                                          <Radio size="sm" value="ADA" colorScheme="teal">Ada</Radio>
-                                          <Radio size="sm" value="TIDAK_ADA" colorScheme="teal">Tidak Ada</Radio>
-                                        </HStack>
-                                      </RadioGroup>
-                                    </FormControl>
-
                                     {/* Keputusan Migrasi (Ya / Tidak) */}
                                     <FormControl isRequired>
                                       <FormLabel fontSize="xs" fontWeight="semibold" color={colorMode === "light" ? "gray.700" : "gray.300"} mb={1}>
@@ -2785,7 +3631,7 @@ const CabRequestDetailView = () => {
                                     </FormControl>
 
                                     {/* Kesepakatan Waktu Pelaksanaan Migrasi */}
-                                    <FormControl isRequired>
+                                    <FormControl isRequired gridColumn={{ base: "span 1", md: "span 2" }}>
                                       <FormLabel fontSize="xs" fontWeight="semibold" color={colorMode === "light" ? "gray.700" : "gray.300"} mb={1}>
                                         Kesepakatan Waktu Pelaksanaan Migrasi
                                       </FormLabel>
@@ -2797,6 +3643,23 @@ const CabRequestDetailView = () => {
                                         borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
                                         value={commitmentForm.kesepakatanWaktuPelaksanaanMigrasi}
                                         onChange={(e) => setCommitmentForm((prev) => ({ ...prev, kesepakatanWaktuPelaksanaanMigrasi: e.target.value }))}
+                                      />
+                                    </FormControl>
+
+                                    {/* PIR (Post Implementation Review) */}
+                                    <FormControl gridColumn={{ base: "span 1", md: "span 2" }}>
+                                      <FormLabel fontSize="xs" fontWeight="semibold" color={colorMode === "light" ? "gray.700" : "gray.300"} mb={1}>
+                                        PIR (Post Implementation Review)
+                                      </FormLabel>
+                                      <Textarea
+                                        size="sm"
+                                        rounded="lg"
+                                        rows={2}
+                                        placeholder="Tuliskan deskripsi/catatan Post Implementation Review (PIR)..."
+                                        bg={colorMode === "light" ? "white" : "gray.700"}
+                                        borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
+                                        value={commitmentForm.pir}
+                                        onChange={(e) => setCommitmentForm((prev) => ({ ...prev, pir: e.target.value }))}
                                       />
                                     </FormControl>
 
@@ -2820,7 +3683,6 @@ const CabRequestDetailView = () => {
                                 </VStack>
                               ) : (
                                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
-                                  <InfoItem label="PIR" value={Data.pir === "TIDAK_ADA" ? "Tidak Ada" : "Ada"} />
                                   <InfoItem label="Keputusan Migrasi" value={Data.keputusanMigrasi === "TIDAK" ? "Tidak" : (Data.keputusanMigrasi || "Ya")} />
                                   <InfoItem
                                     label="Ketersediaan Waktu Migrasi Data Center"
@@ -2831,6 +3693,9 @@ const CabRequestDetailView = () => {
                                     value={Data.kesepakatanWaktuPelaksanaanMigrasi ? `${new Date(Data.kesepakatanWaktuPelaksanaanMigrasi).toLocaleDateString("id-ID")} ${new Date(Data.kesepakatanWaktuPelaksanaanMigrasi).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB` : (Data.kesepakatanWaktuPelaksanaan ? `${new Date(Data.kesepakatanWaktuPelaksanaan).toLocaleDateString("id-ID")} ${new Date(Data.kesepakatanWaktuPelaksanaan).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB` : "-")}
                                   />
                                   <Box gridColumn={{ base: "span 1", md: "span 2" }}>
+                                    <InfoItem label="PIR (Post Implementation Review)" value={Data.pir || "-"} />
+                                  </Box>
+                                  <Box gridColumn={{ base: "span 1", md: "span 2" }}>
                                     <InfoItem label="Catatan Komitmen" value={Data.catatanKomitmen || "-"} />
                                   </Box>
                                 </SimpleGrid>
@@ -2838,20 +3703,8 @@ const CabRequestDetailView = () => {
                             </VStack>
                           </Box>
 
-
-
                           {canSchedule ? (
                             <Flex justify="end" pt={2} gap={3} wrap="wrap">
-                              {/* <Button
-                                variant="outline"
-                                colorScheme="teal"
-                                size="sm"
-                                leftIcon={<FiSave />}
-                                onClick={handleSaveCommitment}
-                                isLoading={isSavingCommitment}
-                              >
-                                Simpan Komitmen Migrasi
-                              </Button> */}
                               <Button
                                 colorScheme="teal"
                                 bg="teal.600"
@@ -2869,7 +3722,7 @@ const CabRequestDetailView = () => {
                           ) : (
                             <Box p={3} bg={colorMode === "light" ? "white" : "gray.750"} rounded="md" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.650"}>
                               <Text fontSize="xs" color="gray.500">
-                                ℹ Menunggu Scheduler mengonfirmasi pelaksanaan sidang saat rapat CAB dimulai bersama tim.
+                                ℹ Menunggu Scheduler mengisikan komitmen migrasi saat rapat sidang CAB berlangsung bersama tim.
                               </Text>
                             </Box>
                           )}
@@ -2878,151 +3731,37 @@ const CabRequestDetailView = () => {
                     </Card>
                   )}
 
-                  {/* ─── STAGE 4: Evaluasi Migrasi & Hasil Sidang CAB (Status: CONFIRM) ─── */}
-                  {Data.status === "CONFIRM" && (
-                    <Card rounded={radiusStyle} shadow="sm" border="2px solid" borderColor="purple.300" bg={colorMode === "light" ? "purple.50" : "gray.800"}>
-                      <CardHeader py={3} px={5} borderBottom="1px" borderColor={colorMode === "light" ? "purple.100" : "gray.700"}>
-                        <Flex justify="space-between" align="center" w="full">
-                          <HStack spacing={2}>
-                            <Icon as={FiFileText} color="purple.500" />
-                            <Heading size="sm" color="purple.700">Evaluasi Migrasi & Hasil Sidang CAB (Mark as Done)</Heading>
-                          </HStack>
-                        </Flex>
-                      </CardHeader>
-                      <CardBody px={5} py={4}>
-                        <VStack spacing={4} align="stretch">
-                          {/* Execution confirmation detail */}
-                          <Box p={3.5} bg={colorMode === "light" ? "white" : "gray.750"} rounded="lg" border="1px" borderColor={colorMode === "light" ? "purple.200" : "gray.600"}>
-                            <HStack spacing={2} mb={1}>
-                              <Icon as={FiCheckCircle} color="purple.500" boxSize={4} />
-                              <Text fontSize="xs" fontWeight="bold" color="purple.700">
-                                Sidang Rapat CAB Telah Dilaksanakan
-                              </Text>
-                            </HStack>
-                            <Text fontSize="xs" color="gray.600">
-                              Rapat pembahasan permohonan telah dikonfirmasi terlaksana. Silakan masukkan hasil evaluasi teknis, kesimpulan mitigasi, dan tentukan status implementasi migrasi.
-                            </Text>
-                          </Box>
-
-                          {/* Summary of Commitment from Stage 3 */}
-                          {(Data.ketersediaanWaktuMigrasiDc || Data.kesepakatanWaktuPelaksanaanMigrasi || Data.pir || Data.catatanKomitmen) && (
-                            <Box p={3.5} bg={colorMode === "light" ? "white" : "gray.750"} rounded="lg" border="1px" borderColor={colorMode === "light" ? "purple.200" : "gray.600"}>
-                              <Text fontSize="2xs" color="gray.500" fontWeight="bold" textTransform="uppercase" mb={2}>
-                                Kesepakatan & Komitmen Migrasi Terkonfirmasi:
-                              </Text>
-                              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
-                                <InfoItem label="PIR" value={Data.pir === "TIDAK_ADA" ? "Tidak Ada" : "Ada"} />
-                                <InfoItem label="Keputusan Migrasi" value={Data.keputusanMigrasi === "TIDAK" ? "Tidak" : (Data.keputusanMigrasi || "Ya")} />
-                                <InfoItem
-                                  label="Ketersediaan Waktu Migrasi Data Center"
-                                  value={Data.ketersediaanWaktuMigrasiDc ? `${new Date(Data.ketersediaanWaktuMigrasiDc).toLocaleDateString("id-ID")} ${new Date(Data.ketersediaanWaktuMigrasiDc).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB` : "-"}
-                                />
-                                <InfoItem
-                                  label="Kesepakatan Waktu Pelaksanaan Migrasi"
-                                  value={Data.kesepakatanWaktuPelaksanaanMigrasi ? `${new Date(Data.kesepakatanWaktuPelaksanaanMigrasi).toLocaleDateString("id-ID")} ${new Date(Data.kesepakatanWaktuPelaksanaanMigrasi).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB` : (Data.kesepakatanWaktuPelaksanaan ? `${new Date(Data.kesepakatanWaktuPelaksanaan).toLocaleDateString("id-ID")} ${new Date(Data.kesepakatanWaktuPelaksanaan).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB` : "-")}
-                                />
-                                {Data.catatanKomitmen && (
-                                  <Box gridColumn={{ base: "span 1", md: "span 2" }}>
-                                    <InfoItem label="Catatan Komitmen" value={Data.catatanKomitmen} />
-                                  </Box>
-                                )}
-                              </SimpleGrid>
-                            </Box>
-                          )}
-
-                          {canSchedule ? (
-                            <>
-                              <FormControl isRequired>
-                                <FormLabel fontSize="sm" fontWeight="semibold">Hasil Evaluasi / Catatan Sidang Meeting</FormLabel>
-                                <Textarea
-                                  placeholder="Tuliskan hasil evaluasi migrasi & pembahasan CAB..."
-                                  rows={4}
-                                  size="sm"
-                                  rounded="lg"
-                                  bg={colorMode === "light" ? "white" : "gray.750"}
-                                  value={resultForm.cabResult}
-                                  onChange={(e) => setResultForm({ ...resultForm, cabResult: e.target.value })}
-                                />
-                              </FormControl>
-                              <FormControl>
-                                <FormLabel fontSize="sm" fontWeight="semibold">Catatan Tambahan CAB</FormLabel>
-                                <Textarea
-                                  placeholder="Catatan opsional..."
-                                  rows={3}
-                                  size="sm"
-                                  rounded="lg"
-                                  bg={colorMode === "light" ? "white" : "gray.750"}
-                                  value={resultForm.cabNotes}
-                                  onChange={(e) => setResultForm({ ...resultForm, cabNotes: e.target.value })}
-                                />
-                              </FormControl>
-                              <FormControl isRequired>
-                                <FormLabel fontSize="sm" fontWeight="semibold">Status Implementasi</FormLabel>
-                                <Select
-                                  size="sm"
-                                  rounded="lg"
-                                  bg={colorMode === "light" ? "white" : "gray.750"}
-                                  value={resultForm.implementationStatus}
-                                  onChange={(e) => setResultForm({ ...resultForm, implementationStatus: e.target.value })}
-                                >
-                                  <option value="">-- Pilih Status --</option>
-                                  <option value="SUCCESS">SUCCESS</option>
-                                  <option value="FAILED">FAILED</option>
-                                  <option value="PARTIAL">PARTIAL</option>
-                                </Select>
-                              </FormControl>
-                              <HStack justify="end" spacing={3} pt={2}>
-                                <Button
-                                  colorScheme="purple"
-                                  bg="purple.600"
-                                  color="white"
-                                  _hover={{ bg: "purple.700" }}
-                                  size="sm"
-                                  leftIcon={<FiCheck />}
-                                  onClick={handleSetImplementStatus}
-                                  isLoading={loading}
-                                >
-                                  Submit
-                                </Button>
-                              </HStack>
-                            </>
-                          ) : (
-                            <Box p={3} bg={colorMode === "light" ? "white" : "gray.750"} rounded="md" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.650"}>
-                              <Text fontSize="xs" color="gray.500">
-                                ℹ Menunggu Scheduler mengisikan catatan evaluasi migrasi dan menandai implementasi selesai.
-                              </Text>
-                            </Box>
-                          )}
-                        </VStack>
-                      </CardBody>
-                    </Card>
-                  )}
-
-                  {/* ─── STAGE 5: Activity Checklist CAB & Send to Approval (Status: IMPLEMENT) ─── */}
-                  {Data.status === "IMPLEMENT" && (
+                  {/* ─── STAGE 3: Evaluasi Migrasi, Checklist & Send to Approval (Status: IMPLEMENTASI / IMPLEMENT) ─── */}
+                  {(Data.status === "IMPLEMENTASI" || Data.status === "IMPLEMENT") && (
                     <VStack spacing={5} align="stretch">
-                      {/* Context Result Summary Card */}
-                      {Data.cabResult && (
-                        <Card rounded={radiusStyle} shadow="sm" border="1px" borderColor={colorMode === "light" ? "purple.200" : "purple.800"} bg={colorMode === "light" ? "purple.50" : "gray.800"}>
-                          <CardBody px={5} py={3.5}>
-                            <Flex justify="space-between" align="center" wrap="wrap" gap={2} mb={2}>
-                              <HStack spacing={2}>
-                                <Icon as={FiFileText} color="purple.500" />
-                                <Text fontSize="xs" fontWeight="bold" color="purple.700">
-                                  Hasil Evaluasi Sidang Rapat CAB:
-                                </Text>
-                              </HStack>
-                              {Data.implementationStatus && (
-                                <Badge colorScheme={Data.implementationStatus === "SUCCESS" ? "green" : Data.implementationStatus === "FAILED" ? "red" : "orange"} fontSize="2xs">
-                                  STATUS: {Data.implementationStatus}
-                                </Badge>
-                              )}
-                            </Flex>
-                            <Text fontSize="xs" color={colorMode === "light" ? "gray.700" : "gray.200"} lineHeight="tall">
-                              {Data.cabResult}
-                            </Text>
-                          </CardBody>
-                        </Card>
+                      {/* Summary of Commitment from Pelaksanaan */}
+                      {(Data.ketersediaanWaktuMigrasiDc || Data.kesepakatanWaktuPelaksanaanMigrasi || Data.pir || Data.catatanKomitmen) && (
+                        <Box p={3.5} bg={colorMode === "light" ? "white" : "gray.750"} rounded="lg" border="1px" borderColor={colorMode === "light" ? "teal.200" : "gray.600"}>
+                          <Text fontSize="2xs" color="gray.500" fontWeight="bold" textTransform="uppercase" mb={2}>
+                            Kesepakatan & Komitmen Migrasi Terkonfirmasi:
+                          </Text>
+                          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
+                            <InfoItem label="Keputusan Migrasi" value={Data.keputusanMigrasi === "TIDAK" ? "Tidak" : (Data.keputusanMigrasi || "Ya")} />
+                            <InfoItem
+                              label="Ketersediaan Waktu Migrasi Data Center"
+                              value={Data.ketersediaanWaktuMigrasiDc ? `${new Date(Data.ketersediaanWaktuMigrasiDc).toLocaleDateString("id-ID")} ${new Date(Data.ketersediaanWaktuMigrasiDc).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB` : "-"}
+                            />
+                            <InfoItem
+                              label="Kesepakatan Waktu Pelaksanaan Migrasi"
+                              value={Data.kesepakatanWaktuPelaksanaanMigrasi ? `${new Date(Data.kesepakatanWaktuPelaksanaanMigrasi).toLocaleDateString("id-ID")} ${new Date(Data.kesepakatanWaktuPelaksanaanMigrasi).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB` : (Data.kesepakatanWaktuPelaksanaan ? `${new Date(Data.kesepakatanWaktuPelaksanaan).toLocaleDateString("id-ID")} ${new Date(Data.kesepakatanWaktuPelaksanaan).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB` : "-")}
+                            />
+                            {Data.pir && (
+                              <Box gridColumn={{ base: "span 1", md: "span 2" }}>
+                                <InfoItem label="PIR (Post Implementation Review)" value={Data.pir} />
+                              </Box>
+                            )}
+                            {Data.catatanKomitmen && (
+                              <Box gridColumn={{ base: "span 1", md: "span 2" }}>
+                                <InfoItem label="Catatan Komitmen" value={Data.catatanKomitmen} />
+                              </Box>
+                            )}
+                          </SimpleGrid>
+                        </Box>
                       )}
 
                       {/* Activity Checklist CAB (Verifikasi Pra-Approval) */}
@@ -3032,16 +3771,6 @@ const CabRequestDetailView = () => {
                             <HStack spacing={2.5}>
                               <Icon as={FiCheckSquare} color="blue.500" />
                               <Heading size="sm">Activity Checklist CAB (Verifikasi Pra-Approval)</Heading>
-                              {/* <Badge
-                                colorScheme={Data.category === "HARDWARE" ? "purple" : "blue"}
-                                variant="solid"
-                                rounded="md"
-                                px={2}
-                                py={0.5}
-                                fontSize="2xs"
-                              >
-                                {Data.category === "HARDWARE" ? "HARDWARE" : "SOFTWARE"}
-                              </Badge> */}
                             </HStack>
                             <Badge
                               colorScheme={allActivitiesDone ? "green" : "orange"}
@@ -3092,7 +3821,8 @@ const CabRequestDetailView = () => {
 
                             <VStack spacing={2.5} align="stretch">
                               {activities.map((act) => {
-                                const canToggle = canSchedule && Data.status === "IMPLEMENT";
+                                const isFinalStatus = ["COMPLETED", "APPROVED", "REJECTED"].includes(Data.status);
+                                const canToggle = !isFinalStatus;
                                 return (
                                   <Box
                                     key={act.id}
@@ -3161,6 +3891,86 @@ const CabRequestDetailView = () => {
                         </CardBody>
                       </Card>
 
+                      {/* Evaluasi Migrasi & Hasil Sidang CAB (Mark as Done) */}
+                      <Card rounded={radiusStyle} shadow="sm" border="2px solid" borderColor="purple.300" bg={colorMode === "light" ? "purple.50" : "gray.800"}>
+                        <CardHeader py={3} px={5} borderBottom="1px" borderColor={colorMode === "light" ? "purple.100" : "gray.700"}>
+                          <Flex justify="space-between" align="center" w="full">
+                            <HStack spacing={2}>
+                              <Icon as={FiFileText} color="purple.500" />
+                              <Heading size="sm" color="purple.700">Evaluasi Migrasi & Hasil Sidang CAB (Mark as Done)</Heading>
+                            </HStack>
+                            <Badge colorScheme="purple" variant="solid" rounded="full" px={2.5} py={0.5} fontSize="2xs">
+                              TAHAP: IMPLEMENTASI
+                            </Badge>
+                          </Flex>
+                        </CardHeader>
+                        <CardBody px={5} py={4}>
+                          <VStack spacing={4} align="stretch">
+                            <Box p={3.5} bg={colorMode === "light" ? "white" : "gray.750"} rounded="lg" border="1px" borderColor={colorMode === "light" ? "purple.200" : "gray.600"}>
+                              <HStack spacing={2} mb={1}>
+                                <Icon as={FiCheckCircle} color="purple.500" boxSize={4} />
+                                <Text fontSize="xs" fontWeight="bold" color="purple.700">
+                                  Evaluasi & Hasil Sidang Rapat CAB
+                                </Text>
+                              </HStack>
+                              <Text fontSize="xs" color="gray.600">
+                                Masukkan hasil evaluasi teknis, kesimpulan mitigasi, dan tentukan status implementasi migrasi sebelum mengirim permohonan ke Approver.
+                              </Text>
+                            </Box>
+
+                            {canSchedule ? (
+                              <VStack spacing={3.5} align="stretch">
+                                <FormControl isRequired>
+                                  <FormLabel fontSize="sm" fontWeight="semibold">Hasil Evaluasi / Catatan Sidang Meeting</FormLabel>
+                                  <Textarea
+                                    placeholder="Tuliskan hasil evaluasi migrasi & pembahasan CAB..."
+                                    rows={4}
+                                    size="sm"
+                                    rounded="lg"
+                                    bg={colorMode === "light" ? "white" : "gray.750"}
+                                    value={resultForm.cabResult}
+                                    onChange={(e) => setResultForm({ ...resultForm, cabResult: e.target.value })}
+                                  />
+                                </FormControl>
+                                <FormControl>
+                                  <FormLabel fontSize="sm" fontWeight="semibold">Catatan Tambahan CAB</FormLabel>
+                                  <Textarea
+                                    placeholder="Catatan opsional..."
+                                    rows={3}
+                                    size="sm"
+                                    rounded="lg"
+                                    bg={colorMode === "light" ? "white" : "gray.750"}
+                                    value={resultForm.cabNotes}
+                                    onChange={(e) => setResultForm({ ...resultForm, cabNotes: e.target.value })}
+                                  />
+                                </FormControl>
+                                <FormControl isRequired>
+                                  <FormLabel fontSize="sm" fontWeight="semibold">Status Implementasi</FormLabel>
+                                  <Select
+                                    size="sm"
+                                    rounded="lg"
+                                    bg={colorMode === "light" ? "white" : "gray.750"}
+                                    value={resultForm.implementationStatus}
+                                    onChange={(e) => setResultForm({ ...resultForm, implementationStatus: e.target.value })}
+                                  >
+                                    <option value="">-- Pilih Status --</option>
+                                    <option value="SUCCESS">SUCCESS</option>
+                                    <option value="FAILED">FAILED</option>
+                                    <option value="PARTIAL">PARTIAL</option>
+                                  </Select>
+                                </FormControl>
+                              </VStack>
+                            ) : (
+                              <Box p={3} bg={colorMode === "light" ? "white" : "gray.750"} rounded="md" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.650"}>
+                                <Text fontSize="xs" color="gray.500">
+                                  ℹ Menunggu Scheduler mengisikan catatan evaluasi migrasi dan status implementasi.
+                                </Text>
+                              </Box>
+                            )}
+                          </VStack>
+                        </CardBody>
+                      </Card>
+
                       {/* Send to Approval Action Card */}
                       {canSchedule && (
                         <Card rounded={radiusStyle} shadow="sm" border="2px solid" borderColor="orange.300" bg={colorMode === "light" ? "orange.50" : "gray.800"}>
@@ -3176,9 +3986,18 @@ const CabRequestDetailView = () => {
                             <VStack spacing={4} align="stretch">
                               <Box p={3.5} bg={colorMode === "light" ? "white" : "gray.750"} rounded="lg" border="1px" borderColor={colorMode === "light" ? "orange.200" : "gray.600"}>
                                 <Text fontSize="xs" color="gray.600">
-                                  Hasil evaluasi migrasi dan checklist verifikasi pra-approval telah siap. Pastikan seluruh poin checklist di atas telah dicentang sebelum mengirim berkas permohonan ke Approver.
+                                  Hasil evaluasi migrasi dan checklist verifikasi pra-approval telah siap. Pastikan seluruh poin checklist di atas telah dicentang dan form evaluasi terisi sebelum mengirim berkas permohonan ke Approver.
                                 </Text>
                               </Box>
+
+                              {(!resultForm.cabResult || !resultForm.implementationStatus) && (
+                                <HStack p={3} bg={colorMode === "light" ? "purple.50" : "purple.950"} border="1px solid" borderColor="purple.300" rounded="lg" spacing={2.5}>
+                                  <Icon as={FiAlertTriangle} color="purple.500" boxSize={4} flexShrink={0} />
+                                  <Text fontSize="xs" color={colorMode === "light" ? "purple.800" : "purple.200"}>
+                                    Perhatian: Anda wajib mengisi <strong>Hasil Evaluasi Sidang</strong> dan <strong>Status Implementasi</strong> pada form di atas.
+                                  </Text>
+                                </HStack>
+                              )}
 
                               {!allActivitiesDone && (
                                 <HStack p={3} bg={colorMode === "light" ? "orange.50" : "orange.950"} border="1px solid" borderColor="orange.300" rounded="lg" spacing={2.5}>
@@ -3199,7 +4018,7 @@ const CabRequestDetailView = () => {
                                   leftIcon={<FiSend />}
                                   onClick={handleSendToApproval}
                                   isLoading={loading}
-                                  isDisabled={!allActivitiesDone}
+                                  isDisabled={!allActivitiesDone || !resultForm.cabResult || !resultForm.implementationStatus}
                                   px={6}
                                 >
                                   Submit
@@ -3212,8 +4031,8 @@ const CabRequestDetailView = () => {
                     </VStack>
                   )}
 
-                  {/* ─── STAGE 6: Approval Action (Status: WAITING APPROVAL) ─── */}
-                  {["WAITING APPROVAL", "WAITING APPROVE", "PENDING_APPROVAL"].includes(Data.status) && (
+                  {/* ─── STAGE 6: Approval Action (Status: SEND TO APPROVAL / WAITING APPROVAL) ─── */}
+                  {["SEND TO APPROVAL", "SEND_TO_APPROVAL", "WAITING APPROVAL", "WAITING APPROVE", "PENDING_APPROVAL", "IN_REVIEW"].includes(Data.status) && (
                     <Card rounded={radiusStyle} shadow="sm" border="2px solid" borderColor="orange.300" bg={colorMode === "light" ? "orange.50" : "gray.800"}>
                       <CardHeader py={3} px={5} borderBottom="1px" borderColor={colorMode === "light" ? "orange.100" : "gray.700"}>
                         <Flex justify="space-between" align="center" w="full">
@@ -3327,7 +4146,7 @@ const CabRequestDetailView = () => {
                           px={5}
                           fontWeight="semibold"
                         >
-                          ← Kembali ke Data Permohonan
+                          Sebelumnya
                         </Button>
                       </Flex>
                     </CardBody>
@@ -3355,7 +4174,7 @@ const CabRequestDetailView = () => {
               </Card>
 
               {/* ─── SECTION: Jadwal Rapat CAB (High Contrast Highlight) ─── */}
-              {Data.scheduledDate && ["SCHEDULED", "CONFIRM", "IMPLEMENT", "SUBMITTED", "WAITING APPROVAL", "WAITING APPROVE", "COMPLETED", "APPROVED", "IN_REVIEW"].includes(Data.status) && (() => {
+              {Data.scheduledDate && ["PENJADWALAN", "SCHEDULED", "PELAKSANAAN", "CONFIRM", "IMPLEMENTASI", "IMPLEMENT", "SUBMITTED", "SEND TO APPROVAL", "SEND_TO_APPROVAL", "WAITING APPROVAL", "WAITING APPROVE", "COMPLETED", "APPROVED", "IN_REVIEW"].includes(Data.status) && (() => {
                 const schedDate = new Date(Data.scheduledDate);
                 const monthName = schedDate.toLocaleDateString("id-ID", { month: "short" }).toUpperCase();
                 const dayNumber = schedDate.getDate();

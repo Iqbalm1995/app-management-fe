@@ -133,6 +133,26 @@ const useCabRequest = () => {
           // Fill default rich form details if missing
           const defaultDetail: Partial<CabRequestDetail> = {
             category: detail.requestType?.toUpperCase().includes("INFRA") || detail.requestType?.toUpperCase().includes("HARDWARE") ? "HARDWARE" : "SOFTWARE",
+            applicationId: detail.applicationId || "app-001",
+            applicationName: detail.applicationName || detail.projectName || "DIGI by Bank BJB",
+            applications: detail.applications && detail.applications.length > 0 ? detail.applications : [
+              {
+                id: "app-1",
+                applicationId: detail.applicationId || "app-001",
+                applicationName: detail.applicationName || detail.projectName || "DIGI by Bank BJB",
+                aplikasiKategori: detail.aplikasiKategori || "Transaksional",
+                rfcKodeProject: detail.rfcKodeProject || "RFC-2026-088",
+                itspKode: detail.itspKode || "ITSP-BJB-990",
+              },
+              {
+                id: "app-2",
+                applicationId: "app-002",
+                applicationName: "BJB Mobile Payment Switcher",
+                aplikasiKategori: "Transaksional",
+                rfcKodeProject: "RFC-2026-089",
+                itspKode: "ITSP-BJB-991",
+              },
+            ],
             rfcKodeProject: detail.rfcKodeProject || "RFC-2026-088",
             itspKode: detail.itspKode || "ITSP-BJB-990",
             aplikasiKategori: detail.aplikasiKategori || "CORE_BANKING",
@@ -192,12 +212,13 @@ const useCabRequest = () => {
     setLoading(true);
     return new Promise((resolve) => {
       setTimeout(() => {
-        // DRAFT and REQUEST must NEVER show on calendar grid
+        // DRAFT and PENGAJUAN / REQUEST must NEVER show on calendar grid
         const scheduled = MOCK_CAB_LIST.filter(
           (r) =>
             r.scheduledDate !== null &&
             r.status !== "DRAFT" &&
-            r.status !== "REQUEST"
+            r.status !== "REQUEST" &&
+            r.status !== "PENGAJUAN"
         );
         setLoading(false);
         resolve({ data: scheduled, countTotal: scheduled.length });
@@ -212,7 +233,10 @@ const useCabRequest = () => {
     return new Promise((resolve) => {
       setTimeout(() => {
         const pending = MOCK_CAB_LIST.filter(
-          (r) => r.status === "WAITING APPROVAL" || r.status === "WAITING APPROVE"
+          (r) =>
+            r.status === "SEND TO APPROVAL" ||
+            r.status === "WAITING APPROVAL" ||
+            r.status === "WAITING APPROVE"
         );
         setLoading(false);
         resolve({ data: pending, countTotal: pending.length });
@@ -301,7 +325,7 @@ const useCabRequest = () => {
           requestedCabDate,
           scheduledDate: null,
           scheduledEndDate: null,
-          status: isDraft ? "DRAFT" : "REQUEST",
+          status: isDraft ? "DRAFT" : "PENGAJUAN",
           requesterName: "Iqbal Maulana",
           approverName: "Ahmad Fauzi",
           projectName,
@@ -313,8 +337,15 @@ const useCabRequest = () => {
           category: isHw ? "HARDWARE" : "SOFTWARE",
           tipeCab: isSw ? formPayload.step1?.tipeCab : undefined,
           appSide: isSw ? formPayload.step1?.appSide : undefined,
-          appSideOther: isSw ? formPayload.step1?.appSideOther : undefined,
-          applications: isSw ? formPayload.step1?.applications || [] : undefined,
+          applicationId: isSw ? (formPayload.step1?.applicationId || formPayload.step1?.applications?.[0]?.applicationId) : undefined,
+          applicationName: isSw ? (formPayload.step1?.applicationName || formPayload.step1?.applications?.[0]?.applicationName) : undefined,
+          applications: isSw ? (formPayload.step1?.applications && formPayload.step1.applications.length > 0 ? formPayload.step1.applications : formPayload.step1?.applicationName ? [{
+            applicationId: formPayload.step1?.applicationId || "",
+            applicationName: formPayload.step1?.applicationName || "",
+            aplikasiKategori: formPayload.step1?.aplikasiKategori || "",
+            rfcKodeProject: formPayload.step1?.rfcKodeProject || "",
+            itspKode: formPayload.step1?.itspKode || "",
+          }] : []) : undefined,
           requesterEmail: "iqbal.maulana@bjb.co.id",
           description,
           impactAnalysis,
@@ -390,14 +421,14 @@ const useCabRequest = () => {
         if (idx !== -1) {
           MOCK_CAB_LIST[idx].scheduledDate = payload.scheduledDate;
           MOCK_CAB_LIST[idx].scheduledEndDate = payload.scheduledEndDate;
-          MOCK_CAB_LIST[idx].status = "SCHEDULED";
+          MOCK_CAB_LIST[idx].status = "PELAKSANAAN";
           MOCK_CAB_LIST[idx].isCabDone = MOCK_CAB_LIST[idx].isCabDone || "N";
         }
         if (MOCK_CAB_DETAIL[id]) {
           MOCK_CAB_DETAIL[id].scheduledDate = payload.scheduledDate;
           MOCK_CAB_DETAIL[id].scheduledEndDate = payload.scheduledEndDate;
           MOCK_CAB_DETAIL[id].cabLocation = payload.cabLocation;
-          MOCK_CAB_DETAIL[id].status = "SCHEDULED";
+          MOCK_CAB_DETAIL[id].status = "PELAKSANAAN";
           MOCK_CAB_DETAIL[id].isCabDone = MOCK_CAB_DETAIL[id].isCabDone || "N";
         }
         setLoading(false);
@@ -419,7 +450,7 @@ const useCabRequest = () => {
           if (idx !== -1) {
             MOCK_CAB_LIST[idx].scheduledDate = item.scheduledDate;
             MOCK_CAB_LIST[idx].scheduledEndDate = item.scheduledEndDate;
-            MOCK_CAB_LIST[idx].status = "SCHEDULED";
+            MOCK_CAB_LIST[idx].status = "PELAKSANAAN";
             MOCK_CAB_LIST[idx].isCabDone = MOCK_CAB_LIST[idx].isCabDone || "N";
           }
           if (MOCK_CAB_DETAIL[item.id]) {
@@ -428,7 +459,7 @@ const useCabRequest = () => {
             if (item.cabLocation) {
               MOCK_CAB_DETAIL[item.id].cabLocation = item.cabLocation;
             }
-            MOCK_CAB_DETAIL[item.id].status = "SCHEDULED";
+            MOCK_CAB_DETAIL[item.id].status = "PELAKSANAAN";
             MOCK_CAB_DETAIL[item.id].isCabDone = MOCK_CAB_DETAIL[item.id].isCabDone || "N";
           }
         });
@@ -447,10 +478,10 @@ const useCabRequest = () => {
       setTimeout(() => {
         const idx = MOCK_CAB_LIST.findIndex((r) => r.id === id);
         if (idx !== -1) {
-          MOCK_CAB_LIST[idx].status = "CONFIRM";
+          MOCK_CAB_LIST[idx].status = "IMPLEMENTASI";
         }
         if (MOCK_CAB_DETAIL[id]) {
-          MOCK_CAB_DETAIL[id].status = "CONFIRM";
+          MOCK_CAB_DETAIL[id].status = "IMPLEMENTASI";
         }
         setLoading(false);
         resolve(true);
@@ -466,7 +497,7 @@ const useCabRequest = () => {
     setLoading(true);
     return new Promise((resolve) => {
       setTimeout(() => {
-        const newStatus = isCabDone === "Y" ? "IMPLEMENT" : "CONFIRM";
+        const newStatus = isCabDone === "Y" ? "IMPLEMENTASI" : "PELAKSANAAN";
         const idx = MOCK_CAB_LIST.findIndex((r) => r.id === id);
         if (idx !== -1) {
           MOCK_CAB_LIST[idx].isCabDone = isCabDone;
@@ -512,11 +543,11 @@ const useCabRequest = () => {
       setTimeout(() => {
         const idx = MOCK_CAB_LIST.findIndex((r) => r.id === id);
         if (idx !== -1) {
-          MOCK_CAB_LIST[idx].status = "WAITING APPROVAL";
+          MOCK_CAB_LIST[idx].status = "SEND TO APPROVAL";
           MOCK_CAB_LIST[idx].isCabDone = "Y";
         }
         if (MOCK_CAB_DETAIL[id]) {
-          MOCK_CAB_DETAIL[id].status = "WAITING APPROVAL";
+          MOCK_CAB_DETAIL[id].status = "SEND TO APPROVAL";
           MOCK_CAB_DETAIL[id].isCabDone = "Y";
         }
         setLoading(false);
@@ -535,11 +566,11 @@ const useCabRequest = () => {
         ids.forEach((id) => {
           const idx = MOCK_CAB_LIST.findIndex((r) => r.id === id);
           if (idx !== -1) {
-            MOCK_CAB_LIST[idx].status = "WAITING APPROVAL";
+            MOCK_CAB_LIST[idx].status = "SEND TO APPROVAL";
             MOCK_CAB_LIST[idx].isCabDone = "Y";
           }
           if (MOCK_CAB_DETAIL[id]) {
-            MOCK_CAB_DETAIL[id].status = "WAITING APPROVAL";
+            MOCK_CAB_DETAIL[id].status = "SEND TO APPROVAL";
             MOCK_CAB_DETAIL[id].isCabDone = "Y";
           }
         });
@@ -586,24 +617,21 @@ const useCabRequest = () => {
     activityId: string,
     userName?: string
   ): Promise<boolean> => {
-    setLoading(true);
     return new Promise((resolve) => {
       setTimeout(() => {
         const detail = MOCK_CAB_DETAIL[id];
         if (detail) {
-          if (!detail.activityChecklist || detail.activityChecklist.length === 0) {
-            detail.activityChecklist = DEFAULT_CAB_ACTIVITIES.map((act) => ({ ...act }));
-          }
-          const act = detail.activityChecklist.find((a) => a.id === activityId);
+          const currentActivities = getDynamicCabActivities(detail, detail.activityChecklist);
+          const act = currentActivities.find((a) => a.id === activityId);
           if (act) {
             act.isDone = !act.isDone;
             act.doneAt = act.isDone ? new Date().toISOString() : null;
             act.doneBy = act.isDone ? (userName || "Scheduler") : null;
           }
+          detail.activityChecklist = currentActivities;
         }
-        setLoading(false);
         resolve(true);
-      }, 50);
+      }, 30);
     });
   };
 
@@ -621,6 +649,8 @@ const useCabRequest = () => {
         }
         if (MOCK_CAB_DETAIL[id]) {
           MOCK_CAB_DETAIL[id] = { ...MOCK_CAB_DETAIL[id], ...payload };
+        } else if (listIdx !== -1) {
+          MOCK_CAB_DETAIL[id] = { ...MOCK_CAB_LIST[listIdx], ...payload } as CabRequestDetail;
         }
         setLoading(false);
         resolve(true);

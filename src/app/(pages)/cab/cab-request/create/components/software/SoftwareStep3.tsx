@@ -428,9 +428,9 @@ const SoftwareStep3 = ({
             })
           }
           isRequired
-          showChildren={dataStep3.ceklistMigrasi === "ADA"}
+          // showChildren={dataStep3.ceklistMigrasi === "ADA"}
         >
-          <FormControl isRequired pt={1}>
+          {/* <FormControl isRequired pt={1}>
             <FormLabel fontSize="xs" color="gray.500" mb={1}>
               Detail Ceklist dan Rundown Migrasi
             </FormLabel>
@@ -440,7 +440,7 @@ const SoftwareStep3 = ({
               value={dataStep3.ceklistMigrasiRundown}
               onChange={(e) => onChangeStep3({ ...dataStep3, ceklistMigrasiRundown: e.target.value })}
             />
-          </FormControl>
+          </FormControl> */}
         </RadioAdaTidakSimple>
       </InputGroupPanel>
 
