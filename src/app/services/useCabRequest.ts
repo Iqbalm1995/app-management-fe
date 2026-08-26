@@ -159,6 +159,7 @@ const useCabRequest = () => {
             jenisCab: detail.jenisCab || "WEEKLY",
             jenisCabEmergencyAlasan: detail.jenisCabEmergencyAlasan || "",
             hasilUat: detail.hasilUat || ["BERHASIL_BAIK"],
+            hasilUatCatatan: detail.hasilUatCatatan || (detail.hasilUat?.includes("BERHASIL_CATATAN") ? "Seluruh skenario pengujian utama berhasil, catatan pada integrasi logging response time minor." : ""),
             rekomendasiUat: detail.rekomendasiUat || "REKOMENDASI_MIGRASI",
             tanggalPermohonanMigrasi: detail.tanggalPermohonanMigrasi || detail.targetDate || "2026-08-22",
             ceklistMigrasiRundown: detail.ceklistMigrasiRundown || "1. Backup database snapshot (01:00)\n2. Stop service gateway (01:30)\n3. Deploy release binary (01:45)\n4. Database migration script (02:00)\n5. Smoke test & health check (02:20)\n6. Start traffic routing (02:30)",

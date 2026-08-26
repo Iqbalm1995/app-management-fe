@@ -691,6 +691,7 @@ const CabRequestDetailView = () => {
       jenisCab: requestEditForm.jenisCab as any,
       ceklistMigrasi: requestEditForm.ceklistMigrasi as any,
       hasilUat: [requestEditForm.hasilUat as any],
+      hasilUatCatatan: requestEditForm.hasilUat === "BERHASIL_CATATAN" ? requestEditForm.hasilUatCatatan : (requestEditForm.hasilUatCatatan || ""),
       rekomendasiUat: requestEditForm.rekomendasiUat as any,
       downtime: requestEditForm.downtime as any,
       risikoKonflik: requestEditForm.risikoKonflik as any,
@@ -909,7 +910,6 @@ const CabRequestDetailView = () => {
     if (!requestId) return;
     setIsSavingCommitment(true);
     const success = await UpdateCabRequest(tokenData, requestId, {
-      pir: commitmentForm.pir,
       ketersediaanWaktuMigrasiDc: commitmentForm.ketersediaanWaktuMigrasiDc,
       keputusanMigrasi: commitmentForm.keputusanMigrasi as any,
       kesepakatanWaktuPelaksanaanMigrasi: commitmentForm.kesepakatanWaktuPelaksanaanMigrasi,
@@ -933,7 +933,6 @@ const CabRequestDetailView = () => {
       commitmentForm.catatanKomitmen
     ) {
       await UpdateCabRequest(tokenData, requestId, {
-        pir: commitmentForm.pir,
         ketersediaanWaktuMigrasiDc: commitmentForm.ketersediaanWaktuMigrasiDc,
         keputusanMigrasi: commitmentForm.keputusanMigrasi as any,
         kesepakatanWaktuPelaksanaanMigrasi: commitmentForm.kesepakatanWaktuPelaksanaanMigrasi,
@@ -2460,13 +2459,13 @@ const CabRequestDetailView = () => {
                           <Box w="4px" h="18px" bg="blue.500" rounded="full" />
                           <Heading size="sm">Waktu Pelaksanaan & Rencana Downtime</Heading>
                         </HStack>
-                        <HStack spacing={2}>
+                        {/* <HStack spacing={2}>
                           {Data.downtime === "ADA" && (
                             <Badge colorScheme="purple" variant="solid" rounded="full" px={2.5} py={0.5} fontSize="xs">
                               Downtime: {isEditingRequest ? requestEditForm.downtimeDurasi : (Data.downtimeDurasi || "60 Menit")}
                             </Badge>
                           )}
-                        </HStack>
+                        </HStack> */}
                       </Flex>
                     </CardHeader>
                     <CardBody px={5} py={4}>
@@ -2616,11 +2615,11 @@ const CabRequestDetailView = () => {
                                   <Badge colorScheme={Data.downtime === "ADA" ? "orange" : "green"} variant="subtle" rounded="full" px={2}>
                                     {Data.downtime === "ADA" ? "ADA DOWNTIME" : "ZERO DOWNTIME"}
                                   </Badge>
-                                  {Data.downtime === "ADA" && (
+                                  {/* {Data.downtime === "ADA" && (
                                     <Badge colorScheme="purple" variant="solid" rounded="full" px={2}>
                                       {Data.downtimeDurasi || "60 Menit"}
                                     </Badge>
-                                  )}
+                                  )} */}
                                 </HStack>
                               }
                             />
@@ -3654,12 +3653,14 @@ const CabRequestDetailView = () => {
                                       <Textarea
                                         size="sm"
                                         rounded="lg"
-                                        rows={2}
-                                        placeholder="Tuliskan deskripsi/catatan Post Implementation Review (PIR)..."
-                                        bg={colorMode === "light" ? "white" : "gray.700"}
+                                        rows={3}
+                                        isReadOnly
+                                        isDisabled
+                                        bg={colorMode === "light" ? "gray.100" : "gray.800"}
                                         borderColor={colorMode === "light" ? "gray.300" : "gray.600"}
-                                        value={commitmentForm.pir}
-                                        onChange={(e) => setCommitmentForm((prev) => ({ ...prev, pir: e.target.value }))}
+                                        color={colorMode === "light" ? "gray.700" : "gray.300"}
+                                        value={"Diajukan oleh Product Owner.\nBila >90 hari tidak ada pengajuan PIR, maka Product Owner agar melengkapi Berita Acara (BA) Post Implementation Review (PIR) dan disampaikan kepada Divisi Information Technology"}
+                                        cursor="not-allowed"
                                       />
                                     </FormControl>
 
@@ -3693,7 +3694,7 @@ const CabRequestDetailView = () => {
                                     value={Data.kesepakatanWaktuPelaksanaanMigrasi ? `${new Date(Data.kesepakatanWaktuPelaksanaanMigrasi).toLocaleDateString("id-ID")} ${new Date(Data.kesepakatanWaktuPelaksanaanMigrasi).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB` : (Data.kesepakatanWaktuPelaksanaan ? `${new Date(Data.kesepakatanWaktuPelaksanaan).toLocaleDateString("id-ID")} ${new Date(Data.kesepakatanWaktuPelaksanaan).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB` : "-")}
                                   />
                                   <Box gridColumn={{ base: "span 1", md: "span 2" }}>
-                                    <InfoItem label="PIR (Post Implementation Review)" value={Data.pir || "-"} />
+                                    <InfoItem label="PIR (Post Implementation Review)" value="Diajukan oleh Product Owner. Bila >90 hari tidak ada pengajuan PIR, maka Product Owner agar melengkapi Berita Acara (BA) Post Implementation Review (PIR) dan disampaikan kepada Divisi Information Technology" />
                                   </Box>
                                   <Box gridColumn={{ base: "span 1", md: "span 2" }}>
                                     <InfoItem label="Catatan Komitmen" value={Data.catatanKomitmen || "-"} />
@@ -3750,11 +3751,9 @@ const CabRequestDetailView = () => {
                               label="Kesepakatan Waktu Pelaksanaan Migrasi"
                               value={Data.kesepakatanWaktuPelaksanaanMigrasi ? `${new Date(Data.kesepakatanWaktuPelaksanaanMigrasi).toLocaleDateString("id-ID")} ${new Date(Data.kesepakatanWaktuPelaksanaanMigrasi).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB` : (Data.kesepakatanWaktuPelaksanaan ? `${new Date(Data.kesepakatanWaktuPelaksanaan).toLocaleDateString("id-ID")} ${new Date(Data.kesepakatanWaktuPelaksanaan).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB` : "-")}
                             />
-                            {Data.pir && (
-                              <Box gridColumn={{ base: "span 1", md: "span 2" }}>
-                                <InfoItem label="PIR (Post Implementation Review)" value={Data.pir} />
-                              </Box>
-                            )}
+                            <Box gridColumn={{ base: "span 1", md: "span 2" }}>
+                              <InfoItem label="PIR (Post Implementation Review)" value="Diajukan oleh Product Owner. Bila >90 hari tidak ada pengajuan PIR, maka Product Owner agar melengkapi Berita Acara (BA) Post Implementation Review (PIR) dan disampaikan kepada Divisi Information Technology" />
+                            </Box>
                             {Data.catatanKomitmen && (
                               <Box gridColumn={{ base: "span 1", md: "span 2" }}>
                                 <InfoItem label="Catatan Komitmen" value={Data.catatanKomitmen} />
