@@ -174,21 +174,64 @@ export const TabButtonCustomStyleHighLight = ({
 // ============================================================================
 // 3. Modern Reusable Design Pattern Tabs Component
 // ============================================================================
-export type TabDesignVariant = "segmented" | "pills" | "cards" | "outline" | "minimal";
+export type TabDesignVariant =
+  | "button-group"
+  | "brd-rfc"
+  | "ghost-pills"
+  | "segmented"
+  | "pills"
+  | "cards"
+  | "outline"
+  | "minimal";
+
+interface TabsDesignContextValue {
+  variant: TabDesignVariant;
+  colorScheme?: string;
+}
+
+const TabsDesignContext = React.createContext<TabsDesignContextValue>({
+  variant: "button-group",
+  colorScheme: "blue",
+});
 
 export interface CustomTabListProps extends Omit<TabListProps, "children"> {
   children: ReactNode;
   variant?: TabDesignVariant;
+  colorScheme?: string;
   fullWidth?: boolean;
 }
 
 export const CustomTabList = forwardRef<HTMLDivElement, CustomTabListProps>(
-  ({ children, variant = "segmented", fullWidth = false, ...props }, ref) => {
+  ({ children, variant = "button-group", colorScheme = "blue", fullWidth = false, ...props }, ref) => {
     const { colorMode } = useColorMode();
     const isLight = colorMode === "light";
 
-    if (variant === "pills") {
-      return (
+    let content: ReactNode = null;
+
+    if (variant === "button-group" || variant === "brd-rfc" || variant === "ghost-pills") {
+      content = (
+        <TabList
+          ref={ref}
+          display="flex"
+          alignItems="center"
+          gap={2}
+          p={0}
+          w={fullWidth ? "full" : "fit-content"}
+          maxW="full"
+          overflowX="auto"
+          overflowY="hidden"
+          border="none"
+          css={{
+            scrollbarWidth: "none",
+            "&::-webkit-scrollbar": { display: "none" },
+          }}
+          {...props}
+        >
+          {children}
+        </TabList>
+      );
+    } else if (variant === "pills") {
+      content = (
         <TabList
           ref={ref}
           display="flex"
@@ -213,10 +256,8 @@ export const CustomTabList = forwardRef<HTMLDivElement, CustomTabListProps>(
           {children}
         </TabList>
       );
-    }
-
-    if (variant === "cards") {
-      return (
+    } else if (variant === "cards") {
+      content = (
         <TabList
           ref={ref}
           display="flex"
@@ -236,10 +277,8 @@ export const CustomTabList = forwardRef<HTMLDivElement, CustomTabListProps>(
           {children}
         </TabList>
       );
-    }
-
-    if (variant === "outline") {
-      return (
+    } else if (variant === "outline") {
+      content = (
         <TabList
           ref={ref}
           display="flex"
@@ -256,33 +295,39 @@ export const CustomTabList = forwardRef<HTMLDivElement, CustomTabListProps>(
           {children}
         </TabList>
       );
+    } else {
+      // "segmented"
+      content = (
+        <TabList
+          ref={ref}
+          display="inline-flex"
+          alignItems="center"
+          p={1.5}
+          bg={isLight ? "gray.100" : "gray.900"}
+          border="1px solid"
+          borderColor={isLight ? "gray.200" : "gray.750"}
+          rounded={radiusStyle}
+          gap={1.5}
+          w={fullWidth ? "full" : "fit-content"}
+          maxW="full"
+          overflowX="auto"
+          overflowY="hidden"
+          boxShadow={isLight ? "inset 0 1px 2px rgba(0,0,0,0.04)" : "inset 0 1px 2px rgba(0,0,0,0.3)"}
+          css={{
+            scrollbarWidth: "none",
+            "&::-webkit-scrollbar": { display: "none" },
+          }}
+          {...props}
+        >
+          {children}
+        </TabList>
+      );
     }
 
-    // Default: "segmented" (Modern Pill/Track Segmented Tab Container)
     return (
-      <TabList
-        ref={ref}
-        display="inline-flex"
-        alignItems="center"
-        p={1.5}
-        bg={isLight ? "gray.100" : "gray.900"}
-        border="1px solid"
-        borderColor={isLight ? "gray.200" : "gray.750"}
-        rounded={radiusStyle}
-        gap={1.5}
-        w={fullWidth ? "full" : "fit-content"}
-        maxW="full"
-        overflowX="auto"
-        overflowY="hidden"
-        boxShadow={isLight ? "inset 0 1px 2px rgba(0,0,0,0.04)" : "inset 0 1px 2px rgba(0,0,0,0.3)"}
-        css={{
-          scrollbarWidth: "none",
-          "&::-webkit-scrollbar": { display: "none" },
-        }}
-        {...props}
-      >
-        {children}
-      </TabList>
+      <TabsDesignContext.Provider value={{ variant, colorScheme }}>
+        {content}
+      </TabsDesignContext.Provider>
     );
   }
 );
@@ -309,13 +354,16 @@ export const CustomTabItem = forwardRef<HTMLButtonElement, CustomTabItemProps>(
       badgeVariant = "subtle",
       isHighlight = false,
       tooltip,
-      variant = "segmented",
+      variant: explicitVariant,
       ...props
     },
     ref
   ) => {
     const { colorMode } = useColorMode();
     const isLight = colorMode === "light";
+    const context = React.useContext(TabsDesignContext);
+    const activeVariant = explicitVariant || context.variant || "button-group";
+    const baseColor = context.colorScheme || "blue";
 
     // Dynamic icon renderer
     const renderIcon = () => {
@@ -371,7 +419,39 @@ export const CustomTabItem = forwardRef<HTMLButtonElement, CustomTabItemProps>(
     // Style according to variant
     let tabStyles: TabProps = {};
 
-    if (variant === "pills") {
+    if (
+      activeVariant === "button-group" ||
+      activeVariant === "brd-rfc" ||
+      activeVariant === "ghost-pills"
+    ) {
+      tabStyles = {
+        px: { base: 3, md: 4 },
+        py: 1.5,
+        h: "32px",
+        minH: "32px",
+        borderRadius: "lg",
+        fontSize: "sm",
+        fontWeight: "semibold",
+        color: isLight ? `${baseColor}.600` : `${baseColor}.300`,
+        bg: "transparent",
+        whiteSpace: "nowrap",
+        transition: "all 0.15s ease-in-out",
+        _hover: {
+          bg: isLight ? `${baseColor}.50` : "whiteAlpha.200",
+          color: isLight ? `${baseColor}.700` : `${baseColor}.200`,
+        },
+        _selected: {
+          bg: `${baseColor}.500`,
+          color: "white",
+          borderRadius: "lg",
+          fontWeight: "semibold",
+          boxShadow: isLight ? `0 1px 3px rgba(49, 130, 206, 0.3)` : "none",
+          _hover: {
+            bg: `${baseColor}.600`,
+          },
+        },
+      };
+    } else if (activeVariant === "pills") {
       tabStyles = {
         px: { base: 3.5, md: 4.5 },
         py: 2,
@@ -401,7 +481,7 @@ export const CustomTabItem = forwardRef<HTMLButtonElement, CustomTabItemProps>(
           transform: "translateY(-1px)",
         },
       };
-    } else if (variant === "cards") {
+    } else if (activeVariant === "cards") {
       tabStyles = {
         px: { base: 4, md: 5 },
         py: 2.5,
@@ -482,4 +562,5 @@ CustomTabItem.displayName = "CustomTabItem";
 // Export standard aliases for seamless cross-module use
 export const AppTabList = CustomTabList;
 export const AppTabItem = CustomTabItem;
+
 

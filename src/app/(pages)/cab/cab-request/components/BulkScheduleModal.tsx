@@ -13,6 +13,7 @@ import {
   HStack,
   Heading,
   Icon,
+  IconButton,
   Input,
   InputGroup,
   InputLeftElement,
@@ -45,6 +46,8 @@ import {
   FiList,
   FiAlertCircle,
   FiZap,
+  FiChevronUp,
+  FiChevronDown,
 } from "react-icons/fi";
 
 import { radiusStyle } from "@/app/constants/applicationConstants";
@@ -78,6 +81,28 @@ const addMinutesToTime = (timeStr: string, minutesToAdd: number): string => {
   return `${String(newH).padStart(2, "0")}:${String(newM).padStart(2, "0")}`;
 };
 
+// Helper: Extract date and time from requested CAB fields
+const getRequestedCabDateTimeInfo = (req: CabRequestItem) => {
+  const source = req.requestedCabDate || req.requestDate || "";
+  let datePart = "-";
+  let timePart = "";
+
+  if (source.includes("T")) {
+    const [d, t] = source.split("T");
+    datePart = d;
+    timePart = t ? t.slice(0, 5) : "";
+  } else if (source) {
+    datePart = source;
+  }
+
+  // If timePart is still empty but requestedCabDate has time
+  if (!timePart && req.requestedCabDate && req.requestedCabDate.includes("T")) {
+    timePart = req.requestedCabDate.split("T")[1]?.slice(0, 5) || "";
+  }
+
+  return { datePart, timePart, targetDate: req.targetDate };
+};
+
 export const BulkScheduleModal = ({
   isOpen,
   onClose,
@@ -91,6 +116,9 @@ export const BulkScheduleModal = ({
   const toast = useToast();
 
   const [mode, setMode] = useState<SchedulingMode>("UNIFIED");
+
+  // Ordered list state to allow moving items up and down
+  const [orderedRequests, setOrderedRequests] = useState<CabRequestItem[]>([]);
 
   // Shared state
   const [scheduledDate, setScheduledDate] = useState<string>("");
@@ -116,6 +144,7 @@ export const BulkScheduleModal = ({
       setUnifiedEndTime("10:30");
       setStaggerBaseStartTime("09:00");
       setStaggerDuration(30);
+      setOrderedRequests([...selectedRequests]);
 
       // Initialize staggered slots
       const initialSlots: Record<string, StaggeredSlot> = {};
@@ -132,12 +161,13 @@ export const BulkScheduleModal = ({
     }
   }, [isOpen, initialDate, selectedRequests]);
 
-  // Handler: Auto-generate staggered slots sequentially
-  const handleAutoGenerateStaggered = () => {
+  // Handler: Auto-generate staggered slots sequentially based on orderedRequests
+  const handleAutoGenerateStaggered = (customList?: CabRequestItem[]) => {
+    const list = customList || orderedRequests;
     let currentStart = staggerBaseStartTime || "09:00";
     const updated: Record<string, StaggeredSlot> = {};
 
-    selectedRequests.forEach((req) => {
+    list.forEach((req) => {
       const nextEnd = addMinutesToTime(currentStart, Number(staggerDuration) || 30);
       updated[req.id] = {
         startTime: currentStart,
@@ -148,14 +178,44 @@ export const BulkScheduleModal = ({
     });
 
     setStaggerSlots(updated);
-    toast({
-      title: "Urutan Jadwal Dibuat",
-      description: `Jadwal berhasil di-stagger setiap ${staggerDuration} menit untuk ${selectedRequests.length} permohonan.`,
-      status: "info",
-      duration: 2500,
-      position: "top",
-      isClosable: true,
-    });
+    if (!customList) {
+      toast({
+        title: "Urutan Jadwal Dibuat",
+        description: `Jadwal diurutkan setiap ${staggerDuration} menit untuk ${list.length} permohonan.`,
+        status: "info",
+        duration: 2500,
+        position: "top",
+        isClosable: true,
+      });
+    }
+  };
+
+  // Handler: Move request UP in schedule index
+  const handleMoveUp = (index: number) => {
+    if (index <= 0) return;
+    const nextList = [...orderedRequests];
+    const temp = nextList[index];
+    nextList[index] = nextList[index - 1];
+    nextList[index - 1] = temp;
+    setOrderedRequests(nextList);
+
+    if (mode === "STAGGERED") {
+      handleAutoGenerateStaggered(nextList);
+    }
+  };
+
+  // Handler: Move request DOWN in schedule index
+  const handleMoveDown = (index: number) => {
+    if (index >= orderedRequests.length - 1) return;
+    const nextList = [...orderedRequests];
+    const temp = nextList[index];
+    nextList[index] = nextList[index + 1];
+    nextList[index + 1] = temp;
+    setOrderedRequests(nextList);
+
+    if (mode === "STAGGERED") {
+      handleAutoGenerateStaggered(nextList);
+    }
   };
 
   // Handler: Update individual staggered slot
@@ -176,20 +236,20 @@ export const BulkScheduleModal = ({
   // Validation
   const isValid = useMemo(() => {
     if (!scheduledDate) return false;
-    if (selectedRequests.length === 0) return false;
+    if (orderedRequests.length === 0) return false;
 
     if (mode === "UNIFIED") {
       if (!unifiedStartTime || !unifiedEndTime) return false;
       return unifiedStartTime < unifiedEndTime;
     } else {
-      for (const req of selectedRequests) {
+      for (const req of orderedRequests) {
         const slot = staggerSlots[req.id];
         if (!slot?.startTime || !slot?.endTime) return false;
         if (slot.startTime >= slot.endTime) return false;
       }
       return true;
     }
-  }, [mode, scheduledDate, unifiedStartTime, unifiedEndTime, selectedRequests, staggerSlots]);
+  }, [mode, scheduledDate, unifiedStartTime, unifiedEndTime, orderedRequests, staggerSlots]);
 
   // Submit Handler
   const handleSubmit = async () => {
@@ -205,7 +265,7 @@ export const BulkScheduleModal = ({
       return;
     }
 
-    const payloadItems: BulkScheduleCabItemPayload[] = selectedRequests.map((req) => {
+    const payloadItems: BulkScheduleCabItemPayload[] = orderedRequests.map((req) => {
       if (mode === "UNIFIED") {
         return {
           id: req.id,
@@ -493,7 +553,7 @@ export const BulkScheduleModal = ({
                         colorScheme="blue"
                         leftIcon={<FiZap />}
                         mt={4}
-                        onClick={handleAutoGenerateStaggered}
+                        onClick={() => handleAutoGenerateStaggered()}
                       >
                         Auto-Urutkan
                       </Button>
@@ -511,7 +571,7 @@ export const BulkScheduleModal = ({
             <VStack align="stretch" spacing={2}>
               <Flex justify="space-between" align="center">
                 <Text fontSize="xs" fontWeight="bold" color={isDark ? "gray.200" : "gray.700"}>
-                  Daftar Permohonan yang Dijadwalkan ({selectedRequests.length}):
+                  Daftar Urutan Permohonan ({orderedRequests.length}):
                 </Text>
                 <Text fontSize="2xs" color="gray.500">
                   Tanggal: {formattedTargetDate}
@@ -529,25 +589,74 @@ export const BulkScheduleModal = ({
                 <Table size="sm" variant="simple">
                   <Thead bg={isDark ? "gray.900" : "gray.50"}>
                     <Tr>
-                      <Th fontSize="2xs" w="40px" textAlign="center">No</Th>
+                      <Th fontSize="2xs" w="75px" textAlign="center">
+                        URUTAN
+                      </Th>
                       <Th fontSize="2xs">Permohonan CAB</Th>
                       <Th fontSize="2xs">Pemohon / Aplikasi</Th>
-                      <Th fontSize="2xs" w={mode === "STAGGERED" ? "240px" : "160px"}>
+                      <Th fontSize="2xs" w="155px">
+                        Waktu Request CAB
+                      </Th>
+                      <Th fontSize="2xs" w={mode === "STAGGERED" ? "220px" : "150px"}>
                         Slot Waktu (WIB)
                       </Th>
                     </Tr>
                   </Thead>
                   <Tbody>
-                    {selectedRequests.map((req, idx) => {
+                    {orderedRequests.map((req, idx) => {
                       const slot = staggerSlots[req.id] || {
                         startTime: unifiedStartTime,
                         endTime: unifiedEndTime,
                       };
 
+                      const dtInfo = getRequestedCabDateTimeInfo(req);
+
                       return (
                         <Tr key={req.id} _hover={{ bg: isDark ? "gray.750" : "gray.50" }}>
-                          <Td fontSize="xs" textAlign="center" fontWeight="medium">
-                            {idx + 1}.
+                          <Td textAlign="center">
+                            <HStack spacing={1} justify="center">
+                              <Badge
+                                colorScheme="blue"
+                                variant="subtle"
+                                rounded="md"
+                                px={1.5}
+                                py={0.5}
+                                fontSize="2xs"
+                                fontWeight="bold"
+                                minW="26px"
+                                textAlign="center"
+                              >
+                                #{idx + 1}
+                              </Badge>
+                              <VStack spacing={0}>
+                                <Tooltip label="Pindah ke atas" hasArrow placement="top">
+                                  <IconButton
+                                    aria-label="Geser ke atas"
+                                    icon={<FiChevronUp />}
+                                    size="2xs"
+                                    variant="ghost"
+                                    colorScheme="blue"
+                                    h="14px"
+                                    minW="16px"
+                                    isDisabled={idx === 0}
+                                    onClick={() => handleMoveUp(idx)}
+                                  />
+                                </Tooltip>
+                                <Tooltip label="Pindah ke bawah" hasArrow placement="bottom">
+                                  <IconButton
+                                    aria-label="Geser ke bawah"
+                                    icon={<FiChevronDown />}
+                                    size="2xs"
+                                    variant="ghost"
+                                    colorScheme="blue"
+                                    h="14px"
+                                    minW="16px"
+                                    isDisabled={idx === orderedRequests.length - 1}
+                                    onClick={() => handleMoveDown(idx)}
+                                  />
+                                </Tooltip>
+                              </VStack>
+                            </HStack>
                           </Td>
                           <Td>
                             <VStack align="start" spacing={0.5}>
@@ -583,6 +692,33 @@ export const BulkScheduleModal = ({
                               <Text fontSize="2xs" color="gray.500">
                                 {req.requesterName}
                               </Text>
+                            </VStack>
+                          </Td>
+                          <Td>
+                            <VStack align="start" spacing={0.5}>
+                              <HStack spacing={1.5}>
+                                <Icon as={FiCalendar} boxSize={3} color="blue.500" />
+                                <Text
+                                  fontSize="xs"
+                                  fontWeight="medium"
+                                  color={isDark ? "gray.200" : "gray.700"}
+                                >
+                                  {dtInfo.datePart}
+                                </Text>
+                              </HStack>
+                              {dtInfo.timePart && (
+                                <HStack spacing={1}>
+                                  <Icon as={FiClock} boxSize={3} color="orange.500" />
+                                  <Text fontSize="2xs" fontWeight="semibold" color="orange.500">
+                                    {dtInfo.timePart} WIB
+                                  </Text>
+                                </HStack>
+                              )}
+                              {dtInfo.targetDate && (
+                                <Text fontSize="3xs" color="gray.500">
+                                  Target: <b>{dtInfo.targetDate}</b>
+                                </Text>
+                              )}
                             </VStack>
                           </Td>
                           <Td>
@@ -658,10 +794,10 @@ export const BulkScheduleModal = ({
                 leftIcon={<FiCheckCircle />}
                 onClick={handleSubmit}
                 isLoading={isLoading}
-                isDisabled={!isValid || selectedRequests.length === 0}
+                isDisabled={!isValid || orderedRequests.length === 0}
                 px={5}
               >
-                Simpan Jadwal ({selectedRequests.length})
+                Simpan Jadwal ({orderedRequests.length})
               </Button>
             </HStack>
           </Flex>

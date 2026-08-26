@@ -64,6 +64,10 @@ export interface CabRequestItem {
   cabResult?: string;
   cabNotes?: string;
   cabLocation?: string;
+  tanggalPermohonanMigrasi?: string | null;
+  tanggalImplementasi?: string | null;
+  rekomendasiUat?: "REKOMENDASI_MIGRASI" | "PENGUJIAN_ULANG" | string;
+  rekomendasiMigrasi?: "YA" | "TIDAK" | "Y" | "N" | boolean | string;
 }
 
 // ─── Detail (untuk halaman detail) ───────────────────────────────────────────
@@ -95,7 +99,7 @@ export interface CabRequestDetail extends CabRequestItem {
   // UAT & Implementation Step
   hasilUat?: ("BERHASIL_BAIK" | "BERHASIL_CATATAN" | "TIDAK_BERHASIL")[];
   hasilUatCatatan?: string;
-  rekomendasiUat?: "REKOMENDASI_MIGRASI" | "PENGUJIAN_ULANG" | "";
+  rekomendasiUat?: "REKOMENDASI_MIGRASI" | "PENGUJIAN_ULANG" | "" | string;
   isHaveMemo?: "Y" | "N";
   perihalSementara?: string;
   memoDirektoratPengirim?: string;
@@ -105,7 +109,7 @@ export interface CabRequestDetail extends CabRequestItem {
   memoTanggal?: string;
   memoTanggalDiterima?: string;
   memoDurasiHari?: number;
-  tanggalPermohonanMigrasi?: string;
+  tanggalPermohonanMigrasi?: string | null;
   
   // Downtime & Execution Step
   ceklistMigrasi?: "ADA" | "TIDAK" | "TIDAK_ADA" | "";

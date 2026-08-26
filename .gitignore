@@ -49,3 +49,4 @@ src.zip
 #Application Constans
 src/app/constants/applicationConstants.ts
 
+*.md

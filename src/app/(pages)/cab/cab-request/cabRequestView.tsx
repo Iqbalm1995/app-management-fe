@@ -17,7 +17,10 @@ import {
   Heading,
   HStack,
   Icon,
+  IconButton,
   Input,
+  InputGroup,
+  InputLeftElement,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -40,6 +43,7 @@ import { useRouter } from "next/navigation";
 import {
   FiCalendar,
   FiCheckCircle,
+  FiCheckSquare,
   FiClock,
   FiCpu,
   FiEye,
@@ -52,6 +56,8 @@ import {
   FiPlusSquare,
   FiRefreshCcw,
   FiRotateCcw,
+  FiSearch,
+  FiSend,
   FiShield,
   FiUser,
   FiUsers,
@@ -84,6 +90,7 @@ import useCabRequest from "@/app/services/useCabRequest";
 import { BulkScheduleCabItemPayload, CabRequestItem } from "@/app/types/cabTypes";
 import CabReportsTab from "./components/CabReportsTab";
 import BulkScheduleModal from "./components/BulkScheduleModal";
+import BulkSendToApprovalModal from "./components/BulkSendToApprovalModal";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 interface CalendarStatusStyle {
@@ -450,13 +457,245 @@ const UpcomingSummaryPanel = ({
   );
 };
 
+// ─── Requested / Need Approve CAB Section (Card Section for Approver, Scheduler & Maker in Schedule Calendar) ───
+interface RequestedCabSectionProps {
+  items: CabRequestItem[];
+  isDark: boolean;
+  isMaker?: boolean;
+  isApprover?: boolean;
+  onNavigate: (id: string) => void;
+}
+
+const RequestedCabSection = ({
+  items,
+  isDark,
+  isMaker = false,
+  isApprover = false,
+  onNavigate,
+}: RequestedCabSectionProps) => {
+  const title = isApprover
+    ? "Need Approve"
+    : isMaker
+    ? "Permohonan Saya (Requested)"
+    : "Requested CAB";
+
+  const subtitle = isApprover
+    ? "Permohonan menunggu persetujuan Anda"
+    : isMaker
+    ? "Permohonan Anda yang menunggu penjadwalan"
+    : "Permohonan masuk belum terjadwal";
+
+  const emptyText = isApprover
+    ? "Tidak ada permohonan yang menunggu persetujuan."
+    : isMaker
+    ? "Belum ada permohonan Anda yang berstatus Requested."
+    : "Tidak ada permohonan baru berstatus Requested.";
+
+  const themeColor = isApprover ? "purple" : isMaker ? "blue" : "orange";
+  const sectionIcon = isApprover ? FiCheckCircle : FiClock;
+  const badgeLabel = isApprover ? `${items.length} Need Approve` : `${items.length} Permohonan`;
+
+  return (
+    <Card
+      rounded="lg"
+      shadow="none"
+      border="1px solid"
+      borderColor={
+        isDark
+          ? "gray.700"
+          : isApprover
+          ? "purple.200"
+          : isMaker
+          ? "blue.200"
+          : "orange.200"
+      }
+      bg={isDark ? "gray.800" : "white"}
+      w="full"
+    >
+      <CardHeader
+        py={3.5}
+        px={4}
+        borderBottom="1px solid"
+        borderColor={
+          isDark
+            ? "gray.700"
+            : isApprover
+            ? "purple.100"
+            : isMaker
+            ? "blue.100"
+            : "orange.100"
+        }
+        bg={
+          isDark
+            ? isApprover
+              ? "purple.950"
+              : isMaker
+              ? "blue.950"
+              : "orange.950"
+            : isApprover
+            ? "purple.50"
+            : isMaker
+            ? "blue.50"
+            : "orange.50"
+        }
+        roundedTop="lg"
+      >
+        <Flex justify="space-between" align="center" w="full">
+          <HStack spacing={2.5}>
+            <Box
+              w={7}
+              h={7}
+              rounded="md"
+              bg={`${themeColor}.500`}
+              color="white"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              flexShrink={0}
+            >
+              <Icon as={sectionIcon} boxSize={4} />
+            </Box>
+            <VStack align="start" spacing={0}>
+              <Heading size="xs" fontWeight="700" color={isDark ? "white" : "gray.800"}>
+                {title}
+              </Heading>
+              <Text fontSize="2xs" color={isDark ? "gray.400" : "gray.500"}>
+                {subtitle}
+              </Text>
+            </VStack>
+          </HStack>
+          <Badge
+            colorScheme={themeColor}
+            variant="solid"
+            rounded="full"
+            px={2}
+            py={0.5}
+            fontSize="3xs"
+          >
+            {badgeLabel}
+          </Badge>
+        </Flex>
+      </CardHeader>
+
+      <CardBody
+        p={3}
+        maxH="280px"
+        overflowY="auto"
+        sx={{
+          "&::-webkit-scrollbar": { width: "4px" },
+          "&::-webkit-scrollbar-track": { bg: "transparent" },
+          "&::-webkit-scrollbar-thumb": {
+            bg: isDark ? "gray.700" : "gray.300",
+            borderRadius: "4px",
+          },
+        }}
+      >
+        {items.length === 0 ? (
+          <Flex h="90px" justify="center" align="center" textAlign="center">
+            <Text fontSize="xs" color={isDark ? "gray.500" : "gray.400"}>
+              {emptyText}
+            </Text>
+          </Flex>
+        ) : (
+          <VStack spacing={2.5} align="stretch">
+            {items.map((item) => (
+              <Box
+                key={item.id}
+                p={2.5}
+                rounded="md"
+                bg={isDark ? "gray.750" : "gray.50"}
+                border="1px solid"
+                borderColor={isDark ? "gray.700" : "gray.200"}
+                transition="all 0.15s ease"
+                _hover={{
+                  borderColor: `${themeColor}.400`,
+                  transform: "translateY(-1px)",
+                  shadow: "sm",
+                }}
+              >
+                <Flex justify="space-between" align="center" mb={1}>
+                  <Text
+                    fontFamily="mono"
+                    fontSize="2xs"
+                    fontWeight="bold"
+                    color="secondary.600"
+                  >
+                    {item.requestNo}
+                  </Text>
+                  <Badge
+                    fontSize="3xs"
+                    colorScheme={
+                      item.status === "CONFIRM"
+                        ? "teal"
+                        : item.status === "WAITING APPROVAL"
+                        ? "purple"
+                        : "orange"
+                    }
+                    variant="subtle"
+                    rounded="sm"
+                  >
+                    {item.status}
+                  </Badge>
+                </Flex>
+
+                <Text
+                  fontSize="xs"
+                  fontWeight="semibold"
+                  color={isDark ? "white" : "gray.850"}
+                  noOfLines={1}
+                  mb={1}
+                >
+                  {item.requestTitle}
+                </Text>
+
+                <Flex justify="space-between" align="center" fontSize="2xs" color="gray.500" mb={2}>
+                  <HStack spacing={1} maxW="55%">
+                    <Icon as={FiUser} boxSize={3} flexShrink={0} />
+                    <Text noOfLines={1}>{item.requesterName}</Text>
+                  </HStack>
+                  <HStack spacing={1} flexShrink={0}>
+                    <Icon as={FiCalendar} boxSize={3} color={`${themeColor}.500`} />
+                    <Text>{item.targetDate || item.requestDate}</Text>
+                  </HStack>
+                </Flex>
+
+                <Flex justify="flex-end" pt={1.5} borderTop="1px solid" borderColor={isDark ? "gray.700" : "gray.200"}>
+                  <Button
+                    size="xs"
+                    colorScheme={themeColor}
+                    variant="outline"
+                    rounded="md"
+                    h="22px"
+                    fontSize="3xs"
+                    fontWeight="bold"
+                    leftIcon={<FiEye />}
+                    onClick={() => onNavigate(item.id)}
+                  >
+                    {isApprover ? "Review & Approve" : "Detail"}
+                  </Button>
+                </Flex>
+              </Box>
+            ))}
+          </VStack>
+        )}
+      </CardBody>
+    </Card>
+  );
+};
+
 // ─── Component ───────────────────────────────────────────────────────────────
 const CabRequestView = () => {
   useDocumentTitle("CAB Request");
   const { colorMode } = useColorMode();
   const router = useRouter();
   const toast = useToast();
-  const { ListCabRequests, GetCabCalendar, BulkScheduleCabRequests, loading } = useCabRequest();
+  const {
+    ListCabRequests,
+    GetCabCalendar,
+    BulkScheduleCabRequests,
+    BulkSendToApproval,
+    loading,
+  } = useCabRequest();
 
   // Auth
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -486,6 +725,10 @@ const CabRequestView = () => {
   const [bulkModalInitialDate, setBulkModalInitialDate] = useState<string>("");
   const [incomingRequestCount, setIncomingRequestCount] = useState<number | null>(null);
 
+  // Bulk Approval state & modal (for CONFIRM status)
+  const bulkApprovalModal = useDisclosure();
+  const [schedulerStatusFilter, setSchedulerStatusFilter] = useState<"ALL" | "REQUEST" | "CONFIRM">("ALL");
+
   // Table pagination (CAB List - excludes REQUEST)
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
   const pagination = useMemo(() => ({ pageIndex, pageSize }), [pageIndex, pageSize]);
@@ -497,7 +740,7 @@ const CabRequestView = () => {
     [DataList]
   );
 
-  // Pending Table pagination & filter (CAB Request Tab - Status REQUEST only - Scheduler only)
+  // Pending Table pagination & filter (CAB Request Tab - Status REQUEST & CONFIRM - Scheduler only)
   const [{ pageIndex: pendingPageIndex, pageSize: pendingPageSize }, setPendingPagination] =
     useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
   const pendingPagination = useMemo(
@@ -506,16 +749,46 @@ const CabRequestView = () => {
   );
   const [pendingGlobalFilter, setPendingGlobalFilter] = useState<string>("");
 
-  const pendingRequestsList = useMemo(
-    () => DataList.filter((item) => String(item.status).toUpperCase() === "REQUEST"),
+  const countRequest = useMemo(
+    () => DataList.filter((item) => String(item.status).toUpperCase() === "REQUEST").length,
     [DataList]
   );
+  const countConfirm = useMemo(
+    () => DataList.filter((item) => String(item.status).toUpperCase() === "CONFIRM").length,
+    [DataList]
+  );
+  const totalSchedulerQueue = countRequest + countConfirm;
 
-  // Selected requests for bulk actions
+  const pendingRequestsList = useMemo(() => {
+    return DataList.filter((item) => {
+      const st = String(item.status).toUpperCase();
+      if (schedulerStatusFilter === "REQUEST") return st === "REQUEST";
+      if (schedulerStatusFilter === "CONFIRM") return st === "CONFIRM";
+      return st === "REQUEST" || st === "CONFIRM";
+    });
+  }, [DataList, schedulerStatusFilter]);
+
+  // Selected requests partitioned for bulk actions
   const selectedRequestsList = useMemo(() => {
     const selectedIds = Object.keys(rowSelection).filter((k) => rowSelection[k]);
     return DataList.filter((item) => selectedIds.includes(item.id));
   }, [rowSelection, DataList]);
+
+  // Active selected status lock: "REQUEST" | "CONFIRM" | null
+  const activeSelectedStatus = useMemo(() => {
+    if (selectedRequestsList.length === 0) return null;
+    return String(selectedRequestsList[0]?.status || "").toUpperCase();
+  }, [selectedRequestsList]);
+
+  const selectedRequestItems = useMemo(
+    () => selectedRequestsList.filter((i) => String(i.status).toUpperCase() === "REQUEST"),
+    [selectedRequestsList]
+  );
+
+  const selectedConfirmItems = useMemo(
+    () => selectedRequestsList.filter((i) => String(i.status).toUpperCase() === "CONFIRM"),
+    [selectedRequestsList]
+  );
 
   // Bulk Schedule Handlers
   const handleConfirmBulkSchedule = async (items: BulkScheduleCabItemPayload[]) => {
@@ -536,6 +809,33 @@ const CabRequestView = () => {
       toast({
         title: "Gagal Menyimpan Jadwal",
         description: "Terjadi kesalahan saat menyimpan jadwal massal.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+        position: "top",
+      });
+    }
+  };
+
+  // Bulk Send to Approval Handlers (for CONFIRM status)
+  const handleConfirmBulkSendToApproval = async (ids: string[], note?: string) => {
+    const success = await BulkSendToApproval(tokenData, ids);
+    if (success) {
+      toast({
+        title: "Permohonan Berhasil Diajukan",
+        description: `${ids.length} permohonan berhasil diajukan ke antrean approval (Status ➔ WAITING APPROVAL).`,
+        status: "success",
+        duration: 3500,
+        isClosable: true,
+        position: "top",
+      });
+      setRowSelection({});
+      bulkApprovalModal.onClose();
+      loadData();
+    } else {
+      toast({
+        title: "Gagal Mengajukan Permohonan",
+        description: "Terjadi kesalahan saat memproses pengajuan approval massal.",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -594,10 +894,68 @@ const CabRequestView = () => {
   const [activeQuickFilter, setActiveQuickFilter] = useState<string>("This Month");
   const [calendarViewMode, setCalendarViewMode] = useState<"dayGridMonth" | "timeGridWeek">("dayGridMonth");
 
-  const unscheduledCount = useMemo(
-    () => DataList.filter((r) => r.status === "REQUEST" || r.scheduledDate === null).length,
-    [DataList]
-  );
+  // Filter calendar data: exclude REQUEST and DRAFT, and for Maker role filter by requesterName
+  const visibleCalendarData = useMemo(() => {
+    const nonRequestData = DataCalendar.filter(
+      (item) => item.status !== "REQUEST" && item.status !== "DRAFT"
+    );
+    if (!canMake) return nonRequestData;
+    const currentName = String(DataAuth?.nama || DataAuth?.username || "Iqbal Maulana").toLowerCase().trim();
+    return nonRequestData.filter((item) => {
+      const reqName = String(item.requesterName || "").toLowerCase().trim();
+      return (
+        reqName === currentName ||
+        reqName.includes(currentName) ||
+        currentName.includes(reqName) ||
+        reqName === "iqbal maulana"
+      );
+    });
+  }, [DataCalendar, canMake, DataAuth]);
+
+  // Items for sidebar section in Schedule Calendar (Need Approve for Approver, Requested for Scheduler & Maker)
+  const requestedList = useMemo(() => {
+    if (canApprove) {
+      return DataList.filter((item) => {
+        const s = String(item.status).toUpperCase();
+        return s === "WAITING APPROVAL" || s === "WAITING APPROVE" || s === "CONFIRM";
+      });
+    }
+
+    const allRequested = DataList.filter(
+      (item) => String(item.status).toUpperCase() === "REQUEST"
+    );
+
+    if (canMake) {
+      const currentName = String(DataAuth?.nama || DataAuth?.username || "Iqbal Maulana").toLowerCase().trim();
+      return allRequested.filter((item) => {
+        const reqName = String(item.requesterName || "").toLowerCase().trim();
+        return (
+          reqName === currentName ||
+          reqName.includes(currentName) ||
+          currentName.includes(reqName) ||
+          reqName === "iqbal maulana"
+        );
+      });
+    }
+
+    return allRequested;
+  }, [DataList, canApprove, canMake, DataAuth]);
+
+  const unscheduledCount = useMemo(() => {
+    const baseList = canMake
+      ? DataList.filter((item) => {
+          const currentName = String(DataAuth?.nama || DataAuth?.username || "Iqbal Maulana").toLowerCase().trim();
+          const reqName = String(item.requesterName || "").toLowerCase().trim();
+          return (
+            reqName === currentName ||
+            reqName.includes(currentName) ||
+            currentName.includes(reqName) ||
+            reqName === "iqbal maulana"
+          );
+        })
+      : DataList;
+    return baseList.filter((r) => r.status === "REQUEST" || r.scheduledDate === null).length;
+  }, [DataList, canMake, DataAuth]);
 
   const handleViewChange = (view: "dayGridMonth" | "timeGridWeek") => {
     setCalendarViewMode(view);
@@ -694,7 +1052,7 @@ const CabRequestView = () => {
 
   // Calendar events with date range filter
   const calendarEvents = useMemo(() => {
-    let filtered = DataCalendar;
+    let filtered = visibleCalendarData;
     if (calendarDateFrom && calendarDateTo) {
       filtered = filtered.filter((item) => {
         if (!item.scheduledDate) return false;
@@ -720,11 +1078,11 @@ const CabRequestView = () => {
         extendedProps: { ...item },
       };
     });
-  }, [DataCalendar, isDark, calendarDateFrom, calendarDateTo]);
+  }, [visibleCalendarData, isDark, calendarDateFrom, calendarDateTo]);
 
   // Group upcoming scheduled events for the 30% summary panel
   const upcomingEventsData = useMemo(() => {
-    if (!DataCalendar || DataCalendar.length === 0) {
+    if (!visibleCalendarData || visibleCalendarData.length === 0) {
       return { today: [], thisWeek: [], next14Days: [], totalCount: 0 };
     }
 
@@ -744,7 +1102,7 @@ const CabRequestView = () => {
     const fourteenDaysStr = fourteenDaysLater.toISOString().slice(0, 10);
 
     // Filter events occurring within the next 14 days
-    const validScheduled = DataCalendar.filter((item) => {
+    const validScheduled = visibleCalendarData.filter((item) => {
       if (!item.scheduledDate) return false;
       const itemDate = item.scheduledDate.slice(0, 10);
       return itemDate >= todayStr && itemDate <= fourteenDaysStr;
@@ -771,7 +1129,7 @@ const CabRequestView = () => {
       next14Days,
       totalCount: validScheduled.length,
     };
-  }, [DataCalendar]);
+  }, [visibleCalendarData]);
 
   // Calendar event custom render with tooltip
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1112,13 +1470,13 @@ const CabRequestView = () => {
     onGlobalFilterChange: setGlobalFilter,
   });
 
-  // Pending Table columns (Status REQUEST only)
+  // Pending Table columns (Status REQUEST & CONFIRM - Scheduler only)
   const pendingColumns = useMemo<ColumnDef<CabRequestItem>[]>(
     () => [
       {
         id: "select",
         header: ({ table }: { table: any }) => {
-          const selectableRows = table.getRowModel().rows;
+          const selectableRows = table.getRowModel().rows.filter((r: any) => r.getCanSelect());
           const isAllSelected =
             selectableRows.length > 0 &&
             selectableRows.every((r: any) => r.getIsSelected());
@@ -1138,12 +1496,21 @@ const CabRequestView = () => {
                   isDisabled={selectableRows.length === 0}
                   onChange={(e) => {
                     const checked = e.target.checked;
-                    const newSelection = { ...rowSelection };
-                    selectableRows.forEach((r: any) => {
-                      if (checked) {
+                    if (!checked) {
+                      setRowSelection({});
+                      return;
+                    }
+                    const newSelection: Record<string, boolean> = {};
+                    const targetStatus =
+                      activeSelectedStatus ||
+                      (selectableRows[0]
+                        ? String(selectableRows[0].original.status || "").toUpperCase()
+                        : null);
+
+                    table.getRowModel().rows.forEach((r: any) => {
+                      const st = String(r.original.status || "").toUpperCase();
+                      if (st === targetStatus) {
                         newSelection[r.id] = true;
-                      } else {
-                        delete newSelection[r.id];
                       }
                     });
                     setRowSelection(newSelection);
@@ -1153,15 +1520,34 @@ const CabRequestView = () => {
             </Flex>
           );
         },
-        cell: ({ row }: { row: any }) => (
-          <Flex justify="center" align="center" px={1}>
-            <Checkbox
-              colorScheme="blue"
-              isChecked={row.getIsSelected()}
-              onChange={row.getToggleSelectedHandler()}
-            />
-          </Flex>
-        ),
+        cell: ({ row }: { row: any }) => {
+          const rowStatus = String(row.original.status || "").toUpperCase();
+          const isRowDisabled = !row.getCanSelect();
+
+          return (
+            <Flex justify="center" align="center" px={1}>
+              <Tooltip
+                label={
+                  isRowDisabled
+                    ? `Tidak dapat memilih status ${rowStatus} saat status ${activeSelectedStatus} aktif dipilih`
+                    : ""
+                }
+                isDisabled={!isRowDisabled}
+                placement="top"
+                hasArrow
+              >
+                <Box>
+                  <Checkbox
+                    colorScheme="blue"
+                    isChecked={row.getIsSelected()}
+                    isDisabled={isRowDisabled}
+                    onChange={row.getToggleSelectedHandler()}
+                  />
+                </Box>
+              </Tooltip>
+            </Flex>
+          );
+        },
       },
       {
         id: "rowNumber",
@@ -1244,14 +1630,16 @@ const CabRequestView = () => {
         ),
       },
     ],
-    [router, pendingPagination, rowSelection]
+    [router, pendingPagination, rowSelection, activeSelectedStatus]
   );
 
   const pendingTable = useReactTable({
     data: pendingRequestsList,
     columns: pendingColumns,
     state: { globalFilter: pendingGlobalFilter, pagination: pendingPagination, rowSelection },
-    enableRowSelection: true,
+    enableRowSelection: (row) =>
+      activeSelectedStatus === null ||
+      String(row.original.status || "").toUpperCase() === activeSelectedStatus,
     onRowSelectionChange: setRowSelection,
     getRowId: (row) => row.id,
     onPaginationChange: setPendingPagination,
@@ -1317,7 +1705,7 @@ const CabRequestView = () => {
                   </Box>
                   <VStack align="start" spacing={0}>
                     <Heading size="md" color={colorMode === "light" ? "gray.800" : "white"}>List Request</Heading>
-                    <Text fontSize="sm" color="gray.500">{DataList.length} total requests • {DataCalendar.length} scheduled</Text>
+                    <Text fontSize="sm" color="gray.500">{DataList.length} total requests • {visibleCalendarData.length} scheduled</Text>
                   </VStack>
                 </HStack>
                 <HStack spacing={2}>
@@ -1340,7 +1728,7 @@ const CabRequestView = () => {
                     <AppTabItem
                       icon={FiClock}
                       label="CAB Request"
-                      badge={incomingRequestCount ?? pendingRequestsList.length}
+                      badge={(incomingRequestCount ?? totalSchedulerQueue) || undefined}
                       badgeColorScheme="red"
                     />
                   )}
@@ -1394,13 +1782,89 @@ const CabRequestView = () => {
                     )}
                   </TabPanel>
 
-                  {/* ─── Tab 2: Pending Requests (Status REQUEST Only - Scheduler Only) ─── */}
+                  {/* ─── Tab 2: Scheduler Workspace (Status REQUEST & CONFIRM) ─── */}
                   {canSchedule && (
                     <TabPanel px={0} pt={4}>
+                      {/* Sub-Header: Filter Status Cepat + Search Controls */}
+                      <Flex
+                        justify="space-between"
+                        align="center"
+                        wrap="wrap"
+                        gap={3}
+                        mb={3.5}
+                      >
+                        {/* Status Filter Tabs (Segmented style matching CabReportsTab) */}
+                        <Tabs
+                          variant="unstyled"
+                          size="sm"
+                          index={
+                            schedulerStatusFilter === "ALL"
+                              ? 0
+                              : schedulerStatusFilter === "REQUEST"
+                              ? 1
+                              : 2
+                          }
+                          onChange={(idx) => {
+                            const filters: ("ALL" | "REQUEST" | "CONFIRM")[] = [
+                              "ALL",
+                              "REQUEST",
+                              "CONFIRM",
+                            ];
+                            setSchedulerStatusFilter(filters[idx]);
+                            setRowSelection({});
+                          }}
+                        >
+                          <AppTabList variant="segmented">
+                            <AppTabItem
+                              icon={FiLayers}
+                              label="Semua"
+                              badge={totalSchedulerQueue}
+                              badgeColorScheme="blue"
+                            />
+                            <AppTabItem
+                              icon={FiClock}
+                              label="Request"
+                              badge={countRequest}
+                              badgeColorScheme="orange"
+                            />
+                            <AppTabItem
+                              icon={FiCheckSquare}
+                              label="Confirm"
+                              badge={countConfirm}
+                              badgeColorScheme="teal"
+                            />
+                          </AppTabList>
+                        </Tabs>
+
+                        {/* Search Input */}
+                        <HStack spacing={2} w={{ base: "full", md: "auto" }}>
+                          <InputGroup size="sm" maxW={{ base: "full", md: "240px" }}>
+                            <InputLeftElement pointerEvents="none">
+                              <Icon as={FiSearch} color="gray.400" />
+                            </InputLeftElement>
+                            <Input
+                              placeholder="Cari permohonan..."
+                              value={pendingGlobalFilter}
+                              onChange={(e) => setPendingGlobalFilter(e.target.value)}
+                              borderRadius="lg"
+                              bg={isDark ? "gray.800" : "white"}
+                            />
+                          </InputGroup>
+                          <IconButton
+                            size="sm"
+                            aria-label="Refresh"
+                            icon={<FiRotateCcw />}
+                            borderRadius="lg"
+                            onClick={RefreshAction}
+                            isLoading={IsLoadingProcess}
+                          />
+                        </HStack>
+                      </Flex>
+
                       {IsLoadingProcess ? (
                         <VStack spacing={4} py={16}>
                           <LoadingMiniSignature />
-                          <Text color="gray.500" fontWeight="medium">Loading pending requests...</Text>
+                          <Text color="gray.500" fontWeight="medium">Loading permohonan...</Text>
                         </VStack>
                       ) : pendingRequestsList.length === 0 ? (
                         <VStack spacing={6} py={20}>
@@ -1408,9 +1872,13 @@ const CabRequestView = () => {
                             <Icon as={FiCheckCircle} boxSize={10} color="blue.500" />
                           </Box>
                           <VStack spacing={2}>
-                            <Heading size="md" color="gray.500">Semua Permohonan Terjadwal</Heading>
+                            <Heading size="md" color="gray.500">Tidak Ada Antrean</Heading>
                             <Text color="gray.400" fontSize="sm" textAlign="center" maxW="420px">
-                              Saat ini tidak ada permohonan berstatus <b>REQUEST</b> yang menunggu penjadwalan sidang CAB.
+                              {schedulerStatusFilter === "REQUEST"
+                                ? "Saat ini tidak ada permohonan berstatus REQUEST yang menunggu penjadwalan."
+                                : schedulerStatusFilter === "CONFIRM"
+                                ? "Saat ini tidak ada permohonan berstatus CONFIRM yang menunggu pengajuan ke approval."
+                                : "Saat ini tidak ada permohonan aktif berstatus REQUEST maupun CONFIRM."}
                             </Text>
                           </VStack>
                         </VStack>
@@ -1430,7 +1898,7 @@ const CabRequestView = () => {
                               zIndex={20}
                               mt={4}
                               mx="auto"
-                              maxW="680px"
+                              maxW="720px"
                               w="full"
                               boxShadow="0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1)"
                               rounded="xl"
@@ -1469,12 +1937,19 @@ const CabRequestView = () => {
                                         <Text fontSize="sm" fontWeight="bold" color={isDark ? "white" : "gray.800"}>
                                           {selectedRequestsList.length} Permohonan Terpilih
                                         </Text>
-                                        <Badge colorScheme="blue" variant="solid" fontSize="3xs" rounded="full" px={2}>
-                                          Siap Dijadwalkan
-                                        </Badge>
+                                        {selectedRequestItems.length > 0 && (
+                                          <Badge colorScheme="orange" variant="subtle" fontSize="3xs" rounded="full" px={2}>
+                                            {selectedRequestItems.length} Request
+                                          </Badge>
+                                        )}
+                                        {selectedConfirmItems.length > 0 && (
+                                          <Badge colorScheme="purple" variant="subtle" fontSize="3xs" rounded="full" px={2}>
+                                            {selectedConfirmItems.length} Confirm
+                                          </Badge>
+                                        )}
                                       </HStack>
                                       <Text fontSize="2xs" color="gray.500">
-                                        Pilih tanggal & waktu sidang CAB serentak atau berurutan.
+                                        Pilih aksi massal untuk permohonan yang dicentang.
                                       </Text>
                                     </VStack>
                                   </HStack>
@@ -1486,23 +1961,44 @@ const CabRequestView = () => {
                                       fontSize="xs"
                                       onClick={() => setRowSelection({})}
                                     >
-                                      Batal Pilihan
+                                      Batal
                                     </Button>
-                                    <Button
-                                      size="sm"
-                                      colorScheme="blue"
-                                      leftIcon={<FiCalendar />}
-                                      fontWeight="bold"
-                                      fontSize="xs"
-                                      px={4}
-                                      onClick={() => {
-                                        setBulkModalTargetRequests(selectedRequestsList);
-                                        setBulkModalInitialDate("");
-                                        bulkScheduleModal.onOpen();
-                                      }}
-                                    >
-                                      Schedule Chosen({selectedRequestsList.length}) ➔
-                                    </Button>
+
+                                    {/* Action 1: Bulk Schedule (for REQUEST items) */}
+                                    {selectedRequestItems.length > 0 && (
+                                      <Button
+                                        size="sm"
+                                        colorScheme="blue"
+                                        leftIcon={<FiCalendar />}
+                                        fontWeight="semibold"
+                                        fontSize="xs"
+                                        px={3.5}
+                                        onClick={() => {
+                                          setBulkModalTargetRequests(selectedRequestItems);
+                                          setBulkModalInitialDate("");
+                                          bulkScheduleModal.onOpen();
+                                        }}
+                                      >
+                                        Schedule ({selectedRequestItems.length})
+                                      </Button>
+                                    )}
+
+                                    {/* Action 2: Bulk Send to Approval (for CONFIRM items) */}
+                                    {selectedConfirmItems.length > 0 && (
+                                      <Button
+                                        size="sm"
+                                        colorScheme="green"
+                                        leftIcon={<FiSend />}
+                                        fontWeight="semibold"
+                                        fontSize="xs"
+                                        px={3.5}
+                                        onClick={() => {
+                                          bulkApprovalModal.onOpen();
+                                        }}
+                                      >
+                                        Kirim ke Approval ({selectedConfirmItems.length})
+                                      </Button>
+                                    )}
                                   </HStack>
                                 </Flex>
                               </Box>
@@ -1522,7 +2018,7 @@ const CabRequestView = () => {
                         {/* Unscheduled inline notice + Quick Action */}
                         {unscheduledCount > 0 && (
                           <Flex justify="space-between" align="center" wrap="wrap" gap={2}>
-                            <HStack
+                            {/* <HStack
                               spacing={2}
                               px={3}
                               py={1.5}
@@ -1535,7 +2031,7 @@ const CabRequestView = () => {
                               <Text fontSize="xs" color={isDark ? "orange.300" : "orange.800"} fontWeight="medium">
                                 {unscheduledCount} permohonan belum dijadwalkan
                               </Text>
-                            </HStack>
+                            </HStack> */}
 
                             {canSchedule && (
                               <Button
@@ -1596,6 +2092,23 @@ const CabRequestView = () => {
                                 </Button>
                               ))}
                             </HStack>
+
+                            {canMake && (
+                              <HStack
+                                spacing={1.5}
+                                px={2.5}
+                                py={1}
+                                bg={isDark ? "blue.950" : "blue.50"}
+                                border="1px solid"
+                                borderColor={isDark ? "blue.800" : "blue.200"}
+                                rounded="md"
+                              >
+                                <Icon as={FiUser} boxSize={3} color="blue.500" />
+                                <Text fontSize="2xs" color={isDark ? "blue.300" : "blue.700"} fontWeight="medium">
+                                  Permohonan Saya ({visibleCalendarData.length})
+                                </Text>
+                              </HStack>
+                            )}
                           </HStack>
 
                           {/* Right: Date Range Inputs + Apply / Reset */}
@@ -1856,13 +2369,26 @@ const CabRequestView = () => {
                             </Box>
                           </GridItem>
 
-                          {/* Right Column (25% width) — Upcoming Summary Panel */}
+                          {/* Right Column (25% width) — Summary & Requested Section Cards */}
                           <GridItem colSpan={{ base: 12, lg: 3 }}>
-                            <UpcomingSummaryPanel
-                              upcomingData={upcomingEventsData}
-                              isDark={isDark}
-                              onNavigate={(id) => router.push(`/cab/cab-request/detail?id=${id}`)}
-                            />
+                            <VStack spacing={4} align="stretch">
+                              <RequestedCabSection
+                                items={requestedList}
+                                isDark={isDark}
+                                isMaker={canMake}
+                                isApprover={canApprove}
+                                onNavigate={(id) =>
+                                  router.push(`/cab/cab-request/detail?id=${id}`)
+                                }
+                              />
+                              <UpcomingSummaryPanel
+                                upcomingData={upcomingEventsData}
+                                isDark={isDark}
+                                onNavigate={(id) =>
+                                  router.push(`/cab/cab-request/detail?id=${id}`)
+                                }
+                              />
+                            </VStack>
                           </GridItem>
                         </Grid>
                       </VStack>
@@ -2004,6 +2530,15 @@ const CabRequestView = () => {
         selectedRequests={bulkModalTargetRequests}
         initialDate={bulkModalInitialDate}
         onConfirmSchedule={handleConfirmBulkSchedule}
+        isLoading={loading}
+      />
+
+      {/* ─── Bulk Send to Approval Modal (for CONFIRM status) ─── */}
+      <BulkSendToApprovalModal
+        isOpen={bulkApprovalModal.isOpen}
+        onClose={bulkApprovalModal.onClose}
+        selectedRequests={selectedConfirmItems}
+        onConfirmSend={handleConfirmBulkSendToApproval}
         isLoading={loading}
       />
     </LayoutAdmin>

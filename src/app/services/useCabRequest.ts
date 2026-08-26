@@ -192,9 +192,12 @@ const useCabRequest = () => {
     setLoading(true);
     return new Promise((resolve) => {
       setTimeout(() => {
-        // DRAFT must NEVER show on calendar
+        // DRAFT and REQUEST must NEVER show on calendar grid
         const scheduled = MOCK_CAB_LIST.filter(
-          (r) => r.scheduledDate !== null && r.status !== "DRAFT"
+          (r) =>
+            r.scheduledDate !== null &&
+            r.status !== "DRAFT" &&
+            r.status !== "REQUEST"
         );
         setLoading(false);
         resolve({ data: scheduled, countTotal: scheduled.length });
@@ -522,6 +525,30 @@ const useCabRequest = () => {
     });
   };
 
+  const BulkSendToApproval = async (
+    _token: string,
+    ids: string[]
+  ): Promise<boolean> => {
+    setLoading(true);
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        ids.forEach((id) => {
+          const idx = MOCK_CAB_LIST.findIndex((r) => r.id === id);
+          if (idx !== -1) {
+            MOCK_CAB_LIST[idx].status = "WAITING APPROVAL";
+            MOCK_CAB_LIST[idx].isCabDone = "Y";
+          }
+          if (MOCK_CAB_DETAIL[id]) {
+            MOCK_CAB_DETAIL[id].status = "WAITING APPROVAL";
+            MOCK_CAB_DETAIL[id].isCabDone = "Y";
+          }
+        });
+        setLoading(false);
+        resolve(true);
+      }, DELAY_LOW);
+    });
+  };
+
   const ActionCabRequest = async (
     _token: string,
     id: string,
@@ -616,6 +643,7 @@ const useCabRequest = () => {
     SetCabDoneStatus,
     UpdateCabResult,
     SendToApproval,
+    BulkSendToApproval,
     ActionCabRequest,
     ToggleCabActivity,
     generateCabRequestNo,
