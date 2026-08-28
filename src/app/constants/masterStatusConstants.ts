@@ -130,14 +130,69 @@ export const STATUS_COLORS = {
 } as const;
 
 // UTILITY FUNCTIONS
-export const getStatusColor = (status: string): string => {
-  // Handle duplicate status names by context
-  if (status === "ON HOLD") return "orange";
-  if (status === "CANCELED") return "red";
-  if (status === "INITIATING") return "blue";
-  if (status === "COMPLETED") return "green";
+export const getStatusColor = (status?: string | null): string => {
+  if (!status) return "gray";
+  const s = String(status).toUpperCase();
+  // Handle CAB specific statuses
+  if (s === "DRAFT") return "gray";
+  if (s === "PENGAJUAN" || s === "REQUEST") return "blue";
+  if (s === "PENJADWALAN" || s === "SCHEDULED" || s === "SUBMITTED") return "purple";
+  if (s === "PELAKSANAAN" || s === "CONFIRM") return "teal";
+  if (s === "IMPLEMENTASI" || s === "IMPLEMENT") return "orange";
+  if (
+    s === "SEND TO APPROVAL" ||
+    s === "SEND_TO_APPROVAL" ||
+    s === "WAITING APPROVE" ||
+    s === "WAITING APPROVAL" ||
+    s === "IN_REVIEW" ||
+    s === "PENDING_APPROVAL"
+  ) {
+    return "yellow";
+  }
+  if (s === "APPROVED" || s === "COMPLETED") return "green";
+  if (s === "REJECTED") return "red";
+  if (s === "CANCELED") return "red";
+  if (s === "ON HOLD") return "orange";
+  if (s === "INITIATING") return "blue";
 
-  return STATUS_COLORS[status as keyof typeof STATUS_COLORS] || "gray";
+  return STATUS_COLORS[s as keyof typeof STATUS_COLORS] || "gray";
+};
+
+export const formatCabStatusLabel = (status?: string | null): string => {
+  if (!status) return "—";
+  const s = String(status).trim().toUpperCase();
+  switch (s) {
+    case "PENGAJUAN":
+    case "REQUEST":
+      return "Pengajuan";
+    case "PELAKSANAAN":
+    case "CONFIRM":
+    case "PENJADWALAN":
+    case "SCHEDULED":
+    case "SUBMITTED":
+      return "Pelaksanaan";
+    case "IMPLEMENTASI":
+    case "IMPLEMENT":
+      return "Implementasi";
+    case "SEND TO APPROVAL":
+    case "SEND_TO_APPROVAL":
+    case "WAITING APPROVAL":
+    case "WAITING APPROVE":
+    case "IN_REVIEW":
+    case "PENDING_APPROVAL":
+      return "Send to Approval";
+    case "COMPLETED":
+    case "APPROVED":
+      return "Completed";
+    case "REJECTED":
+      return "Rejected";
+    case "DRAFT":
+      return "Draft";
+    case "CANCELED":
+      return "Canceled";
+    default:
+      return status;
+  }
 };
 
 export const isRequirementDone = (status: string): boolean => {

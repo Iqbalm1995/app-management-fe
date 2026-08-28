@@ -1120,29 +1120,9 @@ const SidebarContent = ({
 
         <Flex pt={5} pb={2} mx={3}>
           <VStack w={"full"} h={"65vh"} align={"start"} overflowX="auto">
-            <HStack w="full" justify="space-between" align="center" pl={2}>
-              <Tooltip label="Show Beta" placement="top" hasArrow>
-                <FormControl display="flex" alignItems="center">
-                  <FormLabel
-                    htmlFor="hide-pro"
-                    mb="0"
-                    fontSize={"smaller"}
-                    display={LiteModeTrigger ? "none" : "flex"}
-                  >
-                    Coming Soon
-                  </FormLabel>
-                  <Switch
-                    id="hide-pro"
-                    size="sm"
-                    isChecked={hideProMenus}
-                    onChange={(e) => setHideProMenus(e.target.checked)}
-                  />
-                </FormControl>
-              </Tooltip>
-            </HStack>
             <Box w={"full"} overflowY={"auto"}>
               {filteredMenus
-                .filter((link) => hideProMenus || !link.isPro)
+                .filter((link) => !link.isPro)
                 .map((link) => (
                   <NavItem
                     key={link.menuID}
