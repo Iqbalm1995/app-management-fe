@@ -98,6 +98,17 @@ export interface TaskViewModel {
   projectName?: string | null;
   backlogName?: string | null;
   backlogEnddate?: string | null;
+  taskActivities?: TaskActivityResponse[];
+}
+
+export interface TaskActivityResponse {
+  id: string;
+  taskId: string;
+  taskName?: string | null;
+  userIdSys: string;
+  activity?: string | null;
+  createdAt: string;
+  userData?: UserShortResponse | null;
 }
 
 export interface CreateSimpleTaskPayload {
@@ -226,6 +237,10 @@ interface useTasks {
     payload: PaggingListPayload,
     token: string
   ) => Promise<ApiGenericResponse<TaskCommentResponse[] | null> | null>;
+  ListTaskActivitiesPaged: (
+    payload: PaggingListPayloadCustom,
+    token: string
+  ) => Promise<ApiGenericResponse<TaskActivityResponse[] | null> | null>;
   ListTaskComments: (
     taskId: string,
     token: string
@@ -1426,6 +1441,47 @@ const useTasks = (): useTasks => {
     }
   };
 
+  const ListTaskActivitiesPaged = async (
+    payload: PaggingListPayloadCustom,
+    token: string
+  ): Promise<ApiGenericResponse<TaskActivityResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Task/paged-list-task-activity`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<TaskActivityResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred while fetching task activities."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   return {
     ListTasksBoardPaged,
     ListTasksBoard,
@@ -1437,6 +1493,7 @@ const useTasks = (): useTasks => {
     ListTaskItems,
     ListTaskCommentsPaged,
     ListTaskComments,
+    ListTaskActivitiesPaged,
     GetTaskCommentDetail,
     CreateTaskComment,
     UpdateTaskComment,

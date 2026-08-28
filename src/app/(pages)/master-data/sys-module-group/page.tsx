@@ -59,7 +59,7 @@ import {
     PaginationState,
     useReactTable,
 } from "@tanstack/react-table";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useDocumentTitle } from "../../../hooks/useDocumentTitle";
 import { FiRefreshCw, FiSearch, FiX, FiPlus, FiEdit2, FiTrash2, FiEye } from "react-icons/fi";

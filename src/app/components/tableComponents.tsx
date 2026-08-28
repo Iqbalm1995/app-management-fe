@@ -24,6 +24,7 @@ import {
   Tr,
   VStack,
   useColorMode,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import { flexRender } from "@tanstack/react-table";
 import {
@@ -323,7 +324,7 @@ export function ControlTable({ table }: any) {
               md: "end",
               lg: "end",
             }}
-            divider={<StackDivider borderColor="gray.300" />}
+            divider={<StackDivider borderColor={useColorModeValue("gray.300", "gray.700")} />}
             // bg={"red"}
           >
             <Flex as={HStack}>

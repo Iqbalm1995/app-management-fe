@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, Fragment } from "react";
+import React, { useState, useEffect, useRef, Fragment, useMemo } from "react";
 import {
   Badge,
   Box,
@@ -15,6 +15,8 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  Select,
+  IconButton,
   Stack,
   Text,
   VStack,
@@ -34,6 +36,14 @@ import {
   ModalCloseButton,
   useDisclosure,
   useColorMode,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  TableContainer,
+  Tooltip,
 } from "@chakra-ui/react";
 import {
   FiSearch,
@@ -55,6 +65,7 @@ import {
   FiPlus,
   FiArrowRightCircle,
   FiRefreshCw,
+  FiEye,
 } from "react-icons/fi";
 import { Search2Icon } from "@chakra-ui/icons";
 
@@ -66,15 +77,23 @@ import {
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import ProjectStatusCard from "@/app/components/ProjectStatusCard";
 import LoadingMiniSignature from "@/app/components/loadingMini";
+import { ControlTable } from "@/app/components/tableComponents";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import {
   ProjectDataResponse,
   ProjectDetailResponse,
 } from "@/app/services/useProjects";
 import useProjects from "@/app/services/useProjects";
-import { TaskViewModel } from "@/app/services/useTasks";
+import useTasks, {
+  TaskViewModel,
+  TaskActivityResponse,
+} from "@/app/services/useTasks";
+import { PaggingListPayloadCustom } from "@/app/types/masterTypes";
+import { AuthDataResponse } from "@/app/services/useAuthentications";
+import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import useWorkspace, {
   WorkspaceStatsViewModel,
+  WorkspaceTaskViewModel,
 } from "@/app/services/useWorkspace";
 import { radiusStyle } from "@/app/constants/applicationConstants";
 import {
@@ -87,6 +106,21 @@ import LayoutAdminWorkspace from "@/app/components/layoutAdminWorkspace";
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Workspace",
   breadCrumb: ["Home", "Workspace"],
+};
+
+const formatDateDDMMYYYY = (dateString: string): string => {
+  if (!dateString) return "-";
+  try {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  } catch {
+    return dateString;
+  }
 };
 
 const WorkspaceProject = () => {
@@ -118,8 +152,14 @@ const WorkspaceProject = () => {
     GetProjectDetail,
     GetQuarterProgress,
     GetProjectTypeCounts,
+    GetMyTasks,
     loading,
   } = useWorkspace();
+  const { ListTaskActivitiesPaged } = useTasks();
+  const [dataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
+  const [recentActivities, setRecentActivities] = useState<TaskActivityResponse[]>([]);
+  const [recentActivitiesLoading, setRecentActivitiesLoading] = useState(false);
+
   const [stats, setStats] = useState<WorkspaceStatsViewModel | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
   const [quarterProgress, setQuarterProgress] = useState<any>(null);
@@ -129,6 +169,135 @@ const WorkspaceProject = () => {
   const [projectDetailLoading, setProjectDetailLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [projectsLoading, setProjectsLoading] = useState(false);
+  const [myTasks, setMyTasks] = useState<WorkspaceTaskViewModel[]>([]);
+  const [myTasksLoading, setMyTasksLoading] = useState(false);
+
+  // Task search, filter, and pagination states
+  const [taskSearchTerm, setTaskSearchTerm] = useState("");
+  const [taskPriorityFilter, setTaskPriorityFilter] = useState("All");
+  const [taskStatusFilter, setTaskStatusFilter] = useState("All");
+  const [taskCurrentPage, setTaskCurrentPage] = useState(0);
+  const [totalTasksCount, setTotalTasksCount] = useState(0);
+  const [taskPageSize, setTaskPageSize] = useState<number>(5);
+
+  const fetchRecentActivities = async (userSysId?: string) => {
+    const token = localStorage.getItem("tokenData");
+    if (!token) return;
+
+    setRecentActivitiesLoading(true);
+    try {
+      const filterWhereList: any[] = [];
+      if (userSysId) {
+        filterWhereList.push({
+          field: "UserIdSys",
+          operator: "=",
+          value: userSysId,
+        });
+      }
+
+      const payload: PaggingListPayloadCustom = {
+        page: 0,
+        limit: 5,
+        search: "",
+        filterWhere: filterWhereList,
+        fieldOrder: ["CreatedAt"],
+        orderDir: "desc",
+      };
+
+      const response = await ListTaskActivitiesPaged(payload, token);
+      if (response?.statusCode === 200 && Array.isArray(response.data)) {
+        setRecentActivities(response.data);
+      } else {
+        setRecentActivities([]);
+      }
+    } catch (err) {
+      console.error("Error fetching recent activities:", err);
+      setRecentActivities([]);
+    } finally {
+      setRecentActivitiesLoading(false);
+    }
+  };
+
+  const fetchMyTasks = async (
+    search: string = "",
+    priority: string = "All",
+    status: string = "All",
+    page: number = 0,
+    limit: number = taskPageSize
+  ) => {
+    const token = localStorage.getItem("tokenData");
+    if (token) {
+      setMyTasksLoading(true);
+      try {
+        const filterWhereList: any[] = [];
+        if (priority !== "All") {
+          filterWhereList.push({
+            Field: "TaskPriority",
+            Value: priority,
+            Operator: "="
+          });
+        }
+        if (status !== "All") {
+          filterWhereList.push({
+            Field: "IsCompleted",
+            Value: status === "Completed" ? "Y" : "N",
+            Operator: "="
+          });
+        }
+        const payload = {
+          search: search,
+          limit: limit,
+          page: page,
+          filterWhere: filterWhereList,
+          fieldOrder: ["createdAt"],
+          orderDir: "desc",
+        };
+        const response = await GetMyTasks(payload, token);
+        if (response?.statusCode === 200 && Array.isArray(response.data)) {
+          setMyTasks(response.data);
+          setTotalTasksCount(response.countTotal || response.data.length);
+        }
+      } catch (err) {
+        console.error("Error fetching my tasks:", err);
+      } finally {
+        setMyTasksLoading(false);
+      }
+    }
+  };
+
+  const myTaskTableAdapter = useMemo(() => {
+    const totalPages = Math.ceil(totalTasksCount / taskPageSize) || 1;
+    return {
+      getPageCount: () => totalPages,
+      getState: () => ({
+        pagination: {
+          pageIndex: taskCurrentPage,
+          pageSize: taskPageSize,
+        },
+      }),
+      setPageIndex: (index: number) => {
+        setTaskCurrentPage(index);
+        fetchMyTasks(taskSearchTerm, taskPriorityFilter, taskStatusFilter, index, taskPageSize);
+      },
+      previousPage: () => {
+        const prev = Math.max(0, taskCurrentPage - 1);
+        setTaskCurrentPage(prev);
+        fetchMyTasks(taskSearchTerm, taskPriorityFilter, taskStatusFilter, prev, taskPageSize);
+      },
+      nextPage: () => {
+        const next = Math.min(totalPages - 1, taskCurrentPage + 1);
+        setTaskCurrentPage(next);
+        fetchMyTasks(taskSearchTerm, taskPriorityFilter, taskStatusFilter, next, taskPageSize);
+      },
+      getCanPreviousPage: () => taskCurrentPage > 0,
+      getCanNextPage: () => taskCurrentPage < totalPages - 1,
+      setPageSize: (size: number) => {
+        setTaskPageSize(size);
+        setTaskCurrentPage(0);
+        fetchMyTasks(taskSearchTerm, taskPriorityFilter, taskStatusFilter, 0, size);
+      },
+    };
+  }, [taskCurrentPage, taskPageSize, totalTasksCount, taskSearchTerm, taskPriorityFilter, taskStatusFilter]);
 
   // Project type filter
   const [selectedProjectType, setSelectedProjectType] = useState<string>("All");
@@ -188,15 +357,34 @@ const WorkspaceProject = () => {
       setStatsLoading(true);
       setQuarterProgressLoading(true);
       setProjectsLoading(true);
+      setMyTasksLoading(true);
+
+      // Parse user auth from localStorage
+      let currentUserIdSys = "";
+      const storedAuth = localStorage.getItem("AuthData");
+      if (storedAuth) {
+        try {
+          const parsed: AuthDataModelInterface = JSON.parse(storedAuth);
+          if (parsed.dataLogin) {
+            const uData = parsed.dataLogin as AuthDataResponse;
+            setDataAuth(uData);
+            currentUserIdSys = uData.id || "";
+          }
+        } catch (e) {
+          console.error("Error parsing AuthData:", e);
+        }
+      }
 
       try {
         const { quarter: q, year: y } = getCurrentQuarter();
 
-        const [statsRes, typeCountsRes, projectsRes, quarterRes] = await Promise.all([
+        const [statsRes, typeCountsRes, projectsRes, quarterRes, myTasksRes] = await Promise.all([
           GetWorkspaceStats(token),
           GetProjectTypeCounts(token),
           GetAssignedProjects({ search: "", limit: 9, page: 0, projectType: null, filterWhere: [], fieldOrder: ["createdAt"], orderDir: "desc" }, token),
           GetQuarterProgress(q, y, token),
+          GetMyTasks({ search: "", limit: 5, page: 0, filterWhere: [], fieldOrder: ["createdAt"], orderDir: "desc" }, token),
+          fetchRecentActivities(currentUserIdSys),
         ]);
 
         if (statsRes?.statusCode === 200 && statsRes.data) setStats(statsRes.data);
@@ -206,12 +394,17 @@ const WorkspaceProject = () => {
           setTotalProjectsCount(projectsRes.countTotal || 0);
         }
         if (quarterRes?.statusCode === 200) setQuarterProgress(quarterRes.data);
+        if (myTasksRes?.statusCode === 200 && Array.isArray(myTasksRes.data)) {
+          setMyTasks(myTasksRes.data);
+          setTotalTasksCount(myTasksRes.countTotal || myTasksRes.data.length);
+        }
       } catch (error) {
         console.error("Error fetching workspace data:", error);
       } finally {
         setStatsLoading(false);
         setQuarterProgressLoading(false);
         setProjectsLoading(false);
+        setMyTasksLoading(false);
       }
     };
 
@@ -266,7 +459,7 @@ const WorkspaceProject = () => {
   };
 
   const bgColor = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("gray.200", "gray.600");
+  const borderColor = useColorModeValue("gray.200", "gray.700");
   const textColor = useColorModeValue("gray.600", "gray.300");
   const accentColor = useColorModeValue("blue.500", "blue.400");
   const cardHoverBg = useColorModeValue("gray.50", "gray.700");
@@ -665,6 +858,72 @@ const WorkspaceProject = () => {
       <HeaderContent {...HeaderDataContent} />
 
       <Box p={6}>
+        <VStack spacing={6} align="stretch" mb={6}>
+          {/* Executive Command Hero Banner */}
+          <Box
+            position="relative"
+            bg={colorMode === "dark" ? "rgba(15, 23, 42, 0.85)" : "white"}
+            backdropFilter="blur(16px)"
+            rounded="2xl"
+            shadow="2xl"
+            border="1px"
+            borderColor={colorMode === "dark" ? "gray.700" : "blue.100"}
+            overflow="hidden"
+          >
+            <Box
+              position="absolute"
+              top={0}
+              left={0}
+              right={0}
+              h="5px"
+              bgGradient="linear(to-r, cyan.400, blue.500, purple.600)"
+            />
+            <Box p={6} position="relative" zIndex={1}>
+              <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
+                <HStack spacing={5}>
+                  <Box
+                    w={16}
+                    h={16}
+                    bgGradient="linear(to-br, cyan.500, blue.600)"
+                    rounded="2xl"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    shadow="0 8px 20px 0 rgba(0, 180, 216, 0.3)"
+                    flexShrink={0}
+                  >
+                    <Icon as={FiMonitor} boxSize={7} color="white" />
+                  </Box>
+                  <VStack align="start" spacing={1}>
+                    <HStack spacing={2} align="center">
+                      <Heading size="lg" color={colorMode === "dark" ? "white" : "gray.800"} letterSpacing="tight">
+                        Executive Workspace
+                      </Heading>
+                      <HStack spacing={1.5} bg={colorMode === "dark" ? "gray.900" : "cyan.50"} px={2.5} py={0.5} rounded="full" border="1px" borderColor={colorMode === "dark" ? "gray.700" : "cyan.200"}>
+                        <Box w={2} h={2} bg="cyan.400" rounded="full" />
+                        <Text fontSize="2xs" fontWeight="bold" color={colorMode === "dark" ? "cyan.300" : "cyan.700"}>
+                          LIVE PLATFORM
+                        </Text>
+                      </HStack>
+                    </HStack>
+                    <Text fontSize="sm" color={colorMode === "dark" ? "gray.400" : "gray.600"}>
+                      Monitor, manage, and track your active project assignments & task progress in real time.
+                    </Text>
+                  </VStack>
+                </HStack>
+                <HStack spacing={3}>
+                  <Badge colorScheme="cyan" variant="solid" rounded="full" px={3} py={1} fontSize="xs">
+                    {stats?.totalProjects ?? 0} Projects Assigned
+                  </Badge>
+                  <Badge colorScheme="green" variant="subtle" rounded="full" px={3} py={1} fontSize="xs">
+                    {stats?.activeProjects ?? 0} Active
+                  </Badge>
+                </HStack>
+              </Flex>
+            </Box>
+          </Box>
+        </VStack>
+
         <Grid templateColumns="repeat(12, 1fr)" w="full" gap={5}>
           {/* Main Content */}
           <GridItem colSpan={{ base: 12, sm: 12, md: 9, lg: 9 }} w={"full"}>
@@ -737,6 +996,11 @@ const WorkspaceProject = () => {
                                     setProjectTypeCounts(res.data);
                                   }
                                 }),
+                                GetMyTasks({ search: "", limit: 10, page: 0, filterWhere: [], fieldOrder: ["createdAt"], orderDir: "desc" }, token).then((res) => {
+                                  if (res?.statusCode === 200 && Array.isArray(res.data)) {
+                                    setMyTasks(res.data);
+                                  }
+                                }),
                                 fetchProjects(
                                   searchTerm,
                                   9,
@@ -760,155 +1024,110 @@ const WorkspaceProject = () => {
                     </HStack>
                   </HStack>
 
-                  {/* Tab Filters */}
-                  <HStack spacing={2} mb={4} flexWrap="wrap">
-                    <Button
-                      size="sm"
-                      variant={
-                        selectedProjectType === "All" ? "solid" : "ghost"
-                      }
-                      colorScheme="blue"
-                      onClick={() => setSelectedProjectType("All")}
-                      borderRadius="lg"
-                    >
-                      All ({projectTypeCounts.all})
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={
-                        selectedProjectType === "INTERNAL DEVELOPMENT"
-                          ? "solid"
-                          : "ghost"
-                      }
-                      colorScheme="blue"
-                      onClick={() =>
-                        setSelectedProjectType("INTERNAL DEVELOPMENT")
-                      }
-                      borderRadius="lg"
-                    >
-                      Internal Dev ({projectTypeCounts.internalDev})
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={
-                        selectedProjectType === "PROCUREMENT"
-                          ? "solid"
-                          : "ghost"
-                      }
-                      colorScheme="blue"
-                      onClick={() => setSelectedProjectType("PROCUREMENT")}
-                      borderRadius="lg"
-                    >
-                      Procurement ({projectTypeCounts.procurement})
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={
-                        selectedProjectType === "DEPLOYMENT" ? "solid" : "ghost"
-                      }
-                      colorScheme="blue"
-                      onClick={() => setSelectedProjectType("DEPLOYMENT")}
-                      borderRadius="lg"
-                    >
-                      Deployment ({projectTypeCounts.deployment})
-                    </Button>
+                  {/* Executive Segmented Tab Filters */}
+                  <HStack spacing={2} mb={5} flexWrap="wrap" bg={colorMode === "dark" ? "gray.900" : "gray.100"} p={1.5} rounded="2xl" border="1px" borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}>
+                    {[
+                      { key: "All", label: "All Projects", count: projectTypeCounts.all, icon: FiFolder },
+                      { key: "INTERNAL DEVELOPMENT", label: "Internal Dev", count: projectTypeCounts.internalDev, icon: FiMonitor },
+                      { key: "PROCUREMENT", label: "Procurement", count: projectTypeCounts.procurement, icon: FiClipboard },
+                      { key: "DEPLOYMENT", label: "Deployment", count: projectTypeCounts.deployment, icon: FiTrendingUp },
+                    ].map(({ key, label, count, icon }) => {
+                      const isSelected = selectedProjectType === key;
+                      return (
+                        <Button
+                          key={key}
+                          size="sm"
+                          variant={isSelected ? "solid" : "ghost"}
+                          colorScheme="cyan"
+                          bg={isSelected ? "cyan.500" : "transparent"}
+                          color={isSelected ? "white" : textColor}
+                          onClick={() => setSelectedProjectType(key)}
+                          borderRadius="xl"
+                          px={4}
+                          py={2}
+                          leftIcon={<Icon as={icon} boxSize={4} />}
+                          _hover={{
+                            bg: isSelected ? "cyan.600" : (colorMode === "dark" ? "whiteAlpha.100" : "white"),
+                            transform: "translateY(-1px)",
+                          }}
+                          transition="all 0.2s"
+                        >
+                          <HStack spacing={2}>
+                            <Text fontSize="xs" fontWeight={isSelected ? "bold" : "semibold"}>
+                              {label}
+                            </Text>
+                            <Badge
+                              colorScheme={isSelected ? "whiteAlpha" : "cyan"}
+                              variant={isSelected ? "solid" : "subtle"}
+                              bg={isSelected ? "whiteAlpha.300" : undefined}
+                              color={isSelected ? "white" : "cyan.400"}
+                              fontSize="2xs"
+                              fontFamily="mono"
+                              rounded="full"
+                              px={2}
+                            >
+                              {count}
+                            </Badge>
+                          </HStack>
+                        </Button>
+                      );
+                    })}
                   </HStack>
 
-                  <Grid
-                    templateColumns={
-                      viewMode === "grid"
-                        ? { base: "1fr", md: "repeat(3, 1fr)" }
-                        : "1fr"
-                    }
-                    gap={5}
-                  >
-                    {projectsLoading && (
-                      <Box gridColumn="1 / -1" py={8}>
-                        <LoadingMiniSignature />
-                      </Box>
-                    )}
-                    {!projectsLoading && projects.length === 0 && (
-                      <Box gridColumn="1 / -1" textAlign="center" py={8}>
-                        <Text color="gray.500">
-                          No assigned projects found.
-                        </Text>
-                      </Box>
-                    )}
-                    {!projectsLoading &&
-                      projects.map((project) => (
+                  {projectsLoading && (
+                    <Box py={8}>
+                      <LoadingMiniSignature />
+                    </Box>
+                  )}
+
+                  {!projectsLoading && projects.length === 0 && (
+                    <Box textAlign="center" py={8}>
+                      <Text color="gray.500">
+                        No assigned projects found.
+                      </Text>
+                    </Box>
+                  )}
+
+                  {!projectsLoading && projects.length > 0 && viewMode === "grid" && (
+                    <Grid templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }} gap={5}>
+                      {projects.map((project) => (
                         <Card
                           key={project.id}
                           variant="outline"
                           size="sm"
-                          borderRadius={radiusStyle}
+                          rounded="xl"
+                          bg={colorMode === "dark" ? "gray.800" : "white"}
+                          borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+                          shadow="sm"
                           _hover={{
-                            transform: "translateY(-2px)",
-                            shadow: "md",
-                            borderColor: accentColor,
+                            transform: "translateY(-4px)",
+                            shadow: "2xl",
+                            borderColor: "cyan.400",
                           }}
-                          transition="all 0.2s"
+                          transition="all 0.25s cubic-bezier(0.4, 0, 0.2, 1)"
                           cursor="pointer"
-                          // borderLeft="3px solid"
-                          // borderLeftColor={
-                          //   getStatusColor(project.projectStatus) + ".500"
-                          // }
                           onClick={() => handleProjectClick(project)}
                           position="relative"
                           overflow="hidden"
                         >
-                          {/* Static Wave Background */}
                           <Box
                             position="absolute"
-                            bottom={0}
+                            top={0}
                             left={0}
                             right={0}
-                            height="180px"
-                            pointerEvents="none"
-                          >
-                            <svg
-                              viewBox="0 0 1200 200"
-                              preserveAspectRatio="none"
-                              style={{ width: "100%", height: "100%" }}
-                            >
-                              {/* Diagonal wave layer 1 */}
-                              <path
-                                d="M0,100 C300,20 500,140 800,80 L1200,40 L1200,200 L0,200 Z"
-                                fill={
-                                  colorMode === "dark" ? "#0051ad" : "#f2f8ff"
-                                }
-                                opacity={0.3}
-                              />
-                              {/* Diagonal wave layer 2 */}
-                              <path
-                                d="M0,140 C400,80 600,160 900,100 L1200,70 L1200,200 L0,200 Z"
-                                fill={
-                                  colorMode === "dark" ? "#004593" : "#cae3ff"
-                                }
-                                opacity={0.4}
-                              />
-                              {/* Abstract curved shape */}
-                              <path
-                                d="M0,180 C200,120 600,180 1200,120 L1200,200 L0,200 Z"
-                                fill={
-                                  colorMode === "dark" ? "#00326b" : "#9acaff"
-                                }
-                                opacity={0.5}
-                              />
-                            </svg>
-                          </Box>
+                            h="3px"
+                            bgGradient="linear(to-r, cyan.400, blue.500)"
+                          />
                           <CardBody p={4} zIndex={2}>
                             <VStack align="start" spacing={3} w="full">
-                              {/* Header: Project No + Status */}
                               <HStack justify="space-between" w="full">
                                 <Text
                                   fontSize="2xs"
-                                  color={useColorModeValue(
-                                    "secondary.700",
-                                    "secondary.200"
-                                  )}
+                                  color={colorMode === "dark" ? "cyan.300" : "cyan.700"}
                                   fontWeight="bold"
+                                  fontFamily="mono"
                                 >
-                                  No. {project.projectNo}
+                                  {project.projectNo}
                                 </Text>
                                 <Badge
                                   colorScheme={getStatusColor(
@@ -916,47 +1135,48 @@ const WorkspaceProject = () => {
                                   )}
                                   variant="subtle"
                                   fontSize="xs"
+                                  rounded="full"
+                                  px={2.5}
                                 >
                                   {project.projectStatus}
                                 </Badge>
                               </HStack>
 
-                              {/* Project Name */}
                               <Box h={"40px"}>
                                 <Heading
                                   size="sm"
-                                  color={accentColor}
+                                  color={colorMode === "dark" ? "white" : "gray.800"}
                                   noOfLines={2}
+                                  letterSpacing="tight"
                                 >
                                   {project.projectName}
                                 </Heading>
                               </Box>
 
-                              {/* Progress Bar */}
                               <Box w="full">
                                 <HStack justify="space-between" mb={1}>
-                                  <Text fontSize="xs" color={textColor}>
+                                  <Text fontSize="2xs" color={textColor} fontWeight="medium">
                                     Progress
                                   </Text>
                                   <Text
-                                    fontSize="xs"
+                                    fontSize="2xs"
                                     fontWeight="bold"
-                                    color={accentColor}
+                                    color="cyan.400"
+                                    fontFamily="mono"
                                   >
                                     {project.projectStatusPercentage}%
                                   </Text>
                                 </HStack>
                                 <Progress
                                   value={project.projectStatusPercentage}
-                                  size="sm"
-                                  colorScheme="blue"
+                                  size="xs"
+                                  colorScheme="cyan"
                                   borderRadius="full"
-                                  bg={useColorModeValue("gray.100", "gray.700")}
+                                  bg={colorMode === "dark" ? "gray.700" : "gray.100"}
                                 />
                               </Box>
 
-                              {/* Footer: Team + Type */}
-                              <HStack justify="space-between" w="full">
+                              <HStack justify="space-between" w="full" pt={1}>
                                 <AvatarGroup size="xs" max={3}>
                                   {project.userAssignment?.map((assignment) => (
                                     <Avatar
@@ -970,9 +1190,11 @@ const WorkspaceProject = () => {
                                   ))}
                                 </AvatarGroup>
                                 <Badge
-                                  colorScheme="secondary"
+                                  colorScheme="blue"
                                   variant="subtle"
-                                  fontSize="xs"
+                                  fontSize="2xs"
+                                  rounded="full"
+                                  px={2}
                                 >
                                   {project.projectType}
                                 </Badge>
@@ -981,7 +1203,116 @@ const WorkspaceProject = () => {
                           </CardBody>
                         </Card>
                       ))}
-                  </Grid>
+                    </Grid>
+                  )}
+
+                  {!projectsLoading && projects.length > 0 && viewMode === "list" && (
+                    <TableContainer rounded="xl" border="1px" borderColor={colorMode === "dark" ? "gray.700" : "gray.200"} overflow="hidden">
+                      <Table variant="simple" size="sm">
+                        <Thead bg={colorMode === "dark" ? "gray.900" : "gray.50"}>
+                          <Tr>
+                            <Th py={3} color={textColor} fontSize="xs">No.</Th>
+                            <Th py={3} color={textColor} fontSize="xs">Project Info</Th>
+                            <Th py={3} color={textColor} fontSize="xs">Category & Type</Th>
+                            <Th py={3} color={textColor} fontSize="xs">Status & Timeline</Th>
+                            <Th py={3} color={textColor} fontSize="xs">Assigned Team</Th>
+                            <Th py={3} color={textColor} fontSize="xs" textAlign="center">Action</Th>
+                          </Tr>
+                        </Thead>
+                        <Tbody>
+                          {projects.map((project, idx) => (
+                            <Tr
+                              key={project.id}
+                              _hover={{ bg: colorMode === "dark" ? "whiteAlpha.50" : "cyan.50/30" }}
+                              transition="background 0.15s"
+                              cursor="pointer"
+                              onClick={() => handleProjectClick(project)}
+                            >
+                              <Td py={3}>
+                                <Text fontSize="xs" fontFamily="mono" color={textColor}>
+                                  {currentPage * 9 + idx + 1}.
+                                </Text>
+                              </Td>
+                              <Td py={3}>
+                                <VStack align="start" spacing={0.5}>
+                                  <Text fontSize="2xs" fontWeight="bold" fontFamily="mono" color="cyan.400">
+                                    {project.projectNo}
+                                  </Text>
+                                  <Text fontSize="sm" fontWeight="semibold" color={colorMode === "dark" ? "white" : "gray.800"} noOfLines={1}>
+                                    {project.projectName}
+                                  </Text>
+                                </VStack>
+                              </Td>
+                              <Td py={3}>
+                                <VStack align="start" spacing={1}>
+                                  <Badge colorScheme="blue" variant="subtle" fontSize="2xs" rounded="full" px={2}>
+                                    {project.projectType}
+                                  </Badge>
+                                  {project.projectCategory && (
+                                    <Text fontSize="2xs" color={textColor}>
+                                      {project.projectCategory}
+                                    </Text>
+                                  )}
+                                </VStack>
+                              </Td>
+                              <Td py={3}>
+                                <VStack align="start" spacing={1} minW="140px">
+                                  <HStack spacing={2} w="full" justify="space-between">
+                                    <Badge
+                                      colorScheme={getStatusColor(project.projectStatus)}
+                                      variant="subtle"
+                                      fontSize="2xs"
+                                      rounded="full"
+                                      px={2}
+                                    >
+                                      {project.projectStatus}
+                                    </Badge>
+                                    <Text fontSize="2xs" fontWeight="bold" fontFamily="mono" color="cyan.400">
+                                      {project.projectStatusPercentage}%
+                                    </Text>
+                                  </HStack>
+                                  <Progress
+                                    value={project.projectStatusPercentage}
+                                    size="xs"
+                                    colorScheme="cyan"
+                                    borderRadius="full"
+                                    w="full"
+                                    bg={colorMode === "dark" ? "gray.700" : "gray.100"}
+                                  />
+                                </VStack>
+                              </Td>
+                              <Td py={3}>
+                                <AvatarGroup size="xs" max={3}>
+                                  {project.userAssignment?.map((assignment) => (
+                                    <Avatar
+                                      key={assignment.id}
+                                      name={assignment.userData?.nama}
+                                      src={assignment.userData?.profilePict || undefined}
+                                    />
+                                  ))}
+                                </AvatarGroup>
+                              </Td>
+                              <Td py={3} textAlign="center">
+                                <Button
+                                  size="xs"
+                                  leftIcon={<FiEye />}
+                                  colorScheme="cyan"
+                                  variant="subtle"
+                                  rounded="lg"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleProjectClick(project);
+                                  }}
+                                >
+                                  Preview
+                                </Button>
+                              </Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    </TableContainer>
+                  )}
 
                   {/* Pagination */}
                   {!projectsLoading && projects.length > 0 && (
@@ -1090,42 +1421,328 @@ const WorkspaceProject = () => {
                 </CardBody>
               </Card>
 
-              {/* Recent Tasks */}
+              {/* My Ongoing Assigned Tasks Section */}
               <Card
-                bg={bgColor}
-                borderColor={borderColor}
-                borderRadius={radiusStyle}
+                bg={colorMode === "dark" ? "gray.800" : "white"}
+                border="1px"
+                borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+                rounded="2xl"
                 shadow="sm"
-                _hover={{ shadow: "md" }}
-                transition="all 0.2s"
+                overflow="hidden"
+                position="relative"
               >
-                <CardBody>
-                  <HStack justify="space-between" mb={6}>
-                    <Heading size="md" color={accentColor}>
-                      Recent Tasks
-                    </Heading>
-                  </HStack>
+                <Box
+                  position="absolute"
+                  top={0}
+                  left={0}
+                  right={0}
+                  h="3px"
+                  bgGradient="linear(to-r, cyan.400, blue.500)"
+                />
+                <CardBody p={5}>
+                  <Flex
+                    justify="space-between"
+                    align={{ base: "stretch", md: "center" }}
+                    direction={{ base: "column", md: "row" }}
+                    gap={3}
+                    mb={5}
+                  >
+                    <HStack spacing={3}>
+                      <Box
+                        w={10}
+                        h={10}
+                        bgGradient="linear(to-br, cyan.500, blue.600)"
+                        rounded="xl"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        color="white"
+                        shadow="md"
+                      >
+                        <Icon as={FiCheckCircle} boxSize={5} />
+                      </Box>
+                      <VStack align="start" spacing={0}>
+                        <Heading size="md" color={colorMode === "dark" ? "white" : "gray.800"} letterSpacing="tight">
+                          My Ongoing Assigned Tasks
+                        </Heading>
+                        <Text fontSize="2xs" color={textColor}>
+                          Active tasks assigned to you across projects
+                        </Text>
+                      </VStack>
+                    </HStack>
 
-                  <VStack spacing={4} py={8}>
-                    <Icon
-                      as={FiClock}
-                      boxSize={12}
-                      color={textColor}
-                      opacity={0.5}
-                    />
-                    <Text fontSize="lg" fontWeight="semibold" color={textColor}>
-                      Coming Soon
-                    </Text>
-                    <Text
-                      fontSize="sm"
-                      color={textColor}
-                      textAlign="center"
-                      opacity={0.7}
+                    {/* Executive Filter Bar */}
+                    <HStack
+                      spacing={2}
+                      w={{ base: "full", md: "auto" }}
+                      p={1.5}
+                      bg={colorMode === "dark" ? "gray.900" : "gray.50"}
+                      rounded="xl"
+                      border="1px solid"
+                      borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+                      flexWrap="wrap"
                     >
-                      Task management features will be available in the next
-                      update
-                    </Text>
-                  </VStack>
+                      <InputGroup size="sm" maxW={{ base: "full", md: "190px" }}>
+                        <InputLeftElement pointerEvents="none">
+                          <Icon as={FiSearch} color="gray.400" boxSize={3.5} />
+                        </InputLeftElement>
+                        <Input
+                          placeholder="Search task..."
+                          value={taskSearchTerm}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setTaskSearchTerm(val);
+                            setTaskCurrentPage(0);
+                            fetchMyTasks(val, taskPriorityFilter, taskStatusFilter, 0, taskPageSize);
+                          }}
+                          bg={colorMode === "dark" ? "gray.800" : "white"}
+                          borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+                          borderRadius="lg"
+                          fontSize="xs"
+                          _focus={{ borderColor: "cyan.400", boxShadow: "0 0 0 1px #00B5D8" }}
+                        />
+                      </InputGroup>
+
+                      <Select
+                        size="sm"
+                        maxW={{ base: "full", sm: "125px" }}
+                        bg={colorMode === "dark" ? "gray.800" : "white"}
+                        borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+                        borderRadius="lg"
+                        fontSize="xs"
+                        value={taskPriorityFilter}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setTaskPriorityFilter(val);
+                          setTaskCurrentPage(0);
+                          fetchMyTasks(taskSearchTerm, val, taskStatusFilter, 0, taskPageSize);
+                        }}
+                        _focus={{ borderColor: "cyan.400", boxShadow: "0 0 0 1px #00B5D8" }}
+                      >
+                        <option value="All">All Priority</option>
+                        <option value="HIGH">High</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="LOW">Low</option>
+                      </Select>
+
+                      <Select
+                        size="sm"
+                        maxW={{ base: "full", sm: "125px" }}
+                        bg={colorMode === "dark" ? "gray.800" : "white"}
+                        borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+                        borderRadius="lg"
+                        fontSize="xs"
+                        value={taskStatusFilter}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setTaskStatusFilter(val);
+                          setTaskCurrentPage(0);
+                          fetchMyTasks(taskSearchTerm, taskPriorityFilter, val, 0, taskPageSize);
+                        }}
+                        _focus={{ borderColor: "cyan.400", boxShadow: "0 0 0 1px #00B5D8" }}
+                      >
+                        <option value="All">All Status</option>
+                        <option value="In Progress">In Progress</option>
+                        <option value="Completed">Completed</option>
+                      </Select>
+
+                      <Tooltip label="Refresh tasks" placement="top" hasArrow>
+                        <IconButton
+                          aria-label="Refresh tasks"
+                          icon={<FiRefreshCw />}
+                          size="sm"
+                          bg={colorMode === "dark" ? "gray.800" : "white"}
+                          borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+                          variant="outline"
+                          colorScheme="cyan"
+                          borderRadius="lg"
+                          onClick={() => fetchMyTasks(taskSearchTerm, taskPriorityFilter, taskStatusFilter, taskCurrentPage, taskPageSize)}
+                        />
+                      </Tooltip>
+                    </HStack>
+                  </Flex>
+
+                  {myTasksLoading ? (
+                    <Box py={8}>
+                      <LoadingMiniSignature />
+                    </Box>
+                  ) : myTasks.length === 0 ? (
+                    <VStack spacing={3} py={8} textAlign="center">
+                      <Icon as={FiCheckCircle} boxSize={10} color="gray.400" />
+                      <Text fontSize="sm" color={textColor} fontWeight="medium">
+                        No ongoing assigned tasks found.
+                      </Text>
+                      <Text fontSize="2xs" color="gray.500">
+                        You have completed all your assigned tasks!
+                      </Text>
+                    </VStack>
+                  ) : (
+                    <>
+                      <TableContainer
+                        rounded="xl"
+                        border="1px"
+                        borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+                      >
+                        <Table variant="simple" size="sm" style={{ tableLayout: "fixed", width: "100%" }}>
+                          <Thead bg={colorMode === "dark" ? "whiteAlpha.05" : "blackAlpha.50"}>
+                            <Tr>
+                              <Th py={3} color={textColor} fontSize="xs" w="32%">Task Info</Th>
+                              <Th py={3} color={textColor} fontSize="xs" w="20%">Project</Th>
+                              <Th py={3} color={textColor} fontSize="xs" w="12%">Priority</Th>
+                              <Th py={3} color={textColor} fontSize="xs" w="14%">Stage / Status</Th>
+                              <Th py={3} color={textColor} fontSize="xs" w="12%">Due Date</Th>
+                              <Th py={3} color={textColor} fontSize="xs" w="10%" textAlign="center">Action</Th>
+                            </Tr>
+                          </Thead>
+                          <Tbody>
+                            {myTasks.map((task) => {
+                              const isOverdue = task.dueDate && new Date(task.dueDate) < new Date();
+                              return (
+                                <Tr
+                                  key={task.id}
+                                  _hover={{ bg: colorMode === "dark" ? "whiteAlpha.50" : "cyan.50/30" }}
+                                  transition="background 0.15s"
+                                >
+                                  {/* Task Title & Description - Clean text with strict truncation */}
+                                  <Td py={3} maxW="240px" style={{ overflow: "hidden" }}>
+                                    <VStack align="start" spacing={0.5} w="100%" style={{ overflow: "hidden" }}>
+                                      <Tooltip label={task.title} placement="top-start" hasArrow>
+                                        <Text
+                                          fontSize="sm"
+                                          fontWeight="semibold"
+                                          color={colorMode === "dark" ? "white" : "gray.800"}
+                                          noOfLines={1}
+                                          isTruncated
+                                          w="100%"
+                                          style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                                        >
+                                          {task.title}
+                                        </Text>
+                                      </Tooltip>
+                                      {task.description && (
+                                        <Tooltip label={task.description} placement="top-start" hasArrow>
+                                          <Text
+                                            fontSize="2xs"
+                                            color={textColor}
+                                            noOfLines={1}
+                                            isTruncated
+                                            w="100%"
+                                            style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                                          >
+                                            {task.description}
+                                          </Text>
+                                        </Tooltip>
+                                      )}
+                                    </VStack>
+                                  </Td>
+
+                                  {/* Project Name - Clean text with icon, NEVER wrapped inside badge */}
+                                  <Td py={3} maxW="160px" style={{ overflow: "hidden" }}>
+                                    <Tooltip label={task.projectName} placement="top" hasArrow>
+                                      <HStack spacing={1.5} w="100%" style={{ overflow: "hidden" }}>
+                                        <Icon as={FiFolder} color="cyan.400" boxSize={3.5} flexShrink={0} />
+                                        <Text
+                                          fontSize="xs"
+                                          fontWeight="medium"
+                                          color={colorMode === "dark" ? "gray.200" : "gray.700"}
+                                          noOfLines={1}
+                                          isTruncated
+                                          w="100%"
+                                          style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                                        >
+                                          {task.projectName || "General"}
+                                        </Text>
+                                      </HStack>
+                                    </Tooltip>
+                                  </Td>
+
+                                  {/* Priority Badge - Compact Pill for Short Text */}
+                                  <Td py={3}>
+                                    <Badge
+                                      colorScheme={
+                                        task.priority?.toUpperCase() === "HIGH" || task.priority?.toUpperCase() === "CRITICAL"
+                                          ? "red"
+                                          : task.priority?.toUpperCase() === "MEDIUM"
+                                          ? "orange"
+                                          : "green"
+                                      }
+                                      variant="subtle"
+                                      fontSize="2xs"
+                                      rounded="full"
+                                      px={2.5}
+                                      py={0.5}
+                                      fontWeight="bold"
+                                    >
+                                      {task.priority || "MEDIUM"}
+                                    </Badge>
+                                  </Td>
+
+                                  {/* Stage / Status Badge - Compact Badge */}
+                                  <Td py={3}>
+                                    <Badge
+                                      colorScheme={task.status === "Completed" ? "green" : "purple"}
+                                      variant="subtle"
+                                      fontSize="2xs"
+                                      rounded="full"
+                                      px={2.5}
+                                      py={0.5}
+                                    >
+                                      {task.boardName || task.status}
+                                    </Badge>
+                                  </Td>
+
+                                  {/* Due Date */}
+                                  <Td py={3}>
+                                    {task.dueDate ? (
+                                      <HStack spacing={1}>
+                                        <Icon as={FiClock} boxSize={3} color={isOverdue ? "red.400" : "gray.400"} />
+                                        <Text
+                                          fontSize="2xs"
+                                          fontFamily="mono"
+                                          color={isOverdue ? "red.400" : textColor}
+                                          fontWeight={isOverdue ? "bold" : "normal"}
+                                        >
+                                          {convertToCustomDateFormat(task.dueDate)}
+                                        </Text>
+                                      </HStack>
+                                    ) : (
+                                      <Text fontSize="2xs" color="gray.400">-</Text>
+                                    )}
+                                  </Td>
+
+                                  {/* Kanban Board Direct Link Button */}
+                                  <Td py={3} textAlign="center">
+                                    {task.projectId ? (
+                                      <Link href={`/workspace/project?projectId=${task.projectId}&taskId=${task.id}`} passHref>
+                                        <Button
+                                          size="xs"
+                                          leftIcon={<FiArrowRightCircle />}
+                                          colorScheme="cyan"
+                                          variant="subtle"
+                                          rounded="lg"
+                                        >
+                                          Task Board
+                                        </Button>
+                                      </Link>
+                                    ) : (
+                                      <Text fontSize="2xs" color="gray.400">-</Text>
+                                    )}
+                                  </Td>
+                                </Tr>
+                              );
+                            })}
+                          </Tbody>
+                        </Table>
+                      </TableContainer>
+
+                      {/* Standard Project Table Pagination Component */}
+                      {totalTasksCount > 0 && (
+                        <Box mt={2}>
+                          <ControlTable table={myTaskTableAdapter} />
+                        </Box>
+                      )}
+                    </>
+                  )}
                 </CardBody>
               </Card>
             </VStack>
@@ -1134,138 +1751,75 @@ const WorkspaceProject = () => {
           {/* Sidebar */}
           <GridItem colSpan={{ base: 12, sm: 12, md: 3, lg: 3 }} w={"full"}>
             <VStack spacing={6} align="stretch">
-              {/* Quick Stats */}
+              {/* Quick Stats Grid (2x2) */}
               <Grid
                 templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(2, 1fr)" }}
-                gap={4}
+                gap={3}
               >
-                <Card
-                  bg={bgColor}
-                  borderColor={borderColor}
-                  borderRadius={radiusStyle}
-                  _hover={{ transform: "translateY(-4px)", shadow: "xl" }}
-                  transition="all 0.3s"
-                  shadow="md"
-                >
-                  <CardBody p={5}>
-                    <VStack spacing={3} align="start">
-                      <HStack spacing={2}>
-                        <Icon as={FiFolder} boxSize={5} color="blue.500" />
+                {[
+                  { label: "Total Projects", value: stats?.totalProjects ?? 0, color: "blue", icon: FiFolder },
+                  { label: "Active Projects", value: stats?.activeProjects ?? 0, color: "green", icon: FiTarget },
+                  { label: "Total Tasks", value: stats?.totalTasks ?? 0, color: "purple", icon: FiCheckCircle },
+                  { label: "Overdue Tasks", value: stats?.overdueTasks ?? 0, color: "orange", icon: FiClock },
+                ].map(({ label, value, color, icon }) => (
+                  <Card
+                    key={label}
+                    bg={colorMode === "dark" ? "gray.800" : "white"}
+                    border="1px"
+                    borderColor={colorMode === "dark" ? "gray.700" : "gray.200"}
+                    rounded="xl"
+                    shadow="sm"
+                    _hover={{ transform: "translateY(-3px)", shadow: "xl", borderColor: `${color}.400` }}
+                    transition="all 0.25s cubic-bezier(0.4, 0, 0.2, 1)"
+                    overflow="hidden"
+                    position="relative"
+                  >
+                    <Box
+                      position="absolute"
+                      top={0}
+                      left={0}
+                      right={0}
+                      h="3px"
+                      bgGradient={`linear(to-r, ${color}.400, ${color}.600)`}
+                    />
+                    <CardBody p={4}>
+                      <VStack spacing={2} align="start">
+                        <HStack spacing={2}>
+                          <Box
+                            w={8}
+                            h={8}
+                            bgGradient={`linear(to-br, ${color}.400, ${color}.600)`}
+                            rounded="lg"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                            color="white"
+                            flexShrink={0}
+                          >
+                            <Icon as={icon} boxSize={4} />
+                          </Box>
+                          <Text
+                            color={textColor}
+                            fontSize="2xs"
+                            fontWeight="semibold"
+                            noOfLines={1}
+                          >
+                            {label}
+                          </Text>
+                        </HStack>
                         <Text
-                          color={textColor}
-                          fontSize="sm"
-                          fontWeight="medium"
+                          fontSize="2xl"
+                          fontWeight="extrabold"
+                          color={`${color}.400`}
+                          fontFamily="mono"
+                          lineHeight="1"
                         >
-                          Total Projects
+                          {statsLoading ? "..." : value}
                         </Text>
-                      </HStack>
-                      <Text
-                        fontSize="4xl"
-                        fontWeight="bold"
-                        color={accentColor}
-                        lineHeight="1"
-                      >
-                        {statsLoading ? "..." : stats?.totalProjects ?? 0}
-                      </Text>
-                    </VStack>
-                  </CardBody>
-                </Card>
-
-                <Card
-                  bg={bgColor}
-                  borderColor={borderColor}
-                  borderRadius={radiusStyle}
-                  _hover={{ transform: "translateY(-4px)", shadow: "xl" }}
-                  transition="all 0.3s"
-                  shadow="md"
-                >
-                  <CardBody p={5}>
-                    <VStack spacing={3} align="start">
-                      <HStack spacing={2}>
-                        <Icon as={FiTarget} boxSize={5} color="green.500" />
-                        <Text
-                          color={textColor}
-                          fontSize="sm"
-                          fontWeight="medium"
-                        >
-                          Active Projects
-                        </Text>
-                      </HStack>
-                      <Text
-                        fontSize="4xl"
-                        fontWeight="bold"
-                        color="green.500"
-                        lineHeight="1"
-                      >
-                        {statsLoading ? "..." : stats?.activeProjects ?? 0}
-                      </Text>
-                    </VStack>
-                  </CardBody>
-                </Card>
-
-                <Card
-                  bg={bgColor}
-                  borderColor={borderColor}
-                  borderRadius={radiusStyle}
-                  _hover={{ transform: "translateY(-4px)", shadow: "xl" }}
-                  transition="all 0.3s"
-                  shadow="md"
-                >
-                  <CardBody p={5}>
-                    <VStack spacing={3} align="start">
-                      <HStack spacing={2}>
-                        <Icon as={FiCheckCircle} boxSize={5} color="purple.500" />
-                        <Text
-                          color={textColor}
-                          fontSize="sm"
-                          fontWeight="medium"
-                        >
-                          Total Tasks
-                        </Text>
-                      </HStack>
-                      <Text
-                        fontSize="4xl"
-                        fontWeight="bold"
-                        color="purple.500"
-                        lineHeight="1"
-                      >
-                        {statsLoading ? "..." : stats?.totalTasks ?? 0}
-                      </Text>
-                    </VStack>
-                  </CardBody>
-                </Card>
-
-                <Card
-                  bg={bgColor}
-                  borderColor={borderColor}
-                  borderRadius={radiusStyle}
-                  _hover={{ transform: "translateY(-4px)", shadow: "xl" }}
-                  transition="all 0.3s"
-                  shadow="md"
-                >
-                  <CardBody p={5}>
-                    <VStack spacing={3} align="start">
-                      <HStack spacing={2}>
-                        <Icon as={FiClock} boxSize={5} color="orange.500" />
-                        <Text
-                          color={textColor}
-                          fontSize="sm"
-                          fontWeight="medium"
-                        >
-                          Overdue Tasks
-                        </Text>
-                      </HStack>
-                      <Text
-                        fontSize="4xl"
-                        fontWeight="bold"
-                        color="orange.500"
-                        lineHeight="1"
-                      >
-                        {statsLoading ? "..." : stats?.overdueTasks ?? 0}
-                      </Text>
-                    </VStack>
-                  </CardBody>
-                </Card>
+                      </VStack>
+                    </CardBody>
+                  </Card>
+                ))}
               </Grid>
 
               {/* Current Quarter Progress */}
@@ -1751,33 +2305,152 @@ const WorkspaceProject = () => {
                 _hover={{ shadow: "md" }}
                 transition="all 0.2s"
               >
-                <CardBody>
-                  <HStack justify="space-between" mb={4}>
-                    <Heading size="sm" color={accentColor}>
-                      Recent Activity
-                    </Heading>
-                    <Icon as={FiActivity} color={accentColor} />
+                <CardBody p={5}>
+                  <HStack justify="space-between" mb={3}>
+                    <HStack spacing={2}>
+                      <Icon as={FiActivity} color={accentColor} />
+                      <Heading size="sm" color={accentColor}>
+                        Recent Activity
+                      </Heading>
+                    </HStack>
+                    <Tooltip label="Refresh activity" fontSize="xs" placement="top">
+                      <IconButton
+                        aria-label="Refresh activity"
+                        icon={<FiRefreshCw />}
+                        size="xs"
+                        variant="ghost"
+                        color={textColor}
+                        isLoading={recentActivitiesLoading}
+                        onClick={() => fetchRecentActivities(dataAuth?.id)}
+                      />
+                    </Tooltip>
                   </HStack>
 
-                  <VStack spacing={4} py={6}>
-                    <Icon
-                      as={FiActivity}
-                      boxSize={10}
-                      color={textColor}
-                      opacity={0.5}
-                    />
-                    <Text fontSize="md" fontWeight="semibold" color={textColor}>
-                      Coming Soon
-                    </Text>
-                    <Text
-                      fontSize="sm"
-                      color={textColor}
-                      textAlign="center"
-                      opacity={0.7}
+                  {recentActivitiesLoading ? (
+                    <VStack spacing={3} py={6}>
+                      <Spinner size="md" color={accentColor} />
+                      <Text fontSize="xs" color={textColor}>
+                        Loading activities...
+                      </Text>
+                    </VStack>
+                  ) : recentActivities.length > 0 ? (
+                    <VStack
+                      spacing={0}
+                      align="stretch"
+                      w="full"
+                      divider={
+                        <Divider
+                          borderColor={
+                            colorMode === "light"
+                              ? "gray.100"
+                              : "gray.700"
+                          }
+                        />
+                      }
                     >
-                      Activity tracking will be available soon
-                    </Text>
-                  </VStack>
+                      {recentActivities.map((act) => {
+                        const userName =
+                          act.userData?.nama ||
+                          act.userData?.userId ||
+                          dataAuth?.nama ||
+                          "You";
+                        const userAvatar =
+                          act.userData?.profilePict || dataAuth?.profilePict || undefined;
+
+                        return (
+                          <Box key={act.id} py={2.5}>
+                            <HStack spacing={2.5} align="start">
+                              <Avatar
+                                size="xs"
+                                name={userName}
+                                src={userAvatar}
+                                mt="1px"
+                              />
+                              <VStack spacing={0.5} align="start" flex={1} minW={0}>
+                                <HStack
+                                  justify="space-between"
+                                  w="full"
+                                  spacing={1}
+                                >
+                                  <Text
+                                    fontSize="xs"
+                                    fontWeight="semibold"
+                                    color={
+                                      colorMode === "light"
+                                        ? "gray.700"
+                                        : "gray.200"
+                                    }
+                                    noOfLines={1}
+                                  >
+                                    {userName}
+                                  </Text>
+                                  <HStack
+                                    spacing={1}
+                                    color={
+                                      colorMode === "light"
+                                        ? "gray.400"
+                                        : "gray.500"
+                                    }
+                                    flexShrink={0}
+                                  >
+                                    <Icon as={FiClock} boxSize="10px" />
+                                    <Text fontSize="10px">
+                                      {formatDateDDMMYYYY(act.createdAt)}
+                                    </Text>
+                                  </HStack>
+                                </HStack>
+                                <Text
+                                  fontSize="xs"
+                                  color={
+                                    colorMode === "light"
+                                      ? "gray.600"
+                                      : "gray.300"
+                                  }
+                                  wordBreak="break-word"
+                                  lineHeight="shorter"
+                                >
+                                  {act.activity}
+                                </Text>
+                                {act.taskName && (
+                                  <HStack spacing={1} mt="2px">
+                                    <Badge
+                                      variant="subtle"
+                                      colorScheme="blue"
+                                      fontSize="10px"
+                                      px={1.5}
+                                      py={0.5}
+                                      borderRadius="sm"
+                                      maxW="220px"
+                                      isTruncated
+                                    >
+                                      {act.taskName}
+                                    </Badge>
+                                  </HStack>
+                                )}
+                              </VStack>
+                            </HStack>
+                          </Box>
+                        );
+                      })}
+                    </VStack>
+                  ) : (
+                    <VStack spacing={3} py={6}>
+                      <Icon
+                        as={FiActivity}
+                        boxSize={8}
+                        color={textColor}
+                        opacity={0.4}
+                      />
+                      <Text
+                        fontSize="xs"
+                        fontWeight="medium"
+                        color={textColor}
+                        opacity={0.8}
+                      >
+                        No recent activity recorded
+                      </Text>
+                    </VStack>
+                  )}
                 </CardBody>
               </Card>
             </VStack>

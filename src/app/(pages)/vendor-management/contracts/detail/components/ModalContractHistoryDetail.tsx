@@ -38,6 +38,7 @@ import {
   FiShield,
   FiUserCheck,
   FiRotateCcw,
+  FiTrendingUp,
 } from "react-icons/fi";
 
 import { VendorContractHistoryResponse } from "@/app/services/useVendor";
@@ -120,6 +121,24 @@ export const ModalContractHistoryDetail = ({
                 </HStack>
 
                 <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={3}>
+                  {history.projectId && (
+                    <GridItem colSpan={{ base: 1, md: 2 }}>
+                      <Box p={2.5} rounded="lg" bg={colorMode === "light" ? "purple.50" : "gray.750"} border="1px" borderColor={colorMode === "light" ? "purple.200" : "purple.700"}>
+                        <VStack align="start" spacing={0.5}>
+                          <HStack spacing={2}>
+                            <Text fontSize="2xs" color="purple.600" fontWeight="bold">LINKED PROCUREMENT PROJECT</Text>
+                            <Badge colorScheme="purple" fontSize="2xs">{history.projectCode || history.projectNo || "PROJ"}</Badge>
+                            {history.sdlcStageName && <Badge colorScheme="teal" variant="outline" fontSize="2xs">{history.sdlcStageName}</Badge>}
+                          </HStack>
+                          <Text fontSize="xs" fontWeight="bold">{history.projectName || "Corporate Project"}</Text>
+                          {(history.proOwnerDivisionName || history.proOwnerDirectorateName) && (
+                            <Text fontSize="2xs" color="gray.500">{history.proOwnerDivisionName} • {history.proOwnerDirectorateName}</Text>
+                          )}
+                        </VStack>
+                      </Box>
+                    </GridItem>
+                  )}
+
                   <GridItem>
                     <VStack align="start" spacing={0}>
                       <Text fontSize="2xs" color="gray.500" fontWeight="bold">SPK / CORP REF NUMBER</Text>
@@ -146,6 +165,30 @@ export const ModalContractHistoryDetail = ({
                       <Text fontSize="2xs" color="gray.500" fontWeight="bold">CONTRACT SIGNING DATE</Text>
                       <Text fontSize="xs" fontWeight="bold">{formatDateStr(history.contractDate)}</Text>
                     </VStack>
+                  </GridItem>
+
+                  <GridItem colSpan={{ base: 1, md: 2 }}>
+                    <Box p={2.5} rounded="lg" bg={colorMode === "light" ? "white" : "gray.750"} border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
+                      <HStack justify="space-between" wrap="wrap" gap={2}>
+                        <VStack align="start" spacing={0}>
+                          <Text fontSize="2xs" color="gray.500" fontWeight="bold">BILLING MODEL</Text>
+                          <HStack spacing={2}>
+                            <Badge colorScheme={history.contractBillingType && history.contractBillingType !== "MILESTONE" ? "purple" : "blue"} fontSize="2xs">
+                              {history.contractBillingType || "MILESTONE"}
+                            </Badge>
+                            {history.subscriptionAutoRenew && <Badge colorScheme="green" fontSize="2xs">Auto-Renew</Badge>}
+                          </HStack>
+                        </VStack>
+                        {history.contractBillingType && history.contractBillingType !== "MILESTONE" && (
+                          <VStack align="end" spacing={0}>
+                            <Text fontSize="2xs" color="gray.500" fontWeight="bold">PERIODIC RATE</Text>
+                            <Text fontSize="xs" fontWeight="bold" color="purple.600">
+                              {formatIDR(history.subscriptionPeriodValue || 0)} / cycle
+                            </Text>
+                          </VStack>
+                        )}
+                      </HStack>
+                    </Box>
                   </GridItem>
                 </Grid>
               </VStack>
@@ -281,6 +324,7 @@ export const ModalContractHistoryDetail = ({
                         <Tr>
                           <Th>Step</Th>
                           <Th>Milestone Description</Th>
+                          <Th>Billing Period</Th>
                           <Th textAlign="right">Payment Amount (IDR)</Th>
                           <Th textAlign="right">Status</Th>
                           <Th textAlign="right">Scheduled Due Date</Th>
@@ -291,6 +335,15 @@ export const ModalContractHistoryDetail = ({
                           <Tr key={step.id || idx}>
                             <Td fontWeight="bold">Step #{step.stepOrder}</Td>
                             <Td fontSize="xs">{step.topDescriptions || "-"}</Td>
+                            <Td fontSize="xs">
+                              {step.billingPeriodStart && step.billingPeriodEnd ? (
+                                <Badge colorScheme="purple" fontSize="2xs">
+                                  {formatDateStr(step.billingPeriodStart)} &rarr; {formatDateStr(step.billingPeriodEnd)}
+                                </Badge>
+                              ) : (
+                                "-"
+                              )}
+                            </Td>
                             <Td fontWeight="bold" textAlign="right" color="teal.600">
                               {formatIDR(step.topValues || 0)}
                             </Td>
@@ -310,6 +363,73 @@ export const ModalContractHistoryDetail = ({
                 )}
               </VStack>
             </Box>
+
+            {/* SECTION 6: Archived Cost Governance & Multi-HPS Snapshot */}
+            {history.costGovernanceHistory && (
+              <Box p={5} rounded="xl" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
+                <VStack align="stretch" spacing={3}>
+                  <Flex justify="space-between" align="center" wrap="wrap" gap={2}>
+                    <HStack spacing={2} color="blue.500">
+                      <Icon as={FiTrendingUp} />
+                      <Text fontSize="xs" fontWeight="bold" textTransform="uppercase">6. Archived Cost Governance & Multi-HPS</Text>
+                    </HStack>
+
+                    <HStack spacing={2}>
+                      <Badge colorScheme="blue" fontSize="2xs" px={2} py={0.5} rounded="md">
+                        Anggaran RBB: {formatIDR(history.costGovernanceHistory.totalBudgetRbb || 0)}
+                      </Badge>
+                      <Badge colorScheme={history.costGovernanceHistory.globalResapanPercentage >= 0 ? "teal" : "red"} fontSize="2xs" px={2} py={0.5} rounded="md">
+                        Resapan: {history.costGovernanceHistory.globalResapanPercentage?.toFixed(2)}%
+                      </Badge>
+                    </HStack>
+                  </Flex>
+
+                  {(!history.costGovernanceHistory.hpsItemsHistory || history.costGovernanceHistory.hpsItemsHistory.length === 0) ? (
+                    <Text fontSize="xs" color="gray.500" fontStyle="italic">No HPS items recorded in this snapshot.</Text>
+                  ) : (
+                    <Box border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"} rounded="xl" overflow="hidden">
+                      <Table size="sm" variant="simple">
+                        <Thead bg={colorMode === "light" ? "gray.50" : "gray.800"}>
+                          <Tr>
+                            <Th>HPS Model</Th>
+                            <Th>Tag</Th>
+                            <Th textAlign="right">Nilai HPS (IDR)</Th>
+                            <Th textAlign="right">vs Anggaran RBB</Th>
+                            <Th textAlign="right">vs Nilai Kontrak</Th>
+                          </Tr>
+                        </Thead>
+                        <Tbody>
+                          {history.costGovernanceHistory.hpsItemsHistory.map((hps, idx) => (
+                            <Tr key={hps.id || idx}>
+                              <Td fontWeight="semibold" fontSize="xs">
+                                <HStack spacing={1.5}>
+                                  <Text>{hps.hpsName}</Text>
+                                  {hps.isBenchmark && (
+                                    <Badge colorScheme="yellow" fontSize="3xs">Benchmark</Badge>
+                                  )}
+                                </HStack>
+                              </Td>
+                              <Td fontSize="xs">
+                                <Badge colorScheme="purple" fontSize="3xs">{hps.hpsTag}</Badge>
+                              </Td>
+                              <Td fontWeight="bold" textAlign="right" color="blue.600" fontSize="xs">
+                                {formatIDR(hps.hpsNominal || 0)}
+                              </Td>
+                              <Td textAlign="right" fontSize="xs" fontWeight="semibold" color={hps.diffRbbPercentage >= 0 ? "green.600" : "red.500"}>
+                                {hps.diffRbbPercentage > 0 ? `+${hps.diffRbbPercentage.toFixed(2)}%` : `${hps.diffRbbPercentage.toFixed(2)}%`}
+                              </Td>
+                              <Td textAlign="right" fontSize="xs" fontWeight="semibold" color={hps.diffContractPercentage >= 0 ? "teal.600" : "red.500"}>
+                                {hps.diffContractPercentage > 0 ? `+${hps.diffContractPercentage.toFixed(2)}%` : `${hps.diffContractPercentage.toFixed(2)}%`}
+                              </Td>
+                            </Tr>
+                          ))}
+                        </Tbody>
+                      </Table>
+                    </Box>
+                  )}
+                </VStack>
+              </Box>
+            )}
           </VStack>
         </ModalBody>
 

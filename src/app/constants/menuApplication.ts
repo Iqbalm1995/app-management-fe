@@ -41,6 +41,7 @@ import {
   FiZap,
   FiList,
   FiTarget,
+  FiGlobe,
 } from "react-icons/fi";
 import { GrHelpBook } from "react-icons/gr";
 import {
@@ -124,9 +125,9 @@ export interface LinkItemProps {
 
 export const LinkItems: LinkItemProps[] = [
   {
-    name: "Dashboard",
-    icon: TbLayoutDashboardFilled,
-    iconName: "TbLayoutDashboardFilled",
+    name: "Home",
+    icon: FiGlobe,
+    iconName: "FiGlobe",
     link: "/home",
     role: ["admin"],
     menuID: "1",

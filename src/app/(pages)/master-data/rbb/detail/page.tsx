@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Badge,
@@ -69,7 +69,7 @@ import { radiusStyle, RES_CODE_OK } from "@/app/constants/applicationConstants";
 import { formatIDR } from "@/app/components/CardContract";
 import moment from "moment";
 
-export default function MasterRbbDetailPage() {
+function MasterRbbDetailView() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { colorMode } = useColorMode();
@@ -749,5 +749,19 @@ export default function MasterRbbDetailPage() {
         </Tabs>
       </Box>
     </LayoutAdmin>
+  );
+}
+
+export default function MasterRbbDetailPage() {
+  return (
+    <Suspense
+      fallback={
+        <Flex justify="center" align="center" minH="500px">
+          <Spinner size="xl" color="secondary.500" thickness="4px" />
+        </Flex>
+      }
+    >
+      <MasterRbbDetailView />
+    </Suspense>
   );
 }

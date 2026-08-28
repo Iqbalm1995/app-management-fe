@@ -732,35 +732,39 @@ export default function PerformanceOrgView({ mode }: PerformanceOrgViewProps) {
     evalSortOrder,
   ]);
 
-  // Chart options — same as reference
+  // Executive Command Center Chart options
   const lineChartOptions: any = {
     chart: {
       type: "line",
       id: "org-performance-line-chart",
       toolbar: { show: false },
       background: "transparent",
+      fontFamily: "inherit",
     },
-    stroke: { curve: "smooth", width: 3 },
-    xaxis: { categories: QuartalChart.chart.map((p) => p.quarter) },
-    colors: ["#3182CE", "#48BB78"],
-    legend: { position: "top" },
-    grid: { borderColor: isDark ? "#2D3748" : "#E2E8F0" },
+    stroke: { curve: "smooth", width: 3.5 },
+    xaxis: {
+      categories: QuartalChart.chart.map((p) => p.quarter),
+      labels: { style: { colors: isDark ? "#A0AEC0" : "#4A5568" } },
+    },
+    colors: ["#00B4D8", "#10B981"],
+    legend: { position: "top", labels: { colors: isDark ? "#E2E8F0" : "#2D3748" } },
+    grid: { borderColor: isDark ? "rgba(226, 232, 240, 0.1)" : "#E2E8F0" },
     theme: { mode: isDark ? "dark" : "light" },
     tooltip: { theme: isDark ? "dark" : "light" },
-    dataLabels: { enabled: true },
+    dataLabels: { enabled: true, style: { fontSize: "11px" } },
   };
 
   const donutOptions: any = {
-    chart: { type: "donut", background: "transparent" },
+    chart: { type: "donut", background: "transparent", fontFamily: "inherit" },
     labels: ["Internal Dev", "Procurement", "RFC"],
-    colors: ["#3182CE", "#805AD5", "#ED8936"],
-    legend: { position: "bottom" },
+    colors: ["#00B4D8", "#805AD5", "#ED8936"],
+    legend: { position: "bottom", labels: { colors: isDark ? "#E2E8F0" : "#2D3748" } },
     theme: { mode: isDark ? "dark" : "light" },
     tooltip: { theme: isDark ? "dark" : "light" },
-    plotOptions: { pie: { donut: { size: "65%" } } },
+    plotOptions: { pie: { donut: { size: "68%" } } },
   };
 
-  // StatCard — same as reference
+  // Executive Command Center StatCard
   const StatCard = ({
     label,
     value,
@@ -778,34 +782,50 @@ export default function PerformanceOrgView({ mode }: PerformanceOrgViewProps) {
       borderColor={borderCol}
       rounded="xl"
       shadow="sm"
-      _hover={{ shadow: "md", transform: "translateY(-2px)" }}
-      transition="all 0.2s"
+      _hover={{
+        shadow: "2xl",
+        transform: "translateY(-4px)",
+        borderColor: "cyan.400",
+      }}
+      transition="all 0.25s cubic-bezier(0.4, 0, 0.2, 1)"
+      overflow="hidden"
+      position="relative"
     >
+      <Box
+        position="absolute"
+        top={0}
+        left={0}
+        right={0}
+        h="3px"
+        bgGradient={`linear(to-r, ${color}.400, ${color}.600)`}
+      />
       <CardBody p={4}>
         <HStack spacing={3}>
           <Box
-            w={10}
-            h={10}
-            bg={`${color}.500`}
-            rounded="lg"
+            w={12}
+            h={12}
+            bgGradient={`linear(to-br, ${color}.400, ${color}.600)`}
+            rounded="xl"
             display="flex"
             alignItems="center"
             justifyContent="center"
             color="white"
             flexShrink={0}
+            shadow="md"
           >
             <Icon as={icon} boxSize={5} />
           </Box>
-          <VStack align="start" spacing={0}>
+          <VStack align="start" spacing={0} flex={1}>
             <Text
-              fontSize="2xl"
-              fontWeight="bold"
-              color={`${color}.500`}
+              fontSize="3xl"
+              fontWeight="extrabold"
+              color={`${color}.400`}
+              fontFamily="mono"
               lineHeight="1"
             >
-              {value}
+              {value.toLocaleString()}
             </Text>
-            <Text fontSize="xs" color={textMuted} fontWeight="medium">
+            <Text fontSize="xs" color={textMuted} fontWeight="semibold" noOfLines={1} mt={1}>
               {label}
             </Text>
           </VStack>
@@ -1635,14 +1655,15 @@ export default function PerformanceOrgView({ mode }: PerformanceOrgViewProps) {
 
       <Box px={{ base: 4, md: 6 }} pb={8}>
         <VStack spacing={6} align="stretch">
-          {/* ── Hero Banner ── */}
+          {/* ── Executive Command Hero Banner ── */}
           <Box
             position="relative"
-            bg={cardBg}
-            rounded={radiusStyle}
-            shadow="xl"
+            bg={isDark ? "rgba(15, 23, 42, 0.85)" : "white"}
+            backdropFilter="blur(16px)"
+            rounded="2xl"
+            shadow="2xl"
             border="1px"
-            borderColor={borderCol}
+            borderColor={isDark ? "cyan.900/40" : "blue.100"}
             overflow="hidden"
           >
             <Box
@@ -1650,26 +1671,18 @@ export default function PerformanceOrgView({ mode }: PerformanceOrgViewProps) {
               top={0}
               left={0}
               right={0}
-              h="6px"
-              bgGradient="linear(to-r, blue.500, purple.500, pink.400)"
+              h="5px"
+              bgGradient="linear(to-r, cyan.400, blue.500, purple.600)"
             />
             <Box
               position="absolute"
-              top="-30px"
-              right="40px"
-              w="120px"
-              h="120px"
-              bg={isDark ? "whiteAlpha.50" : "blue.50"}
+              top="-40px"
+              right="30px"
+              w="140px"
+              h="140px"
+              bg={isDark ? "cyan.500/10" : "cyan.50"}
               rounded="full"
-            />
-            <Box
-              position="absolute"
-              bottom="-20px"
-              right="160px"
-              w="80px"
-              h="80px"
-              bg={isDark ? "whiteAlpha.50" : "purple.50"}
-              rounded="full"
+              filter="blur(20px)"
             />
             <Box p={6} position="relative" zIndex={1}>
               <Flex justify="space-between" align="center" wrap="wrap" gap={4}>
@@ -1677,13 +1690,12 @@ export default function PerformanceOrgView({ mode }: PerformanceOrgViewProps) {
                   <Box
                     w={16}
                     h={16}
-                    bg="blue.500"
-                    rounded="full"
+                    bgGradient="linear(to-br, cyan.500, blue.600)"
+                    rounded="2xl"
                     display="flex"
                     alignItems="center"
                     justifyContent="center"
-                    border="3px solid"
-                    borderColor="blue.400"
+                    shadow="0 8px 20px 0 rgba(0, 180, 216, 0.3)"
                     flexShrink={0}
                   >
                     <Icon
@@ -1693,20 +1705,30 @@ export default function PerformanceOrgView({ mode }: PerformanceOrgViewProps) {
                     />
                   </Box>
                   <VStack align="start" spacing={1}>
-                    <Heading size="lg" color={isDark ? "white" : "gray.800"}>
-                      {orgFilterLabel}
-                    </Heading>
+                    <HStack spacing={2} align="center">
+                      <Heading size="lg" color={isDark ? "white" : "gray.800"} letterSpacing="tight">
+                        {orgFilterLabel}
+                      </Heading>
+                      <HStack spacing={1.5} bg={isDark ? "cyan.900/40" : "cyan.50"} px={2.5} py={0.5} rounded="full" border="1px" borderColor={isDark ? "cyan.700/50" : "cyan.200"}>
+                        <Box w={2} h={2} bg="cyan.400" rounded="full" />
+                        <Text fontSize="2xs" fontWeight="bold" color={isDark ? "cyan.300" : "cyan.700"}>
+                          LIVE ENGINE
+                        </Text>
+                      </HStack>
+                    </HStack>
                     <HStack spacing={2} flexWrap="wrap">
-                      <Badge colorScheme="blue" rounded="full" px={2}>
+                      <Badge colorScheme="cyan" variant="solid" rounded="full" px={3} py={0.5} fontSize="2xs">
                         {orgFilterCode}
                       </Badge>
                       <Badge
                         colorScheme="purple"
                         rounded="full"
-                        px={2}
+                        px={3}
+                        py={0.5}
+                        fontSize="2xs"
                         variant="subtle"
                       >
-                        {mode === "group" ? "Group" : "Division"} Performance
+                        {mode === "group" ? "Group" : "Division"} Performance Summary
                       </Badge>
                     </HStack>
                   </VStack>
@@ -1805,8 +1827,12 @@ export default function PerformanceOrgView({ mode }: PerformanceOrgViewProps) {
                   borderColor={borderCol}
                   rounded="xl"
                   shadow="sm"
-                  _hover={{ shadow: "md", transform: "translateY(-2px)" }}
-                  transition="all 0.2s"
+                  _hover={{
+                    shadow: "xl",
+                    transform: "translateY(-3px)",
+                    borderColor: `${color}.400`,
+                  }}
+                  transition="all 0.25s cubic-bezier(0.4, 0, 0.2, 1)"
                 >
                   <CardBody p={4}>
                     <VStack align="start" spacing={3}>
@@ -1818,19 +1844,24 @@ export default function PerformanceOrgView({ mode }: PerformanceOrgViewProps) {
                         >
                           {label}
                         </Text>
-                        <Text
-                          fontSize="xl"
-                          fontWeight="bold"
-                          color={`${color}.500`}
+                        <Badge
+                          colorScheme={color}
+                          variant="subtle"
+                          fontSize="md"
+                          fontWeight="extrabold"
+                          px={2.5}
+                          py={0.5}
+                          rounded="lg"
+                          fontFamily="mono"
                         >
                           {total}
-                        </Text>
+                        </Badge>
                       </HStack>
-                      {/* Stacked progress bar */}
+                      {/* Stacked glowing progress bar */}
                       <Box w="full">
                         <Box
                           h="10px"
-                          bg={isDark ? "gray.600" : "gray.200"}
+                          bg={isDark ? "gray.700" : "gray.200"}
                           rounded="full"
                           overflow="hidden"
                           position="relative"
@@ -1838,23 +1869,24 @@ export default function PerformanceOrgView({ mode }: PerformanceOrgViewProps) {
                           <Box
                             h="full"
                             w={`${closePct}%`}
-                            bg={`${color}.500`}
+                            bgGradient={`linear(to-r, ${color}.400, ${color}.600)`}
                             rounded="full"
-                            transition="width 0.4s ease"
+                            transition="width 0.5s ease"
                           />
                         </Box>
                       </Box>
                       {/* Stats row */}
                       <HStack justify="space-between" w="full">
                         <HStack spacing={1}>
-                          <Box w={2} h={2} bg={`${color}.500`} rounded="full" />
+                          <Box w={2} h={2} bg={`${color}.400`} rounded="full" />
                           <Text fontSize="xs" color={textMuted}>
-                            Close
+                            Closed
                           </Text>
                           <Text
                             fontSize="xs"
                             fontWeight="bold"
-                            color={`${color}.500`}
+                            color={`${color}.400`}
+                            fontFamily="mono"
                           >
                             {close}
                           </Text>
@@ -1873,6 +1905,7 @@ export default function PerformanceOrgView({ mode }: PerformanceOrgViewProps) {
                             fontSize="xs"
                             fontWeight="bold"
                             color={textMuted}
+                            fontFamily="mono"
                           >
                             {active}
                           </Text>
@@ -1887,8 +1920,8 @@ export default function PerformanceOrgView({ mode }: PerformanceOrgViewProps) {
                       >
                         <HStack spacing={3} justify="center">
                           <HStack spacing={1}>
-                            <Box w={3} h={3} bg={`${color}.500`} rounded="sm" />
-                            <Text fontSize="2xs" color={textMuted}>
+                            <Box w={3} h={3} bg={`${color}.400`} rounded="sm" />
+                            <Text fontSize="2xs" color={textMuted} fontWeight="medium">
                               Closed ({closePct}%)
                             </Text>
                           </HStack>
@@ -1899,7 +1932,7 @@ export default function PerformanceOrgView({ mode }: PerformanceOrgViewProps) {
                               bg={isDark ? "gray.600" : "gray.200"}
                               rounded="sm"
                             />
-                            <Text fontSize="2xs" color={textMuted}>
+                            <Text fontSize="2xs" color={textMuted} fontWeight="medium">
                               Active ({100 - closePct}%)
                             </Text>
                           </HStack>
@@ -2272,25 +2305,30 @@ export default function PerformanceOrgView({ mode }: PerformanceOrgViewProps) {
                                 alignItems="center"
                                 justifyContent="center"
                                 flexShrink={0}
+                                shadow={i < 3 ? "sm" : "none"}
                                 bg={
                                   i === 0
                                     ? "yellow.400"
                                     : i === 1
-                                      ? "gray.300"
+                                      ? "gray.400"
                                       : i === 2
-                                        ? "orange.300"
+                                        ? "orange.400"
                                         : isDark
                                           ? "gray.700"
                                           : "gray.100"
                                 }
                               >
-                                <Text
-                                  fontSize="xs"
-                                  fontWeight="bold"
-                                  color={i < 3 ? "white" : textMuted}
-                                >
-                                  {i + 1}
-                                </Text>
+                                {i < 3 ? (
+                                  <Icon as={FiAward} boxSize={3.5} color="white" />
+                                ) : (
+                                  <Text
+                                    fontSize="xs"
+                                    fontWeight="bold"
+                                    color={textMuted}
+                                  >
+                                    {i + 1}
+                                  </Text>
+                                )}
                               </Box>
                               {/* Avatar */}
                               <Box

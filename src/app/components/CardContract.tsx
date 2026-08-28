@@ -188,9 +188,16 @@ const CardContract = ({ data, showWorkValue = false }: CardContractProps) => {
         <VStack spacing={4} align="stretch">
           {/* Title */}
           <VStack align="start" spacing={1}>
-            <Text fontSize="xs" color={colorMode === "light" ? "secondary.700" : "secondary.300"} fontWeight="500">
-              Vendor: <strong>{data.vendorName || data.vendorId || "-"}</strong> {data.vendorCode ? `(${data.vendorCode})` : ""}
-            </Text>
+            <HStack spacing={2} wrap="wrap">
+              <Text fontSize="xs" color={colorMode === "light" ? "secondary.700" : "secondary.300"} fontWeight="500">
+                Vendor: <strong>{data.vendorName || data.vendorId || "-"}</strong> {data.vendorCode ? `(${data.vendorCode})` : ""}
+              </Text>
+            </HStack>
+            {data.projectId && (
+              <Badge colorScheme="purple" fontSize="2xs" rounded="md" px={1.5} py={0.5} maxW="full" isTruncated>
+                Project: {data.projectNo || data.projectName || "Linked"}
+              </Badge>
+            )}
             <Heading
               size="sm"
               color={colorMode === "light" ? "gray.800" : "white"}
@@ -247,6 +254,25 @@ const CardContract = ({ data, showWorkValue = false }: CardContractProps) => {
                 {data.topList?.length || 0} Steps
               </Badge>
             </HStack>
+
+            {data.contractBillingType && data.contractBillingType !== "MILESTONE" && (
+              <HStack justify="space-between" color="gray.600">
+                <HStack spacing={1}>
+                  <Icon as={FiClock} boxSize={3.5} color="purple.500" />
+                  <Text color="gray.500">Billing Model:</Text>
+                </HStack>
+                <HStack spacing={1}>
+                  <Badge colorScheme="purple" fontSize="2xs" rounded="md" px={2} py={0.5}>
+                    {data.contractBillingType}
+                  </Badge>
+                  {data.subscriptionAutoRenew && (
+                    <Badge colorScheme="green" fontSize="2xs" rounded="md" px={1.5} py={0.5}>
+                      Renew
+                    </Badge>
+                  )}
+                </HStack>
+              </HStack>
+            )}
           </VStack>
         </VStack>
 

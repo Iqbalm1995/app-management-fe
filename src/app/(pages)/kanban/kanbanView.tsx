@@ -56,11 +56,16 @@ import useTasks, {
   TaskCommentResponse,
   TaskCommentInsertPayload,
   TaskCommentUpdatePayload,
+  TaskActivityResponse,
   AssignUsersTaskPayload,
   GenerateTaskBoardPayload,
   TaskRelatedPayload,
 } from "@/app/services/useTasks";
-import { PaggingListPayload, ListSearchByParam } from "@/app/types/masterTypes";
+import {
+  PaggingListPayload,
+  PaggingListPayloadCustom,
+  ListSearchByParam,
+} from "@/app/types/masterTypes";
 import {
   Avatar,
   AvatarGroup,
@@ -141,7 +146,7 @@ import { setIn } from "formik";
 import { u } from "framer-motion/client";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import {
   FaCheckCircle,
   FaCog,
@@ -158,6 +163,7 @@ import {
   FaPlus,
 } from "react-icons/fa6";
 import {
+  FiActivity,
   FiAlertCircle,
   FiArchive,
   FiArrowLeft,
@@ -165,6 +171,7 @@ import {
   FiCheckCircle,
   FiCheckSquare,
   FiCircle,
+  FiClock,
   FiCornerDownLeft,
   FiFilter,
   FiInbox,
@@ -209,6 +216,14 @@ interface CompleteAuthDataResponse {
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Kanban",
   breadCrumb: ["Home", "Kanban"],
+};
+
+const formatDateDDMMYYYY = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
 };
 
 // Define item types for drag and drop
@@ -1130,6 +1145,10 @@ function DraggableTaskCard({
           window.refreshKanbanData();
         }
 
+        if (detailedTask?.id) {
+          fetchTaskActivities(detailedTask.id);
+        }
+
         // Close the assign modal
         onAssignModalClose();
       } else {
@@ -1220,12 +1239,18 @@ function DraggableTaskCard({
     CreateTaskComment,
     UpdateTaskComment,
     DeleteTaskComment,
+    ListTaskActivitiesPaged,
     AssignUsersTask,
     MoveTask,
     ListRelatedTasks,
     AssignRelatedTasks,
     ListTasksPaged,
   } = useTasks();
+
+  // Task activities state
+  const [taskActivities, setTaskActivities] = useState<TaskActivityResponse[]>([]);
+  const [isLoadingActivities, setIsLoadingActivities] = useState(false);
+  const [totalActivitiesCount, setTotalActivitiesCount] = useState(0);
 
   // States for inline editing
   const [isEditingName, setIsEditingName] = useState(false);
@@ -1500,6 +1525,8 @@ function DraggableTaskCard({
         if (window.refreshKanbanData) {
           window.refreshKanbanData();
         }
+
+        fetchTaskActivities(detailedTask.id);
       } else {
         showToast({
           description: response?.message || "Failed to update task name",
@@ -1560,6 +1587,8 @@ function DraggableTaskCard({
         if (window.refreshKanbanData) {
           window.refreshKanbanData();
         }
+
+        fetchTaskActivities(detailedTask.id);
       } else {
         showToast({
           description: response?.message || "Failed to update task description",
@@ -1614,6 +1643,8 @@ function DraggableTaskCard({
         if (window.refreshKanbanData) {
           window.refreshKanbanData();
         }
+
+        fetchTaskActivities(detailedTask.id);
       } else {
         showToast({
           description: response?.message || "Failed to update task item",
@@ -1658,6 +1689,8 @@ function DraggableTaskCard({
         if (window.refreshKanbanData) {
           window.refreshKanbanData();
         }
+
+        fetchTaskActivities(detailedTask.id);
 
         showToast({
           description: "Task item added successfully",
@@ -1708,6 +1741,8 @@ function DraggableTaskCard({
         if (window.refreshKanbanData) {
           window.refreshKanbanData();
         }
+
+        fetchTaskActivities(detailedTask.id);
       } else {
         showToast({
           description: response?.message || "Failed to delete task item",
@@ -1760,6 +1795,8 @@ function DraggableTaskCard({
         if (window.refreshKanbanData) {
           window.refreshKanbanData();
         }
+
+        fetchTaskActivities(detailedTask.id);
       } else {
         showToast({
           description: response?.message || "Failed to update task item",
@@ -1815,6 +1852,8 @@ function DraggableTaskCard({
         if (window.refreshKanbanData) {
           window.refreshKanbanData();
         }
+
+        fetchTaskActivities(detailedTask.id);
 
         showToast({
           description: "Task dates updated successfully",
@@ -1909,6 +1948,44 @@ function DraggableTaskCard({
     }
   };
 
+  // Fetch task activities (latest 5)
+  const fetchTaskActivities = async (taskId: string) => {
+    const token = getToken();
+    if (!taskId || !token) return;
+
+    setIsLoadingActivities(true);
+    try {
+      const payload: PaggingListPayloadCustom = {
+        page: 0,
+        limit: 5,
+        search: "",
+        filterWhere: [
+          {
+            field: "TaskId",
+            operator: "=",
+            value: taskId,
+          },
+        ],
+        fieldOrder: ["CreatedAt"],
+        orderDir: "desc",
+      };
+
+      const response = await ListTaskActivitiesPaged(payload, token);
+      if (response && response.statusCode === RES_CODE_OK && response.data) {
+        setTaskActivities(response.data);
+        setTotalActivitiesCount(response.countTotal || response.data.length);
+      } else {
+        setTaskActivities([]);
+        setTotalActivitiesCount(0);
+      }
+    } catch (error) {
+      console.error("Error fetching task activities:", error);
+      setTaskActivities([]);
+    } finally {
+      setIsLoadingActivities(false);
+    }
+  };
+
   // Add related task
   const handleAddRelatedTask = async (relatedTaskId: string) => {
     if (!detailedTask) return;
@@ -1928,6 +2005,7 @@ function DraggableTaskCard({
           statusToast: "success",
         });
         fetchRelatedTasks(detailedTask.id);
+        fetchTaskActivities(detailedTask.id);
         onTaskPickerClose();
       } else {
         showToast({
@@ -1966,6 +2044,7 @@ function DraggableTaskCard({
           statusToast: "success",
         });
         fetchRelatedTasks(detailedTask.id);
+        fetchTaskActivities(detailedTask.id);
       } else {
         showToast({
           description: response?.message || "Failed to remove related task",
@@ -2114,6 +2193,8 @@ function DraggableTaskCard({
         // Refresh comments to show the new comment
         refreshTaskComments();
 
+        fetchTaskActivities(detailedTask.id);
+
         showToast({
           description: "Comment added successfully",
           statusToast: "success",
@@ -2175,6 +2256,10 @@ function DraggableTaskCard({
         setEditingCommentId(null);
         setEditedCommentText("");
 
+        if (detailedTask?.id) {
+          fetchTaskActivities(detailedTask.id);
+        }
+
         showToast({
           description: "Comment updated successfully",
           statusToast: "success",
@@ -2213,6 +2298,10 @@ function DraggableTaskCard({
         setTaskComments((prev) =>
           prev.filter((comment) => comment.id !== commentId)
         );
+
+        if (detailedTask?.id) {
+          fetchTaskActivities(detailedTask.id);
+        }
 
         showToast({
           description: "Comment deleted successfully",
@@ -2306,6 +2395,8 @@ function DraggableTaskCard({
         if (window.refreshKanbanData) {
           window.refreshKanbanData();
         }
+
+        fetchTaskActivities(detailedTask.id);
       } else {
         console.error("Failed to update task progress:", response?.message);
       }
@@ -2348,6 +2439,8 @@ function DraggableTaskCard({
           ...detailedTask,
           taskPriority: newPriority,
         });
+
+        fetchTaskActivities(detailedTask.id);
 
         showToast({
           description: "Task priority updated successfully",
@@ -2451,6 +2544,9 @@ function DraggableTaskCard({
           
           // Fetch related tasks
           fetchRelatedTasks(task.id);
+
+          // Fetch task activities
+          fetchTaskActivities(task.id);
         } else {
           // If API call fails, use the current task data
           setDetailedTask(task);
@@ -3954,18 +4050,171 @@ function DraggableTaskCard({
                       </Button>
                     </Flex>
 
-                    <Flex
-                      w="full"
-                      justifyContent="start"
-                      as={HStack}
-                      spacing={2}
-                      color={"gray.700"}
-                    >
-                      <FaCog size={16} />
-                      <Text fontWeight={600} fontSize={18}>
-                        Aktivitas Task
-                      </Text>
-                    </Flex>
+                    <HorizontalFadeDivider />
+
+                    {/* Aktivitas Task */}
+                    <Box w="full">
+                      <Flex
+                        w="full"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        mb={3}
+                      >
+                        <HStack spacing={2}>
+                          <Icon as={FiActivity} size={16} color="secondary.500" />
+                          <Text
+                            fontWeight={600}
+                            fontSize={16}
+                            color={colorMode === "light" ? "gray.700" : "gray.300"}
+                          >
+                            Aktivitas Task
+                          </Text>
+                          {totalActivitiesCount > 0 && (
+                            <Badge
+                              colorScheme="secondary"
+                              variant="subtle"
+                              rounded="full"
+                              fontSize="xs"
+                              px={2}
+                            >
+                              {totalActivitiesCount}
+                            </Badge>
+                          )}
+                        </HStack>
+
+                        <IconButton
+                          aria-label="Refresh aktivitas"
+                          icon={<Icon as={FiRefreshCw} />}
+                          size="xs"
+                          variant="ghost"
+                          isLoading={isLoadingActivities}
+                          onClick={() => {
+                            if (detailedTask?.id) {
+                              fetchTaskActivities(detailedTask.id);
+                            }
+                          }}
+                        />
+                      </Flex>
+
+                      {isLoadingActivities ? (
+                        <Flex justify="center" align="center" py={3}>
+                          <Spinner size="xs" color="secondary.500" />
+                        </Flex>
+                      ) : taskActivities && taskActivities.length > 0 ? (
+                        <VStack
+                          spacing={0}
+                          align="stretch"
+                          w="full"
+                          divider={
+                            <Divider
+                              borderColor={
+                                colorMode === "light"
+                                  ? "gray.100"
+                                  : "gray.700"
+                              }
+                            />
+                          }
+                        >
+                          {taskActivities.map((act) => {
+                            const userName =
+                              act.userData?.nama ||
+                              act.userData?.userId ||
+                              act.userIdSys ||
+                              "User";
+                            const userAvatar =
+                              act.userData?.profilePict || undefined;
+
+                            return (
+                              <Box key={act.id} py={2}>
+                                <HStack spacing={2} align="start">
+                                  <Avatar
+                                    size="2xs"
+                                    name={userName}
+                                    src={userAvatar}
+                                    mt="2px"
+                                  />
+                                  <VStack spacing={0.5} align="start" flex={1} minW={0}>
+                                    <HStack
+                                      justify="space-between"
+                                      w="full"
+                                      spacing={1}
+                                    >
+                                      <Text
+                                        fontSize="xs"
+                                        fontWeight="semibold"
+                                        color={
+                                          colorMode === "light"
+                                            ? "gray.700"
+                                            : "gray.200"
+                                        }
+                                        noOfLines={1}
+                                      >
+                                        {userName}
+                                      </Text>
+                                      <HStack
+                                        spacing={1}
+                                        color={
+                                          colorMode === "light"
+                                            ? "gray.400"
+                                            : "gray.500"
+                                        }
+                                        flexShrink={0}
+                                      >
+                                        <Icon as={FiClock} boxSize="10px" />
+                                        <Text fontSize="10px">
+                                          {formatDateDDMMYYYY(act.createdAt)}
+                                        </Text>
+                                      </HStack>
+                                    </HStack>
+                                    <Text
+                                      fontSize="xs"
+                                      color={
+                                        colorMode === "light"
+                                          ? "gray.600"
+                                          : "gray.300"
+                                      }
+                                      wordBreak="break-word"
+                                      lineHeight="shorter"
+                                    >
+                                      {act.activity}
+                                    </Text>
+                                  </VStack>
+                                </HStack>
+                              </Box>
+                            );
+                          })}
+                        </VStack>
+                      ) : (
+                        <Box
+                          py={2.5}
+                          px={3}
+                          rounded="md"
+                          bg={
+                            colorMode === "light"
+                              ? "gray.50"
+                              : "gray.800"
+                          }
+                          border="1px dashed"
+                          borderColor={
+                            colorMode === "light"
+                              ? "gray.200"
+                              : "gray.700"
+                          }
+                          textAlign="center"
+                        >
+                          <Text
+                            fontSize="xs"
+                            color={
+                              colorMode === "light"
+                                ? "gray.400"
+                                : "gray.500"
+                            }
+                          >
+                            Belum ada aktivitas tercatat
+                          </Text>
+                        </Box>
+                      )}
+                    </Box>
                   </Flex>
                 </GridItem>
               </Grid>

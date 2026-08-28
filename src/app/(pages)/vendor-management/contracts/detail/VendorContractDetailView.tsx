@@ -60,6 +60,10 @@ import {
   FiInfo,
   FiSliders,
   FiRotateCcw,
+  FiRepeat,
+  FiPieChart,
+  FiCheck,
+  FiTag,
 } from "react-icons/fi";
 
 // Components
@@ -71,6 +75,8 @@ import { RES_CODE_OK } from "@/app/constants/applicationConstants";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import ContractEditTabPanel from "./components/ContractEditTabPanel";
 import ContractHistoryTabPanel from "./components/ContractHistoryTabPanel";
+import ContractPaymentTabPanel from "./components/ContractPaymentTabPanel";
+import ContractCostGovernanceTabPanel from "./components/ContractCostGovernanceTabPanel";
 
 export default function VendorContractDetailView() {
   const { colorMode } = useColorMode();
@@ -151,6 +157,19 @@ export default function VendorContractDetailView() {
     }
   };
 
+  const getTopStatusBadgeColor = (status?: string | null) => {
+    switch (status?.toUpperCase()) {
+      case "PAID": return "green";
+      case "APPROVED": return "teal";
+      case "VERIFIED": return "blue";
+      case "SUBMITTED": return "purple";
+      case "REJECTED": return "red";
+      case "SCHEDULED":
+      case "PENDING":
+      default: return "gray";
+    }
+  };
+
   return (
     <LayoutAdmin>
       <HeaderContent titleName="Vendor Contract Details" breadCrumb={["Home", "Contracts", contract.contractNumber || "Detail"]} />
@@ -227,12 +246,29 @@ export default function VendorContractDetailView() {
               <Grid templateColumns={{ base: "1fr", lg: "2fr 1fr" }} gap={6} alignItems="center">
                 <VStack align="start" spacing={3}>
                   <HStack spacing={2} wrap="wrap">
+                    {contract.projectId && (
+                      <Badge colorScheme="purple" bg="purple.500" color="white" fontSize="xs" px={2.5} py={0.5} rounded="md" display="flex" alignItems="center" gap={1}>
+                        <Icon as={FiBriefcase} />
+                        Project: {contract.projectCode || contract.projectName || "Linked"}
+                      </Badge>
+                    )}
                     <Badge colorScheme="blue" bg="whiteAlpha.300" color="white" fontSize="xs" px={2.5} py={0.5} rounded="md">
                       SPK Ref: {contract.corpNumber}
                     </Badge>
                     <Badge colorScheme="purple" bg="whiteAlpha.300" color="white" fontSize="xs" px={2.5} py={0.5} rounded="md">
                       CTR #: {contract.contractNumber}
                     </Badge>
+                    {contract.contractBillingType && contract.contractBillingType !== "MILESTONE" && (
+                      <Badge colorScheme="teal" bg="teal.400" color="white" fontSize="xs" px={2.5} py={0.5} rounded="md">
+                        {contract.contractBillingType}
+                      </Badge>
+                    )}
+                    {contract.subscriptionAutoRenew && (
+                      <Badge colorScheme="green" bg="green.500" color="white" fontSize="xs" px={2.5} py={0.5} rounded="md" display="flex" alignItems="center" gap={1}>
+                        <Icon as={FiRepeat} />
+                        Auto-Renew
+                      </Badge>
+                    )}
                   </HStack>
 
                   <Heading size="lg" fontWeight="extrabold" lineHeight="snug">
@@ -293,14 +329,20 @@ export default function VendorContractDetailView() {
                   </Tab>
                   <Tab rounded="xl" fontSize="xs" fontWeight="bold">
                     <HStack spacing={2}>
+                      <Icon as={FiLayers} />
+                      <Text>Payments & Realization</Text>
+                    </HStack>
+                  </Tab>
+                  <Tab rounded="xl" fontSize="xs" fontWeight="bold">
+                    <HStack spacing={2}>
                       <Icon as={FiCalendar} />
                       <Text>Timelines & Guarantees</Text>
                     </HStack>
                   </Tab>
                   <Tab rounded="xl" fontSize="xs" fontWeight="bold">
                     <HStack spacing={2}>
-                      <Icon as={FiFolder} />
-                      <Text>Documents & Attachments ({contract.mediaList?.length || 0})</Text>
+                      <Icon as={FiTrendingUp} />
+                      <Text>Cost Governance</Text>
                     </HStack>
                   </Tab>
                   <Tab rounded="xl" fontSize="xs" fontWeight="bold">
@@ -322,6 +364,101 @@ export default function VendorContractDetailView() {
                   {/* TAB 1: Overview & Summary */}
                   <TabPanel p={0}>
                     <VStack spacing={6} align="stretch">
+
+                      {/* Linked Corporate Procurement Project Card */}
+                      {contract.projectId ? (
+                        <Box
+                          p={5}
+                          rounded="2xl"
+                          border="1px"
+                          borderColor={colorMode === "light" ? "purple.200" : "purple.700"}
+                          bg={colorMode === "light" ? "purple.50/40" : "gray.800"}
+                        >
+                          <VStack align="stretch" spacing={3}>
+                            <Flex justify="space-between" align="center" wrap="wrap" gap={3}>
+                              <HStack spacing={3}>
+                                <Box
+                                  w={10}
+                                  h={10}
+                                  rounded="xl"
+                                  bg="purple.500"
+                                  color="white"
+                                  display="flex"
+                                  alignItems="center"
+                                  justifyContent="center"
+                                >
+                                  <Icon as={FiBriefcase} boxSize={5} />
+                                </Box>
+                                <VStack align="start" spacing={0}>
+                                  <HStack spacing={2}>
+                                    <Badge colorScheme="purple" fontSize="xs">
+                                      {contract.projectCode || contract.projectNo || "PROJ-CODE"}
+                                    </Badge>
+                                    <Badge colorScheme="blue" fontSize="xs">
+                                      PROCUREMENT
+                                    </Badge>
+                                    {contract.sdlcStageName && (
+                                      <Badge colorScheme="teal" variant="outline" fontSize="xs">
+                                        {contract.sdlcStageName}
+                                      </Badge>
+                                    )}
+                                  </HStack>
+                                  <Heading size="sm" color={colorMode === "light" ? "gray.800" : "white"}>
+                                    {contract.projectName || "Procurement Project"}
+                                  </Heading>
+                                </VStack>
+                              </HStack>
+
+                              <Link href={`/projects/detail?id=${contract.projectId}`}>
+                                <Button
+                                  size="xs"
+                                  colorScheme="purple"
+                                  variant="outline"
+                                  leftIcon={<FiBriefcase />}
+                                  rounded="lg"
+                                >
+                                  View Corporate Project Details
+                                </Button>
+                              </Link>
+                            </Flex>
+
+                            {(contract.proOwnerDivisionName || contract.proOwnerDirectorateName) && (
+                              <HStack spacing={4} fontSize="xs" color="gray.500" pt={1}>
+                                {contract.proOwnerDivisionName && (
+                                  <HStack spacing={1}>
+                                    <Icon as={FiFolder} />
+                                    <Text>{contract.proOwnerDivisionName}</Text>
+                                  </HStack>
+                                )}
+                                {contract.proOwnerDirectorateName && (
+                                  <HStack spacing={1}>
+                                    <Icon as={FiLayers} />
+                                    <Text>{contract.proOwnerDirectorateName}</Text>
+                                  </HStack>
+                                )}
+                              </HStack>
+                            )}
+                          </VStack>
+                        </Box>
+                      ) : (
+                        <Box
+                          p={4}
+                          rounded="xl"
+                          border="1px dashed"
+                          borderColor={colorMode === "light" ? "purple.200" : "purple.800"}
+                          bg={colorMode === "light" ? "purple.50/20" : "gray.800"}
+                        >
+                          <Flex justify="space-between" align="center" wrap="wrap" gap={3}>
+                            <HStack spacing={2} fontSize="xs" color="gray.500">
+                              <Icon as={FiBriefcase} color="purple.400" />
+                              <Text>No corporate procurement project is linked to this contract.</Text>
+                            </HStack>
+                            <Text fontSize="2xs" color="purple.500" fontWeight="600">
+                              Tip: You can link a procurement project from the "Contract Settings & Edit" tab
+                            </Text>
+                          </Flex>
+                        </Box>
+                      )}
 
                       {/* Vendor Partner Detail Profile Card */}
                       <Box p={5} rounded="2xl" border="1px" borderColor={colorMode === "light" ? "teal.200" : "teal.700"} bg={colorMode === "light" ? "teal.50/40" : "gray.800"}>
@@ -393,8 +530,8 @@ export default function VendorContractDetailView() {
                         </VStack>
                       </Box>
 
-                      {/* CAPEX / OPEX / Guarantees Cards */}
-                      <Grid templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }} gap={4}>
+                      {/* CAPEX / OPEX / Guarantees / Subscription Model Cards */}
+                      <Grid templateColumns={{ base: "1fr", md: contract.contractBillingType && contract.contractBillingType !== "MILESTONE" ? "repeat(4, 1fr)" : "repeat(3, 1fr)" }} gap={4}>
                         <GridItem>
                           <Box p={4} rounded="xl" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"} bg={colorMode === "light" ? "gray.50" : "gray.800"}>
                             <VStack align="start" spacing={1}>
@@ -424,6 +561,21 @@ export default function VendorContractDetailView() {
                             </VStack>
                           </Box>
                         </GridItem>
+
+                        {contract.contractBillingType && contract.contractBillingType !== "MILESTONE" && (
+                          <GridItem>
+                            <Box p={4} rounded="xl" border="1px" borderColor={colorMode === "light" ? "purple.200" : "purple.700"} bg={colorMode === "light" ? "purple.50/50" : "gray.800"}>
+                              <VStack align="start" spacing={1}>
+                                <Text fontSize="2xs" color="purple.600" fontWeight="700" textTransform="uppercase">Subscription Model</Text>
+                                <Text fontSize="lg" fontWeight="800" color="purple.600">{formatIDR(contract.subscriptionPeriodValue || 0, showWorkValue)} <Text as="span" fontSize="2xs" fontWeight="normal">/ cycle</Text></Text>
+                                <HStack spacing={1}>
+                                  <Badge colorScheme="purple" fontSize="2xs">{contract.contractBillingType}</Badge>
+                                  {contract.subscriptionAutoRenew && <Badge colorScheme="green" fontSize="2xs">Auto-Renew</Badge>}
+                                </HStack>
+                              </VStack>
+                            </Box>
+                          </GridItem>
+                        )}
                       </Grid>
 
                       {/* Contract Remarks Note */}
@@ -441,9 +593,15 @@ export default function VendorContractDetailView() {
 
                   {/* TAB 2: Payment TOP Schedule */}
                   <TabPanel p={0}>
-                    <VStack spacing={5} align="stretch">
-                      {/* Summary Banner */}
-                      <Box p={5} rounded="2xl" border="1px" borderColor={colorMode === "light" ? "teal.200" : "teal.800"} bg={colorMode === "light" ? "teal.50/50" : "gray.800"}>
+                    <VStack spacing={6} align="stretch">
+                      {/* Top Progression Banner */}
+                      <Box
+                        p={5}
+                        rounded="2xl"
+                        border="1px"
+                        borderColor={colorMode === "light" ? "teal.200" : "teal.800"}
+                        bg={colorMode === "light" ? "teal.50/50" : "gray.800"}
+                      >
                         <VStack align="stretch" spacing={3}>
                           <Flex justify="space-between" align="center" wrap="wrap" gap={2}>
                             <HStack spacing={2}>
@@ -467,7 +625,7 @@ export default function VendorContractDetailView() {
                               gap={1}
                             >
                               <Icon as={topTotalSum === contract.workValue ? FiCheckCircle : FiAlertCircle} />
-                              {topTotalSum === contract.workValue ? "Balanced (100%)" : "Difference Detected"}
+                              {topTotalSum === contract.workValue ? "Balanced (100%)" : `Selisih: ${formatIDR(Math.abs(contract.workValue - topTotalSum), showWorkValue)}`}
                             </Badge>
                           </Flex>
 
@@ -480,76 +638,359 @@ export default function VendorContractDetailView() {
                         </VStack>
                       </Box>
 
-                      {/* Milestone List Cards */}
-                      {(contract.topList || []).length === 0 ? (
-                        <Box p={8} textAlign="center" rounded="2xl" border="1px dashed" borderColor="gray.300">
-                          <Text fontSize="xs" color="gray.500">No payment schedule milestones recorded for this contract.</Text>
+                      {/* 70% / 30% Responsive Split Layout */}
+                      <Flex direction={{ base: "column", lg: "row" }} gap={6} align="start">
+                        {/* LEFT 70%: TOP Milestones List with Dividers */}
+                        <Box flex={{ base: "1", lg: "7" }} w={{ base: "100%", lg: "70%" }}>
+                          {(contract.topList || []).length === 0 ? (
+                            <Box
+                              p={8}
+                              textAlign="center"
+                              rounded="2xl"
+                              border="1px dashed"
+                              borderColor="gray.300"
+                              bg={colorMode === "light" ? "gray.50" : "gray.850"}
+                            >
+                              <Icon as={FiLayers} boxSize={8} color="gray.400" mb={2} />
+                              <Text fontSize="sm" fontWeight="semibold" color="gray.600">
+                                Belum Ada Jadwal Termin (TOP)
+                              </Text>
+                              <Text fontSize="xs" color="gray.500" mt={1}>
+                                No payment schedule milestones recorded for this contract.
+                              </Text>
+                            </Box>
+                          ) : (
+                            <VStack spacing={0} align="stretch">
+                              {(contract.topList || []).map((top, idx) => {
+                                const pct =
+                                  contract.workValue > 0
+                                    ? parseFloat(((top.topValues / contract.workValue) * 100).toFixed(1))
+                                    : 0;
+                                const isLastItem = idx === (contract.topList?.length || 0) - 1;
+                                const isPaid = top.topStatus?.toUpperCase() === "PAID";
+
+                                return (
+                                  <Box key={top.id || idx}>
+                                    {/* Milestone Item */}
+                                    <Box
+                                      p={4}
+                                      rounded="xl"
+                                      transition="all 0.2s"
+                                      bg={
+                                        isPaid
+                                          ? colorMode === "light"
+                                            ? "green.50/60"
+                                            : "rgba(16, 185, 129, 0.05)"
+                                          : colorMode === "light"
+                                          ? "gray.50/80"
+                                          : "gray.850"
+                                      }
+                                      border="1px"
+                                      borderColor={
+                                        isPaid
+                                          ? colorMode === "light"
+                                            ? "green.200"
+                                            : "green.800"
+                                          : colorMode === "light"
+                                          ? "gray.200"
+                                          : "gray.700"
+                                      }
+                                    >
+                                      <Flex
+                                        justify="space-between"
+                                        align={{ base: "start", md: "center" }}
+                                        wrap="wrap"
+                                        gap={3}
+                                        mb={2}
+                                      >
+                                        <HStack spacing={3} align="center">
+                                          <Box
+                                            w={8}
+                                            h={8}
+                                            rounded="lg"
+                                            display="flex"
+                                            alignItems="center"
+                                            justifyContent="center"
+                                            fontWeight="bold"
+                                            fontSize="xs"
+                                            bg={isPaid ? "green.500" : "teal.500"}
+                                            color="white"
+                                            flexShrink={0}
+                                          >
+                                            {isPaid ? <Icon as={FiCheck} boxSize={4} /> : `#${top.stepOrder}`}
+                                          </Box>
+
+                                          <VStack align="start" spacing={0.5}>
+                                            <HStack spacing={2} wrap="wrap" align="center">
+                                              <Text fontSize="md" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
+                                                {formatIDR(top.topValues, showWorkValue)}
+                                              </Text>
+                                              <Badge colorScheme="teal" variant="subtle" fontSize="2xs" px={2} py={0.5} rounded="md">
+                                                {pct}% Kontrak
+                                              </Badge>
+                                              <Badge
+                                                colorScheme={getTopStatusBadgeColor(top.topStatus)}
+                                                variant="solid"
+                                                fontSize="2xs"
+                                                px={2.5}
+                                                py={0.5}
+                                                rounded="full"
+                                              >
+                                                {top.topStatus || "SCHEDULED"}
+                                              </Badge>
+                                              {top.billingPeriodStart && top.billingPeriodEnd && (
+                                                <Badge colorScheme="purple" fontSize="2xs" px={2} py={0.5} rounded="md">
+                                                  Periode: {new Date(top.billingPeriodStart).toLocaleDateString("id-ID")} &rarr; {new Date(top.billingPeriodEnd).toLocaleDateString("id-ID")}
+                                                </Badge>
+                                              )}
+                                              {top.isAutoGenerated && (
+                                                <Badge colorScheme="cyan" variant="outline" fontSize="2xs" px={1.5} py={0.2} rounded="md">
+                                                  Auto
+                                                </Badge>
+                                              )}
+                                            </HStack>
+
+                                            <HStack spacing={3} fontSize="xs" color="gray.500" wrap="wrap">
+                                              <HStack spacing={1}>
+                                                <Icon as={FiCalendar} boxSize={3.5} />
+                                                <Text>
+                                                  Target: {top.topDate ? new Date(top.topDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "Belum ditentukan"}
+                                                </Text>
+                                              </HStack>
+                                            </HStack>
+                                          </VStack>
+                                        </HStack>
+                                      </Flex>
+
+                                      {/* Description Section */}
+                                      <Box
+                                        mt={2}
+                                        pt={2}
+                                        borderTop="1px dashed"
+                                        borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                                      >
+                                        <HStack spacing={1.5} color="gray.500" mb={1}>
+                                          <Icon as={FiFileText} boxSize={3.5} />
+                                          <Text fontSize="2xs" fontWeight="bold" textTransform="uppercase">Deskripsi / Scope Milestone</Text>
+                                        </HStack>
+                                        <Text fontSize="xs" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                                          {top.topDescriptions || "Tidak ada rincian deskripsi untuk termin ini."}
+                                        </Text>
+                                      </Box>
+                                    </Box>
+
+                                    {/* Divider between items */}
+                                    {!isLastItem && (
+                                      <Divider my={3.5} borderColor={colorMode === "light" ? "gray.200" : "gray.700"} />
+                                    )}
+                                  </Box>
+                                );
+                              })}
+                            </VStack>
+                          )}
                         </Box>
-                      ) : (
-                        <VStack spacing={3} align="stretch">
-                          {(contract.topList || []).map((top, idx) => {
-                            const pct = contract.workValue > 0 ? parseFloat(((top.topValues / contract.workValue) * 100).toFixed(1)) : 0;
-                            return (
+
+                        {/* RIGHT 30%: Additional Info & Summary Widgets */}
+                        <Box flex={{ base: "1", lg: "3" }} w={{ base: "100%", lg: "30%" }}>
+                          <VStack spacing={4} align="stretch" position={{ lg: "sticky" }} top="20px">
+                            
+                            {/* Widget 1: TOP Realization & Summary */}
+                            <Box
+                              p={4}
+                              rounded="xl"
+                              border="1px"
+                              borderColor={colorMode === "light" ? "teal.200" : "teal.700"}
+                              bg={colorMode === "light" ? "gray.50" : "gray.850"}
+                            >
+                              <HStack spacing={2} mb={3} color="teal.500">
+                                <Icon as={FiPieChart} boxSize={4} />
+                                <Text fontSize="xs" fontWeight="bold" textTransform="uppercase">
+                                  TOP Summary & Health
+                                </Text>
+                              </HStack>
+
+                              <VStack spacing={2.5} align="stretch" fontSize="xs">
+                                <Flex justify="space-between">
+                                  <Text color="gray.500">Total Termin:</Text>
+                                  <Badge colorScheme="purple" fontSize="2xs" rounded="md">
+                                    {(contract.topList || []).length} Milestones
+                                  </Badge>
+                                </Flex>
+
+                                <Flex justify="space-between">
+                                  <Text color="gray.500">Total Nominal TOP:</Text>
+                                  <Text fontWeight="bold" color="teal.500">
+                                    {formatIDR(topTotalSum, showWorkValue)}
+                                  </Text>
+                                </Flex>
+
+                                <Flex justify="space-between">
+                                  <Text color="gray.500">Nilai Kontrak Total:</Text>
+                                  <Text fontWeight="bold" color="blue.500">
+                                    {formatIDR(contract.workValue, showWorkValue)}
+                                  </Text>
+                                </Flex>
+
+                                <Flex justify="space-between">
+                                  <Text color="gray.500">Rata-rata / Termin:</Text>
+                                  <Text fontWeight="semibold">
+                                    {formatIDR(
+                                      (contract.topList || []).length > 0
+                                        ? topTotalSum / (contract.topList || []).length
+                                        : 0,
+                                      showWorkValue
+                                    )}
+                                  </Text>
+                                </Flex>
+
+                                <Divider borderColor={colorMode === "light" ? "gray.200" : "gray.700"} my={1} />
+
+                                <Flex justify="space-between" align="center">
+                                  <Text color="gray.500">Status Validasi:</Text>
+                                  <Badge
+                                    colorScheme={topTotalSum === contract.workValue ? "green" : "orange"}
+                                    fontSize="3xs"
+                                    px={2}
+                                    rounded="md"
+                                  >
+                                    {topTotalSum === contract.workValue ? "100% Balanced" : "Selisih Alokasi"}
+                                  </Badge>
+                                </Flex>
+                              </VStack>
+                            </Box>
+
+                            {/* Widget 2: Financial Allocation (CAPEX/OPEX) */}
+                            <Box
+                              p={4}
+                              rounded="xl"
+                              border="1px"
+                              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                              bg={colorMode === "light" ? "gray.50" : "gray.850"}
+                            >
+                              <HStack spacing={2} mb={2.5} color="blue.500">
+                                <Icon as={FiSliders} boxSize={4} />
+                                <Text fontSize="xs" fontWeight="bold" textTransform="uppercase">
+                                  Alokasi Capex / Opex
+                                </Text>
+                              </HStack>
+
+                              <VStack spacing={2} align="stretch" fontSize="xs">
+                                <Flex justify="space-between">
+                                  <Text color="gray.500">CAPEX ({contract.capexPercentage || 0}%):</Text>
+                                  <Text fontWeight="semibold" color="blue.500">
+                                    {formatIDR(contract.cavexValues || 0, showWorkValue)}
+                                  </Text>
+                                </Flex>
+
+                                <Flex justify="space-between">
+                                  <Text color="gray.500">OPEX ({contract.ovexPercentage || 0}%):</Text>
+                                  <Text fontWeight="semibold" color="purple.500">
+                                    {formatIDR(contract.ovexValues || 0, showWorkValue)}
+                                  </Text>
+                                </Flex>
+
+                                <Flex justify="space-between">
+                                  <Text color="gray.500">Jaminan Bank:</Text>
+                                  <Text fontWeight="semibold" color="teal.500">
+                                    {formatIDR(
+                                      (contract.performanceGuaranteeValues || 0) +
+                                        (contract.maintenanceWarrantyValues || 0),
+                                      showWorkValue
+                                    )}
+                                  </Text>
+                                </Flex>
+                              </VStack>
+                            </Box>
+
+                            {/* Widget 3: Billing Cadence */}
+                            {contract.contractBillingType && (
                               <Box
-                                key={idx}
-                                p={5}
-                                rounded="2xl"
+                                p={4}
+                                rounded="xl"
                                 border="1px"
                                 borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-                                bg={colorMode === "light" ? "white" : "gray.800"}
-                                borderLeft="4px solid"
-                                borderLeftColor="teal.500"
-                                shadow="sm"
-                                _hover={{ shadow: "md", transform: "translateY(-1px)" }}
-                                transition="all 0.2s"
+                                bg={colorMode === "light" ? "gray.50" : "gray.850"}
                               >
-                                <VStack align="stretch" spacing={3}>
-                                  <Flex justify="space-between" align="center" wrap="wrap" gap={2}>
-                                    <HStack spacing={2}>
-                                      <Badge colorScheme="teal" px={2.5} py={0.5} rounded="md" fontSize="2xs" fontWeight="bold">
-                                        Step #{top.stepOrder}
-                                      </Badge>
-                                      <Badge colorScheme="blue" px={2.5} py={0.5} rounded="md" fontSize="2xs">
-                                        {pct}% of Work Value
-                                      </Badge>
-                                    </HStack>
+                                <HStack spacing={2} mb={2} color="purple.500">
+                                  <Icon as={FiTag} boxSize={4} />
+                                  <Text fontSize="xs" fontWeight="bold" textTransform="uppercase">
+                                    Billing Cadence
+                                  </Text>
+                                </HStack>
 
-                                    <HStack spacing={2} fontSize="xs" color="gray.500">
-                                      <Icon as={FiCalendar} color="teal.500" />
-                                      <Text fontSize="xs" fontWeight="500">
-                                        {top.topDate ? new Date(top.topDate).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "No due date set"}
-                                      </Text>
-                                    </HStack>
+                                <VStack spacing={1.5} align="stretch" fontSize="xs">
+                                  <Flex justify="space-between" align="center">
+                                    <Text color="gray.500">Model Skema:</Text>
+                                    <Badge
+                                      colorScheme={
+                                        contract.contractBillingType !== "MILESTONE" ? "purple" : "blue"
+                                      }
+                                      fontSize="2xs"
+                                    >
+                                      {contract.contractBillingType}
+                                    </Badge>
                                   </Flex>
-
-                                  <Flex justify="space-between" align="flex-end" wrap="wrap" gap={3} pt={1}>
-                                    <VStack align="start" spacing={1} maxW="70%">
-                                      <HStack spacing={1.5} color="gray.500">
-                                        <Icon as={FiFileText} />
-                                        <Text fontSize="2xs" fontWeight="bold" textTransform="uppercase">Milestone Description</Text>
-                                      </HStack>
-                                      <Text fontSize="xs" fontWeight="500" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                                        {top.topDescriptions || "No description provided for this step."}
+                                  {contract.subscriptionPeriodValue && contract.subscriptionPeriodValue > 0 && (
+                                    <Flex justify="space-between">
+                                      <Text color="gray.500">Rate Siklus:</Text>
+                                      <Text fontWeight="bold" color="purple.500">
+                                        {formatIDR(contract.subscriptionPeriodValue, showWorkValue)}
                                       </Text>
-                                    </VStack>
-
-                                    <VStack align={{ base: "start", md: "end" }} spacing={0}>
-                                      <Text fontSize="2xs" color="gray.500" fontWeight="bold" textTransform="uppercase">Payment Amount</Text>
-                                      <Text fontSize="lg" fontWeight="bold" color="secondary.600">
-                                        {formatIDR(top.topValues, showWorkValue)}
-                                      </Text>
-                                    </VStack>
-                                  </Flex>
+                                    </Flex>
+                                  )}
+                                  {contract.subscriptionAutoRenew && (
+                                    <Flex justify="space-between">
+                                      <Text color="gray.500">Perpanjangan:</Text>
+                                      <Badge colorScheme="green" fontSize="3xs">
+                                        Auto-Renew
+                                      </Badge>
+                                    </Flex>
+                                  )}
                                 </VStack>
                               </Box>
-                            );
-                          })}
-                        </VStack>
-                      )}
+                            )}
+
+                            {/* Widget 4: Timeline Summary */}
+                            <Box
+                              p={4}
+                              rounded="xl"
+                              border="1px"
+                              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                              bg={colorMode === "light" ? "gray.50" : "gray.850"}
+                            >
+                              <HStack spacing={2} mb={2} color="gray.500">
+                                <Icon as={FiCalendar} boxSize={4} />
+                                <Text fontSize="xs" fontWeight="bold" textTransform="uppercase">
+                                  Masa Kontrak
+                                </Text>
+                              </HStack>
+
+                              <VStack spacing={1} align="stretch" fontSize="2xs" color="gray.500">
+                                <Text>
+                                  Mulai: <strong>{new Date(contract.contractStartDate).toLocaleDateString("id-ID")}</strong>
+                                </Text>
+                                <Text>
+                                  Selesai: <strong>{new Date(contract.contractEndDate).toLocaleDateString("id-ID")}</strong>
+                                </Text>
+                              </VStack>
+                            </Box>
+
+                          </VStack>
+                        </Box>
+                      </Flex>
                     </VStack>
                   </TabPanel>
 
-                  {/* TAB 3: Timelines & Guarantees */}
+                  {/* TAB 3: Payment Disbursements & Realization */}
+                  <TabPanel p={0}>
+                    <ContractPaymentTabPanel
+                      contract={contract}
+                      tokenData={tokenData}
+                      onRefreshContract={fetchDetail}
+                    />
+                  </TabPanel>
+
+                  {/* TAB 4: Timelines & Guarantees */}
                   <TabPanel p={0}>
                     <VStack spacing={6} align="stretch">
                       <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
@@ -613,43 +1054,16 @@ export default function VendorContractDetailView() {
                     </VStack>
                   </TabPanel>
 
-                  {/* TAB 5: Documents & Media */}
+                  {/* TAB 5: Cost Governance */}
                   <TabPanel p={0}>
-                    <VStack spacing={4} align="stretch">
-                      {(contract.mediaList || []).length === 0 ? (
-                        <Flex justify="center" align="center" py={12} direction="column" gap={2} border="1px dashed" borderColor={colorMode === "light" ? "gray.300" : "gray.700"} rounded="xl">
-                          <Icon as={FiFolder} boxSize={8} color="gray.400" />
-                          <Text fontSize="xs" color="gray.500">No media or document attachments linked to this contract yet.</Text>
-                        </Flex>
-                      ) : (
-                        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                          {(contract.mediaList || []).map((media, idx) => (
-                            <Box key={idx} p={4} rounded="xl" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
-                              <Flex justify="space-between" align="center">
-                                <HStack spacing={3}>
-                                  <Icon as={FiFileText} boxSize={5} color="blue.500" />
-                                  <VStack align="start" spacing={0}>
-                                    <Text fontSize="xs" fontWeight="bold">{media.objectRawName || "Contract Document"}</Text>
-                                    <Text fontSize="2xs" color="gray.500">{media.objectName || "SPK Document"}</Text>
-                                  </VStack>
-                                </HStack>
-
-                                {media.objectData && (
-                                  <a href={media.objectData} target="_blank" rel="noreferrer">
-                                    <Button size="xs" variant="outline" colorScheme="blue" leftIcon={<FiDownload />}>
-                                      Download
-                                    </Button>
-                                  </a>
-                                )}
-                              </Flex>
-                            </Box>
-                          ))}
-                        </SimpleGrid>
-                      )}
-                    </VStack>
+                    <ContractCostGovernanceTabPanel
+                      contract={contract}
+                      tokenData={tokenData}
+                      onRefreshContract={fetchDetail}
+                    />
                   </TabPanel>
 
-                  {/* TAB 5: Contract Settings & Edit */}
+                  {/* TAB 6: Contract Settings & Edit */}
                   <TabPanel p={0}>
                     <ContractEditTabPanel contract={contract} tokenData={tokenData} onRefreshData={fetchDetail} />
                   </TabPanel>

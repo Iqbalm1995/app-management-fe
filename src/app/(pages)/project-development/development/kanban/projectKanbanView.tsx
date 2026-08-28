@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { DropZoneComponent } from "@/app/components/dropzone";
 import {
   HeaderContent,
@@ -50,6 +50,7 @@ import useTasks, {
   TaskCommentResponse,
   TaskCommentInsertPayload,
   TaskCommentUpdatePayload,
+  TaskActivityResponse,
   AssignUsersTaskPayload,
   GenerateTaskBoardPayload,
 } from "@/app/services/useTasks";
@@ -131,12 +132,14 @@ import {
 } from "react-icons/fa6";
 import { FaSync, FaEdit, FaArchive, FaCog } from "react-icons/fa";
 import {
+  FiActivity,
   FiAlertCircle,
   FiArchive,
   FiArrowLeft,
   FiCheckCircle,
   FiCheckSquare,
   FiCircle,
+  FiClock,
   FiFilter,
   FiInbox,
   FiList,
@@ -146,6 +149,7 @@ import {
   FiPaperclip,
   FiPlusCircle,
   FiRefreshCcw,
+  FiRefreshCw,
   FiSave,
   FiSearch,
   FiSettings,
@@ -192,6 +196,14 @@ interface CompleteAuthDataResponse {
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Project Kanban",
   breadCrumb: ["Home", "Project Development", "Kanban"],
+};
+
+const formatDateDDMMYYYY = (dateString: string): string => {
+  const date = new Date(dateString);
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
 };
 
 // DateRangePicker component for selecting start and end dates
@@ -545,6 +557,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
         }
 
         onAssignModalClose();
+        if (detailedTask?.id) {
+          fetchTaskActivities(detailedTask.id);
+        }
       } else {
         showToast({
           description: response?.message || "Failed to assign users",
@@ -607,6 +622,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
           description: "Task dates updated successfully",
           statusToast: "success",
         });
+
+        fetchTaskActivities(detailedTask.id);
       } else {
         showToast({
           description: response?.message || "Failed to update task dates",
@@ -700,6 +717,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
           // Reset and load comments
           resetCommentsState();
           loadTaskComments(task.id);
+
+          // Fetch task activities
+          fetchTaskActivities(task.id);
         } else {
           // If API call fails, use the current task data
           setDetailedTask(task);
@@ -735,10 +755,54 @@ const TaskCard: React.FC<TaskCardProps> = ({
     CreateTaskComment,
     UpdateTaskComment,
     DeleteTaskComment,
+    ListTaskActivitiesPaged,
     AssignUsersTask,
     MoveTask,
     ListTasksBoard,
   } = useTasks();
+
+  // Task activities state
+  const [taskActivities, setTaskActivities] = useState<TaskActivityResponse[]>([]);
+  const [isLoadingActivities, setIsLoadingActivities] = useState(false);
+  const [totalActivitiesCount, setTotalActivitiesCount] = useState(0);
+
+  // Fetch task activities (latest 5)
+  const fetchTaskActivities = async (taskId: string) => {
+    const token = getToken();
+    if (!taskId || !token) return;
+
+    setIsLoadingActivities(true);
+    try {
+      const payload: PaggingListPayloadCustom = {
+        page: 0,
+        limit: 5,
+        search: "",
+        filterWhere: [
+          {
+            field: "TaskId",
+            operator: "=",
+            value: taskId,
+          },
+        ],
+        fieldOrder: ["CreatedAt"],
+        orderDir: "desc",
+      };
+
+      const response = await ListTaskActivitiesPaged(payload, token);
+      if (response && response.statusCode === RES_CODE_OK && response.data) {
+        setTaskActivities(response.data);
+        setTotalActivitiesCount(response.countTotal || response.data.length);
+      } else {
+        setTaskActivities([]);
+        setTotalActivitiesCount(0);
+      }
+    } catch (error) {
+      console.error("Error fetching task activities:", error);
+      setTaskActivities([]);
+    } finally {
+      setIsLoadingActivities(false);
+    }
+  };
 
   // Helper functions for current user
   const getCurrentUser = () => DataAuth;
@@ -803,6 +867,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
           description: "Task name updated successfully",
           statusToast: "success",
         });
+        fetchTaskActivities(detailedTask.id);
       } else {
         showToast({
           description: response?.message || "Failed to update task name",
@@ -852,6 +917,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
           description: "Task description updated successfully",
           statusToast: "success",
         });
+        fetchTaskActivities(detailedTask.id);
       } else {
         showToast({
           description: response?.message || "Failed to update task description",
@@ -979,6 +1045,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
           return updatedItems;
         });
         onRefreshTasks(); // Refresh tasks data
+        fetchTaskActivities(detailedTask.id);
       } else {
         showToast({
           description: response?.message || "Failed to update task item",
@@ -1013,6 +1080,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         setNewTaskItemName("");
         fetchTaskItems(detailedTask.id);
         onRefreshTasks(); // Refresh tasks data
+        fetchTaskActivities(detailedTask.id);
         showToast({
           description: "Task item added successfully",
           statusToast: "success",
@@ -1049,6 +1117,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         });
 
         onRefreshTasks(); // Refresh tasks data
+        fetchTaskActivities(detailedTask.id);
         showToast({
           description: "Task item deleted successfully",
           statusToast: "success",
@@ -1094,6 +1163,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         );
 
         onRefreshTasks(); // Refresh tasks data
+        fetchTaskActivities(detailedTask.id);
         showToast({
           description: "Task item updated successfully",
           statusToast: "success",
@@ -1196,6 +1266,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         setNewComment("");
         refreshTaskComments();
         onRefreshTasks(); // Refresh tasks data
+        fetchTaskActivities(detailedTask.id);
         showToast({
           description: "Comment added successfully",
           statusToast: "success",
@@ -1256,6 +1327,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
         setEditedCommentText("");
 
         onRefreshTasks(); // Refresh tasks data
+        if (detailedTask?.id) {
+          fetchTaskActivities(detailedTask.id);
+        }
         showToast({
           description: "Comment updated successfully",
           statusToast: "success",
@@ -1295,6 +1369,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
         );
 
         onRefreshTasks(); // Refresh tasks data
+        if (detailedTask?.id) {
+          fetchTaskActivities(detailedTask.id);
+        }
         showToast({
           description: "Comment deleted successfully",
           statusToast: "success",
@@ -1394,6 +1471,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
         // Refresh tasks data
         onRefreshTasks();
+        fetchTaskActivities(detailedTask.id);
       } else {
         showToast({
           description: response?.message || "Failed to move task",
@@ -1404,6 +1482,58 @@ const TaskCard: React.FC<TaskCardProps> = ({
       console.error("Error moving task:", error);
       showToast({
         description: "An error occurred while moving task",
+        statusToast: "error",
+      });
+    } finally {
+      setIsLoadingDetails(false);
+    }
+  };
+
+  // Handle updating task priority
+  const handleUpdateTaskPriority = async (priority: string) => {
+    if (!detailedTask) return;
+
+    try {
+      setIsLoadingDetails(true);
+
+      const updatePayload: any = {
+        id: detailedTask.id,
+        boardId: detailedTask.boardId,
+        taskName: detailedTask.taskName,
+        taskDesc: detailedTask.taskDesc || "",
+        taskPriority: priority,
+        indexTask: detailedTask.indexTask,
+        taskPoint: detailedTask.taskPoint,
+      };
+
+      if (detailedTask.startDate) updatePayload.startDate = detailedTask.startDate;
+      if (detailedTask.endDate) updatePayload.endDate = detailedTask.endDate;
+
+      const response = await UpdateTask(updatePayload, getToken());
+
+      if (response?.statusCode === RES_CODE_OK) {
+        setDetailedTask({
+          ...detailedTask,
+          taskPriority: priority,
+        });
+
+        showToast({
+          description: `Priority updated to ${priority}`,
+          statusToast: "success",
+        });
+
+        onRefreshTasks();
+        fetchTaskActivities(detailedTask.id);
+      } else {
+        showToast({
+          description: response?.message || "Failed to update priority",
+          statusToast: "error",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating priority:", error);
+      showToast({
+        description: "An error occurred while updating priority",
         statusToast: "error",
       });
     } finally {
@@ -1797,21 +1927,25 @@ const TaskCard: React.FC<TaskCardProps> = ({
                         <MenuList>
                           <MenuItem
                             icon={<Badge colorScheme="green">LOW</Badge>}
+                            onClick={() => handleUpdateTaskPriority("LOW")}
                           >
                             Low Priority
                           </MenuItem>
                           <MenuItem
                             icon={<Badge colorScheme="orange">MEDIUM</Badge>}
+                            onClick={() => handleUpdateTaskPriority("MEDIUM")}
                           >
                             Medium Priority
                           </MenuItem>
                           <MenuItem
                             icon={<Badge colorScheme="red">HIGH</Badge>}
+                            onClick={() => handleUpdateTaskPriority("HIGH")}
                           >
                             High Priority
                           </MenuItem>
                           <MenuItem
                             icon={<Badge colorScheme="purple">CRITICAL</Badge>}
+                            onClick={() => handleUpdateTaskPriority("CRITICAL")}
                           >
                             Critical Priority
                           </MenuItem>
@@ -2619,18 +2753,171 @@ const TaskCard: React.FC<TaskCardProps> = ({
                       </Button>
                     </Flex>
 
-                    <Flex
-                      w="full"
-                      justifyContent="start"
-                      as={HStack}
-                      spacing={2}
-                      color={"gray.700"}
-                    >
-                      <FaCog size={16} />
-                      <Text fontWeight={600} fontSize={18}>
-                        Aktivitas Task
-                      </Text>
-                    </Flex>
+                    <HorizontalFadeDivider />
+
+                    {/* Aktivitas Task */}
+                    <Box w="full">
+                      <Flex
+                        w="full"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        mb={3}
+                      >
+                        <HStack spacing={2}>
+                          <Icon as={FiActivity} size={16} color="secondary.500" />
+                          <Text
+                            fontWeight={600}
+                            fontSize={16}
+                            color={colorMode === "light" ? "gray.700" : "gray.300"}
+                          >
+                            Aktivitas Task
+                          </Text>
+                          {totalActivitiesCount > 0 && (
+                            <Badge
+                              colorScheme="secondary"
+                              variant="subtle"
+                              rounded="full"
+                              fontSize="xs"
+                              px={2}
+                            >
+                              {totalActivitiesCount}
+                            </Badge>
+                          )}
+                        </HStack>
+
+                        <IconButton
+                          aria-label="Refresh aktivitas"
+                          icon={<Icon as={FiRefreshCw} />}
+                          size="xs"
+                          variant="ghost"
+                          isLoading={isLoadingActivities}
+                          onClick={() => {
+                            if (detailedTask?.id) {
+                              fetchTaskActivities(detailedTask.id);
+                            }
+                          }}
+                        />
+                      </Flex>
+
+                      {isLoadingActivities ? (
+                        <Flex justify="center" align="center" py={3}>
+                          <Spinner size="xs" color="secondary.500" />
+                        </Flex>
+                      ) : taskActivities && taskActivities.length > 0 ? (
+                        <VStack
+                          spacing={0}
+                          align="stretch"
+                          w="full"
+                          divider={
+                            <Divider
+                              borderColor={
+                                colorMode === "light"
+                                  ? "gray.100"
+                                  : "gray.700"
+                              }
+                            />
+                          }
+                        >
+                          {taskActivities.map((act) => {
+                            const userName =
+                              act.userData?.nama ||
+                              act.userData?.userId ||
+                              act.userIdSys ||
+                              "User";
+                            const userAvatar =
+                              act.userData?.profilePict || undefined;
+
+                            return (
+                              <Box key={act.id} py={2}>
+                                <HStack spacing={2} align="start">
+                                  <Avatar
+                                    size="2xs"
+                                    name={userName}
+                                    src={userAvatar}
+                                    mt="2px"
+                                  />
+                                  <VStack spacing={0.5} align="start" flex={1} minW={0}>
+                                    <HStack
+                                      justify="space-between"
+                                      w="full"
+                                      spacing={1}
+                                    >
+                                      <Text
+                                        fontSize="xs"
+                                        fontWeight="semibold"
+                                        color={
+                                          colorMode === "light"
+                                            ? "gray.700"
+                                            : "gray.200"
+                                        }
+                                        noOfLines={1}
+                                      >
+                                        {userName}
+                                      </Text>
+                                      <HStack
+                                        spacing={1}
+                                        color={
+                                          colorMode === "light"
+                                            ? "gray.400"
+                                            : "gray.500"
+                                        }
+                                        flexShrink={0}
+                                      >
+                                        <Icon as={FiClock} boxSize="10px" />
+                                        <Text fontSize="10px">
+                                          {formatDateDDMMYYYY(act.createdAt)}
+                                        </Text>
+                                      </HStack>
+                                    </HStack>
+                                    <Text
+                                      fontSize="xs"
+                                      color={
+                                        colorMode === "light"
+                                          ? "gray.600"
+                                          : "gray.300"
+                                      }
+                                      wordBreak="break-word"
+                                      lineHeight="shorter"
+                                    >
+                                      {act.activity}
+                                    </Text>
+                                  </VStack>
+                                </HStack>
+                              </Box>
+                            );
+                          })}
+                        </VStack>
+                      ) : (
+                        <Box
+                          py={2.5}
+                          px={3}
+                          rounded="md"
+                          bg={
+                            colorMode === "light"
+                              ? "gray.50"
+                              : "gray.800"
+                          }
+                          border="1px dashed"
+                          borderColor={
+                            colorMode === "light"
+                              ? "gray.200"
+                              : "gray.700"
+                          }
+                          textAlign="center"
+                        >
+                          <Text
+                            fontSize="xs"
+                            color={
+                              colorMode === "light"
+                                ? "gray.400"
+                                : "gray.500"
+                            }
+                          >
+                            Belum ada aktivitas tercatat
+                          </Text>
+                        </Box>
+                      )}
+                    </Box>
                   </Flex>
                 </GridItem>
               </Grid>

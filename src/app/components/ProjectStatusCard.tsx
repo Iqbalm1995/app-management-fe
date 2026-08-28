@@ -30,7 +30,7 @@ const ProjectStatusCard: React.FC<ProjectStatusCardProps> = ({ tokenData }) => {
   const { GetProjectStatus } = useWorkspace();
 
   const cardBg = useColorModeValue("white", "gray.800");
-  const borderColor = useColorModeValue("gray.200", "gray.600");
+  const borderColor = useColorModeValue("gray.200", "gray.700");
   const textColor = useColorModeValue("gray.700", "white");
 
   useEffect(() => {

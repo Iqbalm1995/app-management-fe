@@ -70,6 +70,8 @@ export interface WorkspaceTaskViewModel {
   priority: string;
   dueDate: string | null;
   projectName: string;
+  projectId?: string;
+  boardName?: string;
   assignedTo: string;
 }
 
@@ -227,14 +229,14 @@ const useWorkspace = () => {
     }
   };
 
-  const GetMyTasks = async (tokenData: string) => {
+  const GetMyTasks = async (payload: any = {}, tokenData: string) => {
     setLoading(true);
     try {
       const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
 
       const response = await axiosInstance.post(
-        `${UrlEndpoint}/api/v1/workspace/my-tasks`,
-        {},
+        `${UrlEndpoint}/v1/workspace/my-tasks`,
+        payload,
         {
           headers: {
             Authorization: `Bearer ${tokenData}`,

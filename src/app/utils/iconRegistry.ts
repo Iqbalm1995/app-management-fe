@@ -41,7 +41,12 @@ import {
 } from "react-icons/fa";
 
 // Font Awesome 6
-import { FaDiagramProject, FaO, FaRegRectangleList, FaUsersRays } from "react-icons/fa6";
+import {
+  FaDiagramProject,
+  FaO,
+  FaRegRectangleList,
+  FaUsersRays,
+} from "react-icons/fa6";
 
 // Feather Icons
 import {
@@ -59,6 +64,7 @@ import {
   FiUser,
   FiUsers,
   FiZap,
+  FiGlobe,
 } from "react-icons/fi";
 
 // Grommet Icons
@@ -213,6 +219,7 @@ const iconRegistry: Record<string, IconType> = {
   FiUsers,
   FiList,
   FiZap,
+  FiGlobe,
 
   // Grommet Icons (Gr)
   GrHelpBook,
@@ -304,23 +311,25 @@ const iconRegistry: Record<string, IconType> = {
  * Get Icon Component by Name
  * Returns the IconType component for the given icon name string
  * Falls back to FiCircle if icon not found
- * 
+ *
  * @param iconName - The name of the icon (e.g., "FiHome", "TbUsers")
  * @returns IconType component
- * 
+ *
  * @example
  * const icon = getIconComponent("FiHome");
  * <Icon as={icon} />
  */
 export const getIconComponent = (
-  iconName: string | null | undefined
+  iconName: string | null | undefined,
 ): IconType => {
   if (!iconName) return FiCircle;
 
   const IconComponent = iconRegistry[iconName];
-  
+
   if (!IconComponent) {
-    console.warn(`Icon "${iconName}" not found in registry. Using FiCircle as fallback.`);
+    console.warn(
+      `Icon "${iconName}" not found in registry. Using FiCircle as fallback.`,
+    );
     return FiCircle;
   }
 
@@ -329,7 +338,7 @@ export const getIconComponent = (
 
 /**
  * Check if an icon exists in the registry
- * 
+ *
  * @param iconName - The name of the icon to check
  * @returns boolean indicating if icon exists
  */
@@ -340,7 +349,7 @@ export const hasIcon = (iconName: string): boolean => {
 /**
  * Get all available icon names
  * Useful for debugging or building icon pickers
- * 
+ *
  * @returns Array of all registered icon names
  */
 export const getAvailableIcons = (): string[] => {

@@ -46,6 +46,7 @@ import useTasks, {
   TaskCommentResponse,
   TaskCommentInsertPayload,
   TaskCommentUpdatePayload,
+  TaskActivityResponse,
   AssignUsersTaskPayload,
   GenerateTaskBoardPayload,
   TaskRelatedPayload,
@@ -135,6 +136,7 @@ import {
 } from "react-icons/fa6";
 import { FaSync, FaEdit, FaArchive, FaCog, FaPills } from "react-icons/fa";
 import {
+  FiActivity,
   FiAlertCircle,
   FiArchive,
   FiArrowLeft,
@@ -159,6 +161,7 @@ import {
   FiPlus,
   FiPlusCircle,
   FiRefreshCcw,
+  FiRefreshCw,
   FiRotateCcw,
   FiSave,
   FiSearch,
@@ -290,6 +293,7 @@ const TaskCard = React.memo<TaskCardProps>(({
   });
 
   // Complete modal structure from original DraggableTaskCard
+  const searchParams = useSearchParams();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [detailedTask, setDetailedTask] = useState<TaskViewModel | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
@@ -516,6 +520,9 @@ const TaskCard = React.memo<TaskCardProps>(({
         }
 
         onAssignModalClose();
+        if (detailedTask?.id) {
+          fetchTaskActivities(detailedTask.id);
+        }
       } else {
         showToast({
           description: response?.message || "Failed to assign users",
@@ -571,6 +578,8 @@ const TaskCard = React.memo<TaskCardProps>(({
           description: "Task dates updated successfully",
           statusToast: "success",
         });
+
+        fetchTaskActivities(detailedTask.id);
       } else {
         showToast({
           description: response?.message || "Failed to update task dates",
@@ -596,7 +605,7 @@ const TaskCard = React.memo<TaskCardProps>(({
   const getToken = () => localStorage.getItem("tokenData") as string;
 
   // Handle click on the card - exact copy from original
-  const handleCardClick = async (e: React.MouseEvent) => {
+  const handleCardClick = async (e?: React.MouseEvent) => {
     // Prevent click from triggering during drag operations
     if (!isDragging) {
       setIsLoadingDetails(true);
@@ -683,6 +692,17 @@ const TaskCard = React.memo<TaskCardProps>(({
     }
   };
 
+  // Auto-open detail modal if this task matches taskId in URL searchParams
+  const [hasAutoOpened, setHasAutoOpened] = useState(false);
+
+  useEffect(() => {
+    const taskIdFromUrl = searchParams.get("taskId");
+    if (taskIdFromUrl && task.id === taskIdFromUrl && !hasAutoOpened && !isOpen) {
+      setHasAutoOpened(true);
+      handleCardClick();
+    }
+  }, [searchParams, task.id, hasAutoOpened, isOpen]);
+
   // Apply the drag ref to the div ref
   drag(dragRef);
 
@@ -699,6 +719,7 @@ const TaskCard = React.memo<TaskCardProps>(({
     CreateTaskComment,
     UpdateTaskComment,
     DeleteTaskComment,
+    ListTaskActivitiesPaged,
     AssignUsersTask,
     MoveTask,
     ListTasksBoard,
@@ -706,6 +727,11 @@ const TaskCard = React.memo<TaskCardProps>(({
     AssignRelatedTasks,
     ListTasksPaged,
   } = useTasks();
+
+  // Task activities state
+  const [taskActivities, setTaskActivities] = useState<TaskActivityResponse[]>([]);
+  const [isLoadingActivities, setIsLoadingActivities] = useState(false);
+  const [totalActivitiesCount, setTotalActivitiesCount] = useState(0);
 
   // Related tasks state
   const [relatedTasks, setRelatedTasks] = useState<TaskViewModel[]>([]);
@@ -740,6 +766,44 @@ const TaskCard = React.memo<TaskCardProps>(({
       console.error("Error fetching related tasks:", error);
     } finally {
       setIsLoadingRelatedTasks(false);
+    }
+  };
+
+  // Fetch task activities (latest 5)
+  const fetchTaskActivities = async (taskId: string) => {
+    const token = getToken();
+    if (!taskId || !token) return;
+
+    setIsLoadingActivities(true);
+    try {
+      const payload: PaggingListPayloadCustom = {
+        page: 0,
+        limit: 5,
+        search: "",
+        filterWhere: [
+          {
+            field: "TaskId",
+            operator: "=",
+            value: taskId,
+          },
+        ],
+        fieldOrder: ["CreatedAt"],
+        orderDir: "desc",
+      };
+
+      const response = await ListTaskActivitiesPaged(payload, token);
+      if (response && response.statusCode === RES_CODE_OK && response.data) {
+        setTaskActivities(response.data);
+        setTotalActivitiesCount(response.countTotal || response.data.length);
+      } else {
+        setTaskActivities([]);
+        setTotalActivitiesCount(0);
+      }
+    } catch (error) {
+      console.error("Error fetching task activities:", error);
+      setTaskActivities([]);
+    } finally {
+      setIsLoadingActivities(false);
     }
   };
 
@@ -801,6 +865,7 @@ const TaskCard = React.memo<TaskCardProps>(({
           statusToast: "success",
         });
         fetchRelatedTasks(detailedTask.id);
+        fetchTaskActivities(detailedTask.id);
         onTaskPickerClose();
         setSearchTaskTerm("");
         setSearchTasksResults([]);
@@ -841,6 +906,7 @@ const TaskCard = React.memo<TaskCardProps>(({
           statusToast: "success",
         });
         fetchRelatedTasks(detailedTask.id);
+        fetchTaskActivities(detailedTask.id);
       } else {
         showToast({
           description: response?.message || "Failed to remove related task",
@@ -856,10 +922,11 @@ const TaskCard = React.memo<TaskCardProps>(({
     }
   };
 
-  // Fetch related tasks when task detail opens
+  // Fetch related tasks and activities when task detail opens
   useEffect(() => {
-    if (detailedTask && isOpen) {
+    if (detailedTask?.id && isOpen) {
       fetchRelatedTasks(detailedTask.id);
+      fetchTaskActivities(detailedTask.id);
     }
   }, [detailedTask?.id, isOpen]);
 
@@ -931,6 +998,7 @@ const TaskCard = React.memo<TaskCardProps>(({
           description: "Task name updated successfully",
           statusToast: "success",
         });
+        fetchTaskActivities(detailedTask.id);
       } else {
         showToast({
           description: response?.message || "Failed to update task name",
@@ -980,6 +1048,7 @@ const TaskCard = React.memo<TaskCardProps>(({
           description: "Task description updated successfully",
           statusToast: "success",
         });
+        fetchTaskActivities(detailedTask.id);
       } else {
         showToast({
           description: response?.message || "Failed to update task description",
@@ -1117,6 +1186,7 @@ const TaskCard = React.memo<TaskCardProps>(({
           prev ? { ...prev, percentageStatus: percentage } : null,
         );
         onUpdateTask(detailedTask.id, { percentageStatus: percentage });
+        fetchTaskActivities(detailedTask.id);
       } else {
         showToast({
           description: response?.message || "Failed to update task item",
@@ -1152,6 +1222,7 @@ const TaskCard = React.memo<TaskCardProps>(({
       if (response?.statusCode === RES_CODE_OK) {
         setNewTaskItemName("");
         fetchTaskItems(detailedTask.id);
+        fetchTaskActivities(detailedTask.id);
         onRefreshTasks(); // Refresh tasks data
         showToast({
           description: "Task item added successfully",
@@ -1189,6 +1260,7 @@ const TaskCard = React.memo<TaskCardProps>(({
         });
 
         onRefreshTasks(); // Refresh tasks data
+        fetchTaskActivities(detailedTask.id);
         showToast({
           description: "Task item deleted successfully",
           statusToast: "success",
@@ -1257,6 +1329,9 @@ const TaskCard = React.memo<TaskCardProps>(({
         );
 
         onRefreshTasks();
+        if (detailedTask?.id) {
+          fetchTaskActivities(detailedTask.id);
+        }
         showToast({
           description: "Task item updated successfully",
           statusToast: "success",
@@ -1379,6 +1454,7 @@ const TaskCard = React.memo<TaskCardProps>(({
         setNewComment("");
         refreshTaskComments();
         onRefreshTasks(); // Refresh tasks data
+        fetchTaskActivities(detailedTask.id);
         showToast({
           description: "Comment added successfully",
           statusToast: "success",
@@ -1439,6 +1515,9 @@ const TaskCard = React.memo<TaskCardProps>(({
         setEditedCommentText("");
 
         onRefreshTasks(); // Refresh tasks data
+        if (detailedTask?.id) {
+          fetchTaskActivities(detailedTask.id);
+        }
         showToast({
           description: "Comment updated successfully",
           statusToast: "success",
@@ -1478,6 +1557,9 @@ const TaskCard = React.memo<TaskCardProps>(({
         );
 
         onRefreshTasks(); // Refresh tasks data
+        if (detailedTask?.id) {
+          fetchTaskActivities(detailedTask.id);
+        }
         showToast({
           description: "Comment deleted successfully",
           statusToast: "success",
@@ -1577,6 +1659,7 @@ const TaskCard = React.memo<TaskCardProps>(({
 
         // Refresh tasks data
         onRefreshTasks();
+        fetchTaskActivities(detailedTask.id);
       } else {
         showToast({
           description: response?.message || "Failed to move task",
@@ -1602,8 +1685,16 @@ const TaskCard = React.memo<TaskCardProps>(({
 
       const updatePayload: any = {
         id: detailedTask.id,
+        boardId: detailedTask.boardId,
+        taskName: detailedTask.taskName,
+        taskDesc: detailedTask.taskDesc || "",
         taskPriority: priority,
+        indexTask: detailedTask.indexTask,
+        taskPoint: detailedTask.taskPoint,
       };
+
+      if (detailedTask.startDate) updatePayload.startDate = detailedTask.startDate;
+      if (detailedTask.endDate) updatePayload.endDate = detailedTask.endDate;
 
       const response = await UpdateTask(updatePayload, getToken());
 
@@ -1619,6 +1710,7 @@ const TaskCard = React.memo<TaskCardProps>(({
         });
 
         onRefreshTasks();
+        fetchTaskActivities(detailedTask.id);
       } else {
         showToast({
           description: response?.message || "Failed to update priority",
@@ -3349,29 +3441,173 @@ const TaskCard = React.memo<TaskCardProps>(({
                           ? "Restore"
                           : "Archive"}
                       </Button>
-                      <Button
-                        size={"sm"}
-                        w={"full"}
-                        colorScheme={"blue"}
-                        variant={"outline"}
-                        leftIcon={<Icon as={FiShare2} />}
-                      >
-                        Share
-                      </Button>
                     </Flex>
 
-                    <Flex
-                      w="full"
-                      justifyContent="start"
-                      as={HStack}
-                      spacing={2}
-                      color={colorMode === "light" ? "gray.700" : "gray.300"}
-                    >
-                      <FaCog size={16} />
-                      <Text fontWeight={600} fontSize={18}>
-                        Aktivitas Task
-                      </Text>
-                    </Flex>
+                    <HorizontalFadeDivider />
+
+                    {/* Aktivitas Task */}
+                    <Box w="full">
+                      <Flex
+                        w="full"
+                        justifyContent="space-between"
+                        alignItems="center"
+                        mb={3}
+                      >
+                        <HStack spacing={2}>
+                          <Icon as={FiActivity} size={16} color="secondary.500" />
+                          <Text
+                            fontWeight={600}
+                            fontSize={16}
+                            color={colorMode === "light" ? "gray.700" : "gray.300"}
+                          >
+                            Aktivitas Task
+                          </Text>
+                          {totalActivitiesCount > 0 && (
+                            <Badge
+                              colorScheme="secondary"
+                              variant="subtle"
+                              rounded="full"
+                              fontSize="xs"
+                              px={2}
+                            >
+                              {totalActivitiesCount}
+                            </Badge>
+                          )}
+                        </HStack>
+
+                        <IconButton
+                          aria-label="Refresh aktivitas"
+                          icon={<Icon as={FiRefreshCw} />}
+                          size="xs"
+                          variant="ghost"
+                          isLoading={isLoadingActivities}
+                          onClick={() => {
+                            if (detailedTask?.id) {
+                              fetchTaskActivities(detailedTask.id);
+                            }
+                          }}
+                        />
+                      </Flex>
+
+                      {isLoadingActivities ? (
+                        <Flex justify="center" align="center" py={3}>
+                          <Spinner size="xs" color="secondary.500" />
+                        </Flex>
+                      ) : taskActivities && taskActivities.length > 0 ? (
+                        <VStack
+                          spacing={0}
+                          align="stretch"
+                          w="full"
+                          divider={
+                            <Divider
+                              borderColor={
+                                colorMode === "light"
+                                  ? "gray.100"
+                                  : "gray.700"
+                              }
+                            />
+                          }
+                        >
+                          {taskActivities.map((act) => {
+                            const userName =
+                              act.userData?.nama ||
+                              act.userData?.userId ||
+                              act.userIdSys ||
+                              "User";
+                            const userAvatar =
+                              act.userData?.profilePict || undefined;
+
+                            return (
+                              <Box key={act.id} py={2}>
+                                <HStack spacing={2} align="start">
+                                  <Avatar
+                                    size="2xs"
+                                    name={userName}
+                                    src={userAvatar}
+                                    mt="2px"
+                                  />
+                                  <VStack spacing={0.5} align="start" flex={1} minW={0}>
+                                    <HStack
+                                      justify="space-between"
+                                      w="full"
+                                      spacing={1}
+                                    >
+                                      <Text
+                                        fontSize="xs"
+                                        fontWeight="semibold"
+                                        color={
+                                          colorMode === "light"
+                                            ? "gray.700"
+                                            : "gray.200"
+                                        }
+                                        noOfLines={1}
+                                      >
+                                        {userName}
+                                      </Text>
+                                      <HStack
+                                        spacing={1}
+                                        color={
+                                          colorMode === "light"
+                                            ? "gray.400"
+                                            : "gray.500"
+                                        }
+                                        flexShrink={0}
+                                      >
+                                        <Icon as={FiClock} boxSize="10px" />
+                                        <Text fontSize="10px">
+                                          {formatDateDDMMYYYY(act.createdAt)}
+                                        </Text>
+                                      </HStack>
+                                    </HStack>
+                                    <Text
+                                      fontSize="xs"
+                                      color={
+                                        colorMode === "light"
+                                          ? "gray.600"
+                                          : "gray.300"
+                                      }
+                                      wordBreak="break-word"
+                                      lineHeight="shorter"
+                                    >
+                                      {act.activity}
+                                    </Text>
+                                  </VStack>
+                                </HStack>
+                              </Box>
+                            );
+                          })}
+                        </VStack>
+                      ) : (
+                        <Box
+                          py={2.5}
+                          px={3}
+                          rounded="md"
+                          bg={
+                            colorMode === "light"
+                              ? "gray.50"
+                              : "gray.800"
+                          }
+                          border="1px dashed"
+                          borderColor={
+                            colorMode === "light"
+                              ? "gray.200"
+                              : "gray.700"
+                          }
+                          textAlign="center"
+                        >
+                          <Text
+                            fontSize="xs"
+                            color={
+                              colorMode === "light"
+                                ? "gray.400"
+                                : "gray.500"
+                            }
+                          >
+                            Belum ada aktivitas tercatat
+                          </Text>
+                        </Box>
+                      )}
+                    </Box>
                   </Flex>
                 </GridItem>
               </Grid>

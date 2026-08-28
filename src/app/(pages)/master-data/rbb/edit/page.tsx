@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Alert,
@@ -131,7 +131,7 @@ const parseRupiahNumber = (value: string): number => {
   return parseInt(digitsOnly, 10);
 };
 
-export default function EditMasterRbbPage() {
+function EditMasterRbbView() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { colorMode } = useColorMode();
@@ -1229,5 +1229,19 @@ export default function EditMasterRbbPage() {
         </ModalContent>
       </Modal>
     </LayoutAdmin>
+  );
+}
+
+export default function EditMasterRbbPage() {
+  return (
+    <Suspense
+      fallback={
+        <Flex justify="center" align="center" minH="500px">
+          <Spinner size="xl" color="secondary.500" thickness="4px" />
+        </Flex>
+      }
+    >
+      <EditMasterRbbView />
+    </Suspense>
   );
 }
