@@ -156,7 +156,7 @@ const useCabRequest = () => {
             rfcKodeProject: detail.rfcKodeProject || "RFC-2026-088",
             itspKode: detail.itspKode || "ITSP-BJB-990",
             aplikasiKategori: detail.aplikasiKategori || "CORE_BANKING",
-            jenisCab: detail.jenisCab || "WEEKLY",
+            jenisCab: detail.jenisCab === "WEEKLY" ? "NORMAL" : (detail.jenisCab || "NORMAL"),
             jenisCabEmergencyAlasan: detail.jenisCabEmergencyAlasan || "",
             hasilUat: detail.hasilUat || ["BERHASIL_BAIK"],
             hasilUatCatatan: detail.hasilUatCatatan || (detail.hasilUat?.includes("BERHASIL_CATATAN") ? "Seluruh skenario pengujian utama berhasil, catatan pada integrasi logging response time minor." : ""),
@@ -525,9 +525,21 @@ const useCabRequest = () => {
     return new Promise((resolve) => {
       setTimeout(() => {
         if (MOCK_CAB_DETAIL[id]) {
-          MOCK_CAB_DETAIL[id].cabResult = payload.cabResult;
-          MOCK_CAB_DETAIL[id].cabNotes = payload.cabNotes;
-          MOCK_CAB_DETAIL[id].implementationStatus = payload.implementationStatus;
+          if (payload.cabResult !== undefined) MOCK_CAB_DETAIL[id].cabResult = payload.cabResult;
+          if (payload.cabNotes !== undefined) MOCK_CAB_DETAIL[id].cabNotes = payload.cabNotes;
+          if (payload.implementationStatus !== undefined) MOCK_CAB_DETAIL[id].implementationStatus = payload.implementationStatus;
+          if (payload.buktiImplementasi !== undefined) {
+            MOCK_CAB_DETAIL[id].buktiImplementasi = payload.buktiImplementasi;
+          }
+        }
+        const listIdx = MOCK_CAB_LIST.findIndex((r) => r.id === id);
+        if (listIdx !== -1) {
+          if (payload.cabResult !== undefined) MOCK_CAB_LIST[listIdx].cabResult = payload.cabResult;
+          if (payload.cabNotes !== undefined) MOCK_CAB_LIST[listIdx].cabNotes = payload.cabNotes;
+          if (payload.implementationStatus !== undefined) MOCK_CAB_LIST[listIdx].implementationStatus = payload.implementationStatus;
+          if (payload.buktiImplementasi !== undefined) {
+            MOCK_CAB_LIST[listIdx].buktiImplementasi = payload.buktiImplementasi;
+          }
         }
         setLoading(false);
         resolve(true);

@@ -268,6 +268,10 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
     baseMenu: "/master-data/sequences-config",
   },
   {
+    pattern: "/user-data/assign-module",
+    baseMenu: "/user-data/assign-module",
+  },
+  {
     pattern: "/master-data/workflow/preset-workflow-detail",
     baseMenu: "/master-data/workflow",
   },

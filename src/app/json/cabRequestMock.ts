@@ -521,6 +521,24 @@ export const MOCK_CAB_LIST: CabRequestItem[] = [
     approverName: "Budi Santoso",
     projectName: "Merchant QR Payment Service",
     priority: "MEDIUM",
+    buktiImplementasi: [
+      {
+        id: "bukti-mock-1",
+        name: "deployment_verification_qris.png",
+        size: 524288,
+        url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=60",
+        type: "image/png",
+        uploadedAt: "2026-08-19T11:15:00Z",
+      },
+      {
+        id: "bukti-mock-2",
+        name: "sanity_test_gateway_pass.png",
+        size: 734003,
+        url: "https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?w=800&auto=format&fit=crop&q=60",
+        type: "image/png",
+        uploadedAt: "2026-08-19T11:20:00Z",
+      },
+    ],
   },
   // ── COMPLETED ──
   {

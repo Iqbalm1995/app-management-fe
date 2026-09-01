@@ -1,7 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import {
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogOverlay,
   Badge,
   Box,
   Button,
@@ -12,43 +18,75 @@ import {
   HStack,
   Icon,
   IconButton,
+  Image,
   Input,
   InputGroup,
   InputLeftElement,
+  Menu,
+  MenuButton,
+  MenuDivider,
+  MenuItem,
+  MenuList,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
   Select,
-  Tab,
-  TabList,
+  SimpleGrid,
   Tabs,
-  Table,
-  Tbody,
-  Td,
   Text,
-  Th,
-  Thead,
   Tooltip,
-  Tr,
   useColorMode,
   VStack,
 } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
+import { useDropzone } from "react-dropzone";
 import {
+  ColumnDef,
+  PaginationState,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import {
+  FiAlertCircle,
+  FiAlertTriangle,
   FiCalendar,
+  FiCheck,
+  FiCheckCircle,
   FiChevronLeft,
   FiChevronRight,
   FiClock,
   FiDownload,
   FiEye,
-  FiFileText,
   FiGrid,
+  FiImage,
   FiLayers,
+  FiMoreVertical,
   FiRotateCcw,
   FiSearch,
+  FiTrash2,
+  FiUploadCloud,
+  FiX,
+  FiZoomIn,
 } from "react-icons/fi";
 
 import { radiusStyle } from "@/app/constants/applicationConstants";
 import { AppTabList, AppTabItem } from "@/app/components/TabsCustom";
-import { CabRequestItem } from "@/app/types/cabTypes";
+import { TableComponentWithFilterCTX } from "@/app/components/tableComponentV2";
+import { ColumnMetaCustom } from "@/app/types/masterTypes";
+import { BuktiImplementasiItem, CabRequestItem } from "@/app/types/cabTypes";
 import { exportCabReportsGroupPdf, exportSingleCabMeetingPdf } from "@/app/helper/CabReportPdfExport";
+import useCabRequest from "@/app/services/useCabRequest";
+import {
+  useToastError,
+  useToastSuccess,
+  useToastWarning,
+} from "@/app/helper/ToastMessagesHelper";
 
 type TabPeriodMode = "DAY" | "WEEK" | "MONTH" | "QUARTER";
 
@@ -74,49 +112,53 @@ const getWeekRange = (dateStr: string) => {
   };
 };
 
-const getQuarterKeyFromDate = (dateStr: string): { key: string; year: number; q: number; label: string } => {
-  const d = new Date(dateStr);
-  const year = d.getFullYear() || 2026;
-  const q = Math.ceil((d.getMonth() + 1) / 3);
-  const monthsDesc = q === 1 ? "Jan - Mar" : q === 2 ? "Apr - Jun" : q === 3 ? "Jul - Sep" : "Okt - Des";
-  return {
-    key: `${year}-Q${q}`,
-    year,
-    q,
-    label: `Kuartal ${q} (Q${q}) ${year} • ${monthsDesc}`,
-  };
-};
-
-const formatDateIndo = (dateStr: string): string => {
+const formatDateIndo = (dateStr: string) => {
   if (!dateStr) return "-";
-  try {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString("id-ID", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-  } catch {
-    return dateStr;
-  }
+  const d = new Date(dateStr);
+  return d.toLocaleDateString("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 };
 
-const formatMonthIndo = (yearMonthStr: string): string => {
-  if (!yearMonthStr) return "-";
-  const [year, month] = yearMonthStr.split("-");
-  const monthNames = [
-    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-    "Juli", "Agustus", "September", "Oktober", "November", "Desember",
-  ];
-  const mIndex = parseInt(month, 10) - 1;
-  return `${monthNames[mIndex] || month} ${year}`;
+const formatMonthIndo = (yyyyMm: string) => {
+  if (!yyyyMm) return "-";
+  const [y, m] = yyyyMm.split("-");
+  const d = new Date(Number(y), Number(m) - 1, 1);
+  return d.toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+};
+
+const getQuarterKeyFromDate = (dateStr: string) => {
+  if (!dateStr) {
+    const now = new Date();
+    const q = Math.floor(now.getMonth() / 3) + 1;
+    return { key: `${now.getFullYear()}-Q${q}`, label: `Kuartal ${q} (${now.getFullYear()})` };
+  }
+  const d = new Date(dateStr);
+  const y = d.getFullYear();
+  const q = Math.floor(d.getMonth() / 3) + 1;
+  return { key: `${y}-Q${q}`, label: `Kuartal ${q} (${y})` };
+};
+
+const formatFileSize = (bytes?: number) => {
+  if (!bytes) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 };
 
 const getCabCategory = (item: CabRequestItem): "SOFTWARE" | "HARDWARE" => {
   if (item.category === "HARDWARE" || item.category === "SOFTWARE") return item.category;
   const typeUpper = String(item.requestType || "").toUpperCase();
-  if (typeUpper === "INFRASTRUCTURE" || typeUpper === "HARDWARE" || typeUpper === "PROCUREMENT" || (item.projectName && item.projectName.toLowerCase().includes("hardware"))) {
+  if (
+    typeUpper === "INFRASTRUCTURE" ||
+    typeUpper === "HARDWARE" ||
+    typeUpper === "PROCUREMENT" ||
+    (item.projectName && item.projectName.toLowerCase().includes("hardware"))
+  ) {
     return "HARDWARE";
   }
   return "SOFTWARE";
@@ -125,26 +167,53 @@ const getCabCategory = (item: CabRequestItem): "SOFTWARE" | "HARDWARE" => {
 const renderCabResultBadge = (result?: string, status?: string) => {
   const safe = (result || status || "APPROVED").toUpperCase();
   if (safe.includes("REJECT") || safe.includes("DITOLAK")) {
-    return <Badge colorScheme="red" variant="subtle" rounded="full" px={2.5} py={0.5} fontSize="2xs">Ditolak (Rejected)</Badge>;
+    return (
+      <Badge colorScheme="red" variant="subtle" rounded="full" px={2} py={0.5} fontSize="3xs" fontWeight="semibold">
+        Ditolak
+      </Badge>
+    );
   }
   if (safe.includes("NOTE") || safe.includes("CATATAN")) {
-    return <Badge colorScheme="cyan" variant="subtle" rounded="full" px={2.5} py={0.5} fontSize="2xs">Disetujui dg Catatan</Badge>;
+    return (
+      <Badge colorScheme="cyan" variant="subtle" rounded="full" px={2} py={0.5} fontSize="3xs" fontWeight="semibold">
+        Disetujui dg Catatan
+      </Badge>
+    );
   }
   if (safe.includes("RESCHEDULE") || safe.includes("PENDING")) {
-    return <Badge colorScheme="orange" variant="subtle" rounded="full" px={2.5} py={0.5} fontSize="2xs">Rescheduled</Badge>;
+    return (
+      <Badge colorScheme="orange" variant="subtle" rounded="full" px={2} py={0.5} fontSize="3xs" fontWeight="semibold">
+        Rescheduled
+      </Badge>
+    );
   }
-  return <Badge colorScheme="green" variant="subtle" rounded="full" px={2.5} py={0.5} fontSize="2xs">Disetujui (Approved)</Badge>;
+  return (
+    <Badge colorScheme="green" variant="subtle" rounded="full" px={2} py={0.5} fontSize="3xs" fontWeight="semibold">
+      Disetujui
+    </Badge>
+  );
 };
 
-const CabReportsTab = ({ items }: CabReportsTabProps) => {
+const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
   const { colorMode } = useColorMode();
   const isDark = colorMode === "dark";
   const router = useRouter();
+  const { UpdateCabResult } = useCabRequest();
+
+  const showToastSuccess = useToastSuccess();
+  const showToastError = useToastError();
+  const showToastWarning = useToastWarning();
+
+  // Local synced items state
+  const [localItems, setLocalItems] = useState<CabRequestItem[]>(items);
+  useEffect(() => {
+    setLocalItems(items);
+  }, [items]);
 
   // Active Tab Period Mode
   const [periodMode, setPeriodMode] = useState<TabPeriodMode>("DAY");
 
-  // Selected Filter Values (Defaulting to Current Date / Week / Month / Quarter)
+  // Selected Filter Values
   const [selectedDay, setSelectedDay] = useState<string>(getTodayStr());
   const [selectedWeekDate, setSelectedWeekDate] = useState<string>(getTodayStr());
   const [selectedMonth, setSelectedMonth] = useState<string>(getCurrentMonthStr());
@@ -154,20 +223,45 @@ const CabReportsTab = ({ items }: CabReportsTabProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [typeFilter, setTypeFilter] = useState("ALL");
-  const [pageSize, setPageSize] = useState<number>(10);
-  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  });
   const [isExporting, setIsExporting] = useState(false);
+
+  // ─── Modal States ─────────────────────────────────────────────────────────
+  // 1. Quick Upload Bukti Modal
+  const [activeUploadItem, setActiveUploadItem] = useState<CabRequestItem | null>(null);
+  const [uploadModalFiles, setUploadModalFiles] = useState<BuktiImplementasiItem[]>([]);
+  const [isSavingBukti, setIsSavingBukti] = useState(false);
+
+  // 2. Lightbox Fullscreen Preview Modal
+  const [previewModalData, setPreviewModalData] = useState<{
+    isOpen: boolean;
+    url: string;
+    name: string;
+    size?: number;
+  }>({
+    isOpen: false,
+    url: "",
+    name: "",
+    size: undefined,
+  });
+
+  // 3. Warning Dialog when bulk exporting with missing evidence
+  const [isWarningExportOpen, setIsWarningExportOpen] = useState(false);
+  const cancelRef = useRef<any>(null);
 
   // 1. Base Filter: ONLY items with isCabDone === "Y" or in IMPLEMENT, WAITING APPROVAL, COMPLETED, APPROVED
   const doneCabItems = useMemo(() => {
-    return items.filter(
+    return localItems.filter(
       (item) =>
         item.isCabDone === "Y" ||
         ["IMPLEMENT", "WAITING APPROVAL", "WAITING APPROVE", "COMPLETED", "APPROVED"].includes(
           String(item.status).toUpperCase()
         )
     );
-  }, [items]);
+  }, [localItems]);
 
   // Distinct available options extracted from completed items
   const availableDays = useMemo(() => {
@@ -254,6 +348,11 @@ const CabReportsTab = ({ items }: CabReportsTabProps) => {
     });
   }, [periodFilteredItems, searchQuery, statusFilter, typeFilter]);
 
+  // Missing evidence count for active period
+  const missingEvidenceCount = useMemo(() => {
+    return tableData.filter((i) => !i.buktiImplementasi || i.buktiImplementasi.length === 0).length;
+  }, [tableData]);
+
   // Active Period Label for Heading & PDF
   const activePeriodLabel = useMemo(() => {
     if (periodMode === "DAY") {
@@ -273,27 +372,19 @@ const CabReportsTab = ({ items }: CabReportsTabProps) => {
     return qObj ? qObj.label : selectedQuarter;
   }, [periodMode, selectedDay, selectedWeekDate, selectedMonth, selectedQuarter, availableQuarters]);
 
-  // Pagination calculation
-  const totalPages = Math.ceil(tableData.length / pageSize) || 1;
-  const safePage = Math.min(currentPage, totalPages);
-  const paginatedRows = useMemo(() => {
-    const start = (safePage - 1) * pageSize;
-    return tableData.slice(start, start + pageSize);
-  }, [tableData, safePage, pageSize]);
-
-  // Period Navigation handlers (Previous / Next / Reset to Current)
+  // Period Navigation handlers
   const handleNavDay = (delta: number) => {
     const d = new Date(selectedDay);
     d.setDate(d.getDate() + delta);
     setSelectedDay(d.toISOString().slice(0, 10));
-    setCurrentPage(1);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   };
 
   const handleNavWeek = (deltaWeeks: number) => {
     const d = new Date(selectedWeekDate);
     d.setDate(d.getDate() + deltaWeeks * 7);
     setSelectedWeekDate(d.toISOString().slice(0, 10));
-    setCurrentPage(1);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   };
 
   const handleNavMonth = (deltaMonths: number) => {
@@ -301,7 +392,7 @@ const CabReportsTab = ({ items }: CabReportsTabProps) => {
     const d = new Date(y, m - 1 + deltaMonths, 1);
     const nextMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
     setSelectedMonth(nextMonth);
-    setCurrentPage(1);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
   };
 
   const handleResetToCurrent = () => {
@@ -310,11 +401,108 @@ const CabReportsTab = ({ items }: CabReportsTabProps) => {
     else if (periodMode === "WEEK") setSelectedWeekDate(today);
     else if (periodMode === "MONTH") setSelectedMonth(getCurrentMonthStr());
     else if (periodMode === "QUARTER") setSelectedQuarter(getQuarterKeyFromDate(today).key);
-    setCurrentPage(1);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
+
+  // Dropzone setup for Quick Upload Modal
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    accept: {
+      "image/png": [".png"],
+      "image/jpeg": [".jpg", ".jpeg"],
+      "image/webp": [".webp"],
+    },
+    maxSize: 10 * 1024 * 1024,
+    multiple: true,
+    onDrop: (acceptedFiles) => {
+      if (acceptedFiles.length > 0) {
+        const newItems: BuktiImplementasiItem[] = acceptedFiles.map((file) => ({
+          id: `bukti-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          name: file.name,
+          size: file.size,
+          url: URL.createObjectURL(file),
+          type: file.type,
+          uploadedAt: new Date().toISOString(),
+        }));
+        setUploadModalFiles((prev) => [...prev, ...newItems]);
+        showToastSuccess({
+          description: `${acceptedFiles.length} berkas bukti implementasi berhasil ditambahkan.`,
+        });
+      }
+    },
+    onDropRejected: (fileRejections) => {
+      fileRejections.forEach((rejection) => {
+        if (rejection.errors[0]?.code === "file-too-large") {
+          showToastError({
+            description: `Berkas ${rejection.file.name} melebihi batas ukuran 10MB.`,
+          });
+        } else if (rejection.errors[0]?.code === "file-invalid-type") {
+          showToastError({
+            description: `Berkas ${rejection.file.name} bukan format gambar yang didukung (PNG, JPG, WEBP).`,
+          });
+        }
+      });
+    },
+  });
+
+  const handleOpenUpload = (item: CabRequestItem) => {
+    setActiveUploadItem(item);
+    setUploadModalFiles(item.buktiImplementasi ? [...item.buktiImplementasi] : []);
+  };
+
+  const handleRemoveModalFile = (id: string) => {
+    setUploadModalFiles((prev) => prev.filter((f) => f.id !== id));
+  };
+
+  const handleSaveModalBukti = async () => {
+    if (!activeUploadItem) return;
+    if (uploadModalFiles.length === 0) {
+      showToastWarning({
+        description: "Mohon unggah minimal 1 berkas gambar bukti implementasi.",
+      });
+      return;
+    }
+
+    setIsSavingBukti(true);
+    try {
+      await UpdateCabResult("", activeUploadItem.id, {
+        buktiImplementasi: uploadModalFiles,
+      });
+
+      // Update local state immediately
+      setLocalItems((prev) =>
+        prev.map((i) =>
+          i.id === activeUploadItem.id
+            ? { ...i, buktiImplementasi: uploadModalFiles }
+            : i
+        )
+      );
+
+      showToastSuccess({
+        description: `Bukti implementasi untuk ${activeUploadItem.requestNo} berhasil disimpan. Laporan Berita Acara siap diekspor.`,
+      });
+
+      if (onRefresh) onRefresh();
+      setActiveUploadItem(null);
+    } catch {
+      showToastError({
+        description: "Gagal menyimpan bukti implementasi. Silakan coba kembali.",
+      });
+    } finally {
+      setIsSavingBukti(false);
+    }
   };
 
   // PDF Export Handlers
   const handleExportCurrentPeriodPdf = async () => {
+    if (missingEvidenceCount > 0) {
+      setIsWarningExportOpen(true);
+      return;
+    }
+    executeGroupExport();
+  };
+
+  const executeGroupExport = async () => {
+    setIsWarningExportOpen(false);
     setIsExporting(true);
     try {
       await exportCabReportsGroupPdf({
@@ -323,23 +511,337 @@ const CabReportsTab = ({ items }: CabReportsTabProps) => {
         groupType: periodMode,
         items: tableData,
       });
+      showToastSuccess({
+        description: "Laporan rekapitulasi sidang CAB berhasil diunduh.",
+      });
+    } catch {
+      showToastError({
+        description: "Terjadi kesalahan saat membuat dokumen PDF.",
+      });
     } finally {
       setIsExporting(false);
     }
   };
 
   const handleExportSingle = async (item: CabRequestItem) => {
+    const hasBukti = item.buktiImplementasi && item.buktiImplementasi.length > 0;
+    if (!hasBukti) {
+      showToastWarning({
+        description: "Unggah bukti implementasi terlebih dahulu sebelum mengekspor Berita Acara.",
+      });
+      handleOpenUpload(item);
+      return;
+    }
+
     setIsExporting(true);
     try {
       await exportSingleCabMeetingPdf(item);
+      showToastSuccess({
+        description: `Berita Acara untuk ${item.requestNo} berhasil diekspor.`,
+      });
+    } catch {
+      showToastError({
+        description: "Gagal mengekspor Berita Acara CAB.",
+      });
     } finally {
       setIsExporting(false);
     }
   };
 
+  // ─── TanStack Table Columns Definition (/requirements/brd-rfc Style) ─────
+  const columns = useMemo<ColumnDef<CabRequestItem>[]>(
+    () => [
+      {
+        id: "rowNumber",
+        header: "NO.",
+        cell: (info) => (
+          <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"} textAlign="center" fontWeight="medium">
+            {info.row.index + 1 + pagination.pageIndex * pagination.pageSize}.
+          </Text>
+        ),
+        meta: { isFilterable: false } as ColumnMetaCustom,
+      },
+      {
+        accessorKey: "requestNo",
+        id: "requestNo",
+        header: "REQUEST NO",
+        cell: (info) => {
+          const item = info.row.original;
+          const dateStr = item.scheduledDate
+            ? item.scheduledDate.slice(0, 10)
+            : item.targetDate || "-";
+          return (
+            <VStack align="start" spacing={0.5} minW="130px" maxW="150px">
+              <Text fontSize="xs" fontWeight="bold" color="secondary.600" noOfLines={1}>
+                {info.getValue() as string}
+              </Text>
+              <Text fontSize="2xs" color={isDark ? "gray.400" : "gray.500"} noOfLines={1}>
+                {dateStr}
+              </Text>
+            </VStack>
+          );
+        },
+        meta: { isFilterable: false } as ColumnMetaCustom,
+      },
+      {
+        accessorKey: "requestTitle",
+        id: "requestTitle",
+        header: "JUDUL CAB",
+        cell: (info) => {
+          const item = info.row.original;
+          return (
+            <VStack align="start" spacing={0.5} minW="220px" maxW="280px">
+              <Text fontSize="xs" fontWeight="semibold" noOfLines={2} title={info.getValue() as string}>
+                {info.getValue() as string}
+              </Text>
+              <Text fontSize="2xs" color={isDark ? "gray.400" : "gray.500"} noOfLines={1} title={item.projectName}>
+                Project: {item.projectName || "-"}
+              </Text>
+            </VStack>
+          );
+        },
+        meta: { isFilterable: false } as ColumnMetaCustom,
+      },
+      {
+        id: "category",
+        header: "TIPE",
+        cell: (info) => {
+          const cat = getCabCategory(info.row.original);
+          return (
+            <Badge
+              colorScheme={cat === "HARDWARE" ? "orange" : "purple"}
+              variant="subtle"
+              rounded="full"
+              px={2}
+              py={0.5}
+              fontSize="3xs"
+              fontWeight="bold"
+            >
+              {cat}
+            </Badge>
+          );
+        },
+        meta: { isFilterable: false } as ColumnMetaCustom,
+      },
+      {
+        accessorKey: "scheduledDate",
+        id: "scheduledDate",
+        header: "PELAKSANAAN",
+        cell: (info) => {
+          const item = info.row.original;
+          const timeStr = item.scheduledDate
+            ? `${item.scheduledDate.slice(11, 16)} - ${item.scheduledEndDate ? item.scheduledEndDate.slice(11, 16) : ""} WIB`
+            : "-";
+          return (
+            <VStack align="start" spacing={0.5} minW="130px" maxW="160px">
+              <Text fontSize="xs" fontWeight="medium" noOfLines={1}>
+                {timeStr}
+              </Text>
+              <Text fontSize="2xs" color={isDark ? "gray.400" : "gray.500"} noOfLines={1} title={item.cabLocation || "Online Meeting"}>
+                {item.cabLocation || "Online Meeting"}
+              </Text>
+            </VStack>
+          );
+        },
+        meta: { isFilterable: false } as ColumnMetaCustom,
+      },
+      {
+        accessorKey: "requesterName",
+        id: "requesterName",
+        header: "PEMOHON",
+        cell: (info) => {
+          const item = info.row.original;
+          return (
+            <VStack align="start" spacing={0.5} minW="120px" maxW="150px">
+              <Text fontSize="xs" fontWeight="medium" noOfLines={1}>
+                {item.requesterName || "-"}
+              </Text>
+              <Text fontSize="2xs" color={isDark ? "gray.400" : "gray.500"} noOfLines={1}>
+                Appr: {item.approverName || "-"}
+              </Text>
+            </VStack>
+          );
+        },
+        meta: { isFilterable: false } as ColumnMetaCustom,
+      },
+      {
+        id: "keputusanBukti",
+        header: "STATUS",
+        cell: (info) => {
+          const item = info.row.original;
+          const isRejected =
+            (item.cabResult || item.status || "").toUpperCase().includes("REJECT") ||
+            (item.cabResult || item.status || "").toUpperCase().includes("DITOLAK");
+          const hasBukti = Boolean(item.buktiImplementasi && item.buktiImplementasi.length > 0);
+          const buktiCount = item.buktiImplementasi ? item.buktiImplementasi.length : 0;
+          return (
+            <VStack align="start" spacing={1} minW="140px" maxW="170px">
+              {renderCabResultBadge(item.cabResult, item.status)}
+              {isRejected ? null : hasBukti ? (
+                <Badge
+                  colorScheme="green"
+                  variant="solid"
+                  rounded="full"
+                  px={2}
+                  py={0.5}
+                  fontSize="3xs"
+                  display="inline-flex"
+                  alignItems="center"
+                  gap={1}
+                >
+                  <Icon as={FiCheckCircle} boxSize={2.5} />
+                  Bukti Lengkap ({buktiCount})
+                </Badge>
+              ) : (
+                <Badge
+                  colorScheme="orange"
+                  variant="outline"
+                  rounded="full"
+                  px={2}
+                  py={0.5}
+                  fontSize="3xs"
+                  display="inline-flex"
+                  alignItems="center"
+                  gap={1}
+                >
+                  <Icon as={FiAlertCircle} boxSize={2.5} />
+                  Bukti Belum Diunggah
+                </Badge>
+              )}
+            </VStack>
+          );
+        },
+        meta: { isFilterable: false } as ColumnMetaCustom,
+      },
+      {
+        accessorKey: "cabNotes",
+        id: "cabNotes",
+        header: "CATATAN",
+        cell: (info) => (
+          <Box minW="160px" maxW="220px">
+            <Text fontSize="xs" color={isDark ? "gray.300" : "gray.600"} noOfLines={2} title={(info.getValue() as string) || "-"}>
+              {(info.getValue() as string) || "-"}
+            </Text>
+          </Box>
+        ),
+        meta: { isFilterable: false } as ColumnMetaCustom,
+      },
+      {
+        id: "actions",
+        header: "AKSI",
+        cell: (info) => {
+          const item = info.row.original;
+          const isRejected =
+            (item.cabResult || item.status || "").toUpperCase().includes("REJECT") ||
+            (item.cabResult || item.status || "").toUpperCase().includes("DITOLAK");
+          const hasBukti = Boolean(item.buktiImplementasi && item.buktiImplementasi.length > 0);
+
+          return (
+            <Flex justify="center" align="center" minW="60px">
+              <Menu isLazy placement="bottom-end">
+                <MenuButton
+                  as={Button}
+                  rightIcon={<FiMoreVertical />}
+                  size="xs"
+                  variant="outline"
+                  colorScheme="blue"
+                  bg="transparent"
+                  borderColor={isDark ? "blue.400" : "blue.500"}
+                  color={isDark ? "blue.300" : "blue.600"}
+                  rounded="md"
+                  fontSize="xs"
+                  fontWeight="medium"
+                  px={2.5}
+                  h="24px"
+                  _hover={{
+                    bg: isDark ? "rgba(66, 153, 225, 0.15)" : "blue.50",
+                    borderColor: isDark ? "blue.300" : "blue.600",
+                  }}
+                  _active={{
+                    bg: isDark ? "rgba(66, 153, 225, 0.25)" : "blue.100",
+                  }}
+                >
+                  Action
+                </MenuButton>
+                <MenuList
+                  zIndex={20}
+                  shadow="lg"
+                  py={1}
+                  minW="190px"
+                  bg={isDark ? "gray.800" : "white"}
+                  borderColor={isDark ? "gray.700" : "gray.200"}
+                  rounded="lg"
+                >
+                  <MenuItem
+                    icon={<FiEye />}
+                    fontSize="xs"
+                    onClick={() => router.push(`/cab/cab-request/detail?id=${item.id}`)}
+                  >
+                    Lihat Detail
+                  </MenuItem>
+
+                  {!isRejected && (
+                    <MenuItem
+                      icon={<FiUploadCloud />}
+                      fontSize="xs"
+                      color={!hasBukti ? "orange.500" : undefined}
+                      fontWeight={!hasBukti ? "semibold" : "normal"}
+                      onClick={() => handleOpenUpload(item)}
+                    >
+                      {hasBukti ? "Ubah Bukti Implementasi" : "Upload Bukti"}
+                    </MenuItem>
+                  )}
+
+                  {hasBukti && (
+                    <>
+                      <MenuItem
+                        icon={<FiImage />}
+                        fontSize="xs"
+                        onClick={() =>
+                          setPreviewModalData({
+                            isOpen: true,
+                            url: item.buktiImplementasi![0].url,
+                            name: item.buktiImplementasi![0].name,
+                            size: item.buktiImplementasi![0].size,
+                          })
+                        }
+                      >
+                        Lihat Foto Bukti
+                      </MenuItem>
+                      <MenuItem
+                        icon={<FiDownload />}
+                        fontSize="xs"
+                        onClick={() => handleExportSingle(item)}
+                      >
+                        Ekspor Berita Acara (PDF)
+                      </MenuItem>
+                    </>
+                  )}
+                </MenuList>
+              </Menu>
+            </Flex>
+          );
+        },
+        meta: { isFilterable: false } as ColumnMetaCustom,
+      },
+    ],
+    [router, pagination, isExporting]
+  );
+
+  const table = useReactTable({
+    data: tableData,
+    columns,
+    state: { pagination },
+    getRowId: (row) => row.id,
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+  });
+
   return (
     <VStack spacing={4} align="stretch" w="full">
-      {/* ─── Period Filter Tabs (Per Hari, Per Minggu, Per Bulan, Per Kuartal) ─── */}
+      {/* ─── Period Filter Tabs ─── */}
       <Card
         rounded={radiusStyle}
         shadow="sm"
@@ -355,7 +857,7 @@ const CabReportsTab = ({ items }: CabReportsTabProps) => {
             onChange={(idx) => {
               const modes: TabPeriodMode[] = ["DAY", "WEEK", "MONTH", "QUARTER"];
               setPeriodMode(modes[idx]);
-              setCurrentPage(1);
+              setPagination((prev) => ({ ...prev, pageIndex: 0 }));
             }}
           >
             <AppTabList variant="segmented">
@@ -405,7 +907,7 @@ const CabReportsTab = ({ items }: CabReportsTabProps) => {
                       value={selectedDay}
                       onChange={(e) => {
                         setSelectedDay(e.target.value);
-                        setCurrentPage(1);
+                        setPagination((prev) => ({ ...prev, pageIndex: 0 }));
                       }}
                     />
                     <IconButton
@@ -435,7 +937,7 @@ const CabReportsTab = ({ items }: CabReportsTabProps) => {
                       value={selectedWeekDate}
                       onChange={(e) => {
                         setSelectedWeekDate(e.target.value);
-                        setCurrentPage(1);
+                        setPagination((prev) => ({ ...prev, pageIndex: 0 }));
                       }}
                     />
                     <IconButton
@@ -459,12 +961,12 @@ const CabReportsTab = ({ items }: CabReportsTabProps) => {
                     />
                     <Select
                       size="sm"
-                      w="170px"
                       rounded="lg"
+                      w="170px"
                       value={selectedMonth}
                       onChange={(e) => {
                         setSelectedMonth(e.target.value);
-                        setCurrentPage(1);
+                        setPagination((prev) => ({ ...prev, pageIndex: 0 }));
                       }}
                     >
                       {availableMonths.map((m) => (
@@ -484,40 +986,56 @@ const CabReportsTab = ({ items }: CabReportsTabProps) => {
                 )}
 
                 {periodMode === "QUARTER" && (
-                  <Select
-                    size="sm"
-                    w="240px"
-                    rounded="lg"
-                    value={selectedQuarter}
-                    onChange={(e) => {
-                      setSelectedQuarter(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                  >
-                    {availableQuarters.map((q) => (
-                      <option key={q.key} value={q.key}>
-                        {q.label}
-                      </option>
-                    ))}
-                  </Select>
+                  <HStack spacing={2}>
+                    <Select
+                      size="sm"
+                      rounded="lg"
+                      w="180px"
+                      value={selectedQuarter}
+                      onChange={(e) => {
+                        setSelectedQuarter(e.target.value);
+                        setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+                      }}
+                    >
+                      {availableQuarters.map((q) => (
+                        <option key={q.key} value={q.key}>
+                          {q.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </HStack>
                 )}
 
                 <Button
                   size="sm"
                   variant="ghost"
-                  colorScheme="blue"
                   leftIcon={<FiRotateCcw />}
                   onClick={handleResetToCurrent}
+                  fontSize="xs"
                 >
-                  {periodMode === "DAY" ? "Hari Ini" : periodMode === "WEEK" ? "Minggu Ini" : periodMode === "MONTH" ? "Bulan Ini" : "Kuartal Ini"}
+                  Reset ke Saat Ini
                 </Button>
               </HStack>
 
-              {/* Header Active Period & Count Badge */}
-              <HStack spacing={2}>
-                <Badge colorScheme="blue" variant="subtle" rounded="full" px={3} py={1} fontSize="xs">
-                  {tableData.length} Agenda Ditemukan
-                </Badge>
+              {/* Action Buttons: Bulk Export PDF */}
+              <HStack spacing={2} w={{ base: "full", md: "auto" }} justify={{ base: "start", md: "end" }}>
+                {missingEvidenceCount > 0 && (
+                  <Badge
+                    colorScheme="orange"
+                    variant="subtle"
+                    px={2.5}
+                    py={1}
+                    rounded="full"
+                    fontSize="xs"
+                    display="inline-flex"
+                    alignItems="center"
+                    gap={1.5}
+                  >
+                    <Icon as={FiAlertTriangle} />
+                    {missingEvidenceCount} Implementasi CAB belum ada lampiran bukti
+                  </Badge>
+                )}
+
                 <Button
                   size="sm"
                   colorScheme="blue"
@@ -526,7 +1044,7 @@ const CabReportsTab = ({ items }: CabReportsTabProps) => {
                   isDisabled={tableData.length === 0}
                   isLoading={isExporting}
                 >
-                  Export 
+                  Export Laporan
                 </Button>
               </HStack>
             </Flex>
@@ -545,11 +1063,11 @@ const CabReportsTab = ({ items }: CabReportsTabProps) => {
                   <Icon as={FiSearch} color="gray.400" />
                 </InputLeftElement>
                 <Input
-                  placeholder="Cari no. request, project, pemohon, notulen..."
+                  placeholder="Cari no. request, project, pemohon, notulen"
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
-                    setCurrentPage(1);
+                    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
                   }}
                   rounded="lg"
                 />
@@ -563,7 +1081,7 @@ const CabReportsTab = ({ items }: CabReportsTabProps) => {
                   value={statusFilter}
                   onChange={(e) => {
                     setStatusFilter(e.target.value);
-                    setCurrentPage(1);
+                    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
                   }}
                 >
                   <option value="ALL">Semua Keputusan</option>
@@ -579,7 +1097,7 @@ const CabReportsTab = ({ items }: CabReportsTabProps) => {
                   value={typeFilter}
                   onChange={(e) => {
                     setTypeFilter(e.target.value);
-                    setCurrentPage(1);
+                    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
                   }}
                 >
                   <option value="ALL">Semua Tipe</option>
@@ -592,10 +1110,10 @@ const CabReportsTab = ({ items }: CabReportsTabProps) => {
         </CardBody>
       </Card>
 
-      {/* ─── Main Single DataTable ─── */}
+      {/* ─── Main Single DataTable Styled like /requirements/brd-rfc ─── */}
       <Card
         rounded={radiusStyle}
-        shadow="sm"
+        shadow="lg"
         border="1px"
         borderColor={isDark ? "gray.700" : "gray.200"}
         bg={isDark ? "gray.800" : "white"}
@@ -608,231 +1126,324 @@ const CabReportsTab = ({ items }: CabReportsTabProps) => {
                 {activePeriodLabel}
               </Text>
               <Text fontSize="3xs" color="gray.500">
-                Daftar agenda sidang CAB yang telah selesai disidangkan
+                Daftar agenda sidang CAB yang telah selesai disidangkan & siap laporan ({tableData.length} agenda)
               </Text>
             </VStack>
           </HStack>
         </Box>
 
-        {tableData.length === 0 ? (
-          <VStack spacing={3} py={16} align="center">
-            <Box p={4} rounded="full" bg={isDark ? "gray.700" : "gray.100"}>
-              <Icon as={FiFileText} boxSize={8} color="gray.400" />
+        <CardBody p={4}>
+          <Box overflowX="auto" w="full">
+            <Box minW="1200px">
+              <TableComponentWithFilterCTX table={table} />
             </Box>
-            <Text fontSize="md" fontWeight="bold" color="gray.500">
-              Tidak Ada Agenda CAB pada Periode Ini
-            </Text>
-            <Text fontSize="xs" color="gray.400" maxW="450px" textAlign="center">
-              Gunakan pemilih tanggal di atas untuk melihat tanggal/periode lain yang memiliki agenda sidang selesai.
-            </Text>
-            {availableDays.length > 0 && (
-              <HStack spacing={2} pt={2}>
-                <Text fontSize="xs" color="gray.500">
-                  Tanggal tersedia:
-                </Text>
-                {availableDays.slice(0, 3).map((d) => (
-                  <Button
-                    key={d}
-                    size="xs"
-                    variant="outline"
-                    colorScheme="blue"
-                    onClick={() => {
-                      setSelectedDay(d);
-                      setSelectedWeekDate(d);
-                      setSelectedMonth(d.slice(0, 7));
-                      setSelectedQuarter(getQuarterKeyFromDate(d).key);
-                    }}
-                  >
-                    {d}
-                  </Button>
-                ))}
-              </HStack>
-            )}
-          </VStack>
-        ) : (
-          <Box w="full">
-            <Box overflowX="auto">
-              <Table size="sm" variant="simple" minW="1000px">
-                <Thead bg={isDark ? "gray.750" : "gray.50"}>
-                  <Tr>
-                    <Th w="40px" textAlign="center">No</Th>
-                    <Th w="130px">No. Request</Th>
-                    <Th minW="220px">Judul Perubahan & Project</Th>
-                    <Th w="120px">Tipe</Th>
-                    <Th w="140px">Waktu Meeting</Th>
-                    <Th w="150px">Pemohon</Th>
-                    <Th w="160px">Keputusan CAB</Th>
-                    <Th minW="200px">Catatan Komite CAB</Th>
-                    <Th w="100px" textAlign="center">Aksi</Th>
-                  </Tr>
-                </Thead>
-                <Tbody>
-                  {paginatedRows.map((item, idx) => {
-                    const rowNum = (safePage - 1) * pageSize + idx + 1;
-                    const timeStr = item.scheduledDate
-                      ? `${item.scheduledDate.slice(11, 16)} - ${item.scheduledEndDate ? item.scheduledEndDate.slice(11, 16) : ""} WIB`
-                      : "-";
-                    const dateStr = item.scheduledDate ? item.scheduledDate.slice(0, 10) : item.targetDate;
-
-                    return (
-                      <Tr
-                        key={item.id}
-                        _hover={{ bg: isDark ? "gray.750" : "blue.50" }}
-                        transition="all 0.15s"
-                      >
-                        <Td textAlign="center" fontSize="xs" color="gray.500">
-                          {rowNum}
-                        </Td>
-                        <Td>
-                          <Text fontSize="xs" fontWeight="bold" color="blue.500">
-                            {item.requestNo}
-                          </Text>
-                          <Text fontSize="3xs" color="gray.400">
-                            {dateStr}
-                          </Text>
-                        </Td>
-                        <Td>
-                          <VStack align="start" spacing={0.5}>
-                            <Text fontSize="xs" fontWeight="semibold" noOfLines={2}>
-                              {item.requestTitle}
-                            </Text>
-                            <Text fontSize="3xs" color="gray.500">
-                              Project: {item.projectName}
-                            </Text>
-                          </VStack>
-                        </Td>
-                        <Td>
-                          <Badge
-                            colorScheme={getCabCategory(item) === "HARDWARE" ? "orange" : "blue"}
-                            variant="subtle"
-                            rounded="full"
-                            px={2.5}
-                            py={0.5}
-                            fontSize="3xs"
-                            fontWeight="bold"
-                          >
-                            {getCabCategory(item)}
-                          </Badge>
-                        </Td>
-                        <Td>
-                          <VStack align="start" spacing={0}>
-                            <Text fontSize="xs" fontWeight="medium">
-                              {timeStr}
-                            </Text>
-                            <Text fontSize="3xs" color="gray.500">
-                              {item.cabLocation || "Online Meeting"}
-                            </Text>
-                          </VStack>
-                        </Td>
-                        <Td>
-                          <VStack align="start" spacing={0}>
-                            <Text fontSize="xs" fontWeight="semibold">
-                              {item.requesterName}
-                            </Text>
-                            <Text fontSize="3xs" color="gray.500">
-                              Approver: {item.approverName}
-                            </Text>
-                          </VStack>
-                        </Td>
-                        <Td>
-                          {renderCabResultBadge(item.cabResult, item.status)}
-                        </Td>
-                        <Td>
-                          <Text fontSize="xs" color={isDark ? "gray.300" : "gray.700"} noOfLines={2}>
-                            {item.cabNotes || "Disetujui tanpa catatan khusus oleh komite CAB."}
-                          </Text>
-                        </Td>
-                        <Td textAlign="center">
-                          <HStack spacing={1} justify="center">
-                            <Tooltip label="Export Berita Acara (PDF)" hasArrow>
-                              <IconButton
-                                size="xs"
-                                colorScheme="blue"
-                                variant="outline"
-                                icon={<FiDownload />}
-                                aria-label="Export PDF"
-                                onClick={() => handleExportSingle(item)}
-                              />
-                            </Tooltip>
-                            <Tooltip label="Lihat Detail Request" hasArrow>
-                              <IconButton
-                                size="xs"
-                                colorScheme="teal"
-                                variant="ghost"
-                                icon={<FiEye />}
-                                aria-label="Detail"
-                                onClick={() => router.push(`/cab/cab-request/detail?id=${item.id}`)}
-                              />
-                            </Tooltip>
-                          </HStack>
-                        </Td>
-                      </Tr>
-                    );
-                  })}
-                </Tbody>
-              </Table>
-            </Box>
-
-            {/* DataTable Pagination Footer */}
-            <Flex
-              px={4}
-              py={3}
-              borderTop="1px"
-              borderColor={isDark ? "gray.700" : "gray.100"}
-              justify="space-between"
-              align="center"
-              wrap="wrap"
-              gap={2}
-              bg={isDark ? "gray.750" : "gray.50"}
-            >
-              <HStack spacing={2}>
-                <Text fontSize="xs" color="gray.500">
-                  Menampilkan {Math.min((safePage - 1) * pageSize + 1, tableData.length)} - {Math.min(safePage * pageSize, tableData.length)} dari {tableData.length} agenda
-                </Text>
-                <Select
-                  size="xs"
-                  w="85px"
-                  rounded="md"
-                  value={pageSize}
-                  onChange={(e) => {
-                    setPageSize(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                >
-                  <option value={5}>5 / hal</option>
-                  <option value={10}>10 / hal</option>
-                  <option value={25}>25 / hal</option>
-                  <option value={50}>50 / hal</option>
-                </Select>
-              </HStack>
-
-              {totalPages > 1 && (
-                <HStack spacing={1}>
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    isDisabled={safePage <= 1}
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  >
-                    Prev
-                  </Button>
-                  <Text fontSize="xs" px={2} fontWeight="semibold">
-                    {safePage} / {totalPages}
-                  </Text>
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    isDisabled={safePage >= totalPages}
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  >
-                    Next
-                  </Button>
-                </HStack>
-              )}
-            </Flex>
           </Box>
-        )}
+        </CardBody>
       </Card>
+
+      {/* ─── Modal 1: Quick Upload Bukti Implementasi ─── */}
+      <Modal
+        isOpen={Boolean(activeUploadItem)}
+        onClose={() => setActiveUploadItem(null)}
+        size="2xl"
+        isCentered
+      >
+        <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(3px)" />
+        <ModalContent
+          rounded="xl"
+          bg={isDark ? "gray.850" : "white"}
+          border="1px"
+          borderColor={isDark ? "gray.700" : "gray.200"}
+        >
+          <ModalHeader pb={1}>
+            <HStack spacing={2}>
+              <Icon as={FiUploadCloud} color="orange.400" />
+              <VStack align="start" spacing={0}>
+                <Text fontSize="md" fontWeight="bold">
+                  Unggah Bukti Implementasi
+                </Text>
+                <Text fontSize="xs" color="gray.500" fontWeight="normal">
+                  {activeUploadItem?.requestNo} • {activeUploadItem?.requestTitle}
+                </Text>
+              </VStack>
+            </HStack>
+          </ModalHeader>
+          <ModalCloseButton />
+
+          <ModalBody py={4}>
+            <VStack spacing={4} align="stretch">
+              <Box
+                p={3}
+                rounded="lg"
+                bg={isDark ? "orange.900" : "orange.50"}
+                border="1px"
+                borderColor={isDark ? "orange.700" : "orange.200"}
+              >
+                <HStack align="start" spacing={2.5}>
+                  <Icon as={FiAlertTriangle} color="orange.400" mt={0.5} />
+                  <VStack align="start" spacing={0.5}>
+                    <Text fontSize="xs" fontWeight="bold" color={isDark ? "orange.200" : "orange.800"}>
+                      Bukti Implementasi Wajib Dilampirkan
+                    </Text>
+                    <Text fontSize="3xs" color={isDark ? "orange.300" : "orange.700"}>
+                      Unggah screenshot deployment, log verifikasi, atau hasil uji coba live untuk melengkapi Berita Acara CAB dan membuka fitur export PDF.
+                    </Text>
+                  </VStack>
+                </HStack>
+              </Box>
+
+              {/* Drag and Drop Zone */}
+              <Box
+                {...getRootProps()}
+                border="2px dashed"
+                borderColor={isDragActive ? "blue.400" : isDark ? "gray.600" : "gray.300"}
+                bg={isDragActive ? (isDark ? "blue.900" : "blue.50") : (isDark ? "gray.800" : "gray.50")}
+                rounded="xl"
+                p={6}
+                textAlign="center"
+                cursor="pointer"
+                transition="all 0.2s"
+                _hover={{
+                  borderColor: "blue.400",
+                  bg: isDark ? "gray.750" : "blue.50",
+                }}
+              >
+                <input {...getInputProps()} />
+                <VStack spacing={2}>
+                  <Box p={3} bg={isDark ? "gray.700" : "blue.100" } rounded="full" color="blue.500">
+                    <Icon as={FiUploadCloud} boxSize={6} />
+                  </Box>
+                  <Text fontSize="sm" fontWeight="semibold">
+                    {isDragActive ? "Lepaskan berkas di sini..." : "Seret & lepas gambar bukti implementasi di sini"}
+                  </Text>
+                  <Text fontSize="xs" color="gray.500">
+                    atau klik untuk memilih dari komputer Anda (Format: PNG, JPG, JPEG, WEBP • Maks. 10MB per berkas)
+                  </Text>
+                </VStack>
+              </Box>
+
+              {/* Uploaded Thumbnails Preview */}
+              {uploadModalFiles.length > 0 && (
+                <VStack align="stretch" spacing={2}>
+                  <HStack justify="space-between">
+                    <Text fontSize="xs" fontWeight="bold">
+                      Berkas Terlampir ({uploadModalFiles.length})
+                    </Text>
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      colorScheme="red"
+                      leftIcon={<FiTrash2 />}
+                      onClick={() => setUploadModalFiles([])}
+                    >
+                      Hapus Semua
+                    </Button>
+                  </HStack>
+
+                  <SimpleGrid columns={{ base: 2, sm: 3, md: 4 }} spacing={3}>
+                    {uploadModalFiles.map((file) => (
+                      <Box
+                        key={file.id}
+                        position="relative"
+                        rounded="lg"
+                        border="1px"
+                        borderColor={isDark ? "gray.700" : "gray.200"}
+                        overflow="hidden"
+                        bg={isDark ? "gray.800" : "white"}
+                        shadow="xs"
+                      >
+                        <Image
+                          src={file.url}
+                          alt={file.name}
+                          h="100px"
+                          w="full"
+                          objectFit="cover"
+                          cursor="pointer"
+                          onClick={() =>
+                            setPreviewModalData({
+                              isOpen: true,
+                              url: file.url,
+                              name: file.name,
+                              size: file.size,
+                            })
+                          }
+                        />
+                        <Box p={2}>
+                          <Text fontSize="3xs" fontWeight="semibold" noOfLines={1} title={file.name}>
+                            {file.name}
+                          </Text>
+                          <Text fontSize="4xs" color="gray.500">
+                            {formatFileSize(file.size)}
+                          </Text>
+                        </Box>
+
+                        {/* Actions Overlay */}
+                        <HStack
+                          position="absolute"
+                          top={1.5}
+                          right={1.5}
+                          spacing={1}
+                        >
+                          <IconButton
+                            size="xs"
+                            icon={<FiZoomIn />}
+                            aria-label="Lihat"
+                            colorScheme="blackAlpha"
+                            rounded="full"
+                            onClick={() =>
+                              setPreviewModalData({
+                                isOpen: true,
+                                url: file.url,
+                                name: file.name,
+                                size: file.size,
+                              })
+                            }
+                          />
+                          <IconButton
+                            size="xs"
+                            icon={<FiX />}
+                            aria-label="Hapus"
+                            colorScheme="red"
+                            rounded="full"
+                            onClick={() => handleRemoveModalFile(file.id)}
+                          />
+                        </HStack>
+                      </Box>
+                    ))}
+                  </SimpleGrid>
+                </VStack>
+              )}
+            </VStack>
+          </ModalBody>
+
+          <ModalFooter borderTop="1px" borderColor={isDark ? "gray.700" : "gray.200"}>
+            <Button
+              variant="ghost"
+              size="sm"
+              mr={3}
+              onClick={() => setActiveUploadItem(null)}
+              isDisabled={isSavingBukti}
+            >
+              Batal
+            </Button>
+            <Button
+              colorScheme="blue"
+              size="sm"
+              leftIcon={<FiCheck />}
+              onClick={handleSaveModalBukti}
+              isLoading={isSavingBukti}
+              isDisabled={uploadModalFiles.length === 0}
+            >
+              Simpan Bukti Implementasi
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* ─── Modal 2: Lightbox Fullscreen Image Preview ─── */}
+      <Modal
+        isOpen={previewModalData.isOpen}
+        onClose={() => setPreviewModalData((prev) => ({ ...prev, isOpen: false }))}
+        size="3xl"
+        isCentered
+      >
+        <ModalOverlay bg="blackAlpha.750" backdropFilter="blur(5px)" />
+        <ModalContent bg={isDark ? "gray.850" : "white"} rounded="xl" overflow="hidden">
+          <ModalHeader py={3} px={4} borderBottom="1px" borderColor={isDark ? "gray.700" : "gray.200"}>
+            <HStack justify="space-between" pr={6}>
+              <VStack align="start" spacing={0}>
+                <Text fontSize="sm" fontWeight="bold">
+                  {previewModalData.name}
+                </Text>
+                {previewModalData.size && (
+                  <Text fontSize="3xs" color="gray.500">
+                    Ukuran: {formatFileSize(previewModalData.size)}
+                  </Text>
+                )}
+              </VStack>
+            </HStack>
+          </ModalHeader>
+          <ModalCloseButton />
+
+          <ModalBody p={0} bg={isDark ? "black" : "gray.900"} display="flex" justifyContent="center" alignItems="center">
+            {previewModalData.url && (
+              <Image
+                src={previewModalData.url}
+                alt={previewModalData.name}
+                maxH="70vh"
+                maxW="full"
+                objectFit="contain"
+              />
+            )}
+          </ModalBody>
+
+          <ModalFooter py={2.5} px={4} borderTop="1px" borderColor={isDark ? "gray.700" : "gray.200"}>
+            <HStack justify="space-between" w="full">
+              <Text fontSize="3xs" color="gray.500">
+                Bukti Implementasi Resmi CAB
+              </Text>
+              <HStack spacing={2}>
+                {previewModalData.url && (
+                  <Button
+                    as="a"
+                    size="xs"
+                    colorScheme="blue"
+                    leftIcon={<FiDownload />}
+                    href={previewModalData.url}
+                    download={previewModalData.name || "bukti-implementasi.png"}
+                  >
+                    Unduh Gambar
+                  </Button>
+                )}
+                <Button
+                  size="xs"
+                  variant="outline"
+                  onClick={() => setPreviewModalData((prev) => ({ ...prev, isOpen: false }))}
+                >
+                  Tutup
+                </Button>
+              </HStack>
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* ─── Modal 3: Confirmation Warning Dialog when Bulk Exporting with Missing Evidence ─── */}
+      <AlertDialog
+        isOpen={isWarningExportOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={() => setIsWarningExportOpen(false)}
+        isCentered
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent rounded="xl" bg={isDark ? "gray.850" : "white"}>
+            <AlertDialogHeader fontSize="md" fontWeight="bold" pb={1}>
+              <HStack spacing={2}>
+                <Icon as={FiAlertTriangle} color="orange.400" />
+                <Text>Peringatan Bukti Implementasi</Text>
+              </HStack>
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              <Text fontSize="sm" color={isDark ? "gray.300" : "gray.700"}>
+                Terdapat <b>{missingEvidenceCount}</b> dari <b>{tableData.length}</b> agenda CAB pada periode ini yang belum memiliki bukti implementasi digital.
+              </Text>
+              <Text fontSize="xs" color="gray.500" mt={2}>
+                Apakah Anda tetap ingin mengunduh laporan rekapitulasi, atau mengunggah bukti terlebih dahulu?
+              </Text>
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={cancelRef} size="sm" variant="ghost" onClick={() => setIsWarningExportOpen(false)}>
+                Batal
+              </Button>
+              <Button size="sm" colorScheme="blue" onClick={executeGroupExport} ml={3}>
+                Tetap Unduh Laporan
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </VStack>
   );
 };

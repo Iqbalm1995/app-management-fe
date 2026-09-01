@@ -144,7 +144,7 @@ const HardwareStep1 = ({ data, onChange, fetchRequirements, fetchProjects, token
           name="jenisCab"
           value={data.jenisCab}
           onChange={(val) => onChange({ ...data, jenisCab: val as any })}
-          options={[{ label: "Weekly", value: "WEEKLY" }, { label: "Emergency", value: "EMERGENCY" }]}
+          options={[{ label: "Normal", value: "NORMAL" }, { label: "Emergency", value: "EMERGENCY" }]}
           isRequired
           showChildren={data.jenisCab === "EMERGENCY"}
         >
