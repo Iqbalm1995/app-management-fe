@@ -982,13 +982,13 @@ const CabRequestView = () => {
     }
   };
 
-  // Bulk Send to Approval Handlers (for CONFIRM status)
+  // Bulk Selesaikan Permohonan Handlers (for CONFIRM status)
   const handleConfirmBulkSendToApproval = async (ids: string[], note?: string) => {
     const success = await BulkSendToApproval(tokenData, ids);
     if (success) {
       toast({
-        title: "Permohonan Berhasil Diajukan",
-        description: `${ids.length} permohonan berhasil diajukan ke antrean approval (Status ➔ WAITING APPROVAL).`,
+        title: "Permohonan Berhasil Diselesaikan",
+        description: `${ids.length} permohonan berhasil diselesaikan (Status ➔ COMPLETED).`,
         status: "success",
         duration: 3500,
         isClosable: true,
@@ -999,8 +999,8 @@ const CabRequestView = () => {
       loadData();
     } else {
       toast({
-        title: "Gagal Mengajukan Permohonan",
-        description: "Terjadi kesalahan saat memproses pengajuan approval massal.",
+        title: "Gagal Menyelesaikan Permohonan",
+        description: "Terjadi kesalahan saat memproses penyelesaian permohonan massal.",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -1726,8 +1726,7 @@ const CabRequestView = () => {
                 { label: "PENJADWALAN (SCHEDULED)", value: "PENJADWALAN" },
                 { label: "PELAKSANAAN (CONFIRM)", value: "PELAKSANAAN" },
                 { label: "IMPLEMENTASI (IMPLEMENT)", value: "IMPLEMENTASI" },
-                { label: "SEND TO APPROVAL", value: "SEND TO APPROVAL" },
-                { label: "APPROVED (COMPLETED)", value: "APPROVED" },
+                { label: "COMPLETED (APPROVED)", value: "COMPLETED" },
                 { label: "REJECTED", value: "REJECTED" },
               ],
             },
@@ -2426,12 +2425,12 @@ const CabRequestView = () => {
                                       </Button>
                                     )}
 
-                                    {/* Action 2: Bulk Send to Approval (for CONFIRM/PELAKSANAAN items) */}
+                                    {/* Action 2: Bulk Selesaikan Permohonan (for CONFIRM/PELAKSANAAN items) */}
                                     {selectedConfirmItems.length > 0 && (
                                       <Button
                                         size="sm"
                                         colorScheme="green"
-                                        leftIcon={<FiSend />}
+                                        leftIcon={<FiCheckCircle />}
                                         fontWeight="semibold"
                                         fontSize="xs"
                                         px={3.5}
@@ -2439,7 +2438,7 @@ const CabRequestView = () => {
                                           bulkApprovalModal.onOpen();
                                         }}
                                       >
-                                        Kirim ke Approval ({selectedConfirmItems.length})
+                                        Selesaikan ({selectedConfirmItems.length})
                                       </Button>
                                     )}
                                   </HStack>

@@ -276,9 +276,14 @@ export type CabPic = CabPicInternalIT | CabPicInternalBJB | CabPicVendor;
 
 // ─── Committee ───────────────────────────────────────────────────────────────
 export interface CabCommitteeMember {
+  id?: string;
   type: "INTERNAL_IT" | "INTERNAL_BJB" | "EXTERNAL";
   userId?: string;
   userName: string;
+  nama?: string;
+  name?: string;
+  jabatan?: string;
+  divisi?: string;
   asalInstitusi?: string;
   asalDivisi?: string;
 }

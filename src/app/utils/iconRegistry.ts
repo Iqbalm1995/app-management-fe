@@ -65,6 +65,7 @@ import {
   FiUsers,
   FiZap,
   FiGlobe,
+  FiVideo
 } from "react-icons/fi";
 
 // Grommet Icons
@@ -220,6 +221,7 @@ const iconRegistry: Record<string, IconType> = {
   FiList,
   FiZap,
   FiGlobe,
+  FiVideo,
 
   // Grommet Icons (Gr)
   GrHelpBook,

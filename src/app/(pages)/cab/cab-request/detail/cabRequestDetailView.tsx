@@ -123,8 +123,7 @@ export const CAB_LIFECYCLE_STAGES = [
   { stage: 1, key: "PENGAJUAN", label: "Pengajuan", role: "Maker", desc: "Pengajuan Permohonan" },
   { stage: 2, key: "PELAKSANAAN", label: "Pelaksanaan", role: "Scheduler & Tim", desc: "Pelaksanaan Sidang CAB" },
   { stage: 3, key: "IMPLEMENTASI", label: "Implementasi", role: "Scheduler", desc: "Evaluasi & Checklist Implementasi" },
-  { stage: 4, key: "SEND TO APPROVAL", label: "Send to Approval", role: "Scheduler", desc: "Menunggu Persetujuan" },
-  { stage: 5, key: "COMPLETED", label: "Completed", role: "Approver", desc: "Keputusan Final" },
+  { stage: 4, key: "COMPLETED", label: "Completed", role: "Selesai", desc: "Implementasi Selesai" },
 ];
 
 export const getStageIndex = (status?: string): number => {
@@ -132,6 +131,7 @@ export const getStageIndex = (status?: string): number => {
   switch (s) {
     case "PENGAJUAN":
     case "REQUEST":
+    case "DRAFT":
       return 1;
     case "PELAKSANAAN":
     case "CONFIRM":
@@ -148,12 +148,11 @@ export const getStageIndex = (status?: string): number => {
     case "WAITING APPROVE":
     case "PENDING_APPROVAL":
     case "IN_REVIEW":
-      return 4;
     case "COMPLETED":
     case "APPROVED":
     case "REJECTED":
     case "CANCELED":
-      return 5;
+      return 4;
     default:
       return 1;
   }
@@ -174,16 +173,9 @@ export const getStep2Title = (status?: string): string => {
     case "IMPLEMENTASI":
     case "IMPLEMENT":
       return "Evaluasi & Checklist Implementasi";
-    case "SEND TO APPROVAL":
-    case "SEND_TO_APPROVAL":
-    case "WAITING APPROVAL":
-    case "WAITING APPROVE":
-    case "PENDING_APPROVAL":
-    case "IN_REVIEW":
-      return "Keputusan Persetujuan";
     case "COMPLETED":
     case "APPROVED":
-      return "Hasil Persetujuan";
+      return "Hasil Selesai";
     case "REJECTED":
       return "Hasil Penolakan";
     default:
@@ -205,19 +197,12 @@ export const getStep2Desc = (status?: string): string => {
       return "Pencatatan kesepakatan & komitmen pelaksanaan migrasi bersama tim";
     case "IMPLEMENTASI":
     case "IMPLEMENT":
-      return "Evaluasi hasil sidang CAB, verifikasi checklist & pengiriman ke Approver";
-    case "SEND TO APPROVAL":
-    case "SEND_TO_APPROVAL":
-    case "WAITING APPROVAL":
-    case "WAITING APPROVE":
-    case "PENDING_APPROVAL":
-    case "IN_REVIEW":
-      return "Tinjauan berkas & keputusan resmi Approver";
+      return "Evaluasi hasil sidang CAB, verifikasi checklist & penyelesaian implementasi";
     case "COMPLETED":
     case "APPROVED":
-      return "Permohonan CAB telah resmi disetujui & selesai";
+      return "Permohonan CAB telah resmi diselesaikan & terarsip";
     case "REJECTED":
-      return "Permohonan CAB telah ditolak oleh Approver";
+      return "Permohonan CAB telah ditolak";
     default:
       return "Detail dan eksekusi tindakan tahapan CAB";
   }
@@ -242,6 +227,7 @@ const CabRequestDetailView = () => {
     UpdateCabRequest,
     UpdateCabResult,
     SendToApproval,
+    CompleteCabRequest,
     ActionCabRequest,
     ConfirmCabMeeting,
     SetCabImplementStatus,
@@ -1087,21 +1073,21 @@ const CabRequestDetailView = () => {
   const handleSendToApproval = async () => {
     if (Data?.status !== "IMPLEMENTASI" && Data?.status !== "IMPLEMENT") {
       showToast({
-        description: "Status permohonan harus Implementasi sebelum mengirim request ini ke Approver.",
+        description: "Status permohonan harus Implementasi sebelum menyelesaikan permohonan ini.",
         statusToast: "warning",
       });
       return;
     }
     if (!resultForm.cabResult || !resultForm.implementationStatus) {
       showToast({
-        description: "Hasil Evaluasi dan Status Implementasi wajib diisi sebelum mengirim ke Approver.",
+        description: "Hasil Evaluasi dan Status Implementasi wajib diisi sebelum menyelesaikan permohonan.",
         statusToast: "warning",
       });
       return;
     }
     if (!allActivitiesDone) {
       showToast({
-        description: `Harap selesaikan seluruh aktivitas checklist CAB (${completedActivitiesCount}/${totalActivitiesCount} selesai) sebelum mengirim ke Approver.`,
+        description: `Harap selesaikan seluruh aktivitas checklist CAB (${completedActivitiesCount}/${totalActivitiesCount} selesai) sebelum menyelesaikan permohonan.`,
         statusToast: "warning",
       });
       return;
@@ -1137,9 +1123,9 @@ const CabRequestDetailView = () => {
         buktiImplementasi: buktiFiles,
       });
     }
-    const success = await SendToApproval(tokenData, requestId!);
+    const success = await CompleteCabRequest(tokenData, requestId!);
     if (success) {
-      showToast({ description: "Request berhasil dikirim ke approver (Status: Send to Approval)", statusToast: "success" });
+      showToast({ description: "Permohonan CAB berhasil diselesaikan (Status: COMPLETED)", statusToast: "success" });
       setIsEditingRequest(false);
       loadDetail();
     }
@@ -1213,7 +1199,9 @@ const CabRequestDetailView = () => {
             <Link href="/cab/cab-request">
               <Button leftIcon={<FiArrowLeft />} variant="ghost" size="sm" color="white" bg="whiteAlpha.100" border="1px solid" borderColor="whiteAlpha.200" _hover={{ bg: "whiteAlpha.200" }} rounded="full" px={4}>Back</Button>
             </Link>
-            <Button leftIcon={<FiRefreshCcw />} variant="ghost" size="sm" color="white" bg="whiteAlpha.100" border="1px solid" borderColor="whiteAlpha.200" _hover={{ bg: "whiteAlpha.200" }} rounded="full" px={3} onClick={() => loadDetail()}>Refresh</Button>
+            <HStack spacing={2}>
+              <Button leftIcon={<FiRefreshCcw />} variant="ghost" size="sm" color="white" bg="whiteAlpha.100" border="1px solid" borderColor="whiteAlpha.200" _hover={{ bg: "whiteAlpha.200" }} rounded="full" px={3} onClick={() => loadDetail()}>Refresh</Button>
+            </HStack>
           </HStack>
           <HStack spacing={4} align="center">
             <Box w="60px" h="60px" bg="whiteAlpha.200" rounded="xl" display="flex" alignItems="center" justifyContent="center">
@@ -1298,7 +1286,7 @@ const CabRequestDetailView = () => {
                       const currentIdx = getStageIndex(Data.status);
                       const isPassed =
                         st.stage < currentIdx ||
-                        (currentIdx === 6 && (Data.status === "COMPLETED" || Data.status === "APPROVED"));
+                        (currentIdx === 4 && (Data.status === "COMPLETED" || Data.status === "APPROVED"));
                       const isCurrent = st.stage === currentIdx;
 
                       return (
@@ -1335,9 +1323,9 @@ const CabRequestDetailView = () => {
                       const currentIdx = getStageIndex(Data.status);
                       const isPassed =
                         st.stage < currentIdx ||
-                        (currentIdx === 6 && (Data.status === "COMPLETED" || Data.status === "APPROVED"));
+                        (currentIdx === 4 && (Data.status === "COMPLETED" || Data.status === "APPROVED"));
                       const isCurrent = st.stage === currentIdx;
-                      const isRejected = currentIdx === 6 && Data.status === "REJECTED";
+                      const isRejected = currentIdx === 4 && Data.status === "REJECTED";
                       const isFirst = idx === 0;
                       const isLast = idx === CAB_LIFECYCLE_STAGES.length - 1;
 
@@ -1496,7 +1484,7 @@ const CabRequestDetailView = () => {
                       leftIcon={<Icon as={FiCheckSquare} />}
                       onClick={() => setActiveDetailStep(2)}
                     >
-                      2. Schedule
+                      2. Action
                     </Button>
                   </SimpleGrid>
                 </Box>
@@ -3304,7 +3292,7 @@ const CabRequestDetailView = () => {
                         <CardBody px={5} py={4}>
                           <VStack spacing={2} align="stretch">
                             <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                              Permohonan CAB ini telah disetujui secara resmi oleh Approver dan seluruh alur proses telah selesai.
+                              Permohonan CAB ini telah selesai diimplementasikan, seluruh checklist kepatuhan telah terverifikasi, dan seluruh alur proses telah rampung.
                             </Text>
                           </VStack>
                         </CardBody>
@@ -4293,22 +4281,22 @@ const CabRequestDetailView = () => {
                         </CardBody>
                       </Card>
 
-                      {/* Send to Approval Action Card */}
+                      {/* Selesaikan Permohonan CAB Action Card */}
                       {canSchedule && (
-                        <Card rounded={radiusStyle} shadow="sm" border="2px solid" borderColor="orange.300" bg={colorMode === "light" ? "orange.50" : "gray.800"}>
-                          <CardHeader py={3} px={5} borderBottom="1px" borderColor={colorMode === "light" ? "orange.100" : "gray.700"}>
+                        <Card rounded={radiusStyle} shadow="sm" border="2px solid" borderColor="green.300" bg={colorMode === "light" ? "green.50" : "gray.800"}>
+                          <CardHeader py={3} px={5} borderBottom="1px" borderColor={colorMode === "light" ? "green.100" : "gray.700"}>
                             <Flex justify="space-between" align="center" w="full">
                               <HStack spacing={2}>
-                                <Icon as={FiSend} color="orange.500" />
-                                <Heading size="sm" color="orange.700">Selesaikan Implementasi Hasil CAB</Heading>
+                                <Icon as={FiCheckCircle} color="green.500" />
+                                <Heading size="sm" color="green.700">Selesaikan Permohonan CAB</Heading>
                               </HStack>
                             </Flex>
                           </CardHeader>
                           <CardBody px={5} py={4}>
                             <VStack spacing={4} align="stretch">
-                              <Box p={3.5} bg={colorMode === "light" ? "white" : "gray.750"} rounded="lg" border="1px" borderColor={colorMode === "light" ? "orange.200" : "gray.600"}>
+                              <Box p={3.5} bg={colorMode === "light" ? "white" : "gray.750"} rounded="lg" border="1px" borderColor={colorMode === "light" ? "green.200" : "gray.600"}>
                                 <Text fontSize="xs" color="gray.600">
-                                  Hasil evaluasi migrasi dan checklist verifikasi pra-approval telah selesai. Pastikan seluruh poin checklist di atas telah dicentang dan form evaluasi terisi sebelum mengirim berkas permohonan ke Approver.
+                                  Hasil evaluasi migrasi dan checklist verifikasi kepatuhan telah selesai. Pastikan seluruh poin checklist di atas telah dicentang dan form evaluasi terisi sebelum menyelesaikan permohonan.
                                 </Text>
                               </Box>
 
@@ -4321,22 +4309,20 @@ const CabRequestDetailView = () => {
                                 </HStack>
                               )}
 
-                   
-
                               <Flex justify="end" pt={2}>
                                 <Button
-                                  colorScheme="orange"
-                                  bg="orange.500"
+                                  colorScheme="green"
+                                  bg="green.600"
                                   color="white"
-                                  _hover={{ bg: "orange.600" }}
+                                  _hover={{ bg: "green.700" }}
                                   size="sm"
-                                  leftIcon={<FiSend />}
+                                  leftIcon={<FiCheckCircle />}
                                   onClick={handleSendToApproval}
                                   isLoading={loading}
                                   isDisabled={!allActivitiesDone || !resultForm.cabResult || !resultForm.implementationStatus}
                                   px={6}
                                 >
-                                  Submit
+                                  Selesaikan Permohonan (COMPLETED)
                                 </Button>
                               </Flex>
                             </VStack>
@@ -4344,118 +4330,6 @@ const CabRequestDetailView = () => {
                         </Card>
                       )}
                     </VStack>
-                  )}
-
-                  {/* ─── STAGE 6: Approval Action (Status: SEND TO APPROVAL / WAITING APPROVAL) ─── */}
-                  {["SEND TO APPROVAL", "SEND_TO_APPROVAL", "WAITING APPROVAL", "WAITING APPROVE", "PENDING_APPROVAL", "IN_REVIEW"].includes(Data.status) && (
-                    <Card rounded={radiusStyle} shadow="sm" border="2px solid" borderColor="orange.300" bg={colorMode === "light" ? "orange.50" : "gray.800"}>
-                      <CardHeader py={3} px={5} borderBottom="1px" borderColor={colorMode === "light" ? "orange.100" : "gray.700"}>
-                        <Flex justify="space-between" align="center" w="full">
-                          <HStack spacing={2}>
-                            <Icon as={FiCheckCircle} color="orange.500" />
-                            <Heading size="sm" color="orange.700">Keputusan Persetujuan (Approval Action)</Heading>
-                          </HStack>
-                          <Badge colorScheme="orange" variant="solid" rounded="full" px={2.5} py={0.5} fontSize="2xs">
-                            STAGE 6: APPROVAL DECISION
-                          </Badge>
-                        </Flex>
-                      </CardHeader>
-                      <CardBody px={5} py={4}>
-                        <VStack spacing={4} align="stretch">
-                          {/* Executive Dossier for Approver */}
-                          {Data.cabResult && (
-                            <Box p={3.5} bg={colorMode === "light" ? "white" : "gray.700"} rounded="lg" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.600"}>
-                              <Text fontSize="xs" fontWeight="bold" color="gray.500" mb={1}>Hasil CAB Meeting & Evaluasi Migrasi:</Text>
-                              <Text fontSize="sm" lineHeight="tall">{Data.cabResult}</Text>
-                              {Data.cabNotes && (
-                                <Box mt={2} p={2.5} bg={colorMode === "light" ? "purple.50" : "gray.750"} rounded="md" border="1px" borderColor={colorMode === "light" ? "purple.100" : "gray.600"}>
-                                  <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "purple.800" : "purple.200"} mb={0.5}>
-                                    Catatan Tambahan CAB:
-                                  </Text>
-                                  <Text fontSize="xs" color={colorMode === "light" ? "gray.700" : "gray.300"}>{Data.cabNotes}</Text>
-                                </Box>
-                              )}
-                              {Data.buktiImplementasi && Data.buktiImplementasi.length > 0 && (
-                                <Box mt={3} pt={2.5} borderTop="1px" borderColor={colorMode === "light" ? "gray.100" : "gray.600"}>
-                                  <Text fontSize="xs" fontWeight="bold" color="gray.600" mb={2}>
-                                    Bukti Implementasi ({Data.buktiImplementasi.length}):
-                                  </Text>
-                                  <SimpleGrid columns={{ base: 2, sm: 3, md: 4 }} spacing={2.5}>
-                                    {Data.buktiImplementasi.map((item) => (
-                                      <Box
-                                        key={item.id}
-                                        p={2}
-                                        border="1px solid"
-                                        borderColor={colorMode === "light" ? "purple.200" : "gray.600"}
-                                        bg={colorMode === "light" ? "gray.50" : "gray.750"}
-                                        rounded="lg"
-                                        cursor="pointer"
-                                        onClick={() => handleOpenImagePreview(item)}
-                                        transition="all 0.15s ease"
-                                        _hover={{ shadow: "sm", borderColor: "purple.400" }}
-                                      >
-                                        <Box w="full" h="65px" rounded="md" overflow="hidden" bg="gray.100" mb={1.5} position="relative">
-                                          <Image src={item.url} alt={item.name} w="full" h="full" objectFit="cover" />
-                                        </Box>
-                                        <Text fontSize="2xs" fontWeight="medium" isTruncated title={item.name}>
-                                          {item.name}
-                                        </Text>
-                                        {item.size && (
-                                          <Text fontSize="3xs" color="gray.500">
-                                            {formatFileSize(item.size)}
-                                          </Text>
-                                        )}
-                                      </Box>
-                                    ))}
-                                  </SimpleGrid>
-                                </Box>
-                              )}
-                              <HStack spacing={2} mt={2.5} wrap="wrap">
-                                {Data.implementationStatus && (
-                                  <Badge colorScheme={Data.implementationStatus === "SUCCESS" ? "green" : Data.implementationStatus === "FAILED" ? "red" : "orange"}>
-                                    Status Implementasi: {Data.implementationStatus}
-                                  </Badge>
-                                )}
-                                <Badge colorScheme="green" variant="subtle">
-                                  ✓ Checklist Pra-Approval: Terverifikasi Selesai
-                                </Badge>
-                              </HStack>
-                            </Box>
-                          )}
-
-                          {canApprove ? (
-                            <>
-                              <FormControl>
-                                <FormLabel fontSize="sm" fontWeight="semibold">Catatan Approver</FormLabel>
-                                <Textarea
-                                  placeholder="Tambahkan catatan persetujuan (wajib jika menolak/reject)..."
-                                  size="sm"
-                                  rounded="lg"
-                                  bg={colorMode === "light" ? "white" : "gray.750"}
-                                  value={approvalNote}
-                                  onChange={(e) => setApprovalNote(e.target.value)}
-                                  rows={3}
-                                />
-                              </FormControl>
-                              <HStack justify="end" spacing={3} pt={2}>
-                                <Button colorScheme="red" variant="outline" size="sm" leftIcon={<FiX />} onClick={() => handleApprovalAction("REJECT")} isLoading={loading}>
-                                  Tolak (REJECTED)
-                                </Button>
-                                <Button colorScheme="green" bg="green.600" color="white" _hover={{ bg: "green.700" }} size="sm" leftIcon={<FiCheck />} onClick={() => handleApprovalAction("APPROVE")} isLoading={loading}>
-                                  Setujui Permohonan (COMPLETED)
-                                </Button>
-                              </HStack>
-                            </>
-                          ) : (
-                            <Box p={3} bg={colorMode === "light" ? "white" : "gray.750"} rounded="md" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.650"}>
-                              <Text fontSize="xs" color="gray.500">
-                                ℹ Permohonan CAB telah diajukan ke Approver dan sedang menunggu keputusan persetujuan resmi.
-                              </Text>
-                            </Box>
-                          )}
-                        </VStack>
-                      </CardBody>
-                    </Card>
                   )}
 
                   {/* ─── Rejected Summary (when REJECTED) ─── */}

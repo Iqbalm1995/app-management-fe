@@ -547,7 +547,7 @@ const useCabRequest = () => {
     });
   };
 
-  const SendToApproval = async (
+  const CompleteCabRequest = async (
     _token: string,
     id: string
   ): Promise<boolean> => {
@@ -556,11 +556,11 @@ const useCabRequest = () => {
       setTimeout(() => {
         const idx = MOCK_CAB_LIST.findIndex((r) => r.id === id);
         if (idx !== -1) {
-          MOCK_CAB_LIST[idx].status = "SEND TO APPROVAL";
+          MOCK_CAB_LIST[idx].status = "COMPLETED";
           MOCK_CAB_LIST[idx].isCabDone = "Y";
         }
         if (MOCK_CAB_DETAIL[id]) {
-          MOCK_CAB_DETAIL[id].status = "SEND TO APPROVAL";
+          MOCK_CAB_DETAIL[id].status = "COMPLETED";
           MOCK_CAB_DETAIL[id].isCabDone = "Y";
         }
         setLoading(false);
@@ -569,7 +569,7 @@ const useCabRequest = () => {
     });
   };
 
-  const BulkSendToApproval = async (
+  const BulkCompleteCabRequest = async (
     _token: string,
     ids: string[]
   ): Promise<boolean> => {
@@ -579,11 +579,11 @@ const useCabRequest = () => {
         ids.forEach((id) => {
           const idx = MOCK_CAB_LIST.findIndex((r) => r.id === id);
           if (idx !== -1) {
-            MOCK_CAB_LIST[idx].status = "SEND TO APPROVAL";
+            MOCK_CAB_LIST[idx].status = "COMPLETED";
             MOCK_CAB_LIST[idx].isCabDone = "Y";
           }
           if (MOCK_CAB_DETAIL[id]) {
-            MOCK_CAB_DETAIL[id].status = "SEND TO APPROVAL";
+            MOCK_CAB_DETAIL[id].status = "COMPLETED";
             MOCK_CAB_DETAIL[id].isCabDone = "Y";
           }
         });
@@ -592,6 +592,9 @@ const useCabRequest = () => {
       }, DELAY_LOW);
     });
   };
+
+  const SendToApproval = CompleteCabRequest;
+  const BulkSendToApproval = BulkCompleteCabRequest;
 
   const ActionCabRequest = async (
     _token: string,
@@ -685,6 +688,8 @@ const useCabRequest = () => {
     SetCabImplementStatus,
     SetCabDoneStatus,
     UpdateCabResult,
+    CompleteCabRequest,
+    BulkCompleteCabRequest,
     SendToApproval,
     BulkSendToApproval,
     ActionCabRequest,

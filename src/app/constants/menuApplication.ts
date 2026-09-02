@@ -42,6 +42,7 @@ import {
   FiList,
   FiTarget,
   FiGlobe,
+  FiVideo
 } from "react-icons/fi";
 import { GrHelpBook } from "react-icons/gr";
 import {
@@ -333,22 +334,11 @@ export const LinkItems: LinkItemProps[] = [
     isPro: false,
     menuID: "1",
     children: [
-        {
+      {
         name: "CAB Request",
         icon: FiCheckCircle,
-        iconName: "FiCheckCircle",
+        iconName: "FiVideo",
         link: "/cab/cab-request",
-        role: ["admin"],
-        menuID: "1",
-        isPro: false,
-        children: [],
-        isDisplaySidebar: "Y",
-      },
-      {
-        name: "CAB Approve",
-        icon: FiCheckCircle,
-        iconName: "FiCheckCircle",
-        link: "/cab/cab-approve",
         role: ["admin"],
         menuID: "1",
         isPro: false,

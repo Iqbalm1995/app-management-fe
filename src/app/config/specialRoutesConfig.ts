@@ -107,10 +107,10 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
     baseMenu: "/cab",
     permission: "make",
   },
-  {
-    pattern: "/cab/cab-approve",
-    baseMenu: "/cab",
-  },
+  // {
+  //   pattern: "/cab/cab-approve",
+  //   baseMenu: "/cab",
+  // },
 
   // ===== REQUIREMENTS =====
   // BRD routes

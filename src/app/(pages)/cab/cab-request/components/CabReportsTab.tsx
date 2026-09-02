@@ -34,12 +34,21 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
+  Popover,
+  PopoverArrow,
+  PopoverBody,
+  PopoverCloseButton,
+  PopoverContent,
+  PopoverTrigger,
+  Portal,
   Select,
   SimpleGrid,
+  Stack,
   Tabs,
   Text,
   Tooltip,
   useColorMode,
+  useDisclosure,
   VStack,
 } from "@chakra-ui/react";
 import { useRouter } from "next/navigation";
@@ -58,11 +67,14 @@ import {
   FiCalendar,
   FiCheck,
   FiCheckCircle,
+  FiChevronDown,
   FiChevronLeft,
   FiChevronRight,
   FiClock,
   FiDownload,
   FiEye,
+  FiFileText,
+  FiFilter,
   FiGrid,
   FiImage,
   FiLayers,
@@ -78,9 +90,16 @@ import {
 import { radiusStyle } from "@/app/constants/applicationConstants";
 import { AppTabList, AppTabItem } from "@/app/components/TabsCustom";
 import { TableComponentWithFilterCTX } from "@/app/components/tableComponentV2";
-import { ColumnMetaCustom } from "@/app/types/masterTypes";
+import {
+  ColumnMetaCustom,
+  ListSearchByParamProps,
+  addParamFilterUpdate,
+  removeParamFilter,
+} from "@/app/types/masterTypes";
 import { BuktiImplementasiItem, CabRequestItem } from "@/app/types/cabTypes";
 import { exportCabReportsGroupPdf, exportSingleCabMeetingPdf } from "@/app/helper/CabReportPdfExport";
+import { exportCabComplianceChecklistExcel, exportCabComplianceChecklistBulkExcel } from "@/app/helper/CabComplianceChecklistExcelExport";
+import { exportCabComplianceChecklistPdf, exportCabComplianceChecklistBulkPdf } from "@/app/helper/CabComplianceChecklistPdfExport";
 import useCabRequest from "@/app/services/useCabRequest";
 import {
   useToastError,
@@ -164,32 +183,10 @@ const getCabCategory = (item: CabRequestItem): "SOFTWARE" | "HARDWARE" => {
   return "SOFTWARE";
 };
 
-const renderCabResultBadge = (result?: string, status?: string) => {
-  const safe = (result || status || "APPROVED").toUpperCase();
-  if (safe.includes("REJECT") || safe.includes("DITOLAK")) {
-    return (
-      <Badge colorScheme="red" variant="subtle" rounded="full" px={2} py={0.5} fontSize="3xs" fontWeight="semibold">
-        Ditolak
-      </Badge>
-    );
-  }
-  if (safe.includes("NOTE") || safe.includes("CATATAN")) {
-    return (
-      <Badge colorScheme="cyan" variant="subtle" rounded="full" px={2} py={0.5} fontSize="3xs" fontWeight="semibold">
-        Disetujui dg Catatan
-      </Badge>
-    );
-  }
-  if (safe.includes("RESCHEDULE") || safe.includes("PENDING")) {
-    return (
-      <Badge colorScheme="orange" variant="subtle" rounded="full" px={2} py={0.5} fontSize="3xs" fontWeight="semibold">
-        Rescheduled
-      </Badge>
-    );
-  }
+const renderCabResultBadge = (_result?: string, _status?: string) => {
   return (
-    <Badge colorScheme="green" variant="subtle" rounded="full" px={2} py={0.5} fontSize="3xs" fontWeight="semibold">
-      Disetujui
+    <Badge colorScheme="green" variant="subtle" rounded="full" px={2.5} py={0.5} fontSize="3xs" fontWeight="semibold">
+      COMPLETED
     </Badge>
   );
 };
@@ -219,10 +216,36 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
   const [selectedMonth, setSelectedMonth] = useState<string>(getCurrentMonthStr());
   const [selectedQuarter, setSelectedQuarter] = useState<string>(getQuarterKeyFromDate(getTodayStr()).key);
 
-  // Search, Status, Type, and Pagination
+  // Search, Type, Column Filter, and Pagination
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL");
   const [typeFilter, setTypeFilter] = useState("ALL");
+  const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([]);
+  const {
+    isOpen: isFilterPopoverOpen,
+    onOpen: onFilterPopoverOpen,
+    onClose: onFilterPopoverClose,
+  } = useDisclosure();
+
+  const handleFilterChange = (newFilters: ListSearchByParamProps[]) => {
+    const updatedFilters = newFilters.reduce(
+      (acc, filter) => addParamFilterUpdate(acc, filter),
+      ParamFilter
+    );
+    setParamFilter(updatedFilters);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
+
+  const removeFilterData = (target: ListSearchByParamProps) => {
+    const updated = removeParamFilter(ParamFilter, target);
+    setParamFilter(updated);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
+
+  const clearAllFilters = () => {
+    setParamFilter([]);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
+
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
@@ -252,15 +275,12 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
   const [isWarningExportOpen, setIsWarningExportOpen] = useState(false);
   const cancelRef = useRef<any>(null);
 
-  // 1. Base Filter: ONLY items with isCabDone === "Y" or in IMPLEMENT, WAITING APPROVAL, COMPLETED, APPROVED
+  // 1. Base Filter: ONLY items with status COMPLETED
   const doneCabItems = useMemo(() => {
-    return localItems.filter(
-      (item) =>
-        item.isCabDone === "Y" ||
-        ["IMPLEMENT", "WAITING APPROVAL", "WAITING APPROVE", "COMPLETED", "APPROVED"].includes(
-          String(item.status).toUpperCase()
-        )
-    );
+    return localItems.filter((item) => {
+      const s = String(item.status || "").toUpperCase();
+      return s === "COMPLETED";
+    });
   }, [localItems]);
 
   // Distinct available options extracted from completed items
@@ -324,7 +344,7 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
     });
   }, [doneCabItems, periodMode, selectedDay, selectedWeekDate, selectedMonth, selectedQuarter]);
 
-  // 3. Search & Filter by keyword, status, and type
+  // 3. Search & Filter by keyword, type, and column filters
   const tableData = useMemo(() => {
     return periodFilteredItems.filter((item) => {
       const q = searchQuery.toLowerCase();
@@ -336,17 +356,78 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
         (item.requesterName && item.requesterName.toLowerCase().includes(q)) ||
         (item.cabNotes && item.cabNotes.toLowerCase().includes(q));
 
-      const res = (item.cabResult || item.status || "APPROVED").toUpperCase();
-      let matchStatus = true;
-      if (statusFilter === "APPROVED") matchStatus = res.includes("APPROVE") && !res.includes("NOTE");
-      else if (statusFilter === "APPROVED_NOTE") matchStatus = res.includes("NOTE") || res.includes("CATATAN");
-      else if (statusFilter === "REJECTED") matchStatus = res.includes("REJECT");
-
       const matchType = typeFilter === "ALL" || getCabCategory(item) === typeFilter;
+      if (!matchSearch || !matchType) return false;
 
-      return matchSearch && matchStatus && matchType;
+      // Column-specific filters from ParamFilter (from header popovers)
+      for (const filter of ParamFilter) {
+        if (!filter.value || !String(filter.value).trim()) continue;
+        const filterVal = String(filter.value).trim();
+        const field = filter.field as keyof CabRequestItem;
+        const itemVal = item[field];
+        const itemStr = itemVal !== null && itemVal !== undefined ? String(itemVal) : "";
+
+        if (filter.operator === "like" || filter.operator === "%") {
+          if (filter.field === "requestTitle") {
+            const matchesTitle = itemStr.toLowerCase().includes(filterVal.toLowerCase());
+            const matchesProj = (item.projectName || "").toLowerCase().includes(filterVal.toLowerCase());
+            if (!matchesTitle && !matchesProj) return false;
+          } else if (filter.field === "projectName") {
+            if (!(item.projectName || "").toLowerCase().includes(filterVal.toLowerCase())) return false;
+          } else if (filter.field === "requesterName") {
+            const matchesReq = itemStr.toLowerCase().includes(filterVal.toLowerCase());
+            const matchesAppr = (item.approverName || "").toLowerCase().includes(filterVal.toLowerCase());
+            if (!matchesReq && !matchesAppr) return false;
+          } else if (filter.field === "approverName") {
+            if (!(item.approverName || "").toLowerCase().includes(filterVal.toLowerCase())) return false;
+          } else {
+            if (!itemStr.toLowerCase().includes(filterVal.toLowerCase())) {
+              return false;
+            }
+          }
+        } else if (filter.operator === "=") {
+          if (filter.field === "category") {
+            const itemCategory = getCabCategory(item);
+            if (itemCategory.toUpperCase() !== filterVal.toUpperCase()) return false;
+          } else if (filter.field === "status") {
+            const fStatus = filterVal.toUpperCase();
+            const iStatus = itemStr.toUpperCase();
+            if (fStatus === "COMPLETED" || fStatus === "APPROVED") {
+              if (iStatus !== "COMPLETED" && iStatus !== "APPROVED") return false;
+            } else {
+              if (iStatus !== fStatus) return false;
+            }
+          } else {
+            if (itemStr.toLowerCase() !== filterVal.toLowerCase()) {
+              return false;
+            }
+          }
+        } else if (filter.operator === "!=") {
+          if (itemStr.toLowerCase() === filterVal.toLowerCase()) {
+            return false;
+          }
+        } else if (filter.operator === ">=") {
+          const itemDate = itemStr.slice(0, 10);
+          const filterDate = filterVal.slice(0, 10);
+          if (itemDate < filterDate) return false;
+        } else if (filter.operator === "<=") {
+          const itemDate = itemStr.slice(0, 10);
+          const filterDate = filterVal.slice(0, 10);
+          if (itemDate > filterDate) return false;
+        } else if (filter.operator === ">") {
+          const itemDate = itemStr.slice(0, 10);
+          const filterDate = filterVal.slice(0, 10);
+          if (itemDate <= filterDate) return false;
+        } else if (filter.operator === "<") {
+          const itemDate = itemStr.slice(0, 10);
+          const filterDate = filterVal.slice(0, 10);
+          if (itemDate >= filterDate) return false;
+        }
+      }
+
+      return true;
     });
-  }, [periodFilteredItems, searchQuery, statusFilter, typeFilter]);
+  }, [periodFilteredItems, searchQuery, typeFilter, ParamFilter]);
 
   // Missing evidence count for active period
   const missingEvidenceCount = useMemo(() => {
@@ -493,30 +574,80 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
   };
 
   // PDF Export Handlers
-  const handleExportCurrentPeriodPdf = async () => {
-    if (missingEvidenceCount > 0) {
-      setIsWarningExportOpen(true);
-      return;
-    }
-    executeGroupExport();
-  };
+  // const handleExportCurrentPeriodPdf = async () => {
+  //   if (missingEvidenceCount > 0) {
+  //     setIsWarningExportOpen(true);
+  //     return;
+  //   }
+  //   executeGroupExport();
+  // };
 
-  const executeGroupExport = async () => {
-    setIsWarningExportOpen(false);
+  // const executeGroupExport = async () => {
+  //   setIsWarningExportOpen(false);
+  //   setIsExporting(true);
+  //   try {
+  //     await exportCabReportsGroupPdf({
+  //       title: "Laporan Sidang Change Advisory Board (CAB)",
+  //       periodLabel: activePeriodLabel,
+  //       groupType: periodMode,
+  //       items: tableData,
+  //     });
+  //     showToastSuccess({
+  //       description: "Laporan rekapitulasi sidang CAB berhasil diunduh.",
+  //     });
+  //   } catch {
+  //     showToastError({
+  //       description: "Terjadi kesalahan saat membuat dokumen PDF.",
+  //     });
+  //   } finally {
+  //     setIsExporting(false);
+  //   }
+  // };
+
+  const handleExportCurrentPeriodChecklistPdf = async () => {
+    if (tableData.length === 0) return;
     setIsExporting(true);
     try {
-      await exportCabReportsGroupPdf({
-        title: "Laporan Sidang Change Advisory Board (CAB)",
-        periodLabel: activePeriodLabel,
-        groupType: periodMode,
-        items: tableData,
-      });
+      await exportCabComplianceChecklistBulkPdf(tableData, activePeriodLabel);
       showToastSuccess({
-        description: "Laporan rekapitulasi sidang CAB berhasil diunduh.",
+        description: `Formulir Compliance Checklist PDF (${tableData.length} agenda) berhasil diunduh.`,
       });
     } catch {
       showToastError({
-        description: "Terjadi kesalahan saat membuat dokumen PDF.",
+        description: "Terjadi kesalahan saat mengekspor formulir Checklist PDF.",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportSingleChecklistPdf = async (item: CabRequestItem) => {
+    setIsExporting(true);
+    try {
+      await exportCabComplianceChecklistPdf(item);
+      showToastSuccess({
+        description: `Compliance Checklist PDF untuk ${item.requestNo} berhasil diekspor.`,
+      });
+    } catch {
+      showToastError({
+        description: "Gagal mengekspor Compliance Checklist PDF.",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportCurrentPeriodExcel = async () => {
+    if (tableData.length === 0) return;
+    setIsExporting(true);
+    try {
+      await exportCabComplianceChecklistBulkExcel(tableData, activePeriodLabel);
+      showToastSuccess({
+        description: `Formulir Compliance Checklist Excel (${tableData.length} agenda) berhasil diunduh.`,
+      });
+    } catch {
+      showToastError({
+        description: "Terjadi kesalahan saat mengekspor file Excel.",
       });
     } finally {
       setIsExporting(false);
@@ -524,15 +655,6 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
   };
 
   const handleExportSingle = async (item: CabRequestItem) => {
-    const hasBukti = item.buktiImplementasi && item.buktiImplementasi.length > 0;
-    if (!hasBukti) {
-      showToastWarning({
-        description: "Unggah bukti implementasi terlebih dahulu sebelum mengekspor Berita Acara.",
-      });
-      handleOpenUpload(item);
-      return;
-    }
-
     setIsExporting(true);
     try {
       await exportSingleCabMeetingPdf(item);
@@ -581,7 +703,18 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
             </VStack>
           );
         },
-        meta: { isFilterable: false } as ColumnMetaCustom,
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "requestNo",
+              operator: "like",
+              value: "",
+              filterType: "text",
+              filterLabel: "Nomor CAB",
+            },
+          ],
+        } as ColumnMetaCustom,
       },
       {
         accessorKey: "requestTitle",
@@ -600,7 +733,25 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
             </VStack>
           );
         },
-        meta: { isFilterable: false } as ColumnMetaCustom,
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "requestTitle",
+              operator: "like",
+              value: "",
+              filterType: "text",
+              filterLabel: "Judul Perubahan",
+            },
+            {
+              field: "projectName",
+              operator: "like",
+              value: "",
+              filterType: "text",
+              filterLabel: "Nama Proyek",
+            },
+          ],
+        } as ColumnMetaCustom,
       },
       {
         id: "category",
@@ -621,7 +772,22 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
             </Badge>
           );
         },
-        meta: { isFilterable: false } as ColumnMetaCustom,
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "category",
+              operator: "=",
+              value: "",
+              filterType: "select",
+              filterLabel: "Tipe Kategori",
+              sourceListData: [
+                { label: "SOFTWARE", value: "SOFTWARE" },
+                { label: "HARDWARE", value: "HARDWARE" },
+              ],
+            },
+          ],
+        } as ColumnMetaCustom,
       },
       {
         accessorKey: "scheduledDate",
@@ -643,7 +809,25 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
             </VStack>
           );
         },
-        meta: { isFilterable: false } as ColumnMetaCustom,
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "scheduledDate",
+              operator: ">=",
+              value: "",
+              filterType: "date",
+              filterLabel: "Dari Tgl Pelaksanaan",
+            },
+            {
+              field: "scheduledDate",
+              operator: "<=",
+              value: "",
+              filterType: "date",
+              filterLabel: "Sampai Tgl Pelaksanaan",
+            },
+          ],
+        } as ColumnMetaCustom,
       },
       {
         accessorKey: "requesterName",
@@ -662,56 +846,52 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
             </VStack>
           );
         },
-        meta: { isFilterable: false } as ColumnMetaCustom,
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "requesterName",
+              operator: "like",
+              value: "",
+              filterType: "text",
+              filterLabel: "Nama Pemohon",
+            },
+            {
+              field: "approverName",
+              operator: "like",
+              value: "",
+              filterType: "text",
+              filterLabel: "Nama Approver",
+            },
+          ],
+        } as ColumnMetaCustom,
       },
       {
         id: "keputusanBukti",
         header: "STATUS",
         cell: (info) => {
           const item = info.row.original;
-          const isRejected =
-            (item.cabResult || item.status || "").toUpperCase().includes("REJECT") ||
-            (item.cabResult || item.status || "").toUpperCase().includes("DITOLAK");
-          const hasBukti = Boolean(item.buktiImplementasi && item.buktiImplementasi.length > 0);
-          const buktiCount = item.buktiImplementasi ? item.buktiImplementasi.length : 0;
           return (
-            <VStack align="start" spacing={1} minW="140px" maxW="170px">
+            <Flex align="center" minW="100px">
               {renderCabResultBadge(item.cabResult, item.status)}
-              {isRejected ? null : hasBukti ? (
-                <Badge
-                  colorScheme="green"
-                  variant="solid"
-                  rounded="full"
-                  px={2}
-                  py={0.5}
-                  fontSize="3xs"
-                  display="inline-flex"
-                  alignItems="center"
-                  gap={1}
-                >
-                  <Icon as={FiCheckCircle} boxSize={2.5} />
-                  Bukti Lengkap ({buktiCount})
-                </Badge>
-              ) : (
-                <Badge
-                  colorScheme="orange"
-                  variant="outline"
-                  rounded="full"
-                  px={2}
-                  py={0.5}
-                  fontSize="3xs"
-                  display="inline-flex"
-                  alignItems="center"
-                  gap={1}
-                >
-                  <Icon as={FiAlertCircle} boxSize={2.5} />
-                  Bukti Belum Diunggah
-                </Badge>
-              )}
-            </VStack>
+            </Flex>
           );
         },
-        meta: { isFilterable: false } as ColumnMetaCustom,
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "status",
+              operator: "=",
+              value: "",
+              filterType: "select",
+              filterLabel: "Status CAB",
+              sourceListData: [
+                { label: "COMPLETED", value: "COMPLETED" },
+              ],
+            },
+          ],
+        } as ColumnMetaCustom,
       },
       {
         accessorKey: "cabNotes",
@@ -724,7 +904,18 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
             </Text>
           </Box>
         ),
-        meta: { isFilterable: false } as ColumnMetaCustom,
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "cabNotes",
+              operator: "like",
+              value: "",
+              filterType: "text",
+              filterLabel: "Catatan",
+            },
+          ],
+        } as ColumnMetaCustom,
       },
       {
         id: "actions",
@@ -780,43 +971,47 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
                     Lihat Detail
                   </MenuItem>
 
-                  {!isRejected && (
+                  {hasBukti && (
                     <MenuItem
-                      icon={<FiUploadCloud />}
+                      icon={<FiImage />}
                       fontSize="xs"
-                      color={!hasBukti ? "orange.500" : undefined}
-                      fontWeight={!hasBukti ? "semibold" : "normal"}
-                      onClick={() => handleOpenUpload(item)}
+                      onClick={() =>
+                        setPreviewModalData({
+                          isOpen: true,
+                          url: item.buktiImplementasi![0].url,
+                          name: item.buktiImplementasi![0].name,
+                          size: item.buktiImplementasi![0].size,
+                        })
+                      }
                     >
-                      {hasBukti ? "Ubah Bukti Implementasi" : "Upload Bukti"}
+                      Lihat Foto Bukti
                     </MenuItem>
                   )}
 
-                  {hasBukti && (
-                    <>
-                      <MenuItem
-                        icon={<FiImage />}
-                        fontSize="xs"
-                        onClick={() =>
-                          setPreviewModalData({
-                            isOpen: true,
-                            url: item.buktiImplementasi![0].url,
-                            name: item.buktiImplementasi![0].name,
-                            size: item.buktiImplementasi![0].size,
-                          })
-                        }
-                      >
-                        Lihat Foto Bukti
-                      </MenuItem>
-                      <MenuItem
-                        icon={<FiDownload />}
-                        fontSize="xs"
-                        onClick={() => handleExportSingle(item)}
-                      >
-                        Ekspor Berita Acara (PDF)
-                      </MenuItem>
-                    </>
-                  )}
+                  <MenuDivider />
+
+                  <MenuItem
+                    icon={<FiFileText />}
+                    fontSize="xs"
+                    onClick={() => handleExportSingleChecklistPdf(item)}
+                  >
+                    Ekspor Checklist (PDF)
+                  </MenuItem>
+
+                  <MenuItem
+                    icon={<FiFileText />}
+                    fontSize="xs"
+                    onClick={async () => {
+                      try {
+                        await exportCabComplianceChecklistExcel(item);
+                        showToastSuccess({ description: "Formulir Compliance Checklist Excel (.xlsx) berhasil diunduh." });
+                      } catch (err) {
+                        showToastError({ description: "Terjadi kesalahan saat mengekspor file Excel." });
+                      }
+                    }}
+                  >
+                    Ekspor Checklist (Excel)
+                  </MenuItem>
                 </MenuList>
               </Menu>
             </Flex>
@@ -1019,33 +1214,42 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
 
               {/* Action Buttons: Bulk Export PDF */}
               <HStack spacing={2} w={{ base: "full", md: "auto" }} justify={{ base: "start", md: "end" }}>
-                {missingEvidenceCount > 0 && (
-                  <Badge
-                    colorScheme="orange"
-                    variant="subtle"
-                    px={2.5}
-                    py={1}
-                    rounded="full"
-                    fontSize="xs"
-                    display="inline-flex"
-                    alignItems="center"
-                    gap={1.5}
+                <Menu>
+                  <MenuButton
+                    as={Button}
+                    size="sm"
+                    colorScheme="blue"
+                    leftIcon={<FiDownload />}
+                    rightIcon={<FiChevronDown />}
+                    isDisabled={tableData.length === 0}
+                    isLoading={isExporting}
                   >
-                    <Icon as={FiAlertTriangle} />
-                    {missingEvidenceCount} Implementasi CAB belum ada lampiran bukti
-                  </Badge>
-                )}
-
-                <Button
-                  size="sm"
-                  colorScheme="blue"
-                  leftIcon={<FiDownload />}
-                  onClick={handleExportCurrentPeriodPdf}
-                  isDisabled={tableData.length === 0}
-                  isLoading={isExporting}
-                >
-                  Export Laporan
-                </Button>
+                    Export Laporan
+                  </MenuButton>
+                  <MenuList zIndex={20} shadow="lg" py={1.5}>
+                    {/* <MenuItem
+                      icon={<FiDownload />}
+                      fontSize="xs"
+                      onClick={handleExportCurrentPeriodPdf}
+                    >
+                      Export Berita Acara Periode (PDF)
+                    </MenuItem> */}
+                    <MenuItem
+                      icon={<FiFileText />}
+                      fontSize="xs"
+                      onClick={handleExportCurrentPeriodChecklistPdf}
+                    >
+                      Export Checklist Periode (PDF)
+                    </MenuItem>
+                    <MenuItem
+                      icon={<FiFileText />}
+                      fontSize="xs"
+                      onClick={handleExportCurrentPeriodExcel}
+                    >
+                      Export Compliance Checklist (Excel)
+                    </MenuItem>
+                  </MenuList>
+                </Menu>
               </HStack>
             </Flex>
 
@@ -1074,25 +1278,86 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
               </InputGroup>
 
               <HStack spacing={2} w={{ base: "full", md: "auto" }}>
-                <Select
-                  size="sm"
-                  w={{ base: "full", sm: "150px" }}
-                  rounded="lg"
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
-                    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-                  }}
+                <Popover
+                  isOpen={isFilterPopoverOpen}
+                  onOpen={onFilterPopoverOpen}
+                  onClose={onFilterPopoverClose}
+                  closeOnBlur={true}
+                  placement="bottom"
                 >
-                  <option value="ALL">Semua Keputusan</option>
-                  <option value="APPROVED">Disetujui</option>
-                  <option value="APPROVED_NOTE">Disetujui Catatan</option>
-                  <option value="REJECTED">Ditolak</option>
-                </Select>
+                  <PopoverTrigger>
+                    <Button size="sm" leftIcon={<FiFilter />}>
+                      Filter{" "}
+                      {ParamFilter.length > 0 && (
+                        <Flex
+                          as="span"
+                          pl={1}
+                          color="secondary.500"
+                          fontWeight={600}
+                        >
+                          ({ParamFilter.length})
+                        </Flex>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent width="auto" minW="xs">
+                    <PopoverBody>
+                      <Flex as={Stack} w="full">
+                        <Text fontWeight={600}>Filter Kolom Aktif</Text>
+                        <Divider />
+                        {ParamFilter.length === 0 ? (
+                          <Text fontSize="xs" color="gray.500">
+                            Belum ada filter kolom aktif. Klik ikon filter pada header tabel untuk menyaring.
+                          </Text>
+                        ) : (
+                          <Stack spacing={2}>
+                            {ParamFilter.map((dt, idx) => (
+                              <Flex
+                                key={idx}
+                                w="full"
+                                alignItems="center"
+                                as={HStack}
+                                spacing={2}
+                              >
+                                <Text fontSize="xs">
+                                  {dt.filterLabel || dt.field} :{" "}
+                                  <Text as="span" fontWeight={600}>
+                                    {dt.value}
+                                  </Text>
+                                </Text>
+                                <IconButton
+                                  aria-label="Remove filter"
+                                  size="xs"
+                                  colorScheme="red"
+                                  variant="ghost"
+                                  icon={<FiX />}
+                                  onClick={() => removeFilterData(dt)}
+                                />
+                              </Flex>
+                            ))}
+                            <Divider />
+                            <Button
+                              size="xs"
+                              colorScheme="red"
+                              variant="outline"
+                              onClick={() => {
+                                clearAllFilters();
+                                onFilterPopoverClose();
+                              }}
+                              w="full"
+                            >
+                              Clear All
+                            </Button>
+                          </Stack>
+                        )}
+                      </Flex>
+                    </PopoverBody>
+                  </PopoverContent>
+                </Popover>
 
                 <Select
                   size="sm"
-                  w={{ base: "full", sm: "150px" }}
+                  w={{ base: "full", sm: "160px" }}
                   rounded="lg"
                   value={typeFilter}
                   onChange={(e) => {
@@ -1100,7 +1365,7 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
                     setPagination((prev) => ({ ...prev, pageIndex: 0 }));
                   }}
                 >
-                  <option value="ALL">Semua Tipe</option>
+                  <option value="ALL">Semua Kategori (Tipe)</option>
                   <option value="SOFTWARE">SOFTWARE</option>
                   <option value="HARDWARE">HARDWARE</option>
                 </Select>
@@ -1135,7 +1400,10 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
         <CardBody p={4}>
           <Box overflowX="auto" w="full">
             <Box minW="1200px">
-              <TableComponentWithFilterCTX table={table} />
+              <TableComponentWithFilterCTX
+                table={table}
+                handleFilterChange={handleFilterChange}
+              />
             </Box>
           </Box>
         </CardBody>
@@ -1437,9 +1705,9 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
               <Button ref={cancelRef} size="sm" variant="ghost" onClick={() => setIsWarningExportOpen(false)}>
                 Batal
               </Button>
-              <Button size="sm" colorScheme="blue" onClick={executeGroupExport} ml={3}>
+              {/* <Button size="sm" colorScheme="blue" onClick={executeGroupExport} ml={3}>
                 Tetap Unduh Laporan
-              </Button>
+              </Button> */}
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialogOverlay>
