@@ -374,12 +374,12 @@ export const ContractEditTabPanel = ({
 
     const freqLabel =
       type === "SUBSCRIPTION_ANNUAL"
-        ? "Tahun"
+        ? "Year"
         : type === "SUBSCRIPTION_SEMI_ANNUAL"
         ? "Semester"
         : type === "SUBSCRIPTION_QUARTERLY"
-        ? "Triwulan"
-        : "Bulan";
+        ? "Quarter"
+        : "Month";
 
     while (currentPeriodStart < end && step <= 120) {
       const nextMonthTarget = new Date(
@@ -389,7 +389,7 @@ export const ContractEditTabPanel = ({
       );
       const periodEnd = nextMonthTarget > end ? new Date(end) : nextMonthTarget;
 
-      const monthName = currentPeriodStart.toLocaleDateString("id-ID", {
+      const monthName = currentPeriodStart.toLocaleDateString("en-US", {
         month: "short",
         year: "numeric",
       });
@@ -397,7 +397,7 @@ export const ContractEditTabPanel = ({
       newUnpaidList.push({
         stepOrder: step,
         topValues: rate,
-        topDescriptions: `Langganan ${freqLabel} #${step} (${monthName})`,
+        topDescriptions: `Subscription ${freqLabel} #${step} (${monthName})`,
         topStatus: "ACTIVE",
         topDate: formatYMD(periodEnd),
         billingPeriodStart: formatYMD(currentPeriodStart),
@@ -819,10 +819,10 @@ export const ContractEditTabPanel = ({
                         cursor="not-allowed"
                       >
                         <option value="MILESTONE">Milestone / Deliverable Progress TOP</option>
-                        <option value="SUBSCRIPTION_MONTHLY">Monthly Subscription (Bulanan)</option>
-                        <option value="SUBSCRIPTION_QUARTERLY">Quarterly Subscription (3 Bulan)</option>
-                        <option value="SUBSCRIPTION_SEMI_ANNUAL">Semi-Annual Subscription (6 Bulan)</option>
-                        <option value="SUBSCRIPTION_ANNUAL">Annual Subscription (Tahunan)</option>
+                        <option value="SUBSCRIPTION_MONTHLY">Monthly Subscription</option>
+                        <option value="SUBSCRIPTION_QUARTERLY">Quarterly Subscription (3 Months)</option>
+                        <option value="SUBSCRIPTION_SEMI_ANNUAL">Semi-Annual Subscription (6 Months)</option>
+                        <option value="SUBSCRIPTION_ANNUAL">Annual Subscription (Yearly)</option>
                         <option value="CUSTOM_RECURRING">Custom Recurring Period</option>
                       </ChakraSelect>
                     </FormControl>
@@ -1283,7 +1283,7 @@ export const ContractEditTabPanel = ({
                     </Text>
                   </HStack>
                   <Text fontSize="2xs" color="gray.600">
-                    Termin pembayaran yang sudah dibayarkan (PAID) atau sedang dalam proses verifikasi dikunci agar konsistensi keuangan dan berkas BAST/Invoice tetap terlindungi. Anda tetap dapat menambahkan dan mengubah termin berikutnya yang belum dibayar.
+                    Payment milestones that are already PAID or under verification are locked to preserve financial integrity and BAST/Invoice archives. You can still add or modify upcoming unpaid milestones.
                   </Text>
                 </Box>
               </Alert>
@@ -1392,7 +1392,7 @@ export const ContractEditTabPanel = ({
                     </Text>
                   </HStack>
                   <Text fontSize="2xs" color="gray.600" mb={2}>
-                    Total Contract Work Value ({formatIDR(totalWorkValue)}) tidak boleh lebih kecil dari dana yang sudah dibayarkan kepada vendor ({formatIDR(paidTopAmount)}). Defisit selisih: {formatIDR(Math.abs(remainingBudget))}. Harap sesuaikan Total Work Value minimal sebesar {formatIDR(paidTopAmount)}.
+                    Total Contract Work Value ({formatIDR(totalWorkValue)}) cannot be less than the amount already disbursed to the vendor ({formatIDR(paidTopAmount)}). Deficit variance: {formatIDR(Math.abs(remainingBudget))}. Please adjust Total Work Value to at least {formatIDR(paidTopAmount)}.
                   </Text>
                   <Button
                     size="xs"
@@ -1415,7 +1415,7 @@ export const ContractEditTabPanel = ({
                     </Text>
                   </HStack>
                   <Text fontSize="2xs" color="gray.600" mb={2}>
-                    Total termin TOP ({formatIDR(totalTopValues)}) {variance > 0 ? "melebihi" : "kurang dari"} Total Work Value ({formatIDR(totalWorkValue)}) sebesar {formatIDR(Math.abs(variance))}. Sisa alokasi yang tersedia untuk termin belum dibayar adalah {formatIDR(remainingBudget)}.
+                    Total TOP milestones ({formatIDR(totalTopValues)}) {variance > 0 ? "exceeds" : "is less than"} Total Work Value ({formatIDR(totalWorkValue)}) by {formatIDR(Math.abs(variance))}. Available allocation for remaining unpaid milestones is {formatIDR(remainingBudget)}.
                   </Text>
                   <HStack spacing={2} wrap="wrap">
                     <Button
@@ -1447,7 +1447,7 @@ export const ContractEditTabPanel = ({
                     Reconciliation Perfect: Total TOP Milestones ({formatIDR(totalTopValues)}) matches Total Work Value ({formatIDR(totalWorkValue)})
                   </Text>
                   <Text fontSize="2xs" opacity={0.85}>
-                    Semua termin pembayaran teralokasi dengan presisi 100% terhadap nilai kontrak.
+                    All payment milestones are allocated with 100% precision matching the total contract value.
                   </Text>
                 </Box>
               </Alert>

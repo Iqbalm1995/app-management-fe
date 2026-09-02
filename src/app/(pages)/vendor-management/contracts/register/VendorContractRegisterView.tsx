@@ -292,12 +292,12 @@ const VendorContractRegisterView = () => {
 
     const freqLabel =
       type === "SUBSCRIPTION_ANNUAL"
-        ? "Tahun"
+        ? "Year"
         : type === "SUBSCRIPTION_SEMI_ANNUAL"
         ? "Semester"
         : type === "SUBSCRIPTION_QUARTERLY"
-        ? "Triwulan"
-        : "Bulan";
+        ? "Quarter"
+        : "Month";
 
     while (currentPeriodStart < end && step <= 120) {
       const nextMonthTarget = new Date(
@@ -307,7 +307,7 @@ const VendorContractRegisterView = () => {
       );
       const periodEnd = nextMonthTarget > end ? new Date(end) : nextMonthTarget;
 
-      const monthName = currentPeriodStart.toLocaleDateString("id-ID", {
+      const monthName = currentPeriodStart.toLocaleDateString("en-US", {
         month: "short",
         year: "numeric",
       });
@@ -315,7 +315,7 @@ const VendorContractRegisterView = () => {
       list.push({
         stepOrder: step,
         topValues: formik.values.subscriptionPeriodValue || 0,
-        topDescriptions: `Langganan ${freqLabel} #${step} (${monthName})`,
+        topDescriptions: `Subscription ${freqLabel} #${step} (${monthName})`,
         topStatus: "ACTIVE",
         topDate: formatYMD(periodEnd),
         billingPeriodStart: formatYMD(currentPeriodStart),
@@ -698,10 +698,10 @@ const VendorContractRegisterView = () => {
                               }}
                             >
                               <option value="MILESTONE">Milestone / Deliverable Progress TOP</option>
-                              <option value="SUBSCRIPTION_MONTHLY">Monthly Subscription (Bulanan)</option>
-                              <option value="SUBSCRIPTION_QUARTERLY">Quarterly Subscription (3 Bulan)</option>
-                              <option value="SUBSCRIPTION_SEMI_ANNUAL">Semi-Annual Subscription (6 Bulan)</option>
-                              <option value="SUBSCRIPTION_ANNUAL">Annual Subscription (Tahunan)</option>
+                              <option value="SUBSCRIPTION_MONTHLY">Monthly Subscription</option>
+                              <option value="SUBSCRIPTION_QUARTERLY">Quarterly Subscription (3 Months)</option>
+                              <option value="SUBSCRIPTION_SEMI_ANNUAL">Semi-Annual Subscription (6 Months)</option>
+                              <option value="SUBSCRIPTION_ANNUAL">Annual Subscription (Yearly)</option>
                               <option value="CUSTOM_RECURRING">Custom Recurring Period</option>
                             </ChakraSelect>
                           </FormControl>
@@ -765,7 +765,7 @@ const VendorContractRegisterView = () => {
                         />
                         {formik.values.contractBillingType !== "MILESTONE" ? (
                           <Text fontSize="2xs" color="purple.500" mt={1}>
-                            Note: Untuk model langganan/subscription tanpa total pasti di muka, nilai total dapat diperkirakan atau digenerate otomatis dari jadwal TOP di bawah.
+                            Note: For subscription/recurring models without a fixed total upfront, total value can be estimated or auto-generated from the TOP schedule below.
                           </Text>
                         ) : null}
                         <FormErrorMessage>{formik.errors.workValue}</FormErrorMessage>

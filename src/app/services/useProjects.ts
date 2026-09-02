@@ -849,6 +849,11 @@ interface useProjectsServices {
     payload: PaggingListPayload,
     token: string
   ) => Promise<ApiGenericResponse<ProjectDataResponse[] | null> | null>;
+  ListByApp: (
+    appId: string,
+    payload: PaggingListPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<ProjectDataResponse[] | null> | null>;
   GetAssignedProjects: (
     payload: PaggingListPayloadCustom,
     token: string,
@@ -1288,6 +1293,48 @@ const useProjects = (): useProjectsServices => {
         const errorResponse = handleAxiosError(err);
         setError(
           err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const ListByApp = async (
+    appId: string,
+    payload: PaggingListPayload,
+    token: string
+  ): Promise<ApiGenericResponse<ProjectDataResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Projects/by-app/${appId}`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<ProjectDataResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request."
         );
         return errorResponse;
       } else {
@@ -4774,6 +4821,7 @@ const useProjects = (): useProjectsServices => {
 
   return {
     List,
+    ListByApp,
     GetAssignedProjects,
     GetWaitingApproval,
     ApproveProject,

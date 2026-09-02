@@ -56,7 +56,20 @@ import {
 } from "@chakra-ui/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
+import {
+  Select as ChakraReactSelect,
+  CreatableSelect as ChakraCreatableSelect,
+} from "chakra-react-select";
+import {
+  getProvinceSelectOptions,
+  getRegencySelectOptions,
+  getDistrictSelectOptions,
+  fetchSubDistrictsByDistrict,
+  getPostalCodeForDistrict,
+  getPostalCodeForSubDistrict,
+  SelectItemOption,
+} from "@/app/constants/locations/indonesiaAddressHelper";
 import {
   FiArrowLeft,
   FiBriefcase,
@@ -93,6 +106,20 @@ const HeaderDataContent = {
   breadCrumb: ["Home", "Vendor Management", "Detail"],
 };
 
+const VENDOR_TYPE_OPTIONS = ["PT", "CV", "INDIVIDUAL"];
+const TDR_TYPE_OPTIONS = ["PERMANENT", "TEMPORARY"];
+
+// Indonesian NPWP input mask formatter (e.g. 01.234.567.8-901.000)
+const formatIndonesianNPWP = (val: string): string => {
+  const digits = val.replace(/\D/g, "").slice(0, 15);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 5) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
+  if (digits.length <= 8) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}.${digits.slice(8)}`;
+  if (digits.length <= 12) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}.${digits.slice(8, 9)}-${digits.slice(9)}`;
+  return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}.${digits.slice(8, 9)}-${digits.slice(9, 12)}.${digits.slice(12, 15)}`;
+};
+
 const VendorDetailView = () => {
   const { colorMode } = useColorMode();
   const router = useRouter();
@@ -120,6 +147,9 @@ const VendorDetailView = () => {
     address2: "",
     address3: "",
     city: "",
+    province: "",
+    district: "",
+    subDistrict: "",
     country: "",
     postalCode: "",
     website: "",
@@ -135,6 +165,153 @@ const VendorDetailView = () => {
     businessImpact: "LOW",
   });
   const [isUpdatingVendor, setIsUpdatingVendor] = useState(false);
+
+  const isDark = colorMode === "dark";
+
+  // Regional Cascading Data & Handlers for Edit Form
+  const isIndonesia = (editVendorForm.country || "").trim().toUpperCase() === "INDONESIA";
+  const [subDistrictOptions, setSubDistrictOptions] = useState<SelectItemOption[]>([]);
+  const [isLoadingSubDistricts, setIsLoadingSubDistricts] = useState<boolean>(false);
+
+  const provinceOptions = useMemo(() => getProvinceSelectOptions(), []);
+
+  const regencyOptions = useMemo(() => {
+    if (!editVendorForm.province) return [];
+    return getRegencySelectOptions(editVendorForm.province);
+  }, [editVendorForm.province]);
+
+  const districtOptions = useMemo(() => {
+    if (!editVendorForm.province || !editVendorForm.city) return [];
+    return getDistrictSelectOptions(editVendorForm.province, editVendorForm.city);
+  }, [editVendorForm.province, editVendorForm.city]);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (editVendorForm.province && editVendorForm.city && editVendorForm.district && isIndonesia) {
+      setIsLoadingSubDistricts(true);
+      fetchSubDistrictsByDistrict(
+        editVendorForm.province,
+        editVendorForm.city,
+        editVendorForm.district
+      )
+        .then((options) => {
+          if (isMounted) {
+            setSubDistrictOptions(options);
+          }
+        })
+        .catch(() => {
+          if (isMounted) {
+            setSubDistrictOptions([]);
+          }
+        })
+        .finally(() => {
+          if (isMounted) {
+            setIsLoadingSubDistricts(false);
+          }
+        });
+    } else {
+      setSubDistrictOptions([]);
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [editVendorForm.province, editVendorForm.city, editVendorForm.district, isIndonesia]);
+
+  const handleProvinceSelect = (option: SelectItemOption | null) => {
+    const selected = option ? option.value : "";
+    setEditVendorForm((prev) => ({
+      ...prev,
+      province: selected,
+      city: "",
+      district: "",
+      subDistrict: "",
+      postalCode: "",
+    }));
+  };
+
+  const handleCitySelect = (option: SelectItemOption | null) => {
+    const selected = option ? option.value : "";
+    setEditVendorForm((prev) => ({
+      ...prev,
+      city: selected,
+      district: "",
+      subDistrict: "",
+      postalCode: "",
+    }));
+  };
+
+  const handleDistrictSelect = (option: SelectItemOption | null) => {
+    const selected = option ? option.value : "";
+    let autoPostal = "";
+    if (selected && editVendorForm.province && editVendorForm.city) {
+      autoPostal = getPostalCodeForDistrict(
+        editVendorForm.province,
+        editVendorForm.city,
+        selected
+      );
+    }
+    setEditVendorForm((prev) => ({
+      ...prev,
+      district: selected,
+      subDistrict: "",
+      postalCode: autoPostal || prev.postalCode || "",
+    }));
+  };
+
+  const handleSubDistrictSelect = (option: SelectItemOption | null) => {
+    const selected = option ? option.value.trim().toUpperCase() : "";
+    let specificPostal = "";
+    if (selected && editVendorForm.province && editVendorForm.city && editVendorForm.district) {
+      specificPostal = getPostalCodeForSubDistrict(
+        editVendorForm.province,
+        editVendorForm.city,
+        editVendorForm.district,
+        selected
+      );
+    }
+    setEditVendorForm((prev) => ({
+      ...prev,
+      subDistrict: selected,
+      postalCode: specificPostal || prev.postalCode || "",
+    }));
+  };
+
+  const selectStyles = {
+    menuPortal: (provided: any) => ({
+      ...provided,
+      zIndex: 99999,
+    }),
+    menu: (provided: any) => ({
+      ...provided,
+      zIndex: 99999,
+      bg: isDark ? "gray.800" : "white",
+      boxShadow: isDark
+        ? "0 10px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.7)"
+        : "0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+    }),
+    control: (provided: any) => ({
+      ...provided,
+      borderRadius: "md",
+      borderColor: isDark ? "gray.600" : "gray.300",
+      bg: isDark ? "gray.800" : "white",
+      fontSize: "sm",
+      minHeight: "36px",
+    }),
+    option: (provided: any, state: any) => ({
+      ...provided,
+      bg: state.isSelected
+        ? isDark
+          ? "blue.600"
+          : "blue.500"
+        : state.isFocused
+        ? isDark
+          ? "gray.700"
+          : "gray.100"
+        : "transparent",
+      color: state.isSelected ? "white" : isDark ? "gray.100" : "gray.800",
+      fontSize: "sm",
+    }),
+  };
 
   // Vendor Status Change Modal State
   const statusConfirmModal = useDisclosure();
@@ -181,14 +358,76 @@ const VendorDetailView = () => {
   // TDR Modal state
   const tdrModal = useDisclosure();
   const [tdrForm, setTdrForm] = useState({
-    trdNumber: "", tdrType: "PERMANENT", npwpNumber: "", yearRegistered: "",
-    businessType: "", businessSectorCode: "", businessSectorName: "",
-    subBusinessSector: "", qualifications: "", timeInEffect: "", expiredAt: "",
+    trdNumber: "",
+    tdrType: "PERMANENT",
+    npwpNumber: "",
+    yearRegistered: new Date().getFullYear().toString(),
+    businessType: "PT",
+    businessSectorCode: "",
+    businessSectorName: "",
+    subBusinessSector: "",
+    qualifications: "",
+    timeInEffect: "",
+    expiredAt: "",
   });
   const [attachmentMethod, setAttachmentMethod] = useState<"file" | "link">("file");
   const [tdrFile, setTdrFile] = useState<File | null>(null);
   const [tdrLink, setTdrLink] = useState("");
   const [isSubmittingTdr, setIsSubmittingTdr] = useState(false);
+
+  const handleOpenAddTdrModal = () => {
+    setTdrForm({
+      trdNumber: "",
+      tdrType: "PERMANENT",
+      npwpNumber: "",
+      yearRegistered: new Date().getFullYear().toString(),
+      businessType: DataVendor?.vendorType || "PT",
+      businessSectorCode: "",
+      businessSectorName: "",
+      subBusinessSector: "",
+      qualifications: "",
+      timeInEffect: "",
+      expiredAt: "",
+    });
+    setTdrFile(null);
+    setTdrLink("");
+    setAttachmentMethod("file");
+    tdrModal.onOpen();
+  };
+
+  const handleExtendTdrExpiry = (months: number, years: number) => {
+    const baseDateStr = tdrForm.timeInEffect;
+    let baseDate: Date;
+    if (baseDateStr && !isNaN(new Date(baseDateStr).getTime())) {
+      baseDate = new Date(baseDateStr);
+    } else {
+      baseDate = new Date();
+    }
+    const targetDate = new Date(baseDate.getTime());
+    if (months > 0) targetDate.setMonth(targetDate.getMonth() + months);
+    if (years > 0) targetDate.setFullYear(targetDate.getFullYear() + years);
+    const yyyy = targetDate.getFullYear();
+    const mm = String(targetDate.getMonth() + 1).padStart(2, "0");
+    const dd = String(targetDate.getDate()).padStart(2, "0");
+    setTdrForm((prev) => ({ ...prev, expiredAt: `${yyyy}-${mm}-${dd}` }));
+  };
+
+  const handleExtendEditTdrExpiry = (months: number, years: number) => {
+    const baseDateStr = editTdrForm.timeInEffect;
+    let baseDate: Date;
+    if (baseDateStr && !isNaN(new Date(baseDateStr).getTime())) {
+      baseDate = new Date(baseDateStr);
+    } else {
+      baseDate = new Date();
+    }
+    const targetDate = new Date(baseDate.getTime());
+    if (months > 0) targetDate.setMonth(targetDate.getMonth() + months);
+    if (years > 0) targetDate.setFullYear(targetDate.getFullYear() + years);
+    const yyyy = targetDate.getFullYear();
+    const mm = String(targetDate.getMonth() + 1).padStart(2, "0");
+    const dd = String(targetDate.getDate()).padStart(2, "0");
+    setEditTdrForm((prev: any) => ({ ...prev, expiredAt: `${yyyy}-${mm}-${dd}` }));
+  };
 
   // TDR Detail/Edit Modal
   const tdrDetailModal = useDisclosure();
@@ -354,6 +593,9 @@ const VendorDetailView = () => {
         address2: response.data.address2 || "",
         address3: response.data.address3 || "",
         city: response.data.city,
+        province: response.data.province || "",
+        district: response.data.district || "",
+        subDistrict: response.data.subDistrict || "",
         country: response.data.country,
         postalCode: response.data.postalCode || "",
         website: response.data.website || "",
@@ -731,8 +973,11 @@ const VendorDetailView = () => {
                           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                             <InfoItem label="Address Line 1" value={DataVendor.address1} />
                             <InfoItem label="Address Line 2" value={DataVendor.address2 || "-"} />
-                            <InfoItem label="City" value={DataVendor.city} />
                             <InfoItem label="Country" value={DataVendor.country} />
+                            <InfoItem label="Province / State" value={DataVendor.province || "-"} />
+                            <InfoItem label="City / Regency" value={DataVendor.city} />
+                            <InfoItem label="District (Kecamatan)" value={DataVendor.district || "-"} />
+                            <InfoItem label="Sub-District (Kelurahan)" value={DataVendor.subDistrict || "-"} />
                             <InfoItem label="Postal Code" value={DataVendor.postalCode || "-"} />
                           </SimpleGrid>
                         </CardBody>
@@ -816,7 +1061,7 @@ const VendorDetailView = () => {
                               </Box>
                               <VStack align="start" spacing={0}>
                                 <Heading size="sm" color={colorMode === "light" ? "blue.700" : "blue.300"}>
-                                  Tanda Daftar Rekanan (TDR) List
+                                  Vendor Registration Certificate (TDR) List
                                 </Heading>
                                 <Text fontSize="xs" color="gray.500">
                                   Total {TdrList.length} registration record{TdrList.length !== 1 ? "s" : ""}
@@ -834,7 +1079,7 @@ const VendorDetailView = () => {
                               >
                                 Sort: {TdrSortDir === "desc" ? "Newest ↓" : "Oldest ↑"}
                               </Button>
-                              <Button size="sm" colorScheme="blue" leftIcon={<FiPlus />} onClick={tdrModal.onOpen} rounded="md">
+                              <Button size="sm" colorScheme="blue" leftIcon={<FiPlus />} onClick={handleOpenAddTdrModal} rounded="md">
                                 Add New TDR
                               </Button>
                             </HStack>
@@ -876,11 +1121,11 @@ const VendorDetailView = () => {
                                         <Td py={3}><Text fontSize="sm">{tdr.yearRegistered}</Text></Td>
                                         <Td py={3}><Text fontSize="sm" noOfLines={1}>{tdr.businessSectorName}</Text></Td>
                                         <Td py={3}>
-                                          <Text fontSize="sm">{new Date(tdr.timeInEffect).toLocaleDateString("id-ID")}</Text>
+                                          <Text fontSize="sm">{new Date(tdr.timeInEffect).toLocaleDateString("en-US")}</Text>
                                         </Td>
                                         <Td py={3}>
                                           <Text fontSize="sm" color={isExpired ? "red.500" : "green.600"} fontWeight="semibold">
-                                            {new Date(tdr.expiredAt).toLocaleDateString("id-ID")}
+                                            {new Date(tdr.expiredAt).toLocaleDateString("en-US")}
                                           </Text>
                                         </Td>
                                         <Td py={3}>
@@ -952,7 +1197,7 @@ const VendorDetailView = () => {
                             <Icon as={FiCheckCircle} color="green.500" boxSize={5} mt={0.5} />
                             <VStack align="start" spacing={0}>
                               <Text fontSize="sm" fontWeight="600">Vendor Created</Text>
-                              <Text fontSize="xs" color="gray.500">Created on {new Date(DataVendor.createdAt).toLocaleDateString("id-ID")} by {DataVendor.createdBy}</Text>
+                              <Text fontSize="xs" color="gray.500">Created on {new Date(DataVendor.createdAt).toLocaleDateString("en-US")} by {DataVendor.createdBy}</Text>
                             </VStack>
                           </HStack>
                           {DataVendor.updatedAt && (
@@ -960,7 +1205,7 @@ const VendorDetailView = () => {
                               <Icon as={FiActivity} color="blue.500" boxSize={5} mt={0.5} />
                               <VStack align="start" spacing={0}>
                                 <Text fontSize="sm" fontWeight="600">Vendor Metadata Updated</Text>
-                                <Text fontSize="xs" color="gray.500">Last updated on {new Date(DataVendor.updatedAt).toLocaleDateString("id-ID")} by {DataVendor.updatedBy || "System"}</Text>
+                                <Text fontSize="xs" color="gray.500">Last updated on {new Date(DataVendor.updatedAt).toLocaleDateString("en-US")} by {DataVendor.updatedBy || "System"}</Text>
                               </VStack>
                             </HStack>
                           )}
@@ -1029,32 +1274,253 @@ const VendorDetailView = () => {
 
                             {/* Location & Address */}
                             <Heading size="xs" color="secondary.700" borderBottom="1px" borderColor="gray.100" pb={1} pt={2}>Location & Address</Heading>
+                            
                             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                               <FormControl isRequired>
                                 <FormLabel fontSize="xs" fontWeight="600">Address Line 1</FormLabel>
-                                <Input size="sm" rounded="md" focusBorderColor="secondary.500" value={editVendorForm.address1} onChange={(e) => setEditVendorForm({ ...editVendorForm, address1: e.target.value })} />
+                                <Input size="sm" rounded="md" focusBorderColor="secondary.500" placeholder="Street name, building, RT/RW..." value={editVendorForm.address1} onChange={(e) => setEditVendorForm({ ...editVendorForm, address1: e.target.value })} />
                               </FormControl>
 
                               <FormControl>
                                 <FormLabel fontSize="xs" fontWeight="600">Address Line 2 (Optional)</FormLabel>
-                                <Input size="sm" rounded="md" focusBorderColor="secondary.500" value={editVendorForm.address2 || ""} onChange={(e) => setEditVendorForm({ ...editVendorForm, address2: e.target.value })} />
-                              </FormControl>
-
-                              <FormControl isRequired>
-                                <FormLabel fontSize="xs" fontWeight="600">City</FormLabel>
-                                <Input size="sm" rounded="md" focusBorderColor="secondary.500" value={editVendorForm.city} onChange={(e) => setEditVendorForm({ ...editVendorForm, city: e.target.value })} />
+                                <Input size="sm" rounded="md" focusBorderColor="secondary.500" placeholder="Unit, floor, suite, landmark..." value={editVendorForm.address2 || ""} onChange={(e) => setEditVendorForm({ ...editVendorForm, address2: e.target.value })} />
                               </FormControl>
 
                               <FormControl isRequired>
                                 <FormLabel fontSize="xs" fontWeight="600">Country</FormLabel>
-                                <Input size="sm" rounded="md" focusBorderColor="secondary.500" value={editVendorForm.country} onChange={(e) => setEditVendorForm({ ...editVendorForm, country: e.target.value })} />
-                              </FormControl>
-
-                              <FormControl>
-                                <FormLabel fontSize="xs" fontWeight="600">Postal Code</FormLabel>
-                                <Input size="sm" rounded="md" focusBorderColor="secondary.500" value={editVendorForm.postalCode || ""} onChange={(e) => setEditVendorForm({ ...editVendorForm, postalCode: e.target.value })} />
+                                <Input
+                                  size="sm"
+                                  rounded="md"
+                                  focusBorderColor="secondary.500"
+                                  placeholder="e.g. INDONESIA"
+                                  value={editVendorForm.country}
+                                  onChange={(e) =>
+                                    setEditVendorForm({
+                                      ...editVendorForm,
+                                      country: e.target.value.toUpperCase(),
+                                    })
+                                  }
+                                />
                               </FormControl>
                             </SimpleGrid>
+
+                            {isIndonesia ? (
+                              <VStack spacing={4} align="stretch">
+                                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                                  <FormControl isRequired>
+                                    <FormLabel fontSize="xs" fontWeight="600">Province / State</FormLabel>
+                                    <ChakraReactSelect
+                                      name="province"
+                                      placeholder="Search & Select Province..."
+                                      options={provinceOptions}
+                                      value={
+                                        editVendorForm.province
+                                          ? {
+                                              value: editVendorForm.province,
+                                              label: editVendorForm.province,
+                                            }
+                                          : null
+                                      }
+                                      onChange={handleProvinceSelect}
+                                      isClearable
+                                      menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
+                                      menuPosition="fixed"
+                                      chakraStyles={selectStyles}
+                                    />
+                                  </FormControl>
+
+                                  <FormControl isRequired>
+                                    <FormLabel fontSize="xs" fontWeight="600">City / Regency</FormLabel>
+                                    <ChakraReactSelect
+                                      name="city"
+                                      placeholder={
+                                        !editVendorForm.province
+                                          ? "Select Province First..."
+                                          : "Search & Select City / Regency..."
+                                      }
+                                      options={regencyOptions}
+                                      value={
+                                        editVendorForm.city
+                                          ? {
+                                              value: editVendorForm.city,
+                                              label: editVendorForm.city,
+                                            }
+                                          : null
+                                      }
+                                      onChange={handleCitySelect}
+                                      isDisabled={!editVendorForm.province}
+                                      isClearable
+                                      menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
+                                      menuPosition="fixed"
+                                      chakraStyles={selectStyles}
+                                    />
+                                  </FormControl>
+                                </SimpleGrid>
+
+                                <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+                                  <FormControl>
+                                    <FormLabel fontSize="xs" fontWeight="600">District (Kecamatan)</FormLabel>
+                                    <ChakraReactSelect
+                                      name="district"
+                                      placeholder={
+                                        !editVendorForm.city
+                                          ? "Select City First..."
+                                          : "Search & Select District..."
+                                      }
+                                      options={districtOptions}
+                                      value={
+                                        editVendorForm.district
+                                          ? {
+                                              value: editVendorForm.district,
+                                              label: editVendorForm.district,
+                                            }
+                                          : null
+                                      }
+                                      onChange={handleDistrictSelect}
+                                      isDisabled={!editVendorForm.city}
+                                      isClearable
+                                      menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
+                                      menuPosition="fixed"
+                                      chakraStyles={selectStyles}
+                                    />
+                                  </FormControl>
+
+                                  <FormControl>
+                                    <FormLabel fontSize="xs" fontWeight="600">Sub-District (Kelurahan / Desa)</FormLabel>
+                                    <ChakraCreatableSelect
+                                      name="subDistrict"
+                                      placeholder={
+                                        !editVendorForm.district
+                                          ? "Select District First..."
+                                          : isLoadingSubDistricts
+                                          ? "Loading Villages..."
+                                          : "Search or Type Kelurahan / Desa..."
+                                      }
+                                      isLoading={isLoadingSubDistricts}
+                                      options={subDistrictOptions}
+                                      value={
+                                        editVendorForm.subDistrict
+                                          ? {
+                                              value: editVendorForm.subDistrict,
+                                              label: editVendorForm.subDistrict,
+                                            }
+                                          : null
+                                      }
+                                      onChange={handleSubDistrictSelect}
+                                      isDisabled={!editVendorForm.district}
+                                      isClearable
+                                      menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
+                                      menuPosition="fixed"
+                                      chakraStyles={selectStyles}
+                                      formatCreateLabel={(inputValue) => `Gunakan "${inputValue.toUpperCase()}"`}
+                                    />
+                                  </FormControl>
+
+                                  <FormControl>
+                                    <FormLabel fontSize="xs" fontWeight="600">Postal Code</FormLabel>
+                                    <Input
+                                      size="sm"
+                                      rounded="md"
+                                      focusBorderColor="secondary.500"
+                                      placeholder="e.g. 40135"
+                                      value={editVendorForm.postalCode || ""}
+                                      onChange={(e) =>
+                                        setEditVendorForm({
+                                          ...editVendorForm,
+                                          postalCode: e.target.value,
+                                        })
+                                      }
+                                    />
+                                  </FormControl>
+                                </SimpleGrid>
+                              </VStack>
+                            ) : (
+                              <VStack spacing={4} align="stretch">
+                                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                                  <FormControl isRequired>
+                                    <FormLabel fontSize="xs" fontWeight="600">City</FormLabel>
+                                    <Input
+                                      size="sm"
+                                      rounded="md"
+                                      focusBorderColor="secondary.500"
+                                      value={editVendorForm.city}
+                                      onChange={(e) =>
+                                        setEditVendorForm({
+                                          ...editVendorForm,
+                                          city: e.target.value,
+                                        })
+                                      }
+                                    />
+                                  </FormControl>
+
+                                  <FormControl>
+                                    <FormLabel fontSize="xs" fontWeight="600">Province / State (Optional)</FormLabel>
+                                    <Input
+                                      size="sm"
+                                      rounded="md"
+                                      focusBorderColor="secondary.500"
+                                      value={editVendorForm.province || ""}
+                                      onChange={(e) =>
+                                        setEditVendorForm({
+                                          ...editVendorForm,
+                                          province: e.target.value,
+                                        })
+                                      }
+                                    />
+                                  </FormControl>
+                                </SimpleGrid>
+
+                                <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+                                  <FormControl>
+                                    <FormLabel fontSize="xs" fontWeight="600">District / County</FormLabel>
+                                    <Input
+                                      size="sm"
+                                      rounded="md"
+                                      focusBorderColor="secondary.500"
+                                      value={editVendorForm.district || ""}
+                                      onChange={(e) =>
+                                        setEditVendorForm({
+                                          ...editVendorForm,
+                                          district: e.target.value,
+                                        })
+                                      }
+                                    />
+                                  </FormControl>
+
+                                  <FormControl>
+                                    <FormLabel fontSize="xs" fontWeight="600">Sub-District</FormLabel>
+                                    <Input
+                                      size="sm"
+                                      rounded="md"
+                                      focusBorderColor="secondary.500"
+                                      value={editVendorForm.subDistrict || ""}
+                                      onChange={(e) =>
+                                        setEditVendorForm({
+                                          ...editVendorForm,
+                                          subDistrict: e.target.value,
+                                        })
+                                      }
+                                    />
+                                  </FormControl>
+
+                                  <FormControl>
+                                    <FormLabel fontSize="xs" fontWeight="600">Postal Code</FormLabel>
+                                    <Input
+                                      size="sm"
+                                      rounded="md"
+                                      focusBorderColor="secondary.500"
+                                      value={editVendorForm.postalCode || ""}
+                                      onChange={(e) =>
+                                        setEditVendorForm({
+                                          ...editVendorForm,
+                                          postalCode: e.target.value,
+                                        })
+                                      }
+                                    />
+                                  </FormControl>
+                                </SimpleGrid>
+                              </VStack>
+                            )}
 
                             {/* PIC Contacts */}
                             <Heading size="xs" color="secondary.700" borderBottom="1px" borderColor="gray.100" pb={1} pt={2}>Person in Charge (PIC) Contacts</Heading>
@@ -1129,7 +1595,7 @@ const VendorDetailView = () => {
                                 isLoading={isUpdatingVendor}
                                 leftIcon={<FiCheckCircle />}
                               >
-                                Save Master Vendor Changes
+                                Save Changes
                               </Button>
                             </Flex>
                           </VStack>
@@ -1254,7 +1720,7 @@ const VendorDetailView = () => {
                       <Divider />
                       <VStack align="start" spacing={0}>
                         <Text fontSize="xs" color="gray.500">Created At</Text>
-                        <Text fontSize="xs" fontWeight="500">{new Date(DataVendor.createdAt).toLocaleDateString("id-ID")}</Text>
+                        <Text fontSize="xs" fontWeight="500">{new Date(DataVendor.createdAt).toLocaleDateString("en-US")}</Text>
                       </VStack>
                       <VStack align="start" spacing={0}>
                         <Text fontSize="xs" color="gray.500">Created By</Text>
@@ -1263,7 +1729,7 @@ const VendorDetailView = () => {
                       {DataVendor.updatedAt && (
                         <VStack align="start" spacing={0}>
                           <Text fontSize="xs" color="gray.500">Last Updated</Text>
-                          <Text fontSize="xs" fontWeight="500">{new Date(DataVendor.updatedAt).toLocaleDateString("id-ID")}</Text>
+                          <Text fontSize="xs" fontWeight="500">{new Date(DataVendor.updatedAt).toLocaleDateString("en-US")}</Text>
                         </VStack>
                       )}
                     </VStack>
@@ -1343,7 +1809,7 @@ const VendorDetailView = () => {
                 <Heading size="md" color={colorMode === "light" ? "secondary.800" : "secondary.100"}>
                   Add New TDR Registration
                 </Heading>
-                <Text fontSize="xs" color="gray.500">Enter Tanda Daftar Rekanan details and upload supporting documents</Text>
+                <Text fontSize="xs" color="gray.500">Enter Vendor Registration Certificate details and upload supporting documents</Text>
               </VStack>
             </HStack>
           </ModalHeader>
@@ -1360,48 +1826,52 @@ const VendorDetailView = () => {
 
                   <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                     <FormControl isRequired>
-                      <FormLabel fontSize="xs" fontWeight="600">TDR Number</FormLabel>
+                      <FormLabel fontSize="xs" fontWeight="600">TDR Registration Number</FormLabel>
                       <Input
                         size="sm"
                         rounded="md"
                         focusBorderColor="secondary.500"
                         bg={colorMode === "light" ? "white" : "gray.700"}
                         value={tdrForm.trdNumber}
-                        onChange={(e) => setTdrForm({ ...tdrForm, trdNumber: e.target.value })}
-                        placeholder="e.g. TDR-2026-00918"
+                        onChange={(e) => setTdrForm({ ...tdrForm, trdNumber: e.target.value.toUpperCase() })}
+                        placeholder="e.g. TDR/2026/VND/0091"
                       />
                     </FormControl>
 
                     <FormControl isRequired>
-                      <FormLabel fontSize="xs" fontWeight="600">Registration Type</FormLabel>
-                      <ChakraSelect
-                        size="sm"
-                        rounded="md"
-                        focusBorderColor="secondary.500"
-                        bg={colorMode === "light" ? "white" : "gray.700"}
+                      <FormLabel fontSize="xs" fontWeight="600">TDR Certification Type</FormLabel>
+                      <RadioGroup
                         value={tdrForm.tdrType}
-                        onChange={(e) => setTdrForm({ ...tdrForm, tdrType: e.target.value })}
+                        onChange={(val) => setTdrForm({ ...tdrForm, tdrType: val })}
                       >
-                        <option value="PERMANENT">PERMANENT (Permanen)</option>
-                        <option value="TEMPORARY">TEMPORARY (Sementara)</option>
-                      </ChakraSelect>
+                        <Stack direction="row" spacing={6} h="36px" align="center">
+                          {TDR_TYPE_OPTIONS.map((t) => (
+                            <Radio key={t} value={t} colorScheme="teal" size="sm">
+                              <Text fontSize="xs" fontWeight="600">
+                                {t}
+                              </Text>
+                            </Radio>
+                          ))}
+                        </Stack>
+                      </RadioGroup>
                     </FormControl>
 
                     <FormControl isRequired>
-                      <FormLabel fontSize="xs" fontWeight="600">NPWP Tax Number</FormLabel>
+                      <FormLabel fontSize="xs" fontWeight="600">Tax Identification Number (NPWP)</FormLabel>
                       <Input
                         size="sm"
                         rounded="md"
                         focusBorderColor="secondary.500"
                         bg={colorMode === "light" ? "white" : "gray.700"}
                         value={tdrForm.npwpNumber}
-                        onChange={(e) => setTdrForm({ ...tdrForm, npwpNumber: e.target.value })}
+                        onChange={(e) => setTdrForm({ ...tdrForm, npwpNumber: formatIndonesianNPWP(e.target.value) })}
                         placeholder="00.000.000.0-000.000"
+                        maxLength={20}
                       />
                     </FormControl>
 
                     <FormControl isRequired>
-                      <FormLabel fontSize="xs" fontWeight="600">Year Registered</FormLabel>
+                      <FormLabel fontSize="xs" fontWeight="600">Registration Year</FormLabel>
                       <Input
                         size="sm"
                         rounded="md"
@@ -1409,7 +1879,8 @@ const VendorDetailView = () => {
                         bg={colorMode === "light" ? "white" : "gray.700"}
                         value={tdrForm.yearRegistered}
                         onChange={(e) => setTdrForm({ ...tdrForm, yearRegistered: e.target.value })}
-                        placeholder="e.g. 2026"
+                        placeholder="2026"
+                        maxLength={4}
                       />
                     </FormControl>
                   </SimpleGrid>
@@ -1424,18 +1895,33 @@ const VendorDetailView = () => {
                     <Heading size="xs" color="purple.700">2. Business Sector & Qualifications</Heading>
                   </HStack>
 
-                  <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                  <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
                     <FormControl isRequired>
-                      <FormLabel fontSize="xs" fontWeight="600">Business Entity Type</FormLabel>
-                      <Input
-                        size="sm"
-                        rounded="md"
-                        focusBorderColor="secondary.500"
-                        bg={colorMode === "light" ? "white" : "gray.700"}
-                        value={tdrForm.businessType}
-                        onChange={(e) => setTdrForm({ ...tdrForm, businessType: e.target.value })}
-                        placeholder="e.g. PT / CV / Koperasi"
-                      />
+                      <FormLabel fontSize="xs" fontWeight="600">TDR Business Entity Type</FormLabel>
+                      <ButtonGroup size="sm" isAttached variant="outline" w="full">
+                        {VENDOR_TYPE_OPTIONS.map((type) => {
+                          const isSelected = tdrForm.businessType === type;
+                          return (
+                            <Button
+                              key={type}
+                              flex={1}
+                              h="36px"
+                              colorScheme={isSelected ? "teal" : "gray"}
+                              bg={isSelected ? "teal.500" : colorMode === "dark" ? "gray.700" : "gray.50"}
+                              color={isSelected ? "white" : colorMode === "dark" ? "gray.200" : "gray.700"}
+                              borderColor={isSelected ? "teal.500" : colorMode === "dark" ? "gray.600" : "gray.300"}
+                              onClick={() => setTdrForm({ ...tdrForm, businessType: type })}
+                              fontSize="xs"
+                              fontWeight="600"
+                              _hover={{
+                                bg: isSelected ? "teal.600" : colorMode === "dark" ? "gray.600" : "gray.100",
+                              }}
+                            >
+                              {type}
+                            </Button>
+                          );
+                        })}
+                      </ButtonGroup>
                     </FormControl>
 
                     <FormControl isRequired>
@@ -1446,41 +1932,41 @@ const VendorDetailView = () => {
                         focusBorderColor="secondary.500"
                         bg={colorMode === "light" ? "white" : "gray.700"}
                         value={tdrForm.businessSectorCode}
-                        onChange={(e) => setTdrForm({ ...tdrForm, businessSectorCode: e.target.value })}
-                        placeholder="e.g. IT-DEV-01"
+                        onChange={(e) => setTdrForm({ ...tdrForm, businessSectorCode: e.target.value.toUpperCase() })}
+                        placeholder="e.g. TIK-01"
                       />
                     </FormControl>
 
-                    <GridItem colSpan={{ base: 1, md: 2 }}>
-                      <FormControl isRequired>
-                        <FormLabel fontSize="xs" fontWeight="600">Business Sector Name</FormLabel>
-                        <Input
-                          size="sm"
-                          rounded="md"
-                          focusBorderColor="secondary.500"
-                          bg={colorMode === "light" ? "white" : "gray.700"}
-                          value={tdrForm.businessSectorName}
-                          onChange={(e) => setTdrForm({ ...tdrForm, businessSectorName: e.target.value })}
-                          placeholder="e.g. Teknologi Informasi & Pengembangan Perangkat Lunak"
-                        />
-                      </FormControl>
-                    </GridItem>
+                    <FormControl isRequired>
+                      <FormLabel fontSize="xs" fontWeight="600">Business Sector Name</FormLabel>
+                      <Input
+                        size="sm"
+                        rounded="md"
+                        focusBorderColor="secondary.500"
+                        bg={colorMode === "light" ? "white" : "gray.700"}
+                        value={tdrForm.businessSectorName}
+                        onChange={(e) => setTdrForm({ ...tdrForm, businessSectorName: e.target.value.toUpperCase() })}
+                        placeholder="e.g. Information Technology"
+                      />
+                    </FormControl>
+                  </SimpleGrid>
 
+                  <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                     <FormControl>
-                      <FormLabel fontSize="xs" fontWeight="600">Sub Business Sector</FormLabel>
+                      <FormLabel fontSize="xs" fontWeight="600">Sub-Business Sector (Optional)</FormLabel>
                       <Input
                         size="sm"
                         rounded="md"
                         focusBorderColor="secondary.500"
                         bg={colorMode === "light" ? "white" : "gray.700"}
                         value={tdrForm.subBusinessSector}
-                        onChange={(e) => setTdrForm({ ...tdrForm, subBusinessSector: e.target.value })}
-                        placeholder="Optional sub-category"
+                        onChange={(e) => setTdrForm({ ...tdrForm, subBusinessSector: e.target.value.toUpperCase() })}
+                        placeholder="e.g. Software Development / Security"
                       />
                     </FormControl>
 
                     <FormControl>
-                      <FormLabel fontSize="xs" fontWeight="600">Qualifications & Certification</FormLabel>
+                      <FormLabel fontSize="xs" fontWeight="600">Qualifications / Quality Certifications</FormLabel>
                       <Input
                         size="sm"
                         rounded="md"
@@ -1488,7 +1974,7 @@ const VendorDetailView = () => {
                         bg={colorMode === "light" ? "white" : "gray.700"}
                         value={tdrForm.qualifications}
                         onChange={(e) => setTdrForm({ ...tdrForm, qualifications: e.target.value })}
-                        placeholder="e.g. ISO 27001 / High Risk Grade"
+                        placeholder="e.g. ISO 27001, ISO 9001 (Optional)"
                       />
                     </FormControl>
                   </SimpleGrid>
@@ -1497,7 +1983,7 @@ const VendorDetailView = () => {
 
               {/* Form Section 3: Validity Period */}
               <Card variant="outline" rounded="lg" p={4} bg={colorMode === "light" ? "gray.50" : "gray.800"}>
-                <VStack spacing={4} align="stretch">
+                <VStack spacing={3} align="stretch">
                   <HStack spacing={2} pb={1} borderBottom="1px" borderColor="gray.200">
                     <Icon as={FiCalendar} color="emerald.500" boxSize={4} />
                     <Heading size="xs" color="emerald.700">3. Validity & Expiration Period</Heading>
@@ -1505,7 +1991,7 @@ const VendorDetailView = () => {
 
                   <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                     <FormControl isRequired>
-                      <FormLabel fontSize="xs" fontWeight="600">Valid From Date</FormLabel>
+                      <FormLabel fontSize="xs" fontWeight="600">Start Effective Date</FormLabel>
                       <Input
                         size="sm"
                         rounded="md"
@@ -1530,6 +2016,14 @@ const VendorDetailView = () => {
                       />
                     </FormControl>
                   </SimpleGrid>
+
+                  <HStack spacing={2} pt={1} justify="flex-end">
+                    <Text fontSize="2xs" color="gray.500" fontWeight="600">Quick Validity Preset:</Text>
+                    <Button size="2xs" variant="outline" colorScheme="teal" onClick={() => handleExtendTdrExpiry(0, 1)}>+1 Year</Button>
+                    <Button size="2xs" variant="outline" colorScheme="teal" onClick={() => handleExtendTdrExpiry(0, 2)}>+2 Years</Button>
+                    <Button size="2xs" variant="outline" colorScheme="teal" onClick={() => handleExtendTdrExpiry(0, 3)}>+3 Years</Button>
+                    <Button size="2xs" variant="outline" colorScheme="teal" onClick={() => handleExtendTdrExpiry(0, 5)}>+5 Years</Button>
+                  </HStack>
                 </VStack>
               </Card>
 
@@ -1644,24 +2138,70 @@ const VendorDetailView = () => {
                     </HStack>
 
                     <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
-                      <FormControl>
-                        <FormLabel fontSize="xs" fontWeight="600">TDR Number</FormLabel>
-                        <Input size="sm" rounded="md" value={editTdrForm.trdNumber} isReadOnly={!isEditingTdr} bg={isEditingTdr ? "white" : "gray.100"} onChange={(e) => setEditTdrForm({ ...editTdrForm, trdNumber: e.target.value })} />
+                      <FormControl isRequired>
+                        <FormLabel fontSize="xs" fontWeight="600">TDR Registration Number</FormLabel>
+                        <Input
+                          size="sm"
+                          rounded="md"
+                          value={editTdrForm.trdNumber || ""}
+                          isReadOnly={!isEditingTdr}
+                          bg={isEditingTdr ? (colorMode === "light" ? "white" : "gray.700") : (colorMode === "light" ? "gray.100" : "gray.900")}
+                          onChange={(e) => setEditTdrForm({ ...editTdrForm, trdNumber: e.target.value.toUpperCase() })}
+                        />
                       </FormControl>
-                      <FormControl>
-                        <FormLabel fontSize="xs" fontWeight="600">Registration Type</FormLabel>
-                        <ChakraSelect size="sm" rounded="md" value={editTdrForm.tdrType} isDisabled={!isEditingTdr} bg={isEditingTdr ? "white" : "gray.100"} onChange={(e) => setEditTdrForm({ ...editTdrForm, tdrType: e.target.value })}>
-                          <option value="PERMANENT">PERMANENT</option>
-                          <option value="TEMPORARY">TEMPORARY</option>
-                        </ChakraSelect>
+
+                      <FormControl isRequired>
+                        <FormLabel fontSize="xs" fontWeight="600">TDR Certification Type</FormLabel>
+                        {isEditingTdr ? (
+                          <RadioGroup
+                            value={editTdrForm.tdrType}
+                            onChange={(val) => setEditTdrForm({ ...editTdrForm, tdrType: val })}
+                          >
+                            <Stack direction="row" spacing={6} h="36px" align="center">
+                              {TDR_TYPE_OPTIONS.map((t) => (
+                                <Radio key={t} value={t} colorScheme="teal" size="sm">
+                                  <Text fontSize="xs" fontWeight="600">
+                                    {t}
+                                  </Text>
+                                </Radio>
+                              ))}
+                            </Stack>
+                          </RadioGroup>
+                        ) : (
+                          <Input
+                            size="sm"
+                            rounded="md"
+                            value={editTdrForm.tdrType || ""}
+                            isReadOnly
+                            bg={colorMode === "light" ? "gray.100" : "gray.900"}
+                          />
+                        )}
                       </FormControl>
-                      <FormControl>
-                        <FormLabel fontSize="xs" fontWeight="600">NPWP Tax Number</FormLabel>
-                        <Input size="sm" rounded="md" value={editTdrForm.npwpNumber} isReadOnly={!isEditingTdr} bg={isEditingTdr ? "white" : "gray.100"} onChange={(e) => setEditTdrForm({ ...editTdrForm, npwpNumber: e.target.value })} />
+
+                      <FormControl isRequired>
+                        <FormLabel fontSize="xs" fontWeight="600">Tax Identification Number (NPWP)</FormLabel>
+                        <Input
+                          size="sm"
+                          rounded="md"
+                          value={editTdrForm.npwpNumber || ""}
+                          isReadOnly={!isEditingTdr}
+                          bg={isEditingTdr ? (colorMode === "light" ? "white" : "gray.700") : (colorMode === "light" ? "gray.100" : "gray.900")}
+                          onChange={(e) => setEditTdrForm({ ...editTdrForm, npwpNumber: formatIndonesianNPWP(e.target.value) })}
+                          maxLength={20}
+                        />
                       </FormControl>
-                      <FormControl>
-                        <FormLabel fontSize="xs" fontWeight="600">Year Registered</FormLabel>
-                        <Input size="sm" rounded="md" value={editTdrForm.yearRegistered} isReadOnly={!isEditingTdr} bg={isEditingTdr ? "white" : "gray.100"} onChange={(e) => setEditTdrForm({ ...editTdrForm, yearRegistered: e.target.value })} />
+
+                      <FormControl isRequired>
+                        <FormLabel fontSize="xs" fontWeight="600">Registration Year</FormLabel>
+                        <Input
+                          size="sm"
+                          rounded="md"
+                          value={editTdrForm.yearRegistered || ""}
+                          isReadOnly={!isEditingTdr}
+                          bg={isEditingTdr ? (colorMode === "light" ? "white" : "gray.700") : (colorMode === "light" ? "gray.100" : "gray.900")}
+                          onChange={(e) => setEditTdrForm({ ...editTdrForm, yearRegistered: e.target.value })}
+                          maxLength={4}
+                        />
                       </FormControl>
                     </SimpleGrid>
                   </VStack>
@@ -1675,28 +2215,93 @@ const VendorDetailView = () => {
                       <Heading size="xs" color="purple.700">2. Business Sector & Details</Heading>
                     </HStack>
 
+                    <SimpleGrid columns={{ base: 1, md: 3 }} spacing={3}>
+                      <FormControl isRequired>
+                        <FormLabel fontSize="xs" fontWeight="600">Business Entity Type</FormLabel>
+                        {isEditingTdr ? (
+                          <ButtonGroup size="sm" isAttached variant="outline" w="full">
+                            {VENDOR_TYPE_OPTIONS.map((type) => {
+                              const isSelected = editTdrForm.businessType === type;
+                              return (
+                                <Button
+                                  key={type}
+                                  flex={1}
+                                  h="36px"
+                                  colorScheme={isSelected ? "teal" : "gray"}
+                                  bg={isSelected ? "teal.500" : colorMode === "dark" ? "gray.700" : "gray.50"}
+                                  color={isSelected ? "white" : colorMode === "dark" ? "gray.200" : "gray.700"}
+                                  borderColor={isSelected ? "teal.500" : colorMode === "dark" ? "gray.600" : "gray.300"}
+                                  onClick={() => setEditTdrForm({ ...editTdrForm, businessType: type })}
+                                  fontSize="xs"
+                                  fontWeight="600"
+                                  _hover={{
+                                    bg: isSelected ? "teal.600" : colorMode === "dark" ? "gray.600" : "gray.100",
+                                  }}
+                                >
+                                  {type}
+                                </Button>
+                              );
+                            })}
+                          </ButtonGroup>
+                        ) : (
+                          <Input
+                            size="sm"
+                            rounded="md"
+                            value={editTdrForm.businessType || ""}
+                            isReadOnly
+                            bg={colorMode === "light" ? "gray.100" : "gray.900"}
+                          />
+                        )}
+                      </FormControl>
+
+                      <FormControl isRequired>
+                        <FormLabel fontSize="xs" fontWeight="600">Business Sector Code</FormLabel>
+                        <Input
+                          size="sm"
+                          rounded="md"
+                          value={editTdrForm.businessSectorCode || ""}
+                          isReadOnly={!isEditingTdr}
+                          bg={isEditingTdr ? (colorMode === "light" ? "white" : "gray.700") : (colorMode === "light" ? "gray.100" : "gray.900")}
+                          onChange={(e) => setEditTdrForm({ ...editTdrForm, businessSectorCode: e.target.value.toUpperCase() })}
+                        />
+                      </FormControl>
+
+                      <FormControl isRequired>
+                        <FormLabel fontSize="xs" fontWeight="600">Business Sector Name</FormLabel>
+                        <Input
+                          size="sm"
+                          rounded="md"
+                          value={editTdrForm.businessSectorName || ""}
+                          isReadOnly={!isEditingTdr}
+                          bg={isEditingTdr ? (colorMode === "light" ? "white" : "gray.700") : (colorMode === "light" ? "gray.100" : "gray.900")}
+                          onChange={(e) => setEditTdrForm({ ...editTdrForm, businessSectorName: e.target.value.toUpperCase() })}
+                        />
+                      </FormControl>
+                    </SimpleGrid>
+
                     <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
                       <FormControl>
-                        <FormLabel fontSize="xs" fontWeight="600">Business Entity Type</FormLabel>
-                        <Input size="sm" rounded="md" value={editTdrForm.businessType} isReadOnly={!isEditingTdr} bg={isEditingTdr ? "white" : "gray.100"} onChange={(e) => setEditTdrForm({ ...editTdrForm, businessType: e.target.value })} />
+                        <FormLabel fontSize="xs" fontWeight="600">Sub-Business Sector (Optional)</FormLabel>
+                        <Input
+                          size="sm"
+                          rounded="md"
+                          value={editTdrForm.subBusinessSector || ""}
+                          isReadOnly={!isEditingTdr}
+                          bg={isEditingTdr ? (colorMode === "light" ? "white" : "gray.700") : (colorMode === "light" ? "gray.100" : "gray.900")}
+                          onChange={(e) => setEditTdrForm({ ...editTdrForm, subBusinessSector: e.target.value.toUpperCase() })}
+                        />
                       </FormControl>
+
                       <FormControl>
-                        <FormLabel fontSize="xs" fontWeight="600">Sector Code</FormLabel>
-                        <Input size="sm" rounded="md" value={editTdrForm.businessSectorCode} isReadOnly={!isEditingTdr} bg={isEditingTdr ? "white" : "gray.100"} onChange={(e) => setEditTdrForm({ ...editTdrForm, businessSectorCode: e.target.value })} />
-                      </FormControl>
-                      <GridItem colSpan={{ base: 1, md: 2 }}>
-                        <FormControl>
-                          <FormLabel fontSize="xs" fontWeight="600">Sector Name</FormLabel>
-                          <Input size="sm" rounded="md" value={editTdrForm.businessSectorName} isReadOnly={!isEditingTdr} bg={isEditingTdr ? "white" : "gray.100"} onChange={(e) => setEditTdrForm({ ...editTdrForm, businessSectorName: e.target.value })} />
-                        </FormControl>
-                      </GridItem>
-                      <FormControl>
-                        <FormLabel fontSize="xs" fontWeight="600">Sub Sector</FormLabel>
-                        <Input size="sm" rounded="md" value={editTdrForm.subBusinessSector} isReadOnly={!isEditingTdr} bg={isEditingTdr ? "white" : "gray.100"} onChange={(e) => setEditTdrForm({ ...editTdrForm, subBusinessSector: e.target.value })} />
-                      </FormControl>
-                      <FormControl>
-                        <FormLabel fontSize="xs" fontWeight="600">Qualifications</FormLabel>
-                        <Input size="sm" rounded="md" value={editTdrForm.qualifications} isReadOnly={!isEditingTdr} bg={isEditingTdr ? "white" : "gray.100"} onChange={(e) => setEditTdrForm({ ...editTdrForm, qualifications: e.target.value })} />
+                        <FormLabel fontSize="xs" fontWeight="600">Qualifications / Quality Certifications</FormLabel>
+                        <Input
+                          size="sm"
+                          rounded="md"
+                          value={editTdrForm.qualifications || ""}
+                          isReadOnly={!isEditingTdr}
+                          bg={isEditingTdr ? (colorMode === "light" ? "white" : "gray.700") : (colorMode === "light" ? "gray.100" : "gray.900")}
+                          onChange={(e) => setEditTdrForm({ ...editTdrForm, qualifications: e.target.value })}
+                        />
                       </FormControl>
                     </SimpleGrid>
                   </VStack>
@@ -1704,22 +2309,49 @@ const VendorDetailView = () => {
 
                 {/* Section 3: Validity Period */}
                 <Card variant="outline" rounded="lg" p={4} bg={colorMode === "light" ? "gray.50" : "gray.800"}>
-                  <VStack spacing={4} align="stretch">
+                  <VStack spacing={3} align="stretch">
                     <HStack spacing={2} pb={1} borderBottom="1px" borderColor="gray.200">
                       <Icon as={FiCalendar} color="emerald.500" boxSize={4} />
-                      <Heading size="xs" color="emerald.700">3. Validity Period</Heading>
+                      <Heading size="xs" color="emerald.700">3. Validity & Expiration Period</Heading>
                     </HStack>
 
                     <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
-                      <FormControl>
-                        <FormLabel fontSize="xs" fontWeight="600">Valid From Date</FormLabel>
-                        <Input size="sm" rounded="md" type="date" value={editTdrForm.timeInEffect} isReadOnly={!isEditingTdr} bg={isEditingTdr ? "white" : "gray.100"} onChange={(e) => setEditTdrForm({ ...editTdrForm, timeInEffect: e.target.value })} />
+                      <FormControl isRequired>
+                        <FormLabel fontSize="xs" fontWeight="600">Start Effective Date</FormLabel>
+                        <Input
+                          size="sm"
+                          rounded="md"
+                          type="date"
+                          value={editTdrForm.timeInEffect || ""}
+                          isReadOnly={!isEditingTdr}
+                          bg={isEditingTdr ? (colorMode === "light" ? "white" : "gray.700") : (colorMode === "light" ? "gray.100" : "gray.900")}
+                          onChange={(e) => setEditTdrForm({ ...editTdrForm, timeInEffect: e.target.value })}
+                        />
                       </FormControl>
-                      <FormControl>
+
+                      <FormControl isRequired>
                         <FormLabel fontSize="xs" fontWeight="600">Expired Date</FormLabel>
-                        <Input size="sm" rounded="md" type="date" value={editTdrForm.expiredAt} isReadOnly={!isEditingTdr} bg={isEditingTdr ? "white" : "gray.100"} onChange={(e) => setEditTdrForm({ ...editTdrForm, expiredAt: e.target.value })} />
+                        <Input
+                          size="sm"
+                          rounded="md"
+                          type="date"
+                          value={editTdrForm.expiredAt || ""}
+                          isReadOnly={!isEditingTdr}
+                          bg={isEditingTdr ? (colorMode === "light" ? "white" : "gray.700") : (colorMode === "light" ? "gray.100" : "gray.900")}
+                          onChange={(e) => setEditTdrForm({ ...editTdrForm, expiredAt: e.target.value })}
+                        />
                       </FormControl>
                     </SimpleGrid>
+
+                    {isEditingTdr && (
+                      <HStack spacing={2} pt={1} justify="flex-end">
+                        <Text fontSize="2xs" color="gray.500" fontWeight="600">Quick Validity Preset:</Text>
+                        <Button size="2xs" variant="outline" colorScheme="teal" onClick={() => handleExtendEditTdrExpiry(0, 1)}>+1 Year</Button>
+                        <Button size="2xs" variant="outline" colorScheme="teal" onClick={() => handleExtendEditTdrExpiry(0, 2)}>+2 Years</Button>
+                        <Button size="2xs" variant="outline" colorScheme="teal" onClick={() => handleExtendEditTdrExpiry(0, 3)}>+3 Years</Button>
+                        <Button size="2xs" variant="outline" colorScheme="teal" onClick={() => handleExtendEditTdrExpiry(0, 5)}>+5 Years</Button>
+                      </HStack>
+                    )}
                   </VStack>
                 </Card>
 

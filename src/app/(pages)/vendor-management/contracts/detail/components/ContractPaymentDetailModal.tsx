@@ -191,7 +191,7 @@ export default function ContractPaymentDetailModal({
                     </Text>
                     <Text fontSize="xs" fontWeight="bold">
                       {payment.paymentStatusDate
-                        ? new Date(payment.paymentStatusDate).toLocaleDateString("id-ID")
+                        ? new Date(payment.paymentStatusDate).toLocaleDateString("en-US")
                         : "-"}
                     </Text>
                   </Box>
@@ -202,7 +202,7 @@ export default function ContractPaymentDetailModal({
                     <Text fontSize="xs" fontWeight="semibold">
                       {payment.createdBy || "SYSTEM"} (
                       {payment.createdAt
-                        ? new Date(payment.createdAt).toLocaleDateString("id-ID")
+                        ? new Date(payment.createdAt).toLocaleDateString("en-US")
                         : "-"}
                       )
                     </Text>
@@ -359,7 +359,7 @@ export default function ContractPaymentDetailModal({
                                   </Text>
                                   <Text fontSize="2xs" color="gray.500">
                                     Ref: {att.documentNumber} • Date:{" "}
-                                    {new Date(att.documentDate).toLocaleDateString("id-ID")}
+                                    {new Date(att.documentDate).toLocaleDateString("en-US")}
                                   </Text>
                                 </VStack>
 

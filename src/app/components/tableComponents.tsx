@@ -43,14 +43,32 @@ import {
 import { useEffect, useState } from "react";
 
 export function ControlTableNum({ table }: any) {
-  const pageCount = table.getPageCount();
-  const currentPage = table.getState().pagination.pageIndex + 1;
+  const pageCount = Math.max(1, table.getPageCount() || 1);
+  const currentPage = (table.getState().pagination.pageIndex || 0) + 1;
 
-  // Create array for page numbers
-  const visiblePages = Array.from(
-    { length: Math.min(5, pageCount) },
-    (_, i) => i + 1
-  ); // Show first 5 pages for now
+  // Generate sliding window of up to 5 visible pages
+  const getVisiblePages = () => {
+    const maxVisible = 5;
+    if (pageCount <= maxVisible) {
+      return Array.from({ length: pageCount }, (_, i) => i + 1);
+    }
+    let start = Math.max(1, currentPage - 2);
+    let end = Math.min(pageCount, start + maxVisible - 1);
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  };
+
+  const visiblePages = getVisiblePages();
+  const showFirstPage = visiblePages.length > 0 && !visiblePages.includes(1);
+  const showFirstEllipsis = visiblePages.length > 0 && visiblePages[0] > 2;
+  const showLastEllipsis =
+    visiblePages.length > 0 &&
+    visiblePages[visiblePages.length - 1] < pageCount - 1;
+  const showLastPage =
+    visiblePages.length > 0 && !visiblePages.includes(pageCount);
+
   return (
     <Flex
       minWidth="max-content"
@@ -73,13 +91,12 @@ export function ControlTableNum({ table }: any) {
               lg: "start",
             }}
             divider={<StackDivider borderColor="gray.300" />}
-            // bg={"red"}
           >
             <TableInputShowPage table={table} />
             <>
               <Text fontWeight={600}>Halaman </Text>
-              <Text> {table.getState().pagination.pageIndex + 1} </Text>/{" "}
-              <Text> {table.getPageCount()} </Text>
+              <Text> {currentPage} </Text>/{" "}
+              <Text> {pageCount} </Text>
             </>
           </HStack>
         </GridItem>
@@ -112,7 +129,23 @@ export function ControlTableNum({ table }: any) {
               >
                 <BsChevronLeft />
               </Button>
-              {/* Page numbers */}
+              {/* First page */}
+              {showFirstPage && (
+                <Button
+                  onClick={() => table.setPageIndex(0)}
+                  isActive={currentPage === 1}
+                  minW="40px"
+                >
+                  1
+                </Button>
+              )}
+              {/* First ellipsis */}
+              {showFirstEllipsis && (
+                <Button minW="40px" isDisabled cursor="default" _hover={{ bg: "transparent" }}>
+                  ...
+                </Button>
+              )}
+              {/* Visible pages */}
               {visiblePages.map((page) => (
                 <Button
                   key={page}
@@ -123,10 +156,17 @@ export function ControlTableNum({ table }: any) {
                   {page}
                 </Button>
               ))}
-              {currentPage !== 1 ? <Button minW="40px">...</Button> : ""}
-              {currentPage !== 1 && (
+              {/* Last ellipsis */}
+              {showLastEllipsis && (
+                <Button minW="40px" isDisabled cursor="default" _hover={{ bg: "transparent" }}>
+                  ...
+                </Button>
+              )}
+              {/* Last page */}
+              {showLastPage && (
                 <Button
                   onClick={() => table.setPageIndex(pageCount - 1)}
+                  isActive={currentPage === pageCount}
                   minW="40px"
                 >
                   {pageCount}
@@ -155,19 +195,37 @@ export function ControlTableNum({ table }: any) {
 }
 
 export function ControlTable({ table }: any) {
-  const pageCount = table.getPageCount();
-  const currentPage = table.getState().pagination.pageIndex + 1;
+  const pageCount = Math.max(1, table.getPageCount() || 1);
+  const currentPage = (table.getState().pagination.pageIndex || 0) + 1;
   const [pageInput, setPageInput] = useState("");
 
   useEffect(() => {
     setPageInput(String(currentPage)); // sync input with current page
   }, [currentPage]);
 
-  // Create array for page numbers
-  const visiblePages = Array.from(
-    { length: Math.min(5, pageCount) },
-    (_, i) => i + 1
-  ); // Show first 5 pages for now
+  // Create array for page numbers (sliding window of up to 5 pages)
+  const getVisiblePages = () => {
+    const maxVisible = 5;
+    if (pageCount <= maxVisible) {
+      return Array.from({ length: pageCount }, (_, i) => i + 1);
+    }
+    let start = Math.max(1, currentPage - 2);
+    let end = Math.min(pageCount, start + maxVisible - 1);
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  };
+
+  const visiblePages = getVisiblePages();
+  const showFirstPage = visiblePages.length > 0 && !visiblePages.includes(1);
+  const showFirstEllipsis = visiblePages.length > 0 && visiblePages[0] > 2;
+  const showLastEllipsis =
+    visiblePages.length > 0 &&
+    visiblePages[visiblePages.length - 1] < pageCount - 1;
+  const showLastPage =
+    visiblePages.length > 0 && !visiblePages.includes(pageCount);
+
   return (
     <Box w="full" overflowX="auto">
       <Flex
@@ -228,6 +286,44 @@ export function ControlTable({ table }: any) {
                   Prev
                 </Text>
               </Button>
+              {/* First page */}
+              {showFirstPage && (
+                <Button
+                  onClick={() => table.setPageIndex(0)}
+                  isActive={currentPage === 1}
+                  minW="35px"
+                  _active={{
+                    bg: "secondary.500",
+                    color: "white",
+                  }}
+                  display={{
+                    base: "none",
+                    sm: "none",
+                    md: "none",
+                    lg: "block",
+                  }}
+                  rounded={"md"}
+                >
+                  1
+                </Button>
+              )}
+              {/* First ellipsis */}
+              {showFirstEllipsis && (
+                <Button
+                  minW="35px"
+                  isDisabled
+                  cursor="default"
+                  _hover={{ bg: "transparent" }}
+                  display={{
+                    base: "none",
+                    sm: "none",
+                    md: "none",
+                    lg: "block",
+                  }}
+                >
+                  ...
+                </Button>
+              )}
               {/* Page numbers */}
               {visiblePages.map((page) => (
                 <Button
@@ -250,9 +346,13 @@ export function ControlTable({ table }: any) {
                   {page}
                 </Button>
               ))}
-              {currentPage !== 1 ? (
+              {/* Last ellipsis */}
+              {showLastEllipsis && (
                 <Button
                   minW="35px"
+                  isDisabled
+                  cursor="default"
+                  _hover={{ bg: "transparent" }}
                   display={{
                     base: "none",
                     sm: "none",
@@ -262,19 +362,24 @@ export function ControlTable({ table }: any) {
                 >
                   ...
                 </Button>
-              ) : (
-                ""
               )}
-              {currentPage !== 1 && (
+              {/* Last page */}
+              {showLastPage && (
                 <Button
                   onClick={() => table.setPageIndex(pageCount - 1)}
+                  isActive={currentPage === pageCount}
                   minW="35px"
+                  _active={{
+                    bg: "secondary.500",
+                    color: "white",
+                  }}
                   display={{
                     base: "none",
                     sm: "none",
                     md: "none",
                     lg: "block",
                   }}
+                  rounded={"md"}
                 >
                   {pageCount}
                 </Button>
@@ -505,14 +610,32 @@ export function ControlTableLite({ table }: any) {
 }
 
 export function ControlTableAlternate1({ table }: any) {
-  const pageCount = table.getPageCount();
-  const currentPage = table.getState().pagination.pageIndex + 1;
+  const pageCount = Math.max(1, table.getPageCount() || 1);
+  const currentPage = (table.getState().pagination.pageIndex || 0) + 1;
 
-  // Create array for page numbers
-  const visiblePages = Array.from(
-    { length: Math.min(5, pageCount) },
-    (_, i) => i + 1
-  ); // Show first 5 pages for now
+  // Create array for page numbers (sliding window of up to 5 pages)
+  const getVisiblePages = () => {
+    const maxVisible = 5;
+    if (pageCount <= maxVisible) {
+      return Array.from({ length: pageCount }, (_, i) => i + 1);
+    }
+    let start = Math.max(1, currentPage - 2);
+    let end = Math.min(pageCount, start + maxVisible - 1);
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  };
+
+  const visiblePages = getVisiblePages();
+  const showFirstPage = visiblePages.length > 0 && !visiblePages.includes(1);
+  const showFirstEllipsis = visiblePages.length > 0 && visiblePages[0] > 2;
+  const showLastEllipsis =
+    visiblePages.length > 0 &&
+    visiblePages[visiblePages.length - 1] < pageCount - 1;
+  const showLastPage =
+    visiblePages.length > 0 && !visiblePages.includes(pageCount);
+
   return (
     <Flex
       minWidth="max-content"
@@ -552,6 +675,39 @@ export function ControlTableAlternate1({ table }: any) {
             >
               <BsChevronLeft />
             </Button>
+            {/* First page */}
+            {showFirstPage && (
+              <Button
+                onClick={() => table.setPageIndex(0)}
+                isActive={currentPage === 1}
+                minW="35px"
+                display={{
+                  base: "none",
+                  sm: "none",
+                  md: "block",
+                  lg: "block",
+                }}
+              >
+                1
+              </Button>
+            )}
+            {/* First ellipsis */}
+            {showFirstEllipsis && (
+              <Button
+                minW="35px"
+                isDisabled
+                cursor="default"
+                _hover={{ bg: "transparent" }}
+                display={{
+                  base: "none",
+                  sm: "none",
+                  md: "block",
+                  lg: "block",
+                }}
+              >
+                ...
+              </Button>
+            )}
             {/* Page numbers */}
             {visiblePages.map((page) => (
               <Button
@@ -569,9 +725,13 @@ export function ControlTableAlternate1({ table }: any) {
                 {page}
               </Button>
             ))}
-            {currentPage !== 1 ? (
+            {/* Last ellipsis */}
+            {showLastEllipsis && (
               <Button
                 minW="35px"
+                isDisabled
+                cursor="default"
+                _hover={{ bg: "transparent" }}
                 display={{
                   base: "none",
                   sm: "none",
@@ -581,12 +741,12 @@ export function ControlTableAlternate1({ table }: any) {
               >
                 ...
               </Button>
-            ) : (
-              ""
             )}
-            {currentPage !== 1 && (
+            {/* Last page */}
+            {showLastPage && (
               <Button
                 onClick={() => table.setPageIndex(pageCount - 1)}
+                isActive={currentPage === pageCount}
                 minW="35px"
                 display={{
                   base: "none",
@@ -1277,14 +1437,31 @@ export function ControlTableSmx({ table }: any) {
 }
 
 export function ControlTableSmx2({ table }: any) {
-  const pageCount = table.getPageCount();
-  const currentPage = table.getState().pagination.pageIndex + 1;
+  const pageCount = Math.max(1, table.getPageCount() || 1);
+  const currentPage = (table.getState().pagination.pageIndex || 0) + 1;
 
-  // Create array for page numbers
-  const visiblePages = Array.from(
-    { length: Math.min(5, pageCount) },
-    (_, i) => i + 1
-  ); // Show first 5 pages for now
+  // Create array for page numbers (sliding window of up to 5 pages)
+  const getVisiblePages = () => {
+    const maxVisible = 5;
+    if (pageCount <= maxVisible) {
+      return Array.from({ length: pageCount }, (_, i) => i + 1);
+    }
+    let start = Math.max(1, currentPage - 2);
+    let end = Math.min(pageCount, start + maxVisible - 1);
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  };
+
+  const visiblePages = getVisiblePages();
+  const showFirstPage = visiblePages.length > 0 && !visiblePages.includes(1);
+  const showFirstEllipsis = visiblePages.length > 0 && visiblePages[0] > 2;
+  const showLastEllipsis =
+    visiblePages.length > 0 &&
+    visiblePages[visiblePages.length - 1] < pageCount - 1;
+  const showLastPage =
+    visiblePages.length > 0 && !visiblePages.includes(pageCount);
 
   return (
     <div style={{ overflowX: "auto" }}>
@@ -1309,13 +1486,12 @@ export function ControlTableSmx2({ table }: any) {
                 lg: "start",
               }}
               divider={<StackDivider borderColor="gray.300" />}
-              // bg={"red"}
             >
               <TableInputShowPageSm table={table} />
               <>
                 <Text fontWeight={600}>Halaman </Text>
-                <Text> {table.getState().pagination.pageIndex + 1} </Text>/{" "}
-                <Text> {table.getPageCount()} </Text>
+                <Text> {currentPage} </Text>/{" "}
+                <Text> {pageCount} </Text>
               </>
             </HStack>
           </GridItem>
@@ -1349,6 +1525,23 @@ export function ControlTableSmx2({ table }: any) {
                   <BsChevronLeft />
                 </Button>
 
+                {/* First page */}
+                {showFirstPage && (
+                  <Button
+                    onClick={() => table.setPageIndex(0)}
+                    isActive={currentPage === 1}
+                    minW="40px"
+                  >
+                    1
+                  </Button>
+                )}
+                {/* First ellipsis */}
+                {showFirstEllipsis && (
+                  <Button minW="40px" isDisabled cursor="default" _hover={{ bg: "transparent" }}>
+                    ...
+                  </Button>
+                )}
+
                 {/* Page numbers */}
                 {visiblePages.map((page) => (
                   <Button
@@ -1361,13 +1554,18 @@ export function ControlTableSmx2({ table }: any) {
                   </Button>
                 ))}
 
-                {/* Ellipsis for more pages */}
-                {currentPage < pageCount - 5 && currentPage === 1 && (
-                  <Button minW="40px">...</Button>
+                {/* Last ellipsis */}
+                {showLastEllipsis && (
+                  <Button minW="40px" isDisabled cursor="default" _hover={{ bg: "transparent" }}>
+                    ...
+                  </Button>
                 )}
-                {currentPage !== 1 && (
+
+                {/* Last page */}
+                {showLastPage && (
                   <Button
                     onClick={() => table.setPageIndex(pageCount - 1)}
+                    isActive={currentPage === pageCount}
                     minW="40px"
                   >
                     {pageCount}

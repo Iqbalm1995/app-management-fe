@@ -207,7 +207,7 @@ export default function GeneratePaymentModal({
           workProgramLeftovers: 0,
           divisionId: "0",
           divisionCode: "DIV-IT",
-          divisionName: "Divisi Teknologi Informasi",
+          divisionName: "Information Technology Division",
         },
       ]);
     } catch {
@@ -224,7 +224,7 @@ export default function GeneratePaymentModal({
           workProgramLeftovers: 0,
           divisionId: "0",
           divisionCode: "DIV-IT",
-          divisionName: "Divisi Teknologi Informasi",
+          divisionName: "Information Technology Division",
         },
       ]);
     }
@@ -435,8 +435,8 @@ export default function GeneratePaymentModal({
                         Value: {formatIDR(contract.workValue)}
                       </Text>
                       <Text color="gray.500">
-                        Period: {new Date(contract.contractStartDate).toLocaleDateString("id-ID")} –{" "}
-                        {new Date(contract.contractEndDate).toLocaleDateString("id-ID")}
+                        Period: {new Date(contract.contractStartDate).toLocaleDateString("en-US")} –{" "}
+                        {new Date(contract.contractEndDate).toLocaleDateString("en-US")}
                       </Text>
                       <Text color="gray.500">
                         Status: {contract.status || "ACTIVE"}

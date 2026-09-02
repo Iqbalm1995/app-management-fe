@@ -40,6 +40,9 @@ export interface VendorInsertPayload {
   address2?: string | null;
   address3?: string | null;
   city: string;
+  province?: string | null;
+  district?: string | null;
+  subDistrict?: string | null;
   country: string;
   postalCode?: string | null;
   website?: string | null;
@@ -65,6 +68,9 @@ export interface VendorUpdatePayload {
   address2?: string | null;
   address3?: string | null;
   city: string;
+  province?: string | null;
+  district?: string | null;
+  subDistrict?: string | null;
   country: string;
   postalCode?: string | null;
   website?: string | null;
@@ -438,6 +444,9 @@ export interface VendorResponse {
   address2?: string | null;
   address3?: string | null;
   city: string;
+  province?: string | null;
+  district?: string | null;
+  subDistrict?: string | null;
   country: string;
   postalCode?: string | null;
   vendorLogo?: string | null;
@@ -699,6 +708,9 @@ interface useVendorServices {
     id: string,
     token: string
   ) => Promise<ApiGenericResponse<VendorResponse | null> | null>;
+  GenerateVendorCode: (
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
   Register: (
     payload: VendorInsertPayload,
     token: string
@@ -879,6 +891,33 @@ const useVendor = (): useVendorServices => {
           message: "Error connect to api",
           error: null,
         };
+      }
+    }
+  };
+
+  const GenerateVendorCode = async (
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const PathEndpoint: string = "/v1/Vendor/generate-code";
+    try {
+      const response = await axiosInstance.get<ApiGenericResponse<string>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "An error occurred during request.");
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error connect to api", error: null };
       }
     }
   };
@@ -1572,6 +1611,7 @@ const useVendor = (): useVendorServices => {
     SaveCostGovernance,
     GetCostGovHistoryList,
     GetDetailById,
+    GenerateVendorCode,
     Register,
     Update,
     InsertTdr,

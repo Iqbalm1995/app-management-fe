@@ -155,6 +155,17 @@ export const LinkItems: LinkItemProps[] = [
         isDisplaySidebar: "Y",
       },
       {
+        name: "My Applications",
+        icon: HiOutlineDesktopComputer,
+        iconName: "HiOutlineDesktopComputer",
+        link: "/workspace/applications",
+        role: ["admin"],
+        menuID: "1",
+        isPro: false,
+        children: [],
+        isDisplaySidebar: "Y",
+      },
+      {
         name: "My Performance",
         icon: FiAward,
         iconName: "FiAward",

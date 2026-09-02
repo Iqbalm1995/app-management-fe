@@ -275,6 +275,12 @@ const ProjectFeatureView = ({ DataProject }: ProjectFeatureViewProps) => {
               {info.row.original.backlogEnddate != null ? (
                 <DeadlineStatusTag
                   deadline={info.row.original.backlogEnddate}
+                  status={info.row.original.developmentStatus}
+                  isDone={
+                    info.row.original.developmentStatus?.toUpperCase() === "DONE" ||
+                    info.row.original.progressionPercentage === 100
+                  }
+                  completedDate={info.row.original.backlogImplementEnddate}
                   remindBeforeDays={10}
                 />
               ) : (

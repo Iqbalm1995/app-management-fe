@@ -203,23 +203,23 @@ export const ModalTopAutoAdjust = ({
         );
         const periodEnd = nextMonthTarget > end ? new Date(end) : nextMonthTarget;
 
-        const monthName = currentPeriodStart.toLocaleDateString("id-ID", {
+        const monthName = currentPeriodStart.toLocaleDateString("en-US", {
           month: "short",
           year: "numeric",
         });
         const freqLabel =
           subFrequency === "ANNUAL"
-            ? "Tahun"
+            ? "Year"
             : subFrequency === "SEMI_ANNUAL"
             ? "Semester"
             : subFrequency === "QUARTERLY"
-            ? "Triwulan"
-            : "Bulan";
+            ? "Quarter"
+            : "Month";
 
         list.push({
           stepOrder: step,
           topValues: 0,
-          topDescriptions: `Langganan ${freqLabel} #${step} (${monthName})`,
+          topDescriptions: `Subscription ${freqLabel} #${step} (${monthName})`,
           topStatus: "ACTIVE",
           topDate: formatYMD(periodEnd),
           billingPeriodStart: formatYMD(currentPeriodStart),
@@ -605,7 +605,7 @@ export const ModalTopAutoAdjust = ({
                         variant={subFrequency === "MONTHLY" ? "solid" : "outline"}
                         onClick={() => setSubFrequency("MONTHLY")}
                       >
-                        Monthly (Bulanan)
+                        Monthly
                       </Button>
                       <Button
                         size="xs"
@@ -613,7 +613,7 @@ export const ModalTopAutoAdjust = ({
                         variant={subFrequency === "QUARTERLY" ? "solid" : "outline"}
                         onClick={() => setSubFrequency("QUARTERLY")}
                       >
-                        Quarterly (3 Bulan)
+                        Quarterly (3 Months)
                       </Button>
                       <Button
                         size="xs"
@@ -621,7 +621,7 @@ export const ModalTopAutoAdjust = ({
                         variant={subFrequency === "SEMI_ANNUAL" ? "solid" : "outline"}
                         onClick={() => setSubFrequency("SEMI_ANNUAL")}
                       >
-                        Semi-Annual (6 Bulan)
+                        Semi-Annual (6 Months)
                       </Button>
                       <Button
                         size="xs"
@@ -629,7 +629,7 @@ export const ModalTopAutoAdjust = ({
                         variant={subFrequency === "ANNUAL" ? "solid" : "outline"}
                         onClick={() => setSubFrequency("ANNUAL")}
                       >
-                        Annual (Tahunan)
+                        Annual (Yearly)
                       </Button>
                     </HStack>
                   </FormControl>

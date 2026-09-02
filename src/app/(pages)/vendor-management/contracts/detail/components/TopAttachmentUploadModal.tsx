@@ -55,12 +55,12 @@ interface TopAttachmentUploadModalProps {
 
 const TOP_DOCUMENT_TYPES = [
   { value: "BAST", label: "Berita Acara Serah Terima (BAST)" },
-  { value: "INVOICE", label: "Invoice / Tagihan Termin" },
-  { value: "BUKTI_TRANSFER", label: "Bukti Transfer / Pembayaran Bank" },
-  { value: "FAKTUR_PAJAK", label: "Faktur Pajak (e-Faktur)" },
-  { value: "SPP", label: "Surat Permohonan Pembayaran (SPP)" },
-  { value: "SPTJB", label: "Surat Pernyataan Tanggung Jawab Belanja (SPTJB)" },
-  { value: "OTHER", label: "Dokumen Pendukung Lainnya" },
+  { value: "INVOICE", label: "Invoice / Milestone Billing" },
+  { value: "BUKTI_TRANSFER", label: "Bank Transfer Proof / Payment Receipt" },
+  { value: "FAKTUR_PAJAK", label: "Tax Invoice (e-Faktur)" },
+  { value: "SPP", label: "Payment Request Letter (SPP)" },
+  { value: "SPTJB", label: "Expenditure Responsibility Statement (SPTJB)" },
+  { value: "OTHER", label: "Other Supporting Documents" },
 ];
 
 export default function TopAttachmentUploadModal({
@@ -96,10 +96,10 @@ export default function TopAttachmentUploadModal({
     if (contractTop) {
       setTopRealizationAmount(contractTop.topValues || 0);
       setDocumentName(
-        `Dokumen Realisasi Termin #${contractTop.stepOrder}`
+        `Realization Document Milestone #${contractTop.stepOrder}`
       );
     }
-  }, [contractTop]);
+  }, [contractTop?.id, contractTop?.stepOrder, contractTop?.topValues]);
 
   const handleReset = () => {
     setDocumentType("BAST");
@@ -119,7 +119,7 @@ export default function TopAttachmentUploadModal({
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setSelectedFile(file);
-      if (!documentName || documentName.startsWith("Dokumen Realisasi")) {
+      if (!documentName || documentName.startsWith("Realization Document")) {
         setDocumentName(file.name.replace(/\.[^/.]+$/, ""));
       }
     }
@@ -142,7 +142,7 @@ export default function TopAttachmentUploadModal({
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
       setSelectedFile(file);
-      if (!documentName || documentName.startsWith("Dokumen Realisasi")) {
+      if (!documentName || documentName.startsWith("Realization Document")) {
         setDocumentName(file.name.replace(/\.[^/.]+$/, ""));
       }
     }
@@ -191,7 +191,7 @@ export default function TopAttachmentUploadModal({
     const res = await UploadTopAttachment(formData, tokenData);
     if (res && res.statusCode === RES_CODE_OK) {
       showToast({
-        description: `Document for Termin #${contractTop.stepOrder} uploaded and master payment recalculated.`,
+        description: `Document for Milestone #${contractTop.stepOrder} uploaded and master payment recalculated.`,
         statusToast: "success",
       });
       handleReset();
@@ -240,10 +240,10 @@ export default function TopAttachmentUploadModal({
             </Box>
             <Box>
               <Text fontSize="md" fontWeight="bold">
-                Upload Termin Payment Document
+                Upload Milestone Payment Document
               </Text>
               <Text fontSize="xs" color="gray.500" fontWeight="normal">
-                Termin #{contractTop?.stepOrder ?? 1} &bull; Nilai: Rp{" "}
+                Milestone #{contractTop?.stepOrder ?? 1} &bull; Value: Rp{" "}
                 {(contractTop?.topValues ?? 0).toLocaleString("id-ID")}
               </Text>
             </Box>
@@ -265,11 +265,11 @@ export default function TopAttachmentUploadModal({
                 <HStack spacing={2}>
                   <Icon as={FiLayers} color="blue.500" />
                   <Text fontSize="sm" fontWeight="bold">
-                    Tahap Realisasi Termin #{contractTop?.stepOrder}
+                    Realization Milestone #{contractTop?.stepOrder}
                   </Text>
                 </HStack>
                 <Badge colorScheme="blue" borderRadius="full" px={2.5}>
-                  Alokasi: Rp {(contractTop?.topValues ?? 0).toLocaleString("id-ID")}
+                  Allocation: Rp {(contractTop?.topValues ?? 0).toLocaleString("id-ID")}
                 </Badge>
               </Flex>
             </Box>
@@ -324,7 +324,7 @@ export default function TopAttachmentUploadModal({
                 <Input
                   value={documentName}
                   onChange={(e) => setDocumentName(e.target.value)}
-                  placeholder="e.g. BAST Termin 1 Pekerjaan..."
+                  placeholder="e.g. BAST Milestone 1 Deliverable..."
                   borderRadius={radiusStyle}
                   fontSize="sm"
                   bg={isDark ? "gray.800" : "white"}
@@ -399,7 +399,7 @@ export default function TopAttachmentUploadModal({
             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
               <FormControl>
                 <FormLabel fontSize="xs" fontWeight="semibold">
-                  TAX INVOICE NO. (FAKTUR PAJAK)
+                  TAX INVOICE NO.
                 </FormLabel>
                 <Input
                   value={taxInvoiceNumber}
@@ -434,7 +434,7 @@ export default function TopAttachmentUploadModal({
               <Textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="Catatan dokumen pendukung..."
+                placeholder="Supporting document notes..."
                 borderRadius={radiusStyle}
                 fontSize="sm"
                 rows={2}

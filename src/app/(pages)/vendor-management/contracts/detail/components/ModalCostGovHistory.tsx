@@ -166,14 +166,14 @@ export default function ModalCostGovHistory({
               </Box>
               <VStack align="start" spacing={0}>
                 <HStack spacing={2}>
-                  <Heading size="md">Riwayat Snapshot Tata Kelola Biaya</Heading>
+                  <Heading size="md">Cost Governance Snapshot History</Heading>
                   <Badge colorScheme="blue" fontSize="xs" px={2.5} py={0.5} rounded="md">
                     {histories.length} Snapshot
                   </Badge>
                 </HStack>
                 <Text fontSize="xs" color="gray.500">
-                  {contractNumber ? `Kontrak: ${contractNumber} • ` : ""}
-                  Audit trail snapshot seluruh parameter HPS dan Anggaran RBB
+                  {contractNumber ? `Contract: ${contractNumber} • ` : ""}
+                  Audit trail snapshot of all HPS parameters and RBB Budget
                 </Text>
               </VStack>
             </HStack>
@@ -200,7 +200,7 @@ export default function ModalCostGovHistory({
             <Flex justify="center" align="center" direction="column" py={16} gap={3}>
               <Spinner size="lg" color="blue.500" thickness="3px" />
               <Text fontSize="sm" color="gray.500">
-                Memuat riwayat snapshot tata kelola biaya...
+                Loading cost governance snapshot history...
               </Text>
             </Flex>
           ) : histories.length === 0 ? (
@@ -224,9 +224,9 @@ export default function ModalCostGovHistory({
                   >
                     <Icon as={FiClock} boxSize={7} />
                   </Box>
-                  <Heading size="sm">Belum Ada Riwayat Snapshot</Heading>
+                  <Heading size="sm">No Snapshot History Recorded</Heading>
                   <Text fontSize="xs" color="gray.500" maxW="480px">
-                    Riwayat snapshot akan otomatis tersimpan secara permanen setiap kali Anda melakukan pembaruan parameter pada form Tata Kelola Biaya dan menekan tombol &quot;Simpan Tata Kelola Biaya&quot;.
+                    Snapshot history will be automatically saved permanently each time you update parameters on the Cost Governance form and submit &quot;Save Cost Governance&quot;.
                   </Text>
                 </Flex>
               </CardBody>
@@ -275,7 +275,7 @@ export default function ModalCostGovHistory({
                             <VStack align="start" spacing={0}>
                               <HStack spacing={2}>
                                 <Text fontSize="sm" fontWeight="bold">
-                                  {hist.revisionReason || "Pembaruan Tata Kelola Biaya"}
+                                  {hist.revisionReason || "Cost Governance Update"}
                                 </Text>
                                 {hist.benchmarkHpsKey && (
                                   <Badge colorScheme="yellow" fontSize="3xs" px={1.5}>
@@ -290,7 +290,7 @@ export default function ModalCostGovHistory({
                                 </HStack>
                                 <HStack spacing={1}>
                                   <Icon as={FiUserCheck} boxSize={3.5} />
-                                  <Text>Oleh: {hist.createdBy || "SYSTEM"}</Text>
+                                  <Text>By: {hist.createdBy || "SYSTEM"}</Text>
                                 </HStack>
                               </HStack>
                             </VStack>
@@ -299,7 +299,7 @@ export default function ModalCostGovHistory({
                           <HStack spacing={4}>
                             <VStack align="end" spacing={0}>
                               <Text fontSize="2xs" color="gray.500" fontWeight="bold">
-                                PAGU ANGGARAN RBB
+                                RBB BUDGET CEILING
                               </Text>
                               <Text fontSize="xs" fontWeight="bold" color="blue.600">
                                 {formatIDR(hist.totalBudgetRbb)}
@@ -308,7 +308,7 @@ export default function ModalCostGovHistory({
 
                             <VStack align="end" spacing={0}>
                               <Text fontSize="2xs" color="gray.500" fontWeight="bold">
-                                RESAPAN KONTRAK
+                                CONTRACT ABSORPTION
                               </Text>
                               <Badge
                                 colorScheme={hist.globalResapanPercentage >= 0 ? "teal" : "red"}
@@ -339,12 +339,12 @@ export default function ModalCostGovHistory({
                             >
                               <VStack align="start" spacing={0.5}>
                                 <Text fontSize="2xs" color="gray.500" fontWeight="bold" textTransform="uppercase">
-                                  Total Anggaran RBB (A)
+                                  Total RBB Budget (A)
                                 </Text>
                                 <Text fontSize="sm" fontWeight="bold" color="blue.600">
                                   {formatIDR(hist.totalBudgetRbb)}
                                 </Text>
-                                <Text fontSize="3xs" color="gray.400">Pagu pagu acuan snapshot</Text>
+                                <Text fontSize="3xs" color="gray.400">Snapshot reference budget ceiling</Text>
                               </VStack>
                             </Box>
 
@@ -357,7 +357,7 @@ export default function ModalCostGovHistory({
                             >
                               <VStack align="start" spacing={0.5}>
                                 <Text fontSize="2xs" color="gray.500" fontWeight="bold" textTransform="uppercase">
-                                  Nilai Kontrak Vendor (C)
+                                  Vendor Contract Value (C)
                                 </Text>
                                 <Text fontSize="sm" fontWeight="bold" color="teal.600">
                                   {formatIDR(hist.contractWorkValue)}
@@ -375,7 +375,7 @@ export default function ModalCostGovHistory({
                             >
                               <VStack align="start" spacing={0.5}>
                                 <Text fontSize="2xs" color="gray.500" fontWeight="bold" textTransform="uppercase">
-                                  Sisa Anggaran RBB (A - C)
+                                  Remaining RBB Budget (A - C)
                                 </Text>
                                 <Text
                                   fontSize="sm"
@@ -385,7 +385,7 @@ export default function ModalCostGovHistory({
                                   {formatIDR(diffResapan)}
                                 </Text>
                                 <Text fontSize="3xs" color="gray.400">
-                                  {diffResapan >= 0 ? "Anggaran Surplus" : "Defisit Anggaran"}
+                                  {diffResapan >= 0 ? "Budget Surplus" : "Budget Deficit"}
                                 </Text>
                               </VStack>
                             </Box>
@@ -399,7 +399,7 @@ export default function ModalCostGovHistory({
                             >
                               <VStack align="start" spacing={0.5}>
                                 <Text fontSize="2xs" color="gray.500" fontWeight="bold" textTransform="uppercase">
-                                  Resapan Global (A vs C)
+                                  Global Absorption (A vs C)
                                 </Text>
                                 <Text fontSize="sm" fontWeight="bold" color="purple.600">
                                   {formatPct(hist.globalResapanPercentage)}
@@ -438,7 +438,7 @@ export default function ModalCostGovHistory({
                             {hpsItems.length === 0 ? (
                               <Box p={4} textAlign="center">
                                 <Text fontSize="xs" color="gray.500" fontStyle="italic">
-                                  Tidak ada rincian pilar HPS yang tercatat dalam snapshot ini.
+                                  No HPS baseline details recorded in this snapshot.
                                 </Text>
                               </Box>
                             ) : (
@@ -449,10 +449,10 @@ export default function ModalCostGovHistory({
                                       <Th fontSize="2xs" py={2.5} w="40px">No.</Th>
                                       <Th fontSize="2xs" py={2.5}>Pilar & Model HPS</Th>
                                       <Th fontSize="2xs" py={2.5} isNumeric>Nominal HPS (Rp.)</Th>
-                                      <Th fontSize="2xs" py={2.5} isNumeric>vs Anggaran RBB (A - H)</Th>
-                                      <Th fontSize="2xs" py={2.5}>Kecukupan Anggaran RBB</Th>
-                                      <Th fontSize="2xs" py={2.5} isNumeric>vs Nilai Kontrak (H - C)</Th>
-                                      <Th fontSize="2xs" py={2.5}>Efisiensi Terhadap HPS</Th>
+                                      <Th fontSize="2xs" py={2.5} isNumeric>vs RBB Budget (A - H)</Th>
+                                      <Th fontSize="2xs" py={2.5}>RBB Budget Sufficiency</Th>
+                                      <Th fontSize="2xs" py={2.5} isNumeric>vs Contract Value (H - C)</Th>
+                                      <Th fontSize="2xs" py={2.5}>Efficiency vs HPS</Th>
                                     </Tr>
                                   </Thead>
                                   <Tbody fontSize="xs">
@@ -562,9 +562,9 @@ export default function ModalCostGovHistory({
                             </GridItem>
                             <GridItem>
                               <VStack align="start" spacing={0.5}>
-                                <Text fontWeight="bold">ALASAN REVISI / PERUBAHAN</Text>
+                                <Text fontWeight="bold">REVISION REASON / CHANGE RATIONALE</Text>
                                 <Text color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                                  {hist.revisionReason || "Tidak ada catatan alasan"}
+                                  {hist.revisionReason || "No revision notes provided"}
                                 </Text>
                               </VStack>
                             </GridItem>
@@ -588,7 +588,7 @@ export default function ModalCostGovHistory({
           px={6}
         >
           <Button size="sm" colorScheme="blue" onClick={onClose}>
-            Tutup Riwayat Snapshot
+            Close Snapshot History
           </Button>
         </ModalFooter>
       </ModalContent>

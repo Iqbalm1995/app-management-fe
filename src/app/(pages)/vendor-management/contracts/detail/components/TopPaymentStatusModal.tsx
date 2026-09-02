@@ -48,11 +48,11 @@ interface TopPaymentStatusModalProps {
 }
 
 const TOP_STATUS_OPTIONS = [
-  { value: "PENDING", label: "PENDING - Belum Diajukan", color: "gray" },
-  { value: "SUBMITTED", label: "SUBMITTED - Berkas Diajukan", color: "purple" },
+  { value: "PENDING", label: "PENDING - Not Submitted", color: "gray" },
+  { value: "SUBMITTED", label: "SUBMITTED - Verification in Progress", color: "purple" },
   { value: "VERIFIED", label: "VERIFIED - Terverifikasi Keuangan", color: "blue" },
   { value: "APPROVED", label: "APPROVED - Disetujui Pencairan", color: "teal" },
-  { value: "PAID", label: "PAID - Dana Sudah Cair / Dibayar", color: "green" },
+  { value: "PAID", label: "PAID - Funds Disbursed / Paid", color: "green" },
   { value: "REJECTED", label: "REJECTED - Ditolak / Perlu Revisi", color: "red" },
 ];
 
@@ -84,7 +84,7 @@ export default function TopPaymentStatusModal({
       }
       setNote(contractTop.topDescriptions || "");
     }
-  }, [contractTop]);
+  }, [contractTop?.id, contractTop?.topStatus, contractTop?.topDate, contractTop?.topDescriptions]);
 
   const validate = (): boolean => {
     const errs: { [key: string]: string } = {};
@@ -108,7 +108,7 @@ export default function TopPaymentStatusModal({
     const res = await UpdateContractTopStatus(payload, tokenData);
     if (res && res.statusCode === RES_CODE_OK) {
       showToast({
-        description: `Termin #${contractTop.stepOrder} status updated to ${topStatus}. Master payment recalculated.`,
+        description: `Milestone #${contractTop.stepOrder} status updated to ${topStatus}. Master payment recalculated.`,
         statusToast: "success",
       });
       onSuccess();
@@ -147,10 +147,10 @@ export default function TopPaymentStatusModal({
             </Box>
             <Box>
               <Text fontSize="md" fontWeight="bold">
-                Update Termin Milestone Status
+                Update Milestone Status
               </Text>
               <Text fontSize="xs" color="gray.500" fontWeight="normal">
-                Termin #{contractTop?.stepOrder ?? 1} &bull; Rp{" "}
+                Milestone #{contractTop?.stepOrder ?? 1} &bull; Rp{" "}
                 {(contractTop?.topValues ?? 0).toLocaleString("id-ID")}
               </Text>
             </Box>
@@ -186,12 +186,12 @@ export default function TopPaymentStatusModal({
                 </Badge>
               </HStack>
               <Text fontSize="sm" fontWeight="medium">
-                Tahap {contractTop?.stepOrder} &mdash; Nilai Termin: Rp{" "}
+                Stage {contractTop?.stepOrder} &mdash; Milestone Value: Rp{" "}
                 {(contractTop?.topValues ?? 0).toLocaleString("id-ID")}
               </Text>
               {contractTop?.topDescriptions && (
                 <Text fontSize="xs" color="gray.500" mt={1}>
-                  Catatan: {contractTop.topDescriptions}
+                  Notes: {contractTop.topDescriptions}
                 </Text>
               )}
             </Box>
@@ -252,7 +252,7 @@ export default function TopPaymentStatusModal({
               <Textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="Masukkan catatan verifikasi atau nomor referensi persetujuan..."
+                placeholder="Enter verification notes or approval reference number..."
                 borderRadius={radiusStyle}
                 fontSize="sm"
                 rows={3}
@@ -271,9 +271,7 @@ export default function TopPaymentStatusModal({
               <HStack align="flex-start" spacing={2}>
                 <Icon as={FiInfo} color="blue.500" mt={0.5} />
                 <Text fontSize="xs" color={isDark ? "blue.200" : "blue.700"}>
-                  Memperbarui status termin ini akan secara otomatis memperbarui
-                  metrik pada Master Payment (Nomor Step Aktif, Akumulasi Nilai
-                  Realisasi, Status Pembayaran Kontrak, dan Tanggal Status).
+                  Updating this milestone status will automatically update metrics in Master Payment (Active Step Number, Accumulated Realization Value, Contract Payment Status, and Status Date).
                 </Text>
               </HStack>
             </Box>

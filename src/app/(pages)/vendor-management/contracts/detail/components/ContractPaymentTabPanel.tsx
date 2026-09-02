@@ -173,18 +173,18 @@ export default function ContractPaymentTabPanel({
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
         showToast({
-          description: "File berhasil diunduh. Password dikirim ke email Anda.",
+          description: "File downloaded successfully. Access password sent to your email.",
           statusToast: "success",
         });
       } else {
         showToast({
-          description: secureDownloadError || "Gagal mengunduh file",
+          description: secureDownloadError || "Failed to download file",
           statusToast: "error",
         });
       }
     } catch {
       showToast({
-        description: "Terjadi kesalahan saat mengunduh file",
+        description: "An error occurred while downloading the file",
         statusToast: "error",
       });
     } finally {
@@ -502,7 +502,7 @@ export default function ContractPaymentTabPanel({
                   rounded="md"
                   fontSize="2xs"
                 >
-                  Tahap Realisasi #{activeStep} dari {totalTopSteps}
+                  Realization Stage #{activeStep} of {totalTopSteps}
                 </Badge>
               </HStack>
               <Text fontSize="xs" color="gray.500">
@@ -510,7 +510,7 @@ export default function ContractPaymentTabPanel({
                 Status Date:{" "}
                 {payment.paymentStatusDate
                   ? new Date(payment.paymentStatusDate).toLocaleDateString(
-                      "id-ID"
+                      "en-US"
                     )
                   : "-"}
               </Text>
@@ -567,7 +567,7 @@ export default function ContractPaymentTabPanel({
                 fontWeight="bold"
                 textTransform="uppercase"
               >
-                Realisasi Pembayaran (Disbursed Value)
+                Payment Realization (Disbursed Value)
               </Text>
               <Text fontSize="md" fontWeight="bold" color="teal.500">
                 {formatIDR(changeValue)}{" "}
@@ -589,7 +589,7 @@ export default function ContractPaymentTabPanel({
                 fontWeight="bold"
                 textTransform="uppercase"
               >
-                Total Nilai Kontrak Pekerjaan
+                Total Contract Work Value
               </Text>
               <Text fontSize="md" fontWeight="bold" color="blue.500">
                 {formatIDR(workValue)}
@@ -714,10 +714,10 @@ export default function ContractPaymentTabPanel({
               <Text color="gray.500">
                 Period:{" "}
                 {new Date(contract.contractStartDate).toLocaleDateString(
-                  "id-ID"
+                  "en-US"
                 )}{" "}
                 &ndash;{" "}
-                {new Date(contract.contractEndDate).toLocaleDateString("id-ID")}
+                {new Date(contract.contractEndDate).toLocaleDateString("en-US")}
               </Text>
               <Text color="gray.500">
                 Capex: {formatIDR(contract.cavexValues || 0)}
@@ -764,7 +764,7 @@ export default function ContractPaymentTabPanel({
               </Badge>
             </HStack>
             <Text fontSize="xs" color="gray.500">
-              Lacak setiap tahapan termin, ubah status pembayaran termin, dan kelola dokumen verifikasi pendukung (BAST, Invoice, Faktur Pajak, Bukti Transfer).
+              Track payment milestones, update milestone payment statuses, and manage supporting verification documents (BAST, Invoice, Tax Invoice, Transfer Proof).
             </Text>
           </VStack>
         </Flex>
@@ -784,10 +784,10 @@ export default function ContractPaymentTabPanel({
               >
                 <Icon as={FiLayers} boxSize={8} color="gray.400" mb={2} />
                 <Text fontSize="sm" fontWeight="semibold" color="gray.600">
-                  Belum Ada Jadwal Termin (TOP)
+                  No Payment Milestones Configured (TOP)
                 </Text>
                 <Text fontSize="xs" color="gray.500" mt={1}>
-                  Kontrak ini belum memiliki daftar tahapan pembayaran TOP.
+                  This contract has no TOP payment milestones configured yet.
                 </Text>
               </Box>
             ) : (
@@ -862,7 +862,7 @@ export default function ContractPaymentTabPanel({
                                   {formatIDR(top.topValues)}
                                 </Text>
                                 <Badge colorScheme="teal" variant="subtle" fontSize="2xs" px={2} py={0.5} rounded="md">
-                                  {topPercentage}% Kontrak
+                                  {topPercentage}% of Contract
                                 </Badge>
                                 <Badge
                                   colorScheme={getTopStatusColor(top.topStatus)}
@@ -876,7 +876,7 @@ export default function ContractPaymentTabPanel({
                                 </Badge>
                                 {top.billingPeriodStart && top.billingPeriodEnd && (
                                   <Badge colorScheme="purple" fontSize="2xs" px={2} py={0.5} rounded="md">
-                                    Periode: {new Date(top.billingPeriodStart).toLocaleDateString("id-ID")} &rarr; {new Date(top.billingPeriodEnd).toLocaleDateString("id-ID")}
+                                    Periode: {new Date(top.billingPeriodStart).toLocaleDateString("en-US")} &rarr; {new Date(top.billingPeriodEnd).toLocaleDateString("en-US")}
                                   </Badge>
                                 )}
                                 {top.isAutoGenerated && (
@@ -890,7 +890,7 @@ export default function ContractPaymentTabPanel({
                                 <HStack spacing={1}>
                                   <Icon as={FiCalendar} boxSize={3.5} />
                                   <Text>
-                                    Target: {top.topDate ? new Date(top.topDate).toLocaleDateString("id-ID") : "-"}
+                                    Target: {top.topDate ? new Date(top.topDate).toLocaleDateString("en-US") : "-"}
                                   </Text>
                                 </HStack>
                                 {top.topDescriptions && (
@@ -924,7 +924,7 @@ export default function ContractPaymentTabPanel({
                               leftIcon={<FiUploadCloud />}
                               onClick={() => setSelectedTopForUpload(top)}
                             >
-                              Upload Dokumen
+                              Upload Document
                             </Button>
                           </HStack>
                         </Flex>
@@ -940,14 +940,14 @@ export default function ContractPaymentTabPanel({
                             <HStack spacing={2}>
                               <Icon as={FiFileText} color="gray.400" boxSize={3.5} />
                               <Text fontSize="2xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
-                                Dokumen Verifikasi ({stepAttachments.length})
+                                Verification Documents ({stepAttachments.length})
                               </Text>
                             </HStack>
                           </Flex>
 
                           {stepAttachments.length === 0 ? (
                             <Text fontSize="2xs" color="gray.400" fontStyle="italic" py={1}>
-                              Belum ada dokumen yang diunggah untuk termin ini. Klik "Upload Dokumen" untuk melampirkan BAST, Invoice, Faktur Pajak, atau Bukti Bayar.
+                              No documents uploaded for this milestone yet. Click "Upload Document" to attach BAST, Invoice, Tax Invoice, or Payment Proof.tau Bukti Bayar.
                             </Text>
                           ) : (
                             <Box
@@ -960,11 +960,11 @@ export default function ContractPaymentTabPanel({
                               <Table size="sm" variant="simple">
                                 <Thead bg={colorMode === "light" ? "gray.50" : "gray.800"}>
                                   <Tr>
-                                    <Th fontSize="2xs" py={2}>Jenis Dokumen</Th>
+                                    <Th fontSize="2xs" py={2}>Document Type</Th>
                                     <Th fontSize="2xs" py={2}>Nama & Nomor Ref</Th>
-                                    <Th fontSize="2xs" py={2}>Realisasi (Rp)</Th>
-                                    <Th fontSize="2xs" py={2}>Faktur Pajak</Th>
-                                    <Th fontSize="2xs" py={2}>Tanggal</Th>
+                                    <Th fontSize="2xs" py={2}>Realization (Rp)</Th>
+                                    <Th fontSize="2xs" py={2}>Tax Invoice</Th>
+                                    <Th fontSize="2xs" py={2}>Date</Th>
                                     <Th fontSize="2xs" py={2}>Versi</Th>
                                     <Th fontSize="2xs" py={2} textAlign="right">Aksi</Th>
                                   </Tr>
@@ -1026,7 +1026,7 @@ export default function ContractPaymentTabPanel({
                                         )}
                                       </Td>
                                       <Td py={2} fontSize="xs">
-                                        {att.documentDate ? new Date(att.documentDate).toLocaleDateString("id-ID") : "-"}
+                                        {att.documentDate ? new Date(att.documentDate).toLocaleDateString("en-US") : "-"}
                                       </Td>
                                       <Td py={2} fontSize="xs">
                                         <Badge variant="outline" fontSize="3xs">
@@ -1066,7 +1066,7 @@ export default function ContractPaymentTabPanel({
                                               />
                                             </Tooltip>
                                           )}
-                                          <Tooltip label="Hapus Dokumen" fontSize="2xs">
+                                          <Tooltip label="Delete Document" fontSize="2xs">
                                             <IconButton
                                               aria-label="Delete attachment"
                                               icon={<FiTrash2 />}
@@ -1120,7 +1120,7 @@ export default function ContractPaymentTabPanel({
                 <VStack spacing={3} align="stretch">
                   <Box>
                     <Flex justify="space-between" align="center" mb={1} fontSize="xs">
-                      <Text color="gray.500">Disbursed ({paidTopCount}/{totalTopCount} Termin)</Text>
+                      <Text color="gray.500">Disbursed ({paidTopCount}/{totalTopCount} Milestones)</Text>
                       <Text fontWeight="bold" color="teal.500">
                         {topPaidPercentage.toFixed(1)}%
                       </Text>
@@ -1138,21 +1138,21 @@ export default function ContractPaymentTabPanel({
 
                   <VStack spacing={2} align="stretch" fontSize="xs">
                     <Flex justify="space-between">
-                      <Text color="gray.500">Total TOP Terbayar:</Text>
+                      <Text color="gray.500">Total Paid TOP:</Text>
                       <Text fontWeight="bold" color="green.500">
                         {formatIDR(totalPaidValue)}
                       </Text>
                     </Flex>
 
                     <Flex justify="space-between">
-                      <Text color="gray.500">Sisa TOP Belum Cair:</Text>
+                      <Text color="gray.500">Remaining Unpaid TOP:</Text>
                       <Text fontWeight="bold" color="orange.500">
                         {formatIDR(pendingTopValue)}
                       </Text>
                     </Flex>
 
                     <Flex justify="space-between">
-                      <Text color="gray.500">Total Nilai Kontrak:</Text>
+                      <Text color="gray.500">Total Contract Value:</Text>
                       <Text fontWeight="bold" color="blue.500">
                         {formatIDR(contract.workValue)}
                       </Text>
@@ -1179,7 +1179,7 @@ export default function ContractPaymentTabPanel({
 
                   <VStack align="start" spacing={1.5} fontSize="xs">
                     <HStack justify="space-between" w="100%">
-                      <Text fontWeight="bold">Termin #{nextUpcomingTop.stepOrder}</Text>
+                      <Text fontWeight="bold">Milestone #{nextUpcomingTop.stepOrder}</Text>
                       <Badge colorScheme={getTopStatusColor(nextUpcomingTop.topStatus)} fontSize="3xs" px={2} rounded="full">
                         {nextUpcomingTop.topStatus || "PENDING"}
                       </Badge>
@@ -1192,7 +1192,7 @@ export default function ContractPaymentTabPanel({
                     <HStack spacing={1} color="gray.500" fontSize="2xs">
                       <Icon as={FiCalendar} boxSize={3} />
                       <Text>
-                        Target: {nextUpcomingTop.topDate ? new Date(nextUpcomingTop.topDate).toLocaleDateString("id-ID") : "Belum ditentukan"}
+                        Target: {nextUpcomingTop.topDate ? new Date(nextUpcomingTop.topDate).toLocaleDateString("en-US") : "Not set"}
                       </Text>
                     </HStack>
 
@@ -1221,11 +1221,11 @@ export default function ContractPaymentTabPanel({
                   <HStack spacing={2} color="green.500">
                     <Icon as={FiCheckCircle} boxSize={4} />
                     <Text fontSize="xs" fontWeight="bold">
-                      Semua Termin Selesai
+                      All Milestones Completed
                     </Text>
                   </HStack>
                   <Text fontSize="2xs" color="gray.500" mt={1}>
-                    Seluruh tahapan TOP pada kontrak ini telah berstatus PAID.
+                    All TOP milestones for this contract are marked as PAID.
                   </Text>
                 </Box>
               )}
@@ -1247,7 +1247,7 @@ export default function ContractPaymentTabPanel({
 
                 <VStack spacing={2} align="stretch" fontSize="xs">
                   <Flex justify="space-between">
-                    <Text color="gray.500">Total Dokumen TOP:</Text>
+                    <Text color="gray.500">Total TOP Documents:</Text>
                     <Badge colorScheme="purple" fontSize="2xs" rounded="md">
                       {totalTopAttachments} File
                     </Badge>
@@ -1255,24 +1255,24 @@ export default function ContractPaymentTabPanel({
 
                   <Flex justify="space-between">
                     <Text color="gray.500">BAST Terlampir:</Text>
-                    <Text fontWeight="semibold">{bastDocCount} Dokumen</Text>
+                    <Text fontWeight="semibold">{bastDocCount} Documents</Text>
                   </Flex>
 
                   <Flex justify="space-between">
                     <Text color="gray.500">Invoice / Tagihan:</Text>
-                    <Text fontWeight="semibold">{invoiceDocCount} Dokumen</Text>
+                    <Text fontWeight="semibold">{invoiceDocCount} Documents</Text>
                   </Flex>
 
                   <Flex justify="space-between">
-                    <Text color="gray.500">Faktur Pajak:</Text>
-                    <Text fontWeight="semibold">{taxDocCount} Dokumen</Text>
+                    <Text color="gray.500">Tax Invoice:</Text>
+                    <Text fontWeight="semibold">{taxDocCount} Documents</Text>
                   </Flex>
 
                   <Divider borderColor={colorMode === "light" ? "gray.200" : "gray.700"} my={1} />
 
                   <HStack spacing={1.5} color="gray.400" fontSize="3xs">
                     <Icon as={FiInfo} boxSize={3} />
-                    <Text>Unduhan file dilindungi OTP Secure Password ke email.</Text>
+                    <Text>File downloads are protected with OTP Secure Password sent to your email.</Text>
                   </HStack>
                 </VStack>
               </Box>
@@ -1584,7 +1584,7 @@ export default function ContractPaymentTabPanel({
                       <Td fontSize="xs">
                         {att.documentDate
                           ? new Date(att.documentDate).toLocaleDateString(
-                              "id-ID"
+                              "en-US"
                             )
                           : "-"}
                       </Td>

@@ -25,6 +25,10 @@ import useOrganization, {
   OrganizationResponse,
 } from "@/app/services/useOrganization";
 import {
+  Alert,
+  AlertDescription,
+  AlertIcon,
+  AlertTitle,
   Badge,
   Box,
   Button,
@@ -48,6 +52,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalOverlay,
+  Progress,
   Select,
   SimpleGrid,
   Spacer,
@@ -77,7 +82,23 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { PaggingListPayload } from "@/app/types/masterTypes";
 import { FaArrowLeft } from "react-icons/fa6";
-import { FiActivity, FiAlertCircle, FiAlertTriangle, FiCheckCircle, FiClock, FiEye, FiInfo, FiLock, FiPlusCircle, FiRefreshCw, FiX } from "react-icons/fi";
+import {
+  FiActivity,
+  FiAlertCircle,
+  FiAlertTriangle,
+  FiCheckCircle,
+  FiClock,
+  FiEye,
+  FiInfo,
+  FiLayers,
+  FiLock,
+  FiPlusCircle,
+  FiRefreshCw,
+  FiShield,
+  FiSkipForward,
+  FiX,
+  FiZap,
+} from "react-icons/fi";
 import { FaFileExcel, FaFilePdf } from "react-icons/fa6";
 
 const boolBadge = (v: string) => (
@@ -171,6 +192,111 @@ export default function AppsAssessmentsDetailView() {
   const [filterReview, setFilterReview] = useState<"" | "reviewed" | "pending">(
     "",
   );
+  const [filterQuick, setFilterQuick] = useState<
+    | "ALL"
+    | "ACTIVE"
+    | "SKIPPED"
+    | "RTO_UNFILLED"
+    | "RPO_UNFILLED"
+    | "REVIEW_PENDING"
+    | "REVIEW_DONE"
+    | "APPROVED"
+    | "IN_APPROVAL"
+  >("ALL");
+
+  // Computed batch quick statistics
+  const stats = useMemo(() => {
+    const all = batchData?.assessments || [];
+    const scoped = filterGroup
+      ? all.filter((a) => a.appManageByGroupId === filterGroup)
+      : all;
+    const total = scoped.length;
+
+    const skipped = scoped.filter((a) => a.isSkipReview === "TRUE").length;
+    const skippedPct = total > 0 ? Math.round((skipped / total) * 100) : 0;
+    const active = total - skipped;
+
+    // RTO Suggestion progression:
+    const rtoFilled = scoped.filter(
+      (a) =>
+        a.isSkipReview !== "TRUE" &&
+        a.appsRtoSuggestionMinutes !== null &&
+        a.appsRtoSuggestionMinutes > 0,
+    ).length;
+    const rtoUnfilled = scoped.filter(
+      (a) =>
+        a.isSkipReview !== "TRUE" &&
+        (!a.appsRtoSuggestionMinutes || a.appsRtoSuggestionMinutes <= 0),
+    ).length;
+    const rtoSatisfied = rtoFilled + skipped;
+    const rtoProgressPct =
+      total > 0 ? Math.round((rtoSatisfied / total) * 100) : 0;
+
+    // RPO Target progression:
+    const rpoFilled = scoped.filter(
+      (a) =>
+        a.isSkipReview !== "TRUE" &&
+        a.appsRpoMinutes !== null &&
+        a.appsRpoMinutes > 0,
+    ).length;
+    const rpoUnfilled = scoped.filter(
+      (a) =>
+        a.isSkipReview !== "TRUE" &&
+        (!a.appsRpoMinutes || a.appsRpoMinutes <= 0),
+    ).length;
+    const rpoSatisfied = rpoFilled + skipped;
+    const rpoProgressPct =
+      total > 0 ? Math.round((rpoSatisfied / total) * 100) : 0;
+
+    // Criteria Review progression:
+    const fullyReviewed = scoped.filter(
+      (a) => a.isSkipReview !== "TRUE" && a.isFullyReviewed,
+    ).length;
+    const reviewPending = scoped.filter(
+      (a) => a.isSkipReview !== "TRUE" && !a.isFullyReviewed,
+    ).length;
+    const reviewSatisfied = fullyReviewed + skipped;
+    const reviewProgressPct =
+      total > 0 ? Math.round((reviewSatisfied / total) * 100) : 0;
+
+    // Approval progression:
+    const approved = scoped.filter((a) => a.statusReport === "APPROVED").length;
+    const inApproval = scoped.filter(
+      (a) =>
+        a.statusReport === "WAITING APPROVAL 1" ||
+        a.statusReport === "WAITING APPROVAL 2",
+    ).length;
+    const draftOrRevise = scoped.filter(
+      (a) =>
+        a.statusReport === "DRAFT" ||
+        a.statusReport === "DECLINE" ||
+        a.statusReport === "REVISE",
+    ).length;
+    const approvedPct = total > 0 ? Math.round((approved / total) * 100) : 0;
+
+    return {
+      total,
+      active,
+      skipped,
+      skippedPct,
+      rtoFilled,
+      rtoUnfilled,
+      rtoSatisfied,
+      rtoProgressPct,
+      rpoFilled,
+      rpoUnfilled,
+      rpoSatisfied,
+      rpoProgressPct,
+      fullyReviewed,
+      reviewPending,
+      reviewSatisfied,
+      reviewProgressPct,
+      approved,
+      inApproval,
+      draftOrRevise,
+      approvedPct,
+    };
+  }, [batchData, filterGroup]);
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -359,9 +485,43 @@ export default function AppsAssessmentsDetailView() {
       if (filterStatus && a.statusReport !== filterStatus) return false;
       if (filterReview === "reviewed" && !a.isFullyReviewed) return false;
       if (filterReview === "pending" && a.isFullyReviewed) return false;
+
+      // Quick filter
+      if (filterQuick === "ACTIVE" && a.isSkipReview === "TRUE") return false;
+      if (filterQuick === "SKIPPED" && a.isSkipReview !== "TRUE") return false;
+      if (
+        filterQuick === "RTO_UNFILLED" &&
+        (a.isSkipReview === "TRUE" ||
+          (a.appsRtoSuggestionMinutes !== null &&
+            a.appsRtoSuggestionMinutes > 0))
+      )
+        return false;
+      if (
+        filterQuick === "RPO_UNFILLED" &&
+        (a.isSkipReview === "TRUE" ||
+          (a.appsRpoMinutes !== null && a.appsRpoMinutes > 0))
+      )
+        return false;
+      if (
+        filterQuick === "REVIEW_PENDING" &&
+        (a.isSkipReview === "TRUE" || a.isFullyReviewed)
+      )
+        return false;
+      if (filterQuick === "REVIEW_DONE" && !a.isFullyReviewed) return false;
+      if (filterQuick === "APPROVED" && a.statusReport !== "APPROVED")
+        return false;
+      if (
+        filterQuick === "IN_APPROVAL" &&
+        !(
+          a.statusReport === "WAITING APPROVAL 1" ||
+          a.statusReport === "WAITING APPROVAL 2"
+        )
+      )
+        return false;
+
       return true;
     });
-  }, [batchData, search, filterGroup, filterStatus, filterReview]);
+  }, [batchData, search, filterGroup, filterStatus, filterReview, filterQuick]);
 
   const clearFilters = () => {
     setSearch("");
@@ -369,6 +529,7 @@ export default function AppsAssessmentsDetailView() {
     if (!isGroupLocked) setFilterGroup("");
     setFilterStatus("");
     setFilterReview("");
+    setFilterQuick("ALL");
   };
 
   const handleExportExcel = async () => {
@@ -1050,6 +1211,15 @@ export default function AppsAssessmentsDetailView() {
                       colorScheme="purple"
                       leftIcon={<FiPlusCircle />}
                       isLoading={isFetchingUnassigned}
+                      isDisabled={
+                        batchData?.statusReport === "APPROVED" ||
+                        isFetchingUnassigned
+                      }
+                      title={
+                        batchData?.statusReport === "APPROVED"
+                          ? "Batch has already been approved / completed — adding new apps is closed"
+                          : undefined
+                      }
                       onClick={handleFetchUnassignedApps}
                     >
                       Check New Apps
@@ -1116,6 +1286,663 @@ export default function AppsAssessmentsDetailView() {
             </Box>
           </Card>
 
+          {/* Quick Stats Metric Cards */}
+          {batchData && (
+            <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 6 }} spacing={3.5}>
+              {/* Card 1: Total Applications */}
+              <Card
+                bg={isDark ? "gray.800" : "white"}
+                border="1px solid"
+                borderColor={
+                  filterQuick === "ACTIVE"
+                    ? "blue.500"
+                    : isDark
+                      ? "gray.700"
+                      : "gray.200"
+                }
+                borderRadius={radiusStyle}
+                p={3.5}
+                boxShadow="sm"
+                transition="all 0.2s ease"
+                _hover={{ transform: "translateY(-2px)", boxShadow: "md" }}
+              >
+                <VStack align="stretch" spacing={2}>
+                  <Flex justify="space-between" align="center">
+                    <Text
+                      fontSize="2xs"
+                      fontWeight="bold"
+                      color={isDark ? "gray.400" : "gray.500"}
+                      textTransform="uppercase"
+                      letterSpacing="wider"
+                    >
+                      Total Systems
+                    </Text>
+                    <Flex
+                      w="26px"
+                      h="26px"
+                      borderRadius="md"
+                      bg={isDark ? "blue.900" : "blue.50"}
+                      color={isDark ? "blue.300" : "blue.500"}
+                      align="center"
+                      justify="center"
+                    >
+                      <Icon as={FiLayers} fontSize="14px" />
+                    </Flex>
+                  </Flex>
+
+                  <Flex align="baseline" gap={1.5}>
+                    <Heading size="md" color={isDark ? "white" : "gray.800"}>
+                      {stats.total}
+                    </Heading>
+                    <Text fontSize="2xs" color="gray.400">
+                      applications
+                    </Text>
+                  </Flex>
+
+                  <HStack spacing={1.5} wrap="wrap" pt={0.5}>
+                    <Badge
+                      colorScheme="green"
+                      variant={filterQuick === "ACTIVE" ? "solid" : "subtle"}
+                      fontSize="2xs"
+                      px={1.5}
+                      py={0.5}
+                      borderRadius="md"
+                      cursor="pointer"
+                      onClick={() =>
+                        setFilterQuick(
+                          filterQuick === "ACTIVE" ? "ALL" : "ACTIVE",
+                        )
+                      }
+                      title="Filter active apps needing review"
+                    >
+                      {stats.active} Active
+                    </Badge>
+                  </HStack>
+                </VStack>
+              </Card>
+
+              {/* Card 2: Dedicated Skipped Review */}
+              <Card
+                bg={isDark ? "gray.800" : "white"}
+                border="1px solid"
+                borderColor={
+                  filterQuick === "SKIPPED"
+                    ? "purple.500"
+                    : isDark
+                      ? "gray.700"
+                      : "gray.200"
+                }
+                borderRadius={radiusStyle}
+                p={3.5}
+                boxShadow="sm"
+                transition="all 0.2s ease"
+                _hover={{ transform: "translateY(-2px)", boxShadow: "md" }}
+              >
+                <VStack align="stretch" spacing={2}>
+                  <Flex justify="space-between" align="center">
+                    <Text
+                      fontSize="2xs"
+                      fontWeight="bold"
+                      color={isDark ? "gray.400" : "gray.500"}
+                      textTransform="uppercase"
+                      letterSpacing="wider"
+                    >
+                      Skipped Review
+                    </Text>
+                    <Flex
+                      w="26px"
+                      h="26px"
+                      borderRadius="md"
+                      bg={isDark ? "purple.900" : "purple.50"}
+                      color={isDark ? "purple.300" : "purple.500"}
+                      align="center"
+                      justify="center"
+                    >
+                      <Icon as={FiSkipForward} fontSize="14px" />
+                    </Flex>
+                  </Flex>
+
+                  <Flex align="baseline" justify="space-between">
+                    <Heading size="md" color={isDark ? "white" : "gray.800"}>
+                      {stats.skipped}
+                    </Heading>
+                    <Badge
+                      colorScheme="purple"
+                      fontSize="2xs"
+                      px={1.5}
+                      py={0.5}
+                      borderRadius="md"
+                    >
+                      {stats.skippedPct}%
+                    </Badge>
+                  </Flex>
+
+                  <Progress
+                    value={stats.skippedPct}
+                    size="xs"
+                    colorScheme="purple"
+                    borderRadius="full"
+                  />
+
+                  <Flex justify="space-between" align="center" fontSize="2xs">
+                    <Badge
+                      colorScheme="purple"
+                      variant={filterQuick === "SKIPPED" ? "solid" : "subtle"}
+                      fontSize="2xs"
+                      px={1.5}
+                      py={0.2}
+                      borderRadius="md"
+                      cursor="pointer"
+                      onClick={() =>
+                        setFilterQuick(
+                          filterQuick === "SKIPPED" ? "ALL" : "SKIPPED",
+                        )
+                      }
+                      title="Filter skipped on-development apps"
+                    >
+                      Stage Dev / Bypassed
+                    </Badge>
+                  </Flex>
+                </VStack>
+              </Card>
+
+              {/* Card 3: Criteria Assessment Review */}
+              <Card
+                bg={isDark ? "gray.800" : "white"}
+                border="1px solid"
+                borderColor={
+                  filterQuick === "REVIEW_DONE" ||
+                  filterQuick === "REVIEW_PENDING"
+                    ? "teal.500"
+                    : isDark
+                      ? "gray.700"
+                      : "gray.200"
+                }
+                borderRadius={radiusStyle}
+                p={3.5}
+                boxShadow="sm"
+                transition="all 0.2s ease"
+                _hover={{ transform: "translateY(-2px)", boxShadow: "md" }}
+              >
+                <VStack align="stretch" spacing={2}>
+                  <Flex justify="space-between" align="center">
+                    <Text
+                      fontSize="2xs"
+                      fontWeight="bold"
+                      color={isDark ? "gray.400" : "gray.500"}
+                      textTransform="uppercase"
+                      letterSpacing="wider"
+                    >
+                      Criteria Review
+                    </Text>
+                    <Flex
+                      w="26px"
+                      h="26px"
+                      borderRadius="md"
+                      bg={isDark ? "teal.900" : "teal.50"}
+                      color={isDark ? "teal.300" : "teal.500"}
+                      align="center"
+                      justify="center"
+                    >
+                      <Icon as={FiCheckCircle} fontSize="14px" />
+                    </Flex>
+                  </Flex>
+
+                  <Flex align="baseline" justify="space-between">
+                    <HStack align="baseline" spacing={1}>
+                      <Heading size="md" color={isDark ? "white" : "gray.800"}>
+                        {stats.reviewSatisfied}
+                      </Heading>
+                      <Text fontSize="2xs" color="gray.400">
+                        /{stats.total}
+                      </Text>
+                    </HStack>
+                    <Badge
+                      colorScheme={
+                        stats.reviewProgressPct === 100 ? "green" : "teal"
+                      }
+                      fontSize="2xs"
+                      px={1.5}
+                      py={0.5}
+                      borderRadius="md"
+                    >
+                      {stats.reviewProgressPct}%
+                    </Badge>
+                  </Flex>
+
+                  <Progress
+                    value={stats.reviewProgressPct}
+                    size="xs"
+                    colorScheme={
+                      stats.reviewProgressPct === 100 ? "green" : "teal"
+                    }
+                    borderRadius="full"
+                  />
+
+                  <Flex
+                    justify="space-between"
+                    align="center"
+                    fontSize="2xs"
+                    wrap="wrap"
+                    gap={1}
+                  >
+                    <Text
+                      color={isDark ? "gray.400" : "gray.500"}
+                      cursor="pointer"
+                      _hover={{
+                        color: "teal.400",
+                        textDecoration: "underline",
+                      }}
+                      onClick={() =>
+                        setFilterQuick(
+                          filterQuick === "REVIEW_DONE" ? "ALL" : "REVIEW_DONE",
+                        )
+                      }
+                    >
+                      {stats.fullyReviewed} Done · {stats.skipped} Skip
+                    </Text>
+                    <Text
+                      color={
+                        stats.reviewPending > 0 ? "orange.400" : "gray.400"
+                      }
+                      cursor="pointer"
+                      _hover={{
+                        color: "orange.300",
+                        textDecoration: "underline",
+                      }}
+                      onClick={() =>
+                        setFilterQuick(
+                          filterQuick === "REVIEW_PENDING"
+                            ? "ALL"
+                            : "REVIEW_PENDING",
+                        )
+                      }
+                    >
+                      {stats.reviewPending} Pending
+                    </Text>
+                  </Flex>
+                </VStack>
+              </Card>
+
+              {/* Card 4: RTO Suggestion (IAG Benchmark) */}
+              <Card
+                bg={isDark ? "gray.800" : "white"}
+                border="1px solid"
+                borderColor={
+                  filterQuick === "RTO_UNFILLED"
+                    ? "orange.500"
+                    : isDark
+                      ? "gray.700"
+                      : "gray.200"
+                }
+                borderRadius={radiusStyle}
+                p={3.5}
+                boxShadow="sm"
+                transition="all 0.2s ease"
+                _hover={{ transform: "translateY(-2px)", boxShadow: "md" }}
+              >
+                <VStack align="stretch" spacing={2}>
+                  <Flex justify="space-between" align="center">
+                    <Text
+                      fontSize="2xs"
+                      fontWeight="bold"
+                      color={isDark ? "gray.400" : "gray.500"}
+                      textTransform="uppercase"
+                      letterSpacing="wider"
+                    >
+                      RTO Suggestion (IAG)
+                    </Text>
+                    <Flex
+                      w="26px"
+                      h="26px"
+                      borderRadius="md"
+                      bg={isDark ? "orange.900" : "orange.50"}
+                      color={isDark ? "orange.300" : "orange.500"}
+                      align="center"
+                      justify="center"
+                    >
+                      <Icon as={FiZap} fontSize="14px" />
+                    </Flex>
+                  </Flex>
+
+                  <Flex align="baseline" justify="space-between">
+                    <HStack align="baseline" spacing={1}>
+                      <Heading size="md" color={isDark ? "white" : "gray.800"}>
+                        {stats.rtoSatisfied}
+                      </Heading>
+                      <Text fontSize="2xs" color="gray.400">
+                        /{stats.total}
+                      </Text>
+                    </HStack>
+                    <Badge
+                      colorScheme={
+                        stats.rtoProgressPct === 100 ? "green" : "orange"
+                      }
+                      fontSize="2xs"
+                      px={1.5}
+                      py={0.5}
+                      borderRadius="md"
+                    >
+                      {stats.rtoProgressPct}%
+                    </Badge>
+                  </Flex>
+
+                  <Progress
+                    value={stats.rtoProgressPct}
+                    size="xs"
+                    colorScheme={
+                      stats.rtoProgressPct === 100 ? "green" : "orange"
+                    }
+                    borderRadius="full"
+                  />
+
+                  <Flex
+                    justify="space-between"
+                    align="center"
+                    fontSize="2xs"
+                    wrap="wrap"
+                    gap={1}
+                  >
+                    <Text color={isDark ? "gray.400" : "gray.500"}>
+                      {stats.rtoFilled} Set · {stats.skipped} Skip
+                    </Text>
+                    {stats.rtoUnfilled > 0 ? (
+                      <Badge
+                        colorScheme="orange"
+                        variant={
+                          filterQuick === "RTO_UNFILLED" ? "solid" : "subtle"
+                        }
+                        fontSize="2xs"
+                        px={1.5}
+                        py={0.2}
+                        borderRadius="md"
+                        cursor="pointer"
+                        onClick={() =>
+                          setFilterQuick(
+                            filterQuick === "RTO_UNFILLED"
+                              ? "ALL"
+                              : "RTO_UNFILLED",
+                          )
+                        }
+                        title="Click to view apps missing IAG RTO review"
+                      >
+                        ⚠️ {stats.rtoUnfilled} Pending
+                      </Badge>
+                    ) : (
+                      <Text color="green.500" fontWeight="semibold">
+                        ✓ Done
+                      </Text>
+                    )}
+                  </Flex>
+                </VStack>
+              </Card>
+
+              {/* Card 5: RPO Target (BMT / Continuity) */}
+              <Card
+                bg={isDark ? "gray.800" : "white"}
+                border="1px solid"
+                borderColor={
+                  filterQuick === "RPO_UNFILLED"
+                    ? "pink.500"
+                    : isDark
+                      ? "gray.700"
+                      : "gray.200"
+                }
+                borderRadius={radiusStyle}
+                p={3.5}
+                boxShadow="sm"
+                transition="all 0.2s ease"
+                _hover={{ transform: "translateY(-2px)", boxShadow: "md" }}
+              >
+                <VStack align="stretch" spacing={2}>
+                  <Flex justify="space-between" align="center">
+                    <Text
+                      fontSize="2xs"
+                      fontWeight="bold"
+                      color={isDark ? "gray.400" : "gray.500"}
+                      textTransform="uppercase"
+                      letterSpacing="wider"
+                    >
+                      RPO Target (BMT)
+                    </Text>
+                    <Flex
+                      w="26px"
+                      h="26px"
+                      borderRadius="md"
+                      bg={isDark ? "pink.900" : "pink.50"}
+                      color={isDark ? "pink.300" : "pink.500"}
+                      align="center"
+                      justify="center"
+                    >
+                      <Icon as={FiActivity} fontSize="14px" />
+                    </Flex>
+                  </Flex>
+
+                  <Flex align="baseline" justify="space-between">
+                    <HStack align="baseline" spacing={1}>
+                      <Heading size="md" color={isDark ? "white" : "gray.800"}>
+                        {stats.rpoSatisfied}
+                      </Heading>
+                      <Text fontSize="2xs" color="gray.400">
+                        /{stats.total}
+                      </Text>
+                    </HStack>
+                    <Badge
+                      colorScheme={
+                        stats.rpoProgressPct === 100 ? "green" : "pink"
+                      }
+                      fontSize="2xs"
+                      px={1.5}
+                      py={0.5}
+                      borderRadius="md"
+                    >
+                      {stats.rpoProgressPct}%
+                    </Badge>
+                  </Flex>
+
+                  <Progress
+                    value={stats.rpoProgressPct}
+                    size="xs"
+                    colorScheme={
+                      stats.rpoProgressPct === 100 ? "green" : "pink"
+                    }
+                    borderRadius="full"
+                  />
+
+                  <Flex
+                    justify="space-between"
+                    align="center"
+                    fontSize="2xs"
+                    wrap="wrap"
+                    gap={1}
+                  >
+                    <Text color={isDark ? "gray.400" : "gray.500"}>
+                      {stats.rpoFilled} Set · {stats.skipped} Skip
+                    </Text>
+                    {stats.rpoUnfilled > 0 ? (
+                      <Badge
+                        colorScheme="pink"
+                        variant={
+                          filterQuick === "RPO_UNFILLED" ? "solid" : "subtle"
+                        }
+                        fontSize="2xs"
+                        px={1.5}
+                        py={0.2}
+                        borderRadius="md"
+                        cursor="pointer"
+                        onClick={() =>
+                          setFilterQuick(
+                            filterQuick === "RPO_UNFILLED"
+                              ? "ALL"
+                              : "RPO_UNFILLED",
+                          )
+                        }
+                        title="Click to view apps with pending RPO target"
+                      >
+                        {stats.rpoUnfilled} Pending
+                      </Badge>
+                    ) : (
+                      <Text color="green.500" fontWeight="semibold">
+                        ✓ Done
+                      </Text>
+                    )}
+                  </Flex>
+                </VStack>
+              </Card>
+
+              {/* Card 6: Governance & Approval Stages */}
+              <Card
+                bg={isDark ? "gray.800" : "white"}
+                border="1px solid"
+                borderColor={
+                  filterQuick === "APPROVED" || filterQuick === "IN_APPROVAL"
+                    ? "cyan.500"
+                    : isDark
+                      ? "gray.700"
+                      : "gray.200"
+                }
+                borderRadius={radiusStyle}
+                p={3.5}
+                boxShadow="sm"
+                transition="all 0.2s ease"
+                _hover={{ transform: "translateY(-2px)", boxShadow: "md" }}
+              >
+                <VStack align="stretch" spacing={2}>
+                  <Flex justify="space-between" align="center">
+                    <Text
+                      fontSize="2xs"
+                      fontWeight="bold"
+                      color={isDark ? "gray.400" : "gray.500"}
+                      textTransform="uppercase"
+                      letterSpacing="wider"
+                    >
+                      Approval Stages
+                    </Text>
+                    <Flex
+                      w="26px"
+                      h="26px"
+                      borderRadius="md"
+                      bg={isDark ? "cyan.900" : "cyan.50"}
+                      color={isDark ? "cyan.300" : "cyan.600"}
+                      align="center"
+                      justify="center"
+                    >
+                      <Icon as={FiShield} fontSize="14px" />
+                    </Flex>
+                  </Flex>
+
+                  <Flex align="baseline" justify="space-between">
+                    <HStack align="baseline" spacing={1}>
+                      <Heading size="md" color={isDark ? "white" : "gray.800"}>
+                        {stats.approved}
+                      </Heading>
+                      <Text fontSize="2xs" color="gray.400">
+                        Approved
+                      </Text>
+                    </HStack>
+                    <Badge
+                      colorScheme={stats.approvedPct === 100 ? "green" : "cyan"}
+                      fontSize="2xs"
+                      px={1.5}
+                      py={0.5}
+                      borderRadius="md"
+                    >
+                      {stats.approvedPct}%
+                    </Badge>
+                  </Flex>
+
+                  <Progress
+                    value={stats.approvedPct}
+                    size="xs"
+                    colorScheme="cyan"
+                    borderRadius="full"
+                  />
+
+                  <HStack
+                    spacing={1}
+                    wrap="wrap"
+                    justify="space-between"
+                    fontSize="2xs"
+                  >
+                    <Badge
+                      colorScheme="purple"
+                      variant={
+                        filterQuick === "IN_APPROVAL" ? "solid" : "subtle"
+                      }
+                      fontSize="2xs"
+                      px={1.5}
+                      py={0.2}
+                      borderRadius="md"
+                      cursor="pointer"
+                      onClick={() =>
+                        setFilterQuick(
+                          filterQuick === "IN_APPROVAL" ? "ALL" : "IN_APPROVAL",
+                        )
+                      }
+                    >
+                      {stats.inApproval} In Approval
+                    </Badge>
+                    <Badge
+                      colorScheme="gray"
+                      variant="subtle"
+                      fontSize="2xs"
+                      px={1.5}
+                      py={0.2}
+                      borderRadius="md"
+                    >
+                      {stats.draftOrRevise} Draft/Revise
+                    </Badge>
+                  </HStack>
+                </VStack>
+              </Card>
+            </SimpleGrid>
+          )}
+
+          {/* Pending IAG RTO Alert Banner */}
+          {stats.rtoUnfilled > 0 && (
+            <Alert
+              status="warning"
+              variant="subtle"
+              borderRadius={radiusStyle}
+              border="1px solid"
+              borderColor={isDark ? "yellow.700" : "yellow.300"}
+              bg={isDark ? "yellow.900" : "yellow.50"}
+              py={3}
+              px={4}
+            >
+              <AlertIcon as={FiAlertTriangle} color="yellow.500" />
+              <Box flex="1">
+                <AlertTitle
+                  fontSize="xs"
+                  fontWeight="bold"
+                  color={isDark ? "yellow.200" : "yellow.900"}
+                >
+                  Perhatian: {stats.rtoUnfilled} Aplikasi Belum Dilakukan Review RTO Suggestion oleh IAG
+                </AlertTitle>
+                <AlertDescription
+                  fontSize="2xs"
+                  color={isDark ? "yellow.300" : "yellow.800"}
+                >
+                  Aplikasi dengan status RTO Suggestion belum terisi memerlukan pengisian benchmark SLA dari tim IAG sebelum dapat disubmit ke tahap approval final.
+                </AlertDescription>
+              </Box>
+              <Button
+                size="xs"
+                colorScheme="orange"
+                variant="solid"
+                onClick={() =>
+                  setFilterQuick(
+                    filterQuick === "RTO_UNFILLED" ? "ALL" : "RTO_UNFILLED",
+                  )
+                }
+              >
+                {filterQuick === "RTO_UNFILLED"
+                  ? "Show All"
+                  : `Filter ${stats.rtoUnfilled} Apps`}
+              </Button>
+            </Alert>
+          )}
+
           {/* Assessments Table */}
           <Card
             rounded={radiusStyle}
@@ -1132,6 +1959,118 @@ export default function AppsAssessmentsDetailView() {
             </CardHeader>
             <Divider borderColor={isDark ? "gray.700" : "gray.100"} />
             <CardBody>
+              {/* Quick Filter Pill Badges */}
+              <Flex gap={2} wrap="wrap" mb={4} align="center">
+                <Text
+                  fontSize="xs"
+                  fontWeight="semibold"
+                  color={isDark ? "gray.400" : "gray.500"}
+                  mr={1}
+                >
+                  Quick Filter:
+                </Text>
+                <Badge
+                  px={2.5}
+                  py={1}
+                  borderRadius="full"
+                  cursor="pointer"
+                  colorScheme={filterQuick === "ALL" ? "blue" : "gray"}
+                  variant={filterQuick === "ALL" ? "solid" : "subtle"}
+                  fontSize="2xs"
+                  onClick={() => setFilterQuick("ALL")}
+                >
+                  All Apps ({stats.total})
+                </Badge>
+                <Badge
+                  px={2.5}
+                  py={1}
+                  borderRadius="full"
+                  cursor="pointer"
+                  colorScheme={filterQuick === "ACTIVE" ? "green" : "gray"}
+                  variant={filterQuick === "ACTIVE" ? "solid" : "subtle"}
+                  fontSize="2xs"
+                  onClick={() => setFilterQuick("ACTIVE")}
+                >
+                  Active ({stats.active})
+                </Badge>
+                <Badge
+                  px={2.5}
+                  py={1}
+                  borderRadius="full"
+                  cursor="pointer"
+                  colorScheme={filterQuick === "SKIPPED" ? "purple" : "gray"}
+                  variant={filterQuick === "SKIPPED" ? "solid" : "subtle"}
+                  fontSize="2xs"
+                  onClick={() => setFilterQuick("SKIPPED")}
+                >
+                  Skipped ({stats.skipped})
+                </Badge>
+                <Badge
+                  px={2.5}
+                  py={1}
+                  borderRadius="full"
+                  cursor="pointer"
+                  colorScheme={filterQuick === "RTO_UNFILLED" ? "orange" : "gray"}
+                  variant={filterQuick === "RTO_UNFILLED" ? "solid" : "subtle"}
+                  fontSize="2xs"
+                  onClick={() => setFilterQuick("RTO_UNFILLED")}
+                >
+                  Pending IAG RTO ({stats.rtoUnfilled})
+                </Badge>
+                <Badge
+                  px={2.5}
+                  py={1}
+                  borderRadius="full"
+                  cursor="pointer"
+                  colorScheme={filterQuick === "RPO_UNFILLED" ? "pink" : "gray"}
+                  variant={filterQuick === "RPO_UNFILLED" ? "solid" : "subtle"}
+                  fontSize="2xs"
+                  onClick={() => setFilterQuick("RPO_UNFILLED")}
+                >
+                  Pending RPO ({stats.rpoUnfilled})
+                </Badge>
+                <Badge
+                  px={2.5}
+                  py={1}
+                  borderRadius="full"
+                  cursor="pointer"
+                  colorScheme={
+                    filterQuick === "REVIEW_PENDING" ? "yellow" : "gray"
+                  }
+                  variant={
+                    filterQuick === "REVIEW_PENDING" ? "solid" : "subtle"
+                  }
+                  fontSize="2xs"
+                  onClick={() => setFilterQuick("REVIEW_PENDING")}
+                >
+                  Review Pending ({stats.reviewPending})
+                </Badge>
+                <Badge
+                  px={2.5}
+                  py={1}
+                  borderRadius="full"
+                  cursor="pointer"
+                  colorScheme={filterQuick === "REVIEW_DONE" ? "teal" : "gray"}
+                  variant={filterQuick === "REVIEW_DONE" ? "solid" : "subtle"}
+                  fontSize="2xs"
+                  onClick={() => setFilterQuick("REVIEW_DONE")}
+                >
+                  Fully Reviewed ({stats.fullyReviewed})
+                </Badge>
+                <Badge
+                  px={2.5}
+                  py={1}
+                  borderRadius="full"
+                  cursor="pointer"
+                  colorScheme={filterQuick === "APPROVED" ? "cyan" : "gray"}
+                  variant={filterQuick === "APPROVED" ? "solid" : "subtle"}
+                  fontSize="2xs"
+                  onClick={() => setFilterQuick("APPROVED")}
+                >
+                  Approved ({stats.approved})
+                </Badge>
+              </Flex>
+
               {/* Filter Row */}
               <Flex gap={3} wrap="wrap" mb={4} align="center">
                 <InputGroup maxW="260px">
@@ -1259,14 +2198,18 @@ export default function AppsAssessmentsDetailView() {
                     />
                   </Box>
                 </HStack>
-                {(search || filterGroup || filterStatus || filterReview) && (
+                {(search ||
+                  filterGroup ||
+                  filterStatus ||
+                  filterReview ||
+                  filterQuick !== "ALL") && (
                   <Button
                     variant="outline"
                     leftIcon={<FiX />}
                     size="sm"
                     onClick={clearFilters}
                   >
-                    Clear
+                    Clear Filters
                   </Button>
                 )}
               </Flex>

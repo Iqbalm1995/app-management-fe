@@ -25,7 +25,7 @@ import { radiusStyle } from "../constants/applicationConstants";
 import { AiFillFileExcel, AiFillFilePdf, AiFillFileWord } from "react-icons/ai";
 import { FaFileAlt } from "react-icons/fa";
 import { AttachmentProps } from "../types/masterTypes";
-import { FiAlertTriangle, FiClock, FiXCircle } from "react-icons/fi";
+import { FiAlertTriangle, FiCheckCircle, FiClock, FiXCircle } from "react-icons/fi";
 
 // capitalize each word string
 export function capitalizeWords(str: string) {
@@ -1301,23 +1301,23 @@ export function getProjectHealthRating(
 
 interface DeadlineStatusTagProps {
   deadline: string; // format: YYYY-MM-DD or ISO string
+  status?: string | null;
+  isDone?: boolean;
+  completedDate?: string | null;
   remindBeforeDays?: number; // default: 7 days
 }
 
 export const DeadlineStatusTag: React.FC<DeadlineStatusTagProps> = ({
   deadline,
+  status,
+  isDone = false,
+  completedDate,
   remindBeforeDays = 7,
 }) => {
-  const now = new Date();
   const deadlineDate = new Date(deadline);
   if (isNaN(deadlineDate.getTime())) {
     return <Text color="red.500">Invalid Date</Text>;
   }
-
-  const msPerDay = 1000 * 60 * 60 * 24;
-  const diffInDays = Math.floor(
-    (deadlineDate.getTime() - now.getTime()) / msPerDay
-  );
 
   // Format date as "DD MMM YYYY"
   const formattedDate = deadlineDate.toLocaleDateString("id-ID", {
@@ -1325,6 +1325,47 @@ export const DeadlineStatusTag: React.FC<DeadlineStatusTagProps> = ({
     month: "short",
     year: "numeric",
   });
+
+  const isCompleted =
+    isDone ||
+    status?.toUpperCase() === "DONE" ||
+    status?.toUpperCase() === "COMPLETED";
+
+  // 1. If completed, show as completed (green)
+  if (isCompleted) {
+    let completedFormattedDate = formattedDate;
+    if (completedDate) {
+      const parsedCompletedDate = new Date(completedDate);
+      if (!isNaN(parsedCompletedDate.getTime())) {
+        completedFormattedDate = parsedCompletedDate.toLocaleDateString("id-ID", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+      }
+    }
+
+    return (
+      <HStack spacing={1} color="green.500">
+        <Icon as={FiCheckCircle} />
+        <Text fontSize="sm" fontWeight="semibold">
+          Selesai ({completedFormattedDate})
+        </Text>
+      </HStack>
+    );
+  }
+
+  // 2. If not completed, compare normalized calendar days
+  const todayMidnight = new Date();
+  todayMidnight.setHours(0, 0, 0, 0);
+
+  const deadlineMidnight = new Date(deadlineDate);
+  deadlineMidnight.setHours(0, 0, 0, 0);
+
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const diffInDays = Math.round(
+    (deadlineMidnight.getTime() - todayMidnight.getTime()) / msPerDay
+  );
 
   let icon = FiClock;
   let color = "gray.500";
@@ -1334,6 +1375,10 @@ export const DeadlineStatusTag: React.FC<DeadlineStatusTagProps> = ({
     icon = FiXCircle;
     color = "red.500";
     label = `Terlambat (${formattedDate})`;
+  } else if (diffInDays === 0) {
+    icon = FiAlertTriangle;
+    color = "orange.600";
+    label = `Hari Ini (${formattedDate})`;
   } else if (diffInDays <= remindBeforeDays) {
     icon = FiAlertTriangle;
     color = "orange.500";

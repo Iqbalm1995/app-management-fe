@@ -137,6 +137,7 @@ export interface ApproveBatchRequest {
   batchCode: string;
   isApproved: boolean;
   note?: string;
+  forceApprove?: boolean;
 }
 
 export interface AppsCriticalReportPendingListRequest {

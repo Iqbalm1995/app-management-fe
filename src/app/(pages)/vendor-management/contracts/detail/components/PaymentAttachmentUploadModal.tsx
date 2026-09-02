@@ -48,11 +48,11 @@ interface PaymentAttachmentUploadModalProps {
 
 const DOCUMENT_TYPES = [
   { value: "BAST", label: "Berita Acara Serah Terima (BAST)" },
-  { value: "INVOICE", label: "Invoice / Tagihan Pembayaran" },
-  { value: "SPP", label: "Surat Permohonan Pembayaran (SPP)" },
-  { value: "SPTJB", label: "Surat Pernyataan Tanggung Jawab Belanja (SPTJB)" },
-  { value: "FAKTUR_PAJAK", label: "Faktur Pajak (e-Faktur)" },
-  { value: "OTHER", label: "Dokumen Pendukung Lainnya" },
+  { value: "INVOICE", label: "Invoice / Payment Billing" },
+  { value: "SPP", label: "Payment Request Letter (SPP)" },
+  { value: "SPTJB", label: "Expenditure Responsibility Statement (SPTJB)" },
+  { value: "FAKTUR_PAJAK", label: "Tax Invoice (e-Faktur)" },
+  { value: "OTHER", label: "Other Supporting Documents" },
 ];
 
 export default function PaymentAttachmentUploadModal({
@@ -265,7 +265,7 @@ export default function PaymentAttachmentUploadModal({
                 rounded="lg"
                 value={documentName}
                 onChange={(e) => setDocumentName(e.target.value)}
-                placeholder="e.g. BAST Tahap 1 Milestone Integrasi API"
+                placeholder="e.g. BAST Milestone 1 API Integration"
               />
               {errors.documentName && (
                 <FormErrorMessage fontSize="2xs">{errors.documentName}</FormErrorMessage>

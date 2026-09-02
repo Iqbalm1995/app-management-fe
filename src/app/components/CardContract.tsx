@@ -85,7 +85,7 @@ export const getContractDeadlineStatus = (endDateStr?: string | null): ContractD
       isExpiringSoon: false,
       badgeColor: "red",
       badgeLabel: `EXPIRED (${expiredDays}d ago)`,
-      warningMessage: `This contract expired ${expiredDays} day(s) ago on ${new Date(endDateStr).toLocaleDateString("id-ID")}. Immediate action or extension required!`,
+      warningMessage: `This contract expired ${expiredDays} day(s) ago on ${new Date(endDateStr).toLocaleDateString("en-US")}. Immediate action or extension required!`,
     };
   }
 
@@ -96,7 +96,7 @@ export const getContractDeadlineStatus = (endDateStr?: string | null): ContractD
       isExpiringSoon: true,
       badgeColor: "orange",
       badgeLabel: `EXPIRING SOON (${daysRemaining}d left)`,
-      warningMessage: `Contract Expiration Warning: This contract will expire in ${daysRemaining} day(s) on ${new Date(endDateStr).toLocaleDateString("id-ID")}. 1-month notice active.`,
+      warningMessage: `Contract Expiration Warning: This contract will expire in ${daysRemaining} day(s) on ${new Date(endDateStr).toLocaleDateString("en-US")}. 1-month notice active.`,
     };
   }
 
@@ -241,7 +241,7 @@ const CardContract = ({ data, showWorkValue = false }: CardContractProps) => {
                 <Text color="gray.500">Contract Period:</Text>
               </HStack>
               <Text fontWeight="600">
-                {new Date(data.contractStartDate).toLocaleDateString("id-ID")} - {new Date(data.contractEndDate).toLocaleDateString("id-ID")}
+                {new Date(data.contractStartDate).toLocaleDateString("en-US")} - {new Date(data.contractEndDate).toLocaleDateString("en-US")}
               </Text>
             </HStack>
 
