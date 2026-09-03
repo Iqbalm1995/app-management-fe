@@ -648,6 +648,49 @@ export function buildChecklistWorksheet(item: CabRequestDetail | CabRequestItem)
   return ws;
 }
 
+// ─── Filename Helper ─────────────────────────────────────────────────────────
+export function buildChecklistFileName(
+  item: CabRequestItem | CabRequestDetail,
+  ext: "pdf" | "xlsx"
+): string {
+  const reqNo = (item.requestNo || "CAB").replace(/[\/\\:*?"<>|]/g, "_").trim();
+  const title = (item.projectName || item.requestTitle || "Dokumen")
+    .replace(/[\/\\:*?"<>|]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 40);
+  const scheduledDate =
+    item.scheduledDate ||
+    (item as any).requestedCabDate ||
+    (item as any).targetDate ||
+    "";
+  let year = new Date().getFullYear();
+  if (scheduledDate) {
+    const parsed = new Date(scheduledDate);
+    if (!isNaN(parsed.getFullYear())) {
+      year = parsed.getFullYear();
+    }
+  }
+  return `Compliance Checklist ${reqNo} CAB ${title} ${year}.${ext}`;
+}
+
+// ─── Single Excel Blob Builder ────────────────────────────────────────────────
+export function buildCabComplianceChecklistExcelBlob(
+  item: CabRequestDetail | CabRequestItem
+): Blob {
+  const wb = XLSX.utils.book_new();
+  const ws = buildChecklistWorksheet(item);
+
+  const cleanReqNo = (item.requestNo || "CAB_REQ").replace(/[^a-zA-Z0-9-_]/g, "_");
+  const sheetName = cleanReqNo.slice(0, 31) || "Compliance Checklist";
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+  const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  return new Blob([wbout], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+}
+
 // ─── Export Single Checklist Excel (.xlsx) ────────────────────────────────────
 export async function exportCabComplianceChecklistExcel(item: CabRequestDetail | CabRequestItem): Promise<void> {
   const wb = XLSX.utils.book_new();
@@ -657,11 +700,51 @@ export async function exportCabComplianceChecklistExcel(item: CabRequestDetail |
   const sheetName = cleanReqNo.slice(0, 31) || "Compliance Checklist";
   XLSX.utils.book_append_sheet(wb, ws, sheetName);
 
-  const filename = `Compliance_Checklist_CAB_${cleanReqNo}.xlsx`;
+  const filename = buildChecklistFileName(item, "xlsx");
   XLSX.writeFile(wb, filename);
 }
 
-// ─── Export Bulk/Group Checklist Excel (.xlsx) ─────────────────────────────────
+// ─── Export Bulk/Group Checklist Excel ZIP (.zip) (1 Request Data = 1 File) ───
+export async function generateCabComplianceChecklistZipExcel(
+  items: (CabRequestItem | CabRequestDetail)[],
+  periodLabel = "Periode"
+): Promise<void> {
+  if (!items || items.length === 0) return;
+  const { ZipWriter, BlobWriter, BlobReader } = await import("@zip.js/zip.js");
+
+  const zipBlobWriter = new BlobWriter("application/zip");
+  const zipWriter = new ZipWriter(zipBlobWriter);
+
+  const usedNames = new Set<string>();
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const blob = buildCabComplianceChecklistExcelBlob(item);
+    let filename = buildChecklistFileName(item, "xlsx");
+
+    if (usedNames.has(filename)) {
+      filename = filename.replace(/\.xlsx$/i, `_${i + 1}.xlsx`);
+    }
+    usedNames.add(filename);
+
+    await zipWriter.add(filename, new BlobReader(blob));
+  }
+
+  await zipWriter.close();
+  const zipBlob = await zipBlobWriter.getData();
+
+  const safePeriod = periodLabel.replace(/[\/\\:*?"<>|]/g, "_").trim();
+  const downloadUrl = URL.createObjectURL(zipBlob);
+  const a = document.createElement("a");
+  a.href = downloadUrl;
+  a.download = `Compliance Checklist CAB Bulk Excel ${safePeriod}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(downloadUrl);
+}
+
+// ─── Export Bulk/Group Checklist Excel (Multi-Sheet .xlsx - Legacy) ────────────
 export async function exportCabComplianceChecklistBulkExcel(
   items: CabRequestItem[],
   periodLabel = "Periode"

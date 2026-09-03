@@ -98,8 +98,16 @@ import {
 } from "@/app/types/masterTypes";
 import { BuktiImplementasiItem, CabRequestItem } from "@/app/types/cabTypes";
 import { exportCabReportsGroupPdf, exportSingleCabMeetingPdf } from "@/app/helper/CabReportPdfExport";
-import { exportCabComplianceChecklistExcel, exportCabComplianceChecklistBulkExcel } from "@/app/helper/CabComplianceChecklistExcelExport";
-import { exportCabComplianceChecklistPdf, exportCabComplianceChecklistBulkPdf } from "@/app/helper/CabComplianceChecklistPdfExport";
+import {
+  exportCabComplianceChecklistExcel,
+  exportCabComplianceChecklistBulkExcel,
+  generateCabComplianceChecklistZipExcel,
+} from "@/app/helper/CabComplianceChecklistExcelExport";
+import {
+  exportCabComplianceChecklistPdf,
+  exportCabComplianceChecklistBulkPdf,
+  generateCabComplianceChecklistZipPdf,
+} from "@/app/helper/CabComplianceChecklistPdfExport";
 import useCabRequest from "@/app/services/useCabRequest";
 import {
   useToastError,
@@ -608,13 +616,13 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
     if (tableData.length === 0) return;
     setIsExporting(true);
     try {
-      await exportCabComplianceChecklistBulkPdf(tableData, activePeriodLabel);
+      await generateCabComplianceChecklistZipPdf(tableData, activePeriodLabel);
       showToastSuccess({
-        description: `Formulir Compliance Checklist PDF (${tableData.length} agenda) berhasil diunduh.`,
+        description: `Formulir Compliance Checklist ZIP PDF (${tableData.length} berkas) berhasil diunduh.`,
       });
     } catch {
       showToastError({
-        description: "Terjadi kesalahan saat mengekspor formulir Checklist PDF.",
+        description: "Terjadi kesalahan saat mengekspor formulir Checklist ZIP PDF.",
       });
     } finally {
       setIsExporting(false);
@@ -641,13 +649,13 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
     if (tableData.length === 0) return;
     setIsExporting(true);
     try {
-      await exportCabComplianceChecklistBulkExcel(tableData, activePeriodLabel);
+      await generateCabComplianceChecklistZipExcel(tableData, activePeriodLabel);
       showToastSuccess({
-        description: `Formulir Compliance Checklist Excel (${tableData.length} agenda) berhasil diunduh.`,
+        description: `Formulir Compliance Checklist ZIP Excel (${tableData.length} berkas) berhasil diunduh.`,
       });
     } catch {
       showToastError({
-        description: "Terjadi kesalahan saat mengekspor file Excel.",
+        description: "Terjadi kesalahan saat mengekspor file ZIP Excel.",
       });
     } finally {
       setIsExporting(false);
@@ -840,9 +848,6 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
               <Text fontSize="xs" fontWeight="medium" noOfLines={1}>
                 {item.requesterName || "-"}
               </Text>
-              <Text fontSize="2xs" color={isDark ? "gray.400" : "gray.500"} noOfLines={1}>
-                Appr: {item.approverName || "-"}
-              </Text>
             </VStack>
           );
         },
@@ -855,13 +860,6 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
               value: "",
               filterType: "text",
               filterLabel: "Nama Pemohon",
-            },
-            {
-              field: "approverName",
-              operator: "like",
-              value: "",
-              filterType: "text",
-              filterLabel: "Nama Approver",
             },
           ],
         } as ColumnMetaCustom,
@@ -1224,7 +1222,7 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
                     isDisabled={tableData.length === 0}
                     isLoading={isExporting}
                   >
-                    Export Laporan
+                    Export Periode
                   </MenuButton>
                   <MenuList zIndex={20} shadow="lg" py={1.5}>
                     {/* <MenuItem
@@ -1239,14 +1237,14 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
                       fontSize="xs"
                       onClick={handleExportCurrentPeriodChecklistPdf}
                     >
-                      Export Checklist Periode (PDF)
+                      Export Checklist ZIP (PDF)
                     </MenuItem>
                     <MenuItem
                       icon={<FiFileText />}
                       fontSize="xs"
                       onClick={handleExportCurrentPeriodExcel}
                     >
-                      Export Compliance Checklist (Excel)
+                      Export Checklist ZIP (Excel)
                     </MenuItem>
                   </MenuList>
                 </Menu>

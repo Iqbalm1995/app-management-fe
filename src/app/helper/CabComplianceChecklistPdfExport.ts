@@ -510,13 +510,40 @@ async function loadImageDataUri(src: string): Promise<string | null> {
   }
 }
 
-// ─── Direct jsPDF Generator ───────────────────────────────────────────────────
+// ─── Filename Helper ─────────────────────────────────────────────────────────
 
-export async function exportCabComplianceChecklistPdf(
+export function buildChecklistFileName(
+  item: CabRequestItem | CabRequestDetail,
+  ext: "pdf" | "xlsx"
+): string {
+  const reqNo = (item.requestNo || "CAB").replace(/[\/\\:*?"<>|]/g, "_").trim();
+  const title = (item.projectName || item.requestTitle || "Dokumen")
+    .replace(/[\/\\:*?"<>|]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 40);
+  const scheduledDate =
+    item.scheduledDate ||
+    (item as any).requestedCabDate ||
+    (item as any).targetDate ||
+    "";
+  let year = new Date().getFullYear();
+  if (scheduledDate) {
+    const parsed = new Date(scheduledDate);
+    if (!isNaN(parsed.getFullYear())) {
+      year = parsed.getFullYear();
+    }
+  }
+  return `Compliance Checklist ${reqNo} CAB ${title} ${year}.${ext}`;
+}
+
+// ─── Direct jsPDF Document Builder ──────────────────────────────────────────
+
+export async function buildCabComplianceChecklistPdfDoc(
   item: CabRequestDetail | CabRequestItem,
   customEvidence?: CabEvidencePayload,
   customSignature?: CabSignaturePayload
-): Promise<void> {
+) {
   const { jsPDF } = await import("jspdf");
   const autoTable = (await import("jspdf-autotable")).default;
 
@@ -703,12 +730,71 @@ export async function exportCabComplianceChecklistPdf(
     doc.text(`NIP. ${payload.signature.signerNip}`, pageW / 2, currentY, { align: "center" });
   }
 
-  // File Download Save
-  const safeTitle = (item.projectName || item.requestTitle || "Dokumen")
-    .replace(/[^a-zA-Z0-9_-]/g, "_")
-    .slice(0, 30);
-  const safeNo = (item.requestNo || "CAB").replace(/[^a-zA-Z0-9_-]/g, "_");
-  doc.save(`Compliance_Checklist_CAB_${safeNo}_${safeTitle}.pdf`);
+  return doc;
+}
+
+// ─── Single PDF Blob Builder ──────────────────────────────────────────────────
+
+export async function buildCabComplianceChecklistPdfBlob(
+  item: CabRequestDetail | CabRequestItem,
+  customEvidence?: CabEvidencePayload,
+  customSignature?: CabSignaturePayload
+): Promise<Blob> {
+  const doc = await buildCabComplianceChecklistPdfDoc(item, customEvidence, customSignature);
+  return doc.output("blob");
+}
+
+// ─── Direct Single PDF Export (Save to File) ──────────────────────────────────
+
+export async function exportCabComplianceChecklistPdf(
+  item: CabRequestDetail | CabRequestItem,
+  customEvidence?: CabEvidencePayload,
+  customSignature?: CabSignaturePayload
+): Promise<void> {
+  const doc = await buildCabComplianceChecklistPdfDoc(item, customEvidence, customSignature);
+  const filename = buildChecklistFileName(item, "pdf");
+  doc.save(filename);
+}
+
+// ─── Bulk PDF ZIP Export (1 Request Data = 1 File in ZIP) ─────────────────────
+
+export async function generateCabComplianceChecklistZipPdf(
+  items: (CabRequestDetail | CabRequestItem)[],
+  periodLabel: string
+): Promise<void> {
+  if (!items || items.length === 0) return;
+  const { ZipWriter, BlobWriter, BlobReader } = await import("@zip.js/zip.js");
+
+  const zipBlobWriter = new BlobWriter("application/zip");
+  const zipWriter = new ZipWriter(zipBlobWriter);
+
+  const usedNames = new Set<string>();
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const blob = await buildCabComplianceChecklistPdfBlob(item);
+    let filename = buildChecklistFileName(item, "pdf");
+
+    if (usedNames.has(filename)) {
+      filename = filename.replace(/\.pdf$/i, `_${i + 1}.pdf`);
+    }
+    usedNames.add(filename);
+
+    await zipWriter.add(filename, new BlobReader(blob));
+  }
+
+  await zipWriter.close();
+  const zipBlob = await zipBlobWriter.getData();
+
+  const safePeriod = periodLabel.replace(/[\/\\:*?"<>|]/g, "_").trim();
+  const downloadUrl = URL.createObjectURL(zipBlob);
+  const a = document.createElement("a");
+  a.href = downloadUrl;
+  a.download = `Compliance Checklist CAB Bulk ${safePeriod}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(downloadUrl);
 }
 
 // ─── Bulk PDF Export (Per Period) ─────────────────────────────────────────────
