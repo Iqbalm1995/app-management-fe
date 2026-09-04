@@ -15,13 +15,16 @@ import {
   useColorMode,
 } from "@chakra-ui/react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   FiArrowLeft,
   FiHeart,
   FiShare,
   FiRefreshCcw,
+  FiDownload,
   FiCode,
 } from "react-icons/fi";
+import { useDownloadManagerModal } from "@/app/context/DownloadManagerContext";
 import {
   radiusStyle,
   PROJECT_TYPE_INTERNAL_DEVELOPMENT,
@@ -38,12 +41,6 @@ import { FaCode } from "react-icons/fa";
 // To add new project types or modify routes:
 // 1. Add new entry with project type constant as key
 // 2. Define back URL, devView URL (optional), and showDevView flag
-// Example:
-//   [NEW_PROJECT_TYPE]: {
-//     back: "/your-back-route",
-//     devView: "/your-dev-view-route",  // optional
-//     showDevView: true,  // show Dev View button
-//   }
 const PROJECT_ROUTES = {
   [PROJECT_TYPE_INTERNAL_DEVELOPMENT]: {
     back: "/projects-manager",
@@ -73,13 +70,31 @@ export const ProjectDetailHeader = ({
   onRefresh,
 }: ProjectDetailHeaderProps) => {
   const { colorMode } = useColorMode();
+  const { openDownloadManager, activeJobsCount } = useDownloadManagerModal();
+  const searchParams = useSearchParams();
+  const fromParam = searchParams.get("from");
+  const contractIdParam = searchParams.get("contractId");
+  const returnUrlParam = searchParams.get("returnUrl");
 
   // Get route configuration based on project type
   const routeConfig = DataProject?.projectType
     ? PROJECT_ROUTES[DataProject.projectType as keyof typeof PROJECT_ROUTES]
     : PROJECT_ROUTES[PROJECT_TYPE_PROCUREMENT]; // Default fallback
 
-  const backUrl = routeConfig?.back || "/projects-procurements";
+  let dynamicBackUrl = routeConfig?.back || "/projects-procurements";
+  let dynamicBackLabel = "Back";
+
+  if (returnUrlParam) {
+    dynamicBackUrl = returnUrlParam;
+    dynamicBackLabel = "Back to Previous Page";
+  } else if (fromParam === "contract-detail" && contractIdParam) {
+    dynamicBackUrl = `/vendor-management/contracts/detail?id=${contractIdParam}`;
+    dynamicBackLabel = "Back to Contract Detail";
+  } else if (fromParam === "contracts" || fromParam === "vendor-contracts") {
+    dynamicBackUrl = "/vendor-management/contracts";
+    dynamicBackLabel = "Back to Vendor Contracts";
+  }
+
   const devViewUrl = routeConfig?.devView
     ? `${routeConfig.devView}?projectId=${projectId}`
     : null;
@@ -144,7 +159,7 @@ export const ProjectDetailHeader = ({
         {/* Compact Top Navigation */}
         <HStack justify="space-between" align="center">
           <HStack spacing={3}>
-            <Link href={backUrl}>
+            <Link href={dynamicBackUrl}>
               <Button
                 leftIcon={<FiArrowLeft />}
                 variant="ghost"
@@ -163,7 +178,7 @@ export const ProjectDetailHeader = ({
                 px={4}
                 transition="all 0.2s ease"
               >
-                Back
+                {dynamicBackLabel}
               </Button>
             </Link>
 
@@ -234,6 +249,38 @@ export const ProjectDetailHeader = ({
               transition="all 0.2s ease"
             >
               Share
+            </Button>
+
+            <Button
+              leftIcon={<FiDownload />}
+              variant="outline"
+              size="sm"
+              onClick={openDownloadManager}
+              borderColor="whiteAlpha.300"
+              color="white"
+              bg="whiteAlpha.100"
+              backdropFilter="blur(10px)"
+              _hover={{
+                bg: "whiteAlpha.200",
+                borderColor: "whiteAlpha.400",
+                transform: "translateY(-1px)",
+              }}
+              rounded="full"
+              px={3.5}
+              transition="all 0.2s ease"
+            >
+              Download Manager
+              {activeJobsCount > 0 && (
+                <Badge
+                  colorScheme="blue"
+                  rounded="full"
+                  ml={1.5}
+                  px={1.5}
+                  fontSize="2xs"
+                >
+                  {activeJobsCount}
+                </Badge>
+              )}
             </Button>
 
             <Button

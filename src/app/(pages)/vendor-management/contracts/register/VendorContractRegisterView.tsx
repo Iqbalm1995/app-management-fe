@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -40,6 +40,7 @@ import {
   SliderTrack,
   SliderFilledTrack,
   SliderThumb,
+  Spinner,
   Stack,
   Switch,
   Table,
@@ -50,6 +51,7 @@ import {
   Th,
   Thead,
   Tr,
+  Tooltip,
   useColorMode,
   useDisclosure,
   VStack,
@@ -64,6 +66,7 @@ import {
   FiClock,
   FiDollarSign,
   FiFileText,
+  FiInfo,
   FiLayers,
   FiPlus,
   FiRepeat,
@@ -72,13 +75,23 @@ import {
   FiSliders,
   FiTrash2,
   FiUserCheck,
+  FiCreditCard,
+  FiPaperclip,
+  FiUploadCloud,
+  FiX,
+  FiTag,
+  FiHash,
+  FiLink,
 } from "react-icons/fi";
 import { useFormik } from "formik";
 import * as yup from "yup";
 
 // Components & Services
 import LayoutAdmin from "@/app/components/layoutAdmin";
-import { HeaderContent, HeaderContentProps } from "@/app/components/headerContent";
+import {
+  HeaderContent,
+  HeaderContentProps,
+} from "@/app/components/headerContent";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import useVendor, {
   ContractItemInsertPayload,
@@ -99,13 +112,27 @@ const HeaderDataContent: HeaderContentProps = {
   breadCrumb: ["Home", "Vendor Management", "Contracts", "Register"],
 };
 
+const DATE_EXTEND_PRESETS = [
+  { label: "+6 Mo", months: 6, years: 0 },
+  { label: "+1 Yr", months: 0, years: 1 },
+  { label: "+2 Yr", months: 0, years: 2 },
+  { label: "+3 Yr", months: 0, years: 3 },
+  { label: "+4 Yr", months: 0, years: 4 },
+  { label: "+5 Yr", months: 0, years: 5 },
+];
+
 const validationSchema = yup.object({
   projectId: yup.string().required("Corporate Procurement Project is required"),
   vendorId: yup.string().required("Please select a vendor partner"),
-  corpNumber: yup.string().required("Corporate SPK / Agreement Number is required"),
+  corpNumber: yup
+    .string()
+    .required("PKS Number / Agreement Number is required"),
   corpName: yup.string().required("Contract Narrative is required"),
   contractDate: yup.string().required("Contract Register Date is required"),
-  workValue: yup.number().min(0, "Work value cannot be negative").required("Work Value is required"),
+  workValue: yup
+    .number()
+    .min(0, "Work value cannot be negative")
+    .required("Work Value is required"),
   contractStartDate: yup.string().required("Contract Start Date is required"),
   contractEndDate: yup.string().required("Contract End Date is required"),
 });
@@ -114,12 +141,24 @@ const VendorContractRegisterView = () => {
   const { colorMode } = useColorMode();
   const showToast = useToastHelper();
   const router = useRouter();
-  const { InsertContract } = useVendor();
+  const { InsertContract, UploadContractAttachment } = useVendor();
 
   const [tokenData, setTokenData] = useState<string>("");
-  const [selectedProject, setSelectedProject] = useState<ProjectDataResponse | null>(null);
-  const [selectedVendor, setSelectedVendor] = useState<VendorResponse | null>(null);
+  const [selectedProject, setSelectedProject] =
+    useState<ProjectDataResponse | null>(null);
+  const [selectedVendor, setSelectedVendor] = useState<VendorResponse | null>(
+    null,
+  );
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  // Contract Document Attachment state (Optional initial upload during register)
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [contractFile, setContractFile] = useState<File | null>(null);
+  const [contractFileCategory, setContractFileCategory] = useState<string>("PKS_MAIN");
+  const [contractDocName, setContractDocName] = useState<string>("");
+  const [contractDocNumber, setContractDocNumber] = useState<string>("");
+  const [contractLinkAttachment, setContractLinkAttachment] = useState<string>("");
+  const [dragActive, setDragActive] = useState<boolean>(false);
 
   // Modals & Safety 5s countdown
   const projectModal = useDisclosure();
@@ -166,7 +205,9 @@ const VendorContractRegisterView = () => {
       workValue: 0,
       note: "",
       contractStartDate: new Date().toISOString().split("T")[0],
-      contractEndDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+      contractEndDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0],
       worksStartDate: "",
       worksEndDate: "",
       warrantyStartDate: "",
@@ -191,7 +232,13 @@ const VendorContractRegisterView = () => {
       subscriptionAutoRenew: false,
       items: [],
       topList: [
-        { stepOrder: 1, topValues: 0, topDate: "", topDescriptions: "", topStatus: "ACTIVE" },
+        {
+          stepOrder: 1,
+          topValues: 0,
+          topDate: "",
+          topDescriptions: "",
+          topStatus: "ACTIVE",
+        },
       ],
     },
     validationSchema,
@@ -204,7 +251,10 @@ const VendorContractRegisterView = () => {
     setSelectedProject(project);
     formik.setFieldValue("projectId", project.id);
     if (!formik.values.corpName || formik.values.corpName.trim() === "") {
-      formik.setFieldValue("corpName", (project.projectName || "").toUpperCase());
+      formik.setFieldValue(
+        "corpName",
+        (project.projectName || "").toUpperCase(),
+      );
     }
   };
 
@@ -217,7 +267,8 @@ const VendorContractRegisterView = () => {
     if (!tokenData) return;
     setIsSubmitting(true);
 
-    const cleanDate = (val?: string) => (val && val.trim() !== "" ? val : undefined);
+    const cleanDate = (val?: string) =>
+      val && val.trim() !== "" ? val : undefined;
 
     const sanitizedPayload: VendorContractInsertPayload = {
       ...formik.values,
@@ -227,10 +278,18 @@ const VendorContractRegisterView = () => {
       warrantyEndDate: cleanDate(formik.values.warrantyEndDate),
       maintenanceStartDate: cleanDate(formik.values.maintenanceStartDate),
       maintenanceEndDate: cleanDate(formik.values.maintenanceEndDate),
-      performanceGuaranteeStartDate: cleanDate(formik.values.performanceGuaranteeStartDate),
-      performanceGuaranteeEndDate: cleanDate(formik.values.performanceGuaranteeEndDate),
-      maintenanceWarrantyStartDate: cleanDate(formik.values.maintenanceWarrantyStartDate),
-      maintenanceWarrantyEndDate: cleanDate(formik.values.maintenanceWarrantyEndDate),
+      performanceGuaranteeStartDate: cleanDate(
+        formik.values.performanceGuaranteeStartDate,
+      ),
+      performanceGuaranteeEndDate: cleanDate(
+        formik.values.performanceGuaranteeEndDate,
+      ),
+      maintenanceWarrantyStartDate: cleanDate(
+        formik.values.maintenanceWarrantyStartDate,
+      ),
+      maintenanceWarrantyEndDate: cleanDate(
+        formik.values.maintenanceWarrantyEndDate,
+      ),
       performanceGuaranteeValues: formik.values.performanceGuaranteeValues || 0,
       maintenanceWarrantyValues: formik.values.maintenanceWarrantyValues || 0,
       cavexValues: formik.values.cavexValues || 0,
@@ -238,7 +297,8 @@ const VendorContractRegisterView = () => {
       ovexValues: formik.values.ovexValues || 0,
       ovexPercentage: formik.values.ovexPercentage || 0,
       contractBillingType: formik.values.contractBillingType || "MILESTONE",
-      subscriptionPeriodValue: formik.values.subscriptionPeriodValue || undefined,
+      subscriptionPeriodValue:
+        formik.values.subscriptionPeriodValue || undefined,
       subscriptionAutoRenew: !!formik.values.subscriptionAutoRenew,
       topList: (formik.values.topList || []).map((t) => ({
         ...t,
@@ -251,36 +311,121 @@ const VendorContractRegisterView = () => {
 
     const res = await InsertContract(sanitizedPayload, tokenData);
     if (res?.statusCode === RES_CODE_OK) {
-      showToast({ description: "Vendor Contract registered successfully!", statusToast: "success" });
+      const createdContractId = res.data;
+
+      // Upload initial contract document if file or link was attached during registration
+      if (createdContractId && (contractFile || contractLinkAttachment.trim())) {
+        try {
+          const fileFormData = new FormData();
+          fileFormData.append("ContractId", createdContractId);
+          fileFormData.append("DocumentType", contractFileCategory || "PKS_MAIN");
+          fileFormData.append(
+            "DocumentName",
+            contractDocName.trim() ||
+              (contractFile
+                ? contractFile.name.replace(/\.[^/.]+$/, "")
+                : "PKS Contract Document")
+          );
+          fileFormData.append(
+            "DocumentNumber",
+            contractDocNumber.trim() || formik.values.contractNumber || ""
+          );
+          fileFormData.append(
+            "DocumentDate",
+            formik.values.contractDate
+              ? new Date(formik.values.contractDate).toISOString()
+              : new Date().toISOString()
+          );
+          fileFormData.append("DocumentVersion", "V.0");
+          if (contractFile) {
+            fileFormData.append("File", contractFile);
+          }
+          if (contractLinkAttachment.trim()) {
+            fileFormData.append("LinkAttachment", contractLinkAttachment.trim());
+          }
+
+          await UploadContractAttachment(fileFormData, tokenData);
+        } catch {
+          // non-blocking for registration flow
+        }
+      }
+
+      showToast({
+        description: "Vendor Contract and attachments registered successfully!",
+        statusToast: "success",
+      });
       confirmModal.onClose();
       router.push("/vendor-management/contracts");
     } else {
-      showToast({ description: res?.message || "Failed to register contract", statusToast: "error" });
+      showToast({
+        description: res?.message || "Failed to register contract",
+        statusToast: "error",
+      });
     }
     setIsSubmitting(false);
   };
 
+  // Helper to extend any End Date based on paired Start Date (or current date if empty)
+  const handleExtendEndDate = (
+    baseDateStr: string | undefined | null,
+    targetFieldPath: string,
+    months: number,
+    years: number,
+  ) => {
+    let baseDate: Date;
+    if (baseDateStr && !isNaN(new Date(baseDateStr).getTime())) {
+      baseDate = new Date(baseDateStr);
+    } else {
+      baseDate = new Date();
+    }
+
+    const targetDate = new Date(baseDate.getTime());
+    if (months > 0) {
+      targetDate.setMonth(targetDate.getMonth() + months);
+    }
+    if (years > 0) {
+      targetDate.setFullYear(targetDate.getFullYear() + years);
+    }
+
+    const yyyy = targetDate.getFullYear();
+    const mm = String(targetDate.getMonth() + 1).padStart(2, "0");
+    const dd = String(targetDate.getDate()).padStart(2, "0");
+    const formatted = `${yyyy}-${mm}-${dd}`;
+
+    formik.setFieldValue(targetFieldPath, formatted);
+    formik.setFieldTouched(targetFieldPath, true, false);
+  };
+
   // Quick 1-Click Subscription Schedule Generator
   const handleQuickGenerateSubscriptionTop = (billingType?: string) => {
-    const type = billingType || formik.values.contractBillingType || "SUBSCRIPTION_MONTHLY";
-    let start = formik.values.contractStartDate ? new Date(formik.values.contractStartDate) : new Date();
+    const type =
+      billingType ||
+      formik.values.contractBillingType ||
+      "SUBSCRIPTION_MONTHLY";
+    let start = formik.values.contractStartDate
+      ? new Date(formik.values.contractStartDate)
+      : new Date();
     let end = formik.values.contractEndDate
       ? new Date(formik.values.contractEndDate)
       : new Date(start.getFullYear() + 1, start.getMonth(), start.getDate());
 
     if (isNaN(start.getTime())) start = new Date();
     if (isNaN(end.getTime()) || end <= start) {
-      end = new Date(start.getFullYear() + 1, start.getMonth(), start.getDate());
+      end = new Date(
+        start.getFullYear() + 1,
+        start.getMonth(),
+        start.getDate(),
+      );
     }
 
     const stepMonths =
       type === "SUBSCRIPTION_ANNUAL"
         ? 12
         : type === "SUBSCRIPTION_SEMI_ANNUAL"
-        ? 6
-        : type === "SUBSCRIPTION_QUARTERLY"
-        ? 3
-        : 1;
+          ? 6
+          : type === "SUBSCRIPTION_QUARTERLY"
+            ? 3
+            : 1;
 
     const pad = (n: number) => n.toString().padStart(2, "0");
     const formatYMD = (d: Date) =>
@@ -294,16 +439,16 @@ const VendorContractRegisterView = () => {
       type === "SUBSCRIPTION_ANNUAL"
         ? "Year"
         : type === "SUBSCRIPTION_SEMI_ANNUAL"
-        ? "Semester"
-        : type === "SUBSCRIPTION_QUARTERLY"
-        ? "Quarter"
-        : "Month";
+          ? "Semester"
+          : type === "SUBSCRIPTION_QUARTERLY"
+            ? "Quarter"
+            : "Month";
 
     while (currentPeriodStart < end && step <= 120) {
       const nextMonthTarget = new Date(
         currentPeriodStart.getFullYear(),
         currentPeriodStart.getMonth() + stepMonths,
-        0
+        0,
       );
       const periodEnd = nextMonthTarget > end ? new Date(end) : nextMonthTarget;
 
@@ -326,7 +471,7 @@ const VendorContractRegisterView = () => {
       currentPeriodStart = new Date(
         periodEnd.getFullYear(),
         periodEnd.getMonth(),
-        periodEnd.getDate() + 1
+        periodEnd.getDate() + 1,
       );
       step++;
     }
@@ -334,20 +479,22 @@ const VendorContractRegisterView = () => {
     const totalWV = formik.values.workValue || 0;
     if (
       totalWV > 0 &&
-      (!formik.values.subscriptionPeriodValue || formik.values.subscriptionPeriodValue === 0)
+      (!formik.values.subscriptionPeriodValue ||
+        formik.values.subscriptionPeriodValue === 0)
     ) {
       const totalSteps = Math.max(1, list.length);
-      const baseAmount = Math.floor(totalWV / totalSteps);
-      const remainder = totalWV - baseAmount * totalSteps;
+      const baseAmount = Number((Math.floor((totalWV / totalSteps) * 100) / 100).toFixed(2));
+      const remainder = Number((totalWV - baseAmount * (totalSteps - 1)).toFixed(2));
       list.forEach((item, idx) => {
-        item.topValues = idx === totalSteps - 1 ? baseAmount + remainder : baseAmount;
+        item.topValues =
+          idx === totalSteps - 1 ? remainder : baseAmount;
       });
       formik.setFieldValue("subscriptionPeriodValue", baseAmount);
     } else if (
       formik.values.subscriptionPeriodValue &&
       formik.values.subscriptionPeriodValue > 0
     ) {
-      const sum = list.reduce((a, b) => a + b.topValues, 0);
+      const sum = Number(list.reduce((a, b) => a + (b.topValues || 0), 0).toFixed(2));
       handleWorkValueChange(sum);
     }
 
@@ -364,7 +511,13 @@ const VendorContractRegisterView = () => {
     const nextOrder = (formik.values.topList?.length || 0) + 1;
     formik.setFieldValue("topList", [
       ...(formik.values.topList || []),
-      { stepOrder: nextOrder, topValues: 0, topDate: "", topDescriptions: "", topStatus: "ACTIVE" },
+      {
+        stepOrder: nextOrder,
+        topValues: 0,
+        topDate: "",
+        topDescriptions: "",
+        topStatus: "ACTIVE",
+      },
     ]);
   };
 
@@ -374,15 +527,18 @@ const VendorContractRegisterView = () => {
     formik.setFieldValue("topList", updated);
   };
 
-  const totalTopValues = (formik.values.topList || []).reduce((acc, t) => acc + (t.topValues || 0), 0);
-  const isTopMatch = totalTopValues === formik.values.workValue;
+  const totalTopValues = (formik.values.topList || []).reduce(
+    (acc, t) => acc + (t.topValues || 0),
+    0,
+  );
+  const isTopMatch = Math.abs(totalTopValues - (formik.values.workValue || 0)) < 0.01;
 
   // Linked CAPEX / OPEX calculations relative to Total Work Value
   const handleWorkValueChange = (newWorkValue: number) => {
     formik.setFieldValue("workValue", newWorkValue);
     const capexPct = formik.values.capexPercentage || 0;
-    const cavexVal = (capexPct / 100) * newWorkValue;
-    const ovexVal = Math.max(0, newWorkValue - cavexVal);
+    const cavexVal = Number(((capexPct / 100) * newWorkValue).toFixed(2));
+    const ovexVal = Number(Math.max(0, newWorkValue - cavexVal).toFixed(2));
     const ovexPct = parseFloat((100 - capexPct).toFixed(2));
 
     formik.setFieldValue("cavexValues", cavexVal);
@@ -390,25 +546,64 @@ const VendorContractRegisterView = () => {
     formik.setFieldValue("ovexPercentage", ovexPct);
   };
 
-  const handleCavexValueChange = (inputVal: number) => {
+  // Debounce timers & adjusting indicators for manual CAPEX and OPEX nominal input
+  const [isCapexAdjusting, setIsCapexAdjusting] = useState(false);
+  const [isOvexAdjusting, setIsOvexAdjusting] = useState(false);
+  const capexDebounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const ovexDebounceTimer = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (capexDebounceTimer.current) clearTimeout(capexDebounceTimer.current);
+      if (ovexDebounceTimer.current) clearTimeout(ovexDebounceTimer.current);
+    };
+  }, []);
+
+  // Sync CAPEX allocation with full validation and counterpart OPEX calculations
+  const syncCavexAllocation = (inputVal: number) => {
     const totalWV = formik.values.workValue || 0;
-    const boundedVal = Math.min(Math.max(0, inputVal), totalWV);
-    const capexPct = totalWV > 0 ? parseFloat(((boundedVal / totalWV) * 100).toFixed(2)) : 0;
-    const ovexVal = Math.max(0, totalWV - boundedVal);
+    const boundedVal = Number(Math.min(Math.max(0, inputVal), totalWV).toFixed(2));
+    const capexPct =
+      totalWV > 0 ? parseFloat(((boundedVal / totalWV) * 100).toFixed(2)) : 0;
+    const ovexVal = Number(Math.max(0, totalWV - boundedVal).toFixed(2));
     const ovexPct = parseFloat((100 - capexPct).toFixed(2));
 
     formik.setFieldValue("cavexValues", boundedVal);
     formik.setFieldValue("capexPercentage", capexPct);
     formik.setFieldValue("ovexValues", ovexVal);
     formik.setFieldValue("ovexPercentage", ovexPct);
+    setIsCapexAdjusting(false);
+  };
+
+  const handleCavexValueChange = (inputVal: number) => {
+    // 1. Immediately update the input field so typing is responsive and smooth without jumping
+    formik.setFieldValue("cavexValues", inputVal);
+    setIsCapexAdjusting(true);
+
+    // 2. Clear previous timer
+    if (capexDebounceTimer.current) {
+      clearTimeout(capexDebounceTimer.current);
+    }
+
+    // 3. Delay recalculation and cross-field adjustment by 3 seconds after user stops typing
+    capexDebounceTimer.current = setTimeout(() => {
+      syncCavexAllocation(inputVal);
+    }, 3000);
+  };
+
+  const handleCavexBlur = () => {
+    if (capexDebounceTimer.current) {
+      clearTimeout(capexDebounceTimer.current);
+    }
+    syncCavexAllocation(formik.values.cavexValues || 0);
   };
 
   const handleCapexPercentageChange = (inputPct: number) => {
     const totalWV = formik.values.workValue || 0;
     const boundedPct = Math.min(Math.max(0, inputPct), 100);
-    const cavexVal = (boundedPct / 100) * totalWV;
+    const cavexVal = Number(((boundedPct / 100) * totalWV).toFixed(2));
     const ovexPct = parseFloat((100 - boundedPct).toFixed(2));
-    const ovexVal = Math.max(0, totalWV - cavexVal);
+    const ovexVal = Number(Math.max(0, totalWV - cavexVal).toFixed(2));
 
     formik.setFieldValue("capexPercentage", boundedPct);
     formik.setFieldValue("cavexValues", cavexVal);
@@ -416,25 +611,51 @@ const VendorContractRegisterView = () => {
     formik.setFieldValue("ovexValues", ovexVal);
   };
 
-  const handleOvexValueChange = (inputVal: number) => {
+  // Sync OPEX allocation with full validation and counterpart CAPEX calculations
+  const syncOvexAllocation = (inputVal: number) => {
     const totalWV = formik.values.workValue || 0;
-    const boundedVal = Math.min(Math.max(0, inputVal), totalWV);
-    const ovexPct = totalWV > 0 ? parseFloat(((boundedVal / totalWV) * 100).toFixed(2)) : 0;
-    const cavexVal = Math.max(0, totalWV - boundedVal);
+    const boundedVal = Number(Math.min(Math.max(0, inputVal), totalWV).toFixed(2));
+    const ovexPct =
+      totalWV > 0 ? parseFloat(((boundedVal / totalWV) * 100).toFixed(2)) : 0;
+    const cavexVal = Number(Math.max(0, totalWV - boundedVal).toFixed(2));
     const capexPct = parseFloat((100 - ovexPct).toFixed(2));
 
     formik.setFieldValue("ovexValues", boundedVal);
     formik.setFieldValue("ovexPercentage", ovexPct);
     formik.setFieldValue("cavexValues", cavexVal);
     formik.setFieldValue("capexPercentage", capexPct);
+    setIsOvexAdjusting(false);
+  };
+
+  const handleOvexValueChange = (inputVal: number) => {
+    // 1. Immediately update the input field so typing is responsive and smooth without jumping
+    formik.setFieldValue("ovexValues", inputVal);
+    setIsOvexAdjusting(true);
+
+    // 2. Clear previous timer
+    if (ovexDebounceTimer.current) {
+      clearTimeout(ovexDebounceTimer.current);
+    }
+
+    // 3. Delay recalculation and cross-field adjustment by 3 seconds after user stops typing
+    ovexDebounceTimer.current = setTimeout(() => {
+      syncOvexAllocation(inputVal);
+    }, 3000);
+  };
+
+  const handleOvexBlur = () => {
+    if (ovexDebounceTimer.current) {
+      clearTimeout(ovexDebounceTimer.current);
+    }
+    syncOvexAllocation(formik.values.ovexValues || 0);
   };
 
   const handleOvexPercentageChange = (inputPct: number) => {
     const totalWV = formik.values.workValue || 0;
     const boundedPct = Math.min(Math.max(0, inputPct), 100);
-    const ovexVal = (boundedPct / 100) * totalWV;
+    const ovexVal = Number(((boundedPct / 100) * totalWV).toFixed(2));
     const capexPct = parseFloat((100 - boundedPct).toFixed(2));
-    const cavexVal = Math.max(0, totalWV - ovexVal);
+    const cavexVal = Number(Math.max(0, totalWV - ovexVal).toFixed(2));
 
     formik.setFieldValue("ovexPercentage", boundedPct);
     formik.setFieldValue("ovexValues", ovexVal);
@@ -444,7 +665,10 @@ const VendorContractRegisterView = () => {
 
   return (
     <LayoutAdmin>
-      <HeaderContent titleName={HeaderDataContent.titleName} breadCrumb={HeaderDataContent.breadCrumb} />
+      <HeaderContent
+        titleName={HeaderDataContent.titleName}
+        breadCrumb={HeaderDataContent.breadCrumb}
+      />
 
       <Box px={{ base: 2, md: 4 }} py={4} maxW="1400px" mx="auto">
         {/* Back Link Header */}
@@ -459,15 +683,38 @@ const VendorContractRegisterView = () => {
         <form onSubmit={formik.handleSubmit}>
           <VStack spacing={6} align="stretch">
             {/* SECTION 1: Corporate Vendor & Header Contract Data */}
-            <Card rounded="2xl" shadow="md" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
-              <CardHeader bg={colorMode === "light" ? "gray.50" : "gray.900"} py={4} roundedTop="2xl">
+            <Card
+              rounded="2xl"
+              shadow="md"
+              border="1px"
+              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+            >
+              <CardHeader
+                bg={colorMode === "light" ? "gray.50" : "gray.900"}
+                py={4}
+                roundedTop="2xl"
+              >
                 <HStack spacing={3}>
-                  <Box w={9} h={9} bg="blue.500" rounded="lg" display="flex" alignItems="center" justifyContent="center" color="white">
+                  <Box
+                    w={9}
+                    h={9}
+                    bg="blue.500"
+                    rounded="lg"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    color="white"
+                  >
                     <FiBriefcase size={18} />
                   </Box>
                   <VStack align="start" spacing={0}>
-                    <Heading size="md">1. Corporate Vendor & Header Contract Data</Heading>
-                    <Text fontSize="xs" color="gray.500">Select mandatory corporate procurement project and vendor partner entity</Text>
+                    <Heading size="md">
+                      1. Corporate Vendor & Header Contract Data
+                    </Heading>
+                    <Text fontSize="xs" color="gray.500">
+                      Select mandatory corporate procurement project and vendor
+                      partner entity
+                    </Text>
                   </VStack>
                 </HStack>
               </CardHeader>
@@ -475,13 +722,24 @@ const VendorContractRegisterView = () => {
               <CardBody p={6}>
                 <VStack spacing={5} align="stretch">
                   {/* Corporate Procurement Project Selector Card (MANDATORY) */}
-                  <FormControl isInvalid={!!formik.errors.projectId && !!formik.touched.projectId} isRequired>
+                  <FormControl
+                    isInvalid={
+                      !!formik.errors.projectId && !!formik.touched.projectId
+                    }
+                    isRequired
+                  >
                     <Flex justify="space-between" align="center" mb={1}>
                       <FormLabel fontSize="sm" fontWeight="bold" m={0}>
                         Corporate Procurement Project *
                       </FormLabel>
                       {selectedProject && (
-                        <Badge colorScheme="purple" fontSize="2xs" px={2} py={0.5} rounded="md">
+                        <Badge
+                          colorScheme="purple"
+                          fontSize="2xs"
+                          px={2}
+                          py={0.5}
+                          rounded="md"
+                        >
                           Linked Project
                         </Badge>
                       )}
@@ -494,7 +752,12 @@ const VendorContractRegisterView = () => {
                         borderColor="purple.400"
                         bg={colorMode === "light" ? "purple.50/50" : "gray.800"}
                       >
-                        <Flex justify="space-between" align="center" wrap="wrap" gap={3}>
+                        <Flex
+                          justify="space-between"
+                          align="center"
+                          wrap="wrap"
+                          gap={3}
+                        >
                           <HStack spacing={3}>
                             <Box
                               w={10}
@@ -511,7 +774,9 @@ const VendorContractRegisterView = () => {
                             <VStack align="start" spacing={0.5}>
                               <HStack spacing={2} wrap="wrap">
                                 <Badge colorScheme="purple">
-                                  {selectedProject.projectCode || selectedProject.projectNo || "NO-CODE"}
+                                  {selectedProject.projectCode ||
+                                    selectedProject.projectNo ||
+                                    "NO-CODE"}
                                 </Badge>
                                 <Badge colorScheme="blue">
                                   {selectedProject.projectType || "PROCUREMENT"}
@@ -529,16 +794,30 @@ const VendorContractRegisterView = () => {
                                 {selectedProject.projectName}
                               </Text>
                               <Text fontSize="xs" color="gray.500">
-                                {selectedProject.proOwnerDivisionName || "Division not set"} • {selectedProject.proOwnerDirectorateName || "Directorate not set"}
+                                {selectedProject.proOwnerDivisionName ||
+                                  "Division not set"}{" "}
+                                •{" "}
+                                {selectedProject.proOwnerDirectorateName ||
+                                  "Directorate not set"}
                               </Text>
                             </VStack>
                           </HStack>
 
                           <HStack spacing={2}>
-                            <Button size="sm" variant="outline" colorScheme="purple" onClick={projectModal.onOpen}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              colorScheme="purple"
+                              onClick={projectModal.onOpen}
+                            >
                               Change Project
                             </Button>
-                            <Button size="sm" variant="ghost" colorScheme="red" onClick={handleClearProject}>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              colorScheme="red"
+                              onClick={handleClearProject}
+                            >
                               Clear
                             </Button>
                           </HStack>
@@ -551,42 +830,100 @@ const VendorContractRegisterView = () => {
                         h="54px"
                         variant="dashed"
                         border="2px dashed"
-                        borderColor={formik.errors.projectId && formik.touched.projectId ? "red.400" : colorMode === "light" ? "purple.300" : "purple.600"}
-                        color={formik.errors.projectId && formik.touched.projectId ? "red.500" : colorMode === "light" ? "purple.600" : "purple.300"}
+                        borderColor={
+                          formik.errors.projectId && formik.touched.projectId
+                            ? "red.400"
+                            : colorMode === "light"
+                              ? "purple.300"
+                              : "purple.600"
+                        }
+                        color={
+                          formik.errors.projectId && formik.touched.projectId
+                            ? "red.500"
+                            : colorMode === "light"
+                              ? "purple.600"
+                              : "purple.300"
+                        }
                         leftIcon={<FiBriefcase size={20} />}
                         onClick={() => {
                           formik.setFieldTouched("projectId", true);
                           projectModal.onOpen();
                         }}
-                        _hover={{ bg: colorMode === "light" ? "purple.50" : "gray.700" }}
+                        _hover={{
+                          bg: colorMode === "light" ? "purple.50" : "gray.700",
+                        }}
                       >
-                        Click to Search & Select Corporate Procurement Project (Mandatory)
+                        Click to Search & Select Corporate Procurement Project
+                        (Mandatory)
                       </Button>
                     )}
-                    <FormErrorMessage>{formik.errors.projectId}</FormErrorMessage>
+                    <FormErrorMessage>
+                      {formik.errors.projectId}
+                    </FormErrorMessage>
                   </FormControl>
 
                   {/* Vendor Selector Card */}
-                  <FormControl isInvalid={!!formik.errors.vendorId && !!formik.touched.vendorId} isRequired>
-                    <FormLabel fontSize="sm" fontWeight="bold">Vendor Partner *</FormLabel>
+                  <FormControl
+                    isInvalid={
+                      !!formik.errors.vendorId && !!formik.touched.vendorId
+                    }
+                    isRequired
+                  >
+                    <FormLabel fontSize="sm" fontWeight="bold">
+                      Vendor Partner *
+                    </FormLabel>
                     {selectedVendor ? (
-                      <Box p={4} rounded="xl" border="1px" borderColor="secondary.500" bg={colorMode === "light" ? "secondary.50" : "gray.700"}>
-                        <Flex justify="space-between" align="center" wrap="wrap" gap={3}>
+                      <Box
+                        p={4}
+                        rounded="xl"
+                        border="1px"
+                        borderColor="secondary.500"
+                        bg={colorMode === "light" ? "secondary.50" : "gray.700"}
+                      >
+                        <Flex
+                          justify="space-between"
+                          align="center"
+                          wrap="wrap"
+                          gap={3}
+                        >
                           <HStack spacing={3}>
-                            <Box w={10} h={10} bg="secondary.500" rounded="xl" display="flex" alignItems="center" justifyContent="center" color="white">
+                            <Box
+                              w={10}
+                              h={10}
+                              bg="secondary.500"
+                              rounded="xl"
+                              display="flex"
+                              alignItems="center"
+                              justifyContent="center"
+                              color="white"
+                            >
                               <FiUserCheck size={20} />
                             </Box>
                             <VStack align="start" spacing={0}>
                               <HStack spacing={2}>
-                                <Badge colorScheme="blue">{selectedVendor.vendorCode}</Badge>
-                                <Badge colorScheme="purple">{selectedVendor.vendorType}</Badge>
+                                <Badge colorScheme="blue">
+                                  {selectedVendor.vendorCode}
+                                </Badge>
+                                <Badge colorScheme="purple">
+                                  {selectedVendor.vendorType}
+                                </Badge>
                               </HStack>
-                              <Text fontSize="md" fontWeight="bold">{selectedVendor.vendorName}</Text>
-                              <Text fontSize="xs" color="gray.500">{selectedVendor.city}, {selectedVendor.country} • PIC: {selectedVendor.picBusinessName}</Text>
+                              <Text fontSize="md" fontWeight="bold">
+                                {selectedVendor.vendorName}
+                              </Text>
+                              <Text fontSize="xs" color="gray.500">
+                                {selectedVendor.city}, {selectedVendor.country}{" "}
+                                • PIC: {selectedVendor.picBusinessName}
+                              </Text>
                             </VStack>
                           </HStack>
 
-                          <Button size="sm" variant="outline" colorScheme="blue" onClick={vendorModal.onOpen}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            colorScheme="blue"
+                            onClick={vendorModal.onOpen}
+                          >
                             Change Vendor
                           </Button>
                         </Flex>
@@ -598,7 +935,11 @@ const VendorContractRegisterView = () => {
                         h="54px"
                         variant="dashed"
                         border="2px dashed"
-                        borderColor={formik.errors.vendorId && formik.touched.vendorId ? "red.400" : "secondary.400"}
+                        borderColor={
+                          formik.errors.vendorId && formik.touched.vendorId
+                            ? "red.400"
+                            : "secondary.400"
+                        }
                         color="secondary.600"
                         leftIcon={<FiUserCheck size={20} />}
                         onClick={() => {
@@ -610,14 +951,27 @@ const VendorContractRegisterView = () => {
                         Click to Search & Select Vendor Partner
                       </Button>
                     )}
-                    <FormErrorMessage>{formik.errors.vendorId}</FormErrorMessage>
+                    <FormErrorMessage>
+                      {formik.errors.vendorId}
+                    </FormErrorMessage>
                   </FormControl>
 
-                  {/* Corporate SPK & Contract Narrative */}
-                  <Grid templateColumns={{ base: "1fr", md: "1fr 2fr" }} gap={4}>
+                  {/* PKS Number & Contract Narrative */}
+                  <Grid
+                    templateColumns={{ base: "1fr", md: "1fr 2fr" }}
+                    gap={4}
+                  >
                     <GridItem>
-                      <FormControl isInvalid={!!formik.errors.corpNumber && !!formik.touched.corpNumber} isRequired>
-                        <FormLabel fontSize="xs" fontWeight="bold">Corporate SPK / Agreement No. *</FormLabel>
+                      <FormControl
+                        isInvalid={
+                          !!formik.errors.corpNumber &&
+                          !!formik.touched.corpNumber
+                        }
+                        isRequired
+                      >
+                        <FormLabel fontSize="xs" fontWeight="bold">
+                          PKS Number / Agreement No. *
+                        </FormLabel>
                         <Input
                           size="sm"
                           rounded="md"
@@ -625,16 +979,30 @@ const VendorContractRegisterView = () => {
                           placeholder="e.g. SPK/BJB/2026/089"
                           name="corpNumber"
                           value={formik.values.corpNumber}
-                          onChange={(e) => formik.setFieldValue("corpNumber", e.target.value.toUpperCase())}
+                          onChange={(e) =>
+                            formik.setFieldValue(
+                              "corpNumber",
+                              e.target.value.toUpperCase(),
+                            )
+                          }
                           onBlur={formik.handleBlur}
                         />
-                        <FormErrorMessage>{formik.errors.corpNumber}</FormErrorMessage>
+                        <FormErrorMessage>
+                          {formik.errors.corpNumber}
+                        </FormErrorMessage>
                       </FormControl>
                     </GridItem>
 
                     <GridItem>
-                      <FormControl isInvalid={!!formik.errors.corpName && !!formik.touched.corpName} isRequired>
-                        <FormLabel fontSize="xs" fontWeight="bold">Contract Narrative *</FormLabel>
+                      <FormControl
+                        isInvalid={
+                          !!formik.errors.corpName && !!formik.touched.corpName
+                        }
+                        isRequired
+                      >
+                        <FormLabel fontSize="xs" fontWeight="bold">
+                          Contract Narrative *
+                        </FormLabel>
                         <Textarea
                           size="sm"
                           rounded="md"
@@ -643,10 +1011,17 @@ const VendorContractRegisterView = () => {
                           placeholder="e.g. PENGADAAN PERANGKAT SERVER DAN INFRASTRUKTUR DATA CENTER..."
                           name="corpName"
                           value={formik.values.corpName}
-                          onChange={(e) => formik.setFieldValue("corpName", e.target.value.toUpperCase())}
+                          onChange={(e) =>
+                            formik.setFieldValue(
+                              "corpName",
+                              e.target.value.toUpperCase(),
+                            )
+                          }
                           onBlur={formik.handleBlur}
                         />
-                        <FormErrorMessage>{formik.errors.corpName}</FormErrorMessage>
+                        <FormErrorMessage>
+                          {formik.errors.corpName}
+                        </FormErrorMessage>
                       </FormControl>
                     </GridItem>
                   </Grid>
@@ -655,15 +1030,36 @@ const VendorContractRegisterView = () => {
             </Card>
 
             {/* SECTION 2: Budget Allocation */}
-            <Card rounded="2xl" shadow="md" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
-              <CardHeader bg={colorMode === "light" ? "gray.50" : "gray.900"} py={4} roundedTop="2xl">
+            <Card
+              rounded="2xl"
+              shadow="md"
+              border="1px"
+              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+            >
+              <CardHeader
+                bg={colorMode === "light" ? "gray.50" : "gray.900"}
+                py={4}
+                roundedTop="2xl"
+              >
                 <HStack spacing={3}>
-                  <Box w={9} h={9} bg="purple.500" rounded="lg" display="flex" alignItems="center" justifyContent="center" color="white">
+                  <Box
+                    w={9}
+                    h={9}
+                    bg="purple.500"
+                    rounded="lg"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    color="white"
+                  >
                     <FiCalendar size={18} />
                   </Box>
                   <VStack align="start" spacing={0}>
                     <Heading size="md">2. Budget Allocation</Heading>
-                    <Text fontSize="xs" color="gray.500">Configure contract billing model, register date, total work value, and duration</Text>
+                    <Text fontSize="xs" color="gray.500">
+                      Configure contract billing model, register date, total
+                      work value, and duration
+                    </Text>
                   </VStack>
                 </HStack>
               </CardHeader>
@@ -671,38 +1067,92 @@ const VendorContractRegisterView = () => {
               <CardBody p={6}>
                 <VStack spacing={5} align="stretch">
                   {/* Contract Billing Model & Recurring Setup */}
-                  <Box p={4} rounded="xl" border="1px solid" borderColor={colorMode === "light" ? "teal.200" : "teal.800"} bg={colorMode === "light" ? "teal.50/30" : "gray.800"}>
+                  <Box
+                    p={4}
+                    rounded="xl"
+                    border="1px solid"
+                    borderColor={
+                      colorMode === "light" ? "teal.200" : "teal.800"
+                    }
+                    bg={colorMode === "light" ? "teal.50/30" : "gray.800"}
+                  >
                     <VStack align="stretch" spacing={3}>
-                      <Flex justify="space-between" align="center" wrap="wrap" gap={2}>
+                      <Flex
+                        justify="space-between"
+                        align="center"
+                        wrap="wrap"
+                        gap={2}
+                      >
                         <HStack spacing={2}>
                           <Icon as={FiRepeat} color="teal.500" />
-                          <Text fontSize="xs" fontWeight="bold">Contract Billing Model & Schedule Type</Text>
+                          <Text fontSize="xs" fontWeight="bold">
+                            Contract Billing Model & Schedule Type
+                          </Text>
                         </HStack>
-                        <Badge colorScheme={formik.values.contractBillingType === "MILESTONE" ? "blue" : "purple"} fontSize="2xs" px={2} py={0.5} rounded="md">
+                        <Badge
+                          colorScheme={
+                            formik.values.contractBillingType === "MILESTONE"
+                              ? "blue"
+                              : "purple"
+                          }
+                          fontSize="2xs"
+                          px={2}
+                          py={0.5}
+                          rounded="md"
+                        >
                           {formik.values.contractBillingType || "MILESTONE"}
                         </Badge>
                       </Flex>
 
-                      <Grid templateColumns={{ base: "1fr", md: formik.values.contractBillingType !== "MILESTONE" ? "repeat(3, 1fr)" : "1fr" }} gap={4} alignItems="center">
+                      <Grid
+                        templateColumns={{
+                          base: "1fr",
+                          md:
+                            formik.values.contractBillingType !== "MILESTONE"
+                              ? "repeat(3, 1fr)"
+                              : "1fr",
+                        }}
+                        gap={4}
+                        alignItems="center"
+                      >
                         <GridItem>
                           <FormControl>
-                            <FormLabel fontSize="2xs" fontWeight="bold">Billing Model Type</FormLabel>
+                            <FormLabel fontSize="2xs" fontWeight="bold">
+                              Billing Model Type
+                            </FormLabel>
                             <ChakraSelect
                               size="sm"
                               rounded="md"
                               name="contractBillingType"
-                              value={formik.values.contractBillingType || "MILESTONE"}
+                              value={
+                                formik.values.contractBillingType || "MILESTONE"
+                              }
                               onChange={(e) => {
                                 const newType = e.target.value;
-                                formik.setFieldValue("contractBillingType", newType);
+                                formik.setFieldValue(
+                                  "contractBillingType",
+                                  newType,
+                                );
                               }}
                             >
-                              <option value="MILESTONE">Milestone / Deliverable Progress TOP</option>
-                              <option value="SUBSCRIPTION_MONTHLY">Monthly Subscription</option>
-                              <option value="SUBSCRIPTION_QUARTERLY">Quarterly Subscription (3 Months)</option>
-                              <option value="SUBSCRIPTION_SEMI_ANNUAL">Semi-Annual Subscription (6 Months)</option>
-                              <option value="SUBSCRIPTION_ANNUAL">Annual Subscription (Yearly)</option>
-                              <option value="CUSTOM_RECURRING">Custom Recurring Period</option>
+                              <option value="MILESTONE">
+                                Milestone / Deliverable Progress TOP
+                              </option>
+                              <option value="SUBSCRIPTION_MONTHLY">
+                                Monthly Subscription
+                              </option>
+                              <option value="SUBSCRIPTION_QUARTERLY">
+                                Quarterly Subscription (3 Months)
+                              </option>
+                              <option value="SUBSCRIPTION_SEMI_ANNUAL">
+                                Semi-Annual Subscription (6 Months)
+                              </option>
+                              <option value="SUBSCRIPTION_ANNUAL">
+                                Annual Subscription (Yearly)
+                              </option>
+                              <option value="CUSTOM_RECURRING">
+                                Custom Recurring Period
+                              </option>
                             </ChakraSelect>
                           </FormControl>
                         </GridItem>
@@ -711,29 +1161,53 @@ const VendorContractRegisterView = () => {
                           <>
                             <GridItem>
                               <FormControl>
-                                <FormLabel fontSize="2xs" fontWeight="bold">Periodic Rate (Rp. per cycle)</FormLabel>
+                                <FormLabel fontSize="2xs" fontWeight="bold">
+                                  Periodic Rate (Rp. per cycle)
+                                </FormLabel>
                                 <CurrencyInput
                                   size="sm"
                                   rounded="md"
                                   name="subscriptionPeriodValue"
-                                  value={formik.values.subscriptionPeriodValue || 0}
+                                  value={
+                                    formik.values.subscriptionPeriodValue || 0
+                                  }
                                   onChange={(_, val) => {
-                                    formik.setFieldValue("subscriptionPeriodValue", val);
+                                    formik.setFieldValue(
+                                      "subscriptionPeriodValue",
+                                      val,
+                                    );
                                   }}
                                 />
                               </FormControl>
                             </GridItem>
 
                             <GridItem>
-                              <FormControl display="flex" alignItems="center" pt={4}>
+                              <FormControl
+                                display="flex"
+                                alignItems="center"
+                                pt={4}
+                              >
                                 <Switch
                                   id="subscriptionAutoRenew"
                                   colorScheme="teal"
-                                  isChecked={!!formik.values.subscriptionAutoRenew}
-                                  onChange={(e) => formik.setFieldValue("subscriptionAutoRenew", e.target.checked)}
+                                  isChecked={
+                                    !!formik.values.subscriptionAutoRenew
+                                  }
+                                  onChange={(e) =>
+                                    formik.setFieldValue(
+                                      "subscriptionAutoRenew",
+                                      e.target.checked,
+                                    )
+                                  }
                                   mr={2}
                                 />
-                                <FormLabel htmlFor="subscriptionAutoRenew" mb="0" fontSize="xs" fontWeight="bold" cursor="pointer">
+                                <FormLabel
+                                  htmlFor="subscriptionAutoRenew"
+                                  mb="0"
+                                  fontSize="xs"
+                                  fontWeight="bold"
+                                  cursor="pointer"
+                                >
                                   Auto-Renew Contract
                                 </FormLabel>
                               </FormControl>
@@ -745,17 +1219,44 @@ const VendorContractRegisterView = () => {
                   </Box>
 
                   {/* Contract Register Date & Total Work Value */}
-                  <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={4}>
+                  <Grid
+                    templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }}
+                    gap={4}
+                  >
                     <GridItem>
-                      <FormControl isInvalid={!!formik.errors.contractDate && !!formik.touched.contractDate} isRequired>
-                        <FormLabel fontSize="xs" fontWeight="bold">Contract Register Date *</FormLabel>
-                        <Input size="sm" type="date" rounded="md" {...formik.getFieldProps("contractDate")} />
-                        <FormErrorMessage>{formik.errors.contractDate}</FormErrorMessage>
+                      <FormControl
+                        isInvalid={
+                          !!formik.errors.contractDate &&
+                          !!formik.touched.contractDate
+                        }
+                        isRequired
+                      >
+                        <FormLabel fontSize="xs" fontWeight="bold">
+                          Contract Register Date *
+                        </FormLabel>
+                        <Input
+                          size="sm"
+                          type="date"
+                          rounded="md"
+                          isDisabled
+                          {...formik.getFieldProps("contractDate")}
+                        />
+                        <FormErrorMessage>
+                          {formik.errors.contractDate}
+                        </FormErrorMessage>
                       </FormControl>
                     </GridItem>
                     <GridItem>
-                      <FormControl isInvalid={!!formik.errors.workValue && !!formik.touched.workValue} isRequired>
-                        <FormLabel fontSize="xs" fontWeight="bold">Total Work Value (Rp.) *</FormLabel>
+                      <FormControl
+                        isInvalid={
+                          !!formik.errors.workValue &&
+                          !!formik.touched.workValue
+                        }
+                        isRequired
+                      >
+                        <FormLabel fontSize="xs" fontWeight="bold">
+                          Total Work Value (Rp.) *
+                        </FormLabel>
                         <CurrencyInput
                           size="sm"
                           rounded="md"
@@ -765,28 +1266,102 @@ const VendorContractRegisterView = () => {
                         />
                         {formik.values.contractBillingType !== "MILESTONE" ? (
                           <Text fontSize="2xs" color="purple.500" mt={1}>
-                            Note: For subscription/recurring models without a fixed total upfront, total value can be estimated or auto-generated from the TOP schedule below.
+                            Note: For subscription/recurring models without a
+                            fixed total upfront, total value can be estimated or
+                            auto-generated from the TOP schedule below.
                           </Text>
                         ) : null}
-                        <FormErrorMessage>{formik.errors.workValue}</FormErrorMessage>
+                        <FormErrorMessage>
+                          {formik.errors.workValue}
+                        </FormErrorMessage>
                       </FormControl>
                     </GridItem>
                   </Grid>
 
                   {/* Contract Start Date & Contract End Date */}
-                  <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={4}>
+                  <Grid
+                    templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }}
+                    gap={4}
+                  >
                     <GridItem>
-                      <FormControl isInvalid={!!formik.errors.contractStartDate && !!formik.touched.contractStartDate} isRequired>
-                        <FormLabel fontSize="xs" fontWeight="bold">Contract Start Date *</FormLabel>
-                        <Input size="sm" type="date" rounded="md" {...formik.getFieldProps("contractStartDate")} />
-                        <FormErrorMessage>{formik.errors.contractStartDate}</FormErrorMessage>
+                      <FormControl
+                        isInvalid={
+                          !!formik.errors.contractStartDate &&
+                          !!formik.touched.contractStartDate
+                        }
+                        isRequired
+                      >
+                        <FormLabel fontSize="xs" fontWeight="bold">
+                          Contract Start Date *
+                        </FormLabel>
+                        <Input
+                          size="sm"
+                          type="date"
+                          rounded="md"
+                          {...formik.getFieldProps("contractStartDate")}
+                        />
+                        <FormErrorMessage>
+                          {formik.errors.contractStartDate}
+                        </FormErrorMessage>
                       </FormControl>
                     </GridItem>
                     <GridItem>
-                      <FormControl isInvalid={!!formik.errors.contractEndDate && !!formik.touched.contractEndDate} isRequired>
-                        <FormLabel fontSize="xs" fontWeight="bold">Contract End Date *</FormLabel>
-                        <Input size="sm" type="date" rounded="md" {...formik.getFieldProps("contractEndDate")} />
-                        <FormErrorMessage>{formik.errors.contractEndDate}</FormErrorMessage>
+                      <FormControl
+                        isInvalid={
+                          !!formik.errors.contractEndDate &&
+                          !!formik.touched.contractEndDate
+                        }
+                        isRequired
+                      >
+                        <FormLabel fontSize="xs" fontWeight="bold">
+                          Contract End Date *
+                        </FormLabel>
+                        <Input
+                          size="sm"
+                          type="date"
+                          rounded="md"
+                          {...formik.getFieldProps("contractEndDate")}
+                        />
+                        <HStack spacing={1.5} mt={2} wrap="wrap">
+                          <Text
+                            fontSize="2xs"
+                            color="gray.500"
+                            fontWeight="bold"
+                            mr={1}
+                          >
+                            Quick Extend:
+                          </Text>
+                          {DATE_EXTEND_PRESETS.map((preset) => (
+                            <Button
+                              key={preset.label}
+                              size="xs"
+                              variant="outline"
+                              colorScheme="purple"
+                              rounded="md"
+                              fontSize="2xs"
+                              fontWeight="bold"
+                              h="22px"
+                              px={2}
+                              onClick={() =>
+                                handleExtendEndDate(
+                                  formik.values.contractStartDate,
+                                  "contractEndDate",
+                                  preset.months,
+                                  preset.years,
+                                )
+                              }
+                              _hover={{
+                                bg: "purple.500",
+                                color: "white",
+                              }}
+                            >
+                              {preset.label}
+                            </Button>
+                          ))}
+                        </HStack>
+                        <FormErrorMessage>
+                          {formik.errors.contractEndDate}
+                        </FormErrorMessage>
                       </FormControl>
                     </GridItem>
                   </Grid>
@@ -795,23 +1370,57 @@ const VendorContractRegisterView = () => {
             </Card>
 
             {/* SECTION 3: Terms of Payment (TOP) Schedule */}
-            <Card rounded="2xl" shadow="md" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
-              <CardHeader bg={colorMode === "light" ? "gray.50" : "gray.900"} py={4} roundedTop="2xl">
-                <Flex justify="space-between" align="center" wrap="wrap" gap={3}>
+            <Card
+              rounded="2xl"
+              shadow="md"
+              border="1px"
+              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+            >
+              <CardHeader
+                bg={colorMode === "light" ? "gray.50" : "gray.900"}
+                py={4}
+                roundedTop="2xl"
+              >
+                <Flex
+                  justify="space-between"
+                  align="center"
+                  wrap="wrap"
+                  gap={3}
+                >
                   <HStack spacing={3}>
-                    <Box w={9} h={9} bg="teal.500" rounded="lg" display="flex" alignItems="center" justifyContent="center" color="white">
-                      <FiDollarSign size={18} />
+                    <Box
+                      w={9}
+                      h={9}
+                      bg="teal.500"
+                      rounded="lg"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                      color="white"
+                    >
+                      <FiCreditCard size={18} />
                     </Box>
                     <VStack align="start" spacing={0}>
                       <HStack spacing={2}>
-                        <Heading size="md">3. Terms of Payment (TOP) Schedule</Heading>
+                        <Heading size="md">
+                          3. Terms of Payment (TOP) Schedule
+                        </Heading>
                         {formik.values.contractBillingType !== "MILESTONE" && (
-                          <Badge colorScheme="purple" fontSize="2xs" px={2} py={0.5} rounded="md">
+                          <Badge
+                            colorScheme="purple"
+                            fontSize="2xs"
+                            px={2}
+                            py={0.5}
+                            rounded="md"
+                          >
                             {formik.values.contractBillingType}
                           </Badge>
                         )}
                       </HStack>
-                      <Text fontSize="xs" color="gray.500">CAPEX/OPEX budget allocation, payment milestones, and recurring schedule</Text>
+                      <Text fontSize="xs" color="gray.500">
+                        CAPEX/OPEX budget allocation, payment milestones, and
+                        recurring schedule
+                      </Text>
                     </VStack>
                   </HStack>
 
@@ -830,7 +1439,15 @@ const VendorContractRegisterView = () => {
                     )}
 
                     <FormControl display="flex" alignItems="center" w="auto">
-                      <FormLabel htmlFor="toggle-top-dates" mb="0" fontSize="xs" fontWeight="bold" color="gray.600" cursor="pointer" mr={2}>
+                      <FormLabel
+                        htmlFor="toggle-top-dates"
+                        mb="0"
+                        fontSize="xs"
+                        fontWeight="bold"
+                        color="gray.600"
+                        cursor="pointer"
+                        mr={2}
+                      >
                         Include Due Dates
                       </FormLabel>
                       <Switch
@@ -853,7 +1470,12 @@ const VendorContractRegisterView = () => {
                       Auto Schedule
                     </Button>
 
-                    <Button size="sm" colorScheme="teal" leftIcon={<FiPlus />} onClick={handleAddTopStep}>
+                    <Button
+                      size="sm"
+                      colorScheme="teal"
+                      leftIcon={<FiPlus />}
+                      onClick={handleAddTopStep}
+                    >
                       Add Payment Step
                     </Button>
                   </HStack>
@@ -863,139 +1485,452 @@ const VendorContractRegisterView = () => {
               <CardBody p={6}>
                 <VStack spacing={5} align="stretch">
                   {/* CAPEX / OPEX Allocation inside Section 3 */}
-                  <Box p={4} rounded="xl" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"} bg={colorMode === "light" ? "gray.50/60" : "gray.900"}>
+                  <Box
+                    p={4}
+                    rounded="xl"
+                    border="1px"
+                    borderColor={
+                      colorMode === "light" ? "gray.200" : "gray.700"
+                    }
+                    bg={colorMode === "light" ? "gray.50/60" : "gray.900"}
+                  >
                     <VStack align="stretch" spacing={4}>
-                      <Flex justify="space-between" align="center" wrap="wrap" gap={2}>
+                      <Flex
+                        justify="space-between"
+                        align="center"
+                        wrap="wrap"
+                        gap={2}
+                      >
                         <HStack spacing={2}>
                           <Icon as={FiLayers} color="teal.500" />
-                          <Heading size="xs" color="gray.600" textTransform="uppercase">Budget Allocation (CAPEX / OPEX)</Heading>
+                          <Heading
+                            size="xs"
+                            color="gray.600"
+                            textTransform="uppercase"
+                          >
+                            Budget Allocation (CAPEX / OPEX)
+                          </Heading>
                         </HStack>
-                        <HStack spacing={2}>
-                          <Badge colorScheme="blue" px={2.5} py={1} rounded="lg" fontSize="2xs">
-                            CAPEX: {formik.values.capexPercentage || 0}% ({formatIDR(formik.values.cavexValues || 0)})
+                        <HStack spacing={2} wrap="wrap">
+                          {(isCapexAdjusting || isOvexAdjusting) && (
+                            <Badge
+                              colorScheme="orange"
+                              variant="solid"
+                              px={2.5}
+                              py={1}
+                              rounded="lg"
+                              fontSize="2xs"
+                              display="flex"
+                              alignItems="center"
+                              gap={1.5}
+                            >
+                              <Spinner size="xs" color="white" />
+                              Auto-adjusting allocations in 3s...
+                            </Badge>
+                          )}
+                          <Badge
+                            colorScheme="blue"
+                            px={2.5}
+                            py={1}
+                            rounded="lg"
+                            fontSize="2xs"
+                          >
+                            CAPEX: {formik.values.capexPercentage || 0}% (
+                            {formatIDR(formik.values.cavexValues || 0)})
                           </Badge>
-                          <Badge colorScheme="purple" px={2.5} py={1} rounded="lg" fontSize="2xs">
-                            OPEX: {formik.values.ovexPercentage || 0}% ({formatIDR(formik.values.ovexValues || 0)})
+                          <Badge
+                            colorScheme="purple"
+                            px={2.5}
+                            py={1}
+                            rounded="lg"
+                            fontSize="2xs"
+                          >
+                            OPEX: {formik.values.ovexPercentage || 0}% (
+                            {formatIDR(formik.values.ovexValues || 0)})
                           </Badge>
                         </HStack>
                       </Flex>
 
-                      <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={4}>
+                      {/* 3 Synced Allocation Helpers Info Banner */}
+                      <HStack
+                        spacing={2.5}
+                        bg={colorMode === "light" ? "blue.50/70" : "gray.800"}
+                        border="1px solid"
+                        borderColor={
+                          colorMode === "light" ? "blue.100" : "blue.900"
+                        }
+                        p={2.5}
+                        rounded="lg"
+                        fontSize="xs"
+                        color={colorMode === "light" ? "blue.800" : "blue.200"}
+                      >
+                        <Icon as={FiInfo} color="blue.500" flexShrink={0} />
+                        <Text>
+                          <strong>3 Input Allocation Methods:</strong> You can
+                          adjust budget distribution using{" "}
+                          <strong>(1) Direct Percentage (%)</strong>,{" "}
+                          <strong>(2) Interactive Slider</strong>, or{" "}
+                          <strong>(3) Exact Nominal (Rp.)</strong>. All inputs
+                          are bidirectional and automatically sync.
+                        </Text>
+                      </HStack>
+
+                      <Grid
+                        templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }}
+                        gap={4}
+                      >
                         {/* CAPEX Card */}
-                        <Box p={4} rounded="xl" border="1px" borderColor={colorMode === "light" ? "blue.200" : "blue.800"} bg={colorMode === "light" ? "blue.50/40" : "gray.800"}>
-                          <VStack align="stretch" spacing={3}>
+                        <Box
+                          p={4}
+                          rounded="xl"
+                          border="1px"
+                          borderColor={
+                            colorMode === "light" ? "blue.200" : "blue.800"
+                          }
+                          bg={colorMode === "light" ? "blue.50/40" : "gray.800"}
+                        >
+                          <VStack align="stretch" spacing={3.5}>
                             <Flex justify="space-between" align="center">
                               <HStack spacing={2}>
                                 <Box w={3} h={3} rounded="full" bg="blue.500" />
-                                <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "blue.700" : "blue.300"}>
-                                  CAPEX Allocation
-                                </Text>
+                                <VStack align="start" spacing={0}>
+                                  <Text
+                                    fontSize="xs"
+                                    fontWeight="bold"
+                                    color={
+                                      colorMode === "light"
+                                        ? "blue.700"
+                                        : "blue.300"
+                                    }
+                                  >
+                                    CAPEX Allocation
+                                  </Text>
+                                  <Text fontSize="2xs" color="gray.500">
+                                    Method 1: Direct % Input
+                                  </Text>
+                                </VStack>
                               </HStack>
 
-                              <HStack spacing={1}>
-                                <NumberInput
-                                  size="sm"
-                                  maxW="90px"
-                                  min={0}
-                                  max={100}
-                                  step={1}
-                                  value={formik.values.capexPercentage || 0}
-                                  onChange={(_, valNum) => handleCapexPercentageChange(isNaN(valNum) ? 0 : valNum)}
-                                >
-                                  <NumberInputField rounded="md" textAlign="right" fontWeight="bold" fontSize="xs" />
-                                  <NumberInputStepper>
-                                    <NumberIncrementStepper />
-                                    <NumberDecrementStepper />
-                                  </NumberInputStepper>
-                                </NumberInput>
-                                <Text fontSize="xs" fontWeight="bold" color="gray.500">%</Text>
-                              </HStack>
+                              <Tooltip
+                                label="Method 1: Enter exact percentage (0-100%)"
+                                placement="top"
+                                hasArrow
+                              >
+                                <HStack spacing={1}>
+                                  <NumberInput
+                                    size="sm"
+                                    maxW="90px"
+                                    min={0}
+                                    max={100}
+                                    step={1}
+                                    value={formik.values.capexPercentage || 0}
+                                    onChange={(_, valNum) =>
+                                      handleCapexPercentageChange(
+                                        isNaN(valNum) ? 0 : valNum,
+                                      )
+                                    }
+                                  >
+                                    <NumberInputField
+                                      rounded="md"
+                                      textAlign="right"
+                                      fontWeight="bold"
+                                      fontSize="xs"
+                                    />
+                                    <NumberInputStepper>
+                                      <NumberIncrementStepper />
+                                      <NumberDecrementStepper />
+                                    </NumberInputStepper>
+                                  </NumberInput>
+                                  <Text
+                                    fontSize="xs"
+                                    fontWeight="bold"
+                                    color="gray.500"
+                                  >
+                                    %
+                                  </Text>
+                                </HStack>
+                              </Tooltip>
                             </Flex>
 
-                            <Box pt={1} pb={1} px={1}>
+                            {/* Method 2: Slider */}
+                            <VStack
+                              align="stretch"
+                              spacing={1}
+                              pt={1}
+                              pb={1}
+                              px={1}
+                            >
+                              <Flex justify="space-between" align="center">
+                                <HStack spacing={1}>
+                                  <Icon
+                                    as={FiSliders}
+                                    fontSize="2xs"
+                                    color="blue.500"
+                                  />
+                                  <Text
+                                    fontSize="2xs"
+                                    color="gray.500"
+                                    fontWeight="bold"
+                                  >
+                                    Method 2: Slide to Adjust Ratio
+                                  </Text>
+                                </HStack>
+                                <Text
+                                  fontSize="2xs"
+                                  color="blue.600"
+                                  fontWeight="bold"
+                                >
+                                  {formik.values.capexPercentage || 0}%
+                                </Text>
+                              </Flex>
                               <Slider
                                 min={0}
                                 max={100}
                                 step={0.5}
                                 colorScheme="blue"
                                 value={formik.values.capexPercentage || 0}
-                                onChange={(val) => handleCapexPercentageChange(val)}
+                                onChange={(val) =>
+                                  handleCapexPercentageChange(val)
+                                }
                               >
                                 <SliderTrack h="6px" rounded="full">
                                   <SliderFilledTrack />
                                 </SliderTrack>
-                                <SliderThumb boxSize={5} shadow="md" bg="blue.500" />
+                                <SliderThumb
+                                  boxSize={5}
+                                  shadow="md"
+                                  bg="blue.500"
+                                />
                               </Slider>
-                            </Box>
+                            </VStack>
 
+                            {/* Method 3: Nominal Currency Input */}
                             <FormControl>
-                              <FormLabel fontSize="2xs" color="gray.500" fontWeight="bold">CAPEX Value (Rp.)</FormLabel>
+                              <Flex
+                                justify="space-between"
+                                align="center"
+                                mb={1}
+                              >
+                                <FormLabel
+                                  fontSize="2xs"
+                                  color="gray.500"
+                                  fontWeight="bold"
+                                  mb={0}
+                                >
+                                  CAPEX Value (Rp.)
+                                </FormLabel>
+                                {isCapexAdjusting ? (
+                                  <Badge
+                                    colorScheme="orange"
+                                    variant="subtle"
+                                    fontSize="3xs"
+                                    rounded="md"
+                                    px={1.5}
+                                    py={0.5}
+                                    display="inline-flex"
+                                    alignItems="center"
+                                    gap={1}
+                                  >
+                                    <Spinner size="xs" color="orange.500" />{" "}
+                                    Auto-adjusting in 3s...
+                                  </Badge>
+                                ) : (
+                                  <Text fontSize="2xs" color="gray.400">
+                                    Method 3: Exact Nominal
+                                  </Text>
+                                )}
+                              </Flex>
                               <CurrencyInput
                                 size="sm"
                                 rounded="md"
                                 name="cavexValues"
                                 value={formik.values.cavexValues || 0}
-                                onChange={(_, val) => handleCavexValueChange(val)}
+                                onChange={(_, val) =>
+                                  handleCavexValueChange(val)
+                                }
+                                onBlur={handleCavexBlur}
                               />
                             </FormControl>
                           </VStack>
                         </Box>
 
                         {/* OPEX Card */}
-                        <Box p={4} rounded="xl" border="1px" borderColor={colorMode === "light" ? "purple.200" : "purple.800"} bg={colorMode === "light" ? "purple.50/40" : "gray.800"}>
-                          <VStack align="stretch" spacing={3}>
+                        <Box
+                          p={4}
+                          rounded="xl"
+                          border="1px"
+                          borderColor={
+                            colorMode === "light" ? "purple.200" : "purple.800"
+                          }
+                          bg={
+                            colorMode === "light" ? "purple.50/40" : "gray.800"
+                          }
+                        >
+                          <VStack align="stretch" spacing={3.5}>
                             <Flex justify="space-between" align="center">
                               <HStack spacing={2}>
-                                <Box w={3} h={3} rounded="full" bg="purple.500" />
-                                <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "purple.700" : "purple.300"}>
-                                  OPEX Allocation
-                                </Text>
+                                <Box
+                                  w={3}
+                                  h={3}
+                                  rounded="full"
+                                  bg="purple.500"
+                                />
+                                <VStack align="start" spacing={0}>
+                                  <Text
+                                    fontSize="xs"
+                                    fontWeight="bold"
+                                    color={
+                                      colorMode === "light"
+                                        ? "purple.700"
+                                        : "purple.300"
+                                    }
+                                  >
+                                    OPEX Allocation
+                                  </Text>
+                                  <Text fontSize="2xs" color="gray.500">
+                                    Method 1: Direct % Input
+                                  </Text>
+                                </VStack>
                               </HStack>
 
-                              <HStack spacing={1}>
-                                <NumberInput
-                                  size="sm"
-                                  maxW="90px"
-                                  min={0}
-                                  max={100}
-                                  step={1}
-                                  value={formik.values.ovexPercentage || 0}
-                                  onChange={(_, valNum) => handleOvexPercentageChange(isNaN(valNum) ? 0 : valNum)}
-                                >
-                                  <NumberInputField rounded="md" textAlign="right" fontWeight="bold" fontSize="xs" />
-                                  <NumberInputStepper>
-                                    <NumberIncrementStepper />
-                                    <NumberDecrementStepper />
-                                  </NumberInputStepper>
-                                </NumberInput>
-                                <Text fontSize="xs" fontWeight="bold" color="gray.500">%</Text>
-                              </HStack>
+                              <Tooltip
+                                label="Method 1: Enter exact percentage (0-100%)"
+                                placement="top"
+                                hasArrow
+                              >
+                                <HStack spacing={1}>
+                                  <NumberInput
+                                    size="sm"
+                                    maxW="90px"
+                                    min={0}
+                                    max={100}
+                                    step={1}
+                                    value={formik.values.ovexPercentage || 0}
+                                    onChange={(_, valNum) =>
+                                      handleOvexPercentageChange(
+                                        isNaN(valNum) ? 0 : valNum,
+                                      )
+                                    }
+                                  >
+                                    <NumberInputField
+                                      rounded="md"
+                                      textAlign="right"
+                                      fontWeight="bold"
+                                      fontSize="xs"
+                                    />
+                                    <NumberInputStepper>
+                                      <NumberIncrementStepper />
+                                      <NumberDecrementStepper />
+                                    </NumberInputStepper>
+                                  </NumberInput>
+                                  <Text
+                                    fontSize="xs"
+                                    fontWeight="bold"
+                                    color="gray.500"
+                                  >
+                                    %
+                                  </Text>
+                                </HStack>
+                              </Tooltip>
                             </Flex>
 
-                            <Box pt={1} pb={1} px={1}>
+                            {/* Method 2: Slider */}
+                            <VStack
+                              align="stretch"
+                              spacing={1}
+                              pt={1}
+                              pb={1}
+                              px={1}
+                            >
+                              <Flex justify="space-between" align="center">
+                                <HStack spacing={1}>
+                                  <Icon
+                                    as={FiSliders}
+                                    fontSize="2xs"
+                                    color="purple.500"
+                                  />
+                                  <Text
+                                    fontSize="2xs"
+                                    color="gray.500"
+                                    fontWeight="bold"
+                                  >
+                                    Method 2: Slide to Adjust Ratio
+                                  </Text>
+                                </HStack>
+                                <Text
+                                  fontSize="2xs"
+                                  color="purple.600"
+                                  fontWeight="bold"
+                                >
+                                  {formik.values.ovexPercentage || 0}%
+                                </Text>
+                              </Flex>
                               <Slider
                                 min={0}
                                 max={100}
                                 step={0.5}
                                 colorScheme="purple"
                                 value={formik.values.ovexPercentage || 0}
-                                onChange={(val) => handleOvexPercentageChange(val)}
+                                onChange={(val) =>
+                                  handleOvexPercentageChange(val)
+                                }
                               >
                                 <SliderTrack h="6px" rounded="full">
                                   <SliderFilledTrack />
                                 </SliderTrack>
-                                <SliderThumb boxSize={5} shadow="md" bg="purple.500" />
+                                <SliderThumb
+                                  boxSize={5}
+                                  shadow="md"
+                                  bg="purple.500"
+                                />
                               </Slider>
-                            </Box>
+                            </VStack>
 
+                            {/* Method 3: Nominal Currency Input */}
                             <FormControl>
-                              <FormLabel fontSize="2xs" color="gray.500" fontWeight="bold">OPEX Value (Rp.)</FormLabel>
+                              <Flex
+                                justify="space-between"
+                                align="center"
+                                mb={1}
+                              >
+                                <FormLabel
+                                  fontSize="2xs"
+                                  color="gray.500"
+                                  fontWeight="bold"
+                                  mb={0}
+                                >
+                                  OPEX Value (Rp.)
+                                </FormLabel>
+                                {isOvexAdjusting ? (
+                                  <Badge
+                                    colorScheme="orange"
+                                    variant="subtle"
+                                    fontSize="3xs"
+                                    rounded="md"
+                                    px={1.5}
+                                    py={0.5}
+                                    display="inline-flex"
+                                    alignItems="center"
+                                    gap={1}
+                                  >
+                                    <Spinner size="xs" color="orange.500" />{" "}
+                                    Auto-adjusting in 3s...
+                                  </Badge>
+                                ) : (
+                                  <Text fontSize="2xs" color="gray.400">
+                                    Method 3: Exact Nominal
+                                  </Text>
+                                )}
+                              </Flex>
                               <CurrencyInput
                                 size="sm"
                                 rounded="md"
                                 name="ovexValues"
                                 value={formik.values.ovexValues || 0}
-                                onChange={(_, val) => handleOvexValueChange(val)}
+                                onChange={(_, val) =>
+                                  handleOvexValueChange(val)
+                                }
+                                onBlur={handleOvexBlur}
                               />
                             </FormControl>
                           </VStack>
@@ -1005,11 +1940,15 @@ const VendorContractRegisterView = () => {
                   </Box>
 
                   {/* Validation Card comparing TOP sum vs workValue */}
-                  <Alert status={isTopMatch ? "success" : "warning"} rounded="xl">
+                  <Alert
+                    status={isTopMatch ? "success" : "warning"}
+                    rounded="xl"
+                  >
                     <AlertIcon />
                     <Box flex={1}>
                       <Text fontSize="xs" fontWeight="bold">
-                        Total TOP Schedule: {formatIDR(totalTopValues)} / Work Value: {formatIDR(formik.values.workValue)}
+                        Total TOP Schedule: {formatIDR(totalTopValues)} / Work
+                        Value: {formatIDR(formik.values.workValue)}
                       </Text>
                       <Text fontSize="2xs" opacity={0.85}>
                         {isTopMatch
@@ -1021,21 +1960,49 @@ const VendorContractRegisterView = () => {
 
                   {/* List TOP */}
                   {(formik.values.topList || []).map((top, idx) => (
-                    <Box key={idx} p={4} rounded="xl" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"} bg={colorMode === "light" ? "white" : "gray.800"}>
+                    <Box
+                      key={idx}
+                      p={4}
+                      rounded="xl"
+                      border="1px"
+                      borderColor={
+                        colorMode === "light" ? "gray.200" : "gray.700"
+                      }
+                      bg={colorMode === "light" ? "white" : "gray.800"}
+                    >
                       <VStack align="stretch" spacing={3}>
                         <Flex justify="space-between" align="center">
                           <HStack spacing={2}>
-                            <Badge colorScheme="teal" rounded="md" px={2.5} py={0.5} fontSize="2xs">
+                            <Badge
+                              colorScheme="teal"
+                              rounded="md"
+                              px={2.5}
+                              py={0.5}
+                              fontSize="xs"
+                            >
                               Step #{top.stepOrder}
                             </Badge>
                             {top.billingPeriodStart && top.billingPeriodEnd && (
-                              <Badge colorScheme="purple" rounded="md" px={2} py={0.5} fontSize="2xs">
-                                Period: {top.billingPeriodStart} &rarr; {top.billingPeriodEnd}
+                              <Badge
+                                colorScheme="purple"
+                                rounded="md"
+                                px={2}
+                                py={0.5}
+                                fontSize="xs"
+                              >
+                                Period: {top.billingPeriodStart} &rarr;{" "}
+                                {top.billingPeriodEnd}
                               </Badge>
                             )}
                           </HStack>
 
-                          <Button size="xs" colorScheme="red" variant="ghost" onClick={() => handleRemoveTopStep(idx)} title="Remove step">
+                          <Button
+                            size="xs"
+                            colorScheme="red"
+                            variant="ghost"
+                            onClick={() => handleRemoveTopStep(idx)}
+                            title="Remove step"
+                          >
                             <FiTrash2 />
                           </Button>
                         </Flex>
@@ -1043,39 +2010,51 @@ const VendorContractRegisterView = () => {
                         <Grid
                           templateColumns={{
                             base: "1fr",
-                            md: formik.values.contractBillingType !== "MILESTONE"
-                              ? "1.2fr 1.8fr 1fr 1fr"
-                              : showTopDates
-                              ? "1fr 1fr 1fr"
-                              : "1fr 2fr",
+                            md:
+                              formik.values.contractBillingType !== "MILESTONE"
+                                ? "1.2fr 1.8fr 1fr 1fr"
+                                : showTopDates
+                                  ? "1fr 1fr 1fr"
+                                  : "1fr 2fr",
                           }}
                           gap={3}
                           alignItems="flex-start"
                         >
                           <GridItem>
                             <FormControl>
-                              <FormLabel fontSize="2xs" fontWeight="bold">Payment Amount (Rp.) *</FormLabel>
+                              <FormLabel fontSize="2xs" fontWeight="bold">
+                                Payment Amount (Rp.) *
+                              </FormLabel>
                               <CurrencyInput
                                 size="sm"
                                 rounded="md"
                                 name={`topList[${idx}].topValues`}
                                 fieldCustom={`topList[${idx}].topValues`}
                                 value={top.topValues || 0}
-                                onChange={(field, val) => formik.setFieldValue(field, val)}
+                                onChange={(field, val) =>
+                                  formik.setFieldValue(field, val)
+                                }
                               />
                             </FormControl>
                           </GridItem>
 
                           <GridItem>
                             <FormControl>
-                              <FormLabel fontSize="2xs" fontWeight="bold">TOP Description / Milestone Note</FormLabel>
+                              <FormLabel fontSize="2xs" fontWeight="bold">
+                                TOP Description / Milestone Note
+                              </FormLabel>
                               <Textarea
                                 size="sm"
                                 rounded="md"
                                 rows={1}
                                 placeholder="e.g. DP 30% after signing contract..."
                                 value={top.topDescriptions || ""}
-                                onChange={(e) => formik.setFieldValue(`topList[${idx}].topDescriptions`, e.target.value)}
+                                onChange={(e) =>
+                                  formik.setFieldValue(
+                                    `topList[${idx}].topDescriptions`,
+                                    e.target.value,
+                                  )
+                                }
                               />
                             </FormControl>
                           </GridItem>
@@ -1084,26 +2063,85 @@ const VendorContractRegisterView = () => {
                             <>
                               <GridItem>
                                 <FormControl>
-                                  <FormLabel fontSize="2xs" fontWeight="bold">Period Start</FormLabel>
+                                  <FormLabel fontSize="2xs" fontWeight="bold">
+                                    Period Start
+                                  </FormLabel>
                                   <Input
                                     size="sm"
                                     type="date"
                                     rounded="md"
-                                    value={top.billingPeriodStart ? top.billingPeriodStart.split("T")[0] : ""}
-                                    onChange={(e) => formik.setFieldValue(`topList[${idx}].billingPeriodStart`, e.target.value)}
+                                    value={
+                                      top.billingPeriodStart
+                                        ? top.billingPeriodStart.split("T")[0]
+                                        : ""
+                                    }
+                                    onChange={(e) =>
+                                      formik.setFieldValue(
+                                        `topList[${idx}].billingPeriodStart`,
+                                        e.target.value,
+                                      )
+                                    }
                                   />
                                 </FormControl>
                               </GridItem>
                               <GridItem>
                                 <FormControl>
-                                  <FormLabel fontSize="2xs" fontWeight="bold">Period End</FormLabel>
+                                  <FormLabel fontSize="2xs" fontWeight="bold">
+                                    Period End
+                                  </FormLabel>
                                   <Input
                                     size="sm"
                                     type="date"
                                     rounded="md"
-                                    value={top.billingPeriodEnd ? top.billingPeriodEnd.split("T")[0] : ""}
-                                    onChange={(e) => formik.setFieldValue(`topList[${idx}].billingPeriodEnd`, e.target.value)}
+                                    value={
+                                      top.billingPeriodEnd
+                                        ? top.billingPeriodEnd.split("T")[0]
+                                        : ""
+                                    }
+                                    onChange={(e) =>
+                                      formik.setFieldValue(
+                                        `topList[${idx}].billingPeriodEnd`,
+                                        e.target.value,
+                                      )
+                                    }
                                   />
+                                  <HStack spacing={1} mt={1.5} wrap="wrap">
+                                    <Text
+                                      fontSize="2xs"
+                                      color="gray.500"
+                                      fontWeight="bold"
+                                      mr={0.5}
+                                    >
+                                      Quick:
+                                    </Text>
+                                    {DATE_EXTEND_PRESETS.map((preset) => (
+                                      <Button
+                                        key={preset.label}
+                                        size="xs"
+                                        variant="outline"
+                                        colorScheme="purple"
+                                        rounded="md"
+                                        fontSize="2xs"
+                                        fontWeight="bold"
+                                        h="20px"
+                                        px={1.5}
+                                        onClick={() =>
+                                          handleExtendEndDate(
+                                            top.billingPeriodStart,
+                                            `topList[${idx}].billingPeriodEnd`,
+                                            preset.months,
+                                            preset.years,
+                                          )
+                                        }
+                                        _hover={{
+                                          bg: "purple.500",
+                                          color: "white",
+                                        }}
+                                      >
+                                        {preset.label}
+                                      </Button>
+                                    ))}
+                                  </HStack>
                                 </FormControl>
                               </GridItem>
                             </>
@@ -1111,13 +2149,24 @@ const VendorContractRegisterView = () => {
                             showTopDates && (
                               <GridItem>
                                 <FormControl>
-                                  <FormLabel fontSize="2xs" fontWeight="bold">Scheduled Due Date (Optional)</FormLabel>
+                                  <FormLabel fontSize="2xs" fontWeight="bold">
+                                    Scheduled Due Date (Optional)
+                                  </FormLabel>
                                   <Input
                                     size="sm"
                                     type="date"
                                     rounded="md"
-                                    value={top.topDate ? top.topDate.split("T")[0] : ""}
-                                    onChange={(e) => formik.setFieldValue(`topList[${idx}].topDate`, e.target.value)}
+                                    value={
+                                      top.topDate
+                                        ? top.topDate.split("T")[0]
+                                        : ""
+                                    }
+                                    onChange={(e) =>
+                                      formik.setFieldValue(
+                                        `topList[${idx}].topDate`,
+                                        e.target.value,
+                                      )
+                                    }
                                   />
                                 </FormControl>
                               </GridItem>
@@ -1132,15 +2181,38 @@ const VendorContractRegisterView = () => {
             </Card>
 
             {/* SECTION 4: Additional Guarantees & Contract Information */}
-            <Card rounded="2xl" shadow="md" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
-              <CardHeader bg={colorMode === "light" ? "gray.50" : "gray.900"} py={4} roundedTop="2xl">
+            <Card
+              rounded="2xl"
+              shadow="md"
+              border="1px"
+              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+            >
+              <CardHeader
+                bg={colorMode === "light" ? "gray.50" : "gray.900"}
+                py={4}
+                roundedTop="2xl"
+              >
                 <HStack spacing={3}>
-                  <Box w={9} h={9} bg="orange.500" rounded="lg" display="flex" alignItems="center" justifyContent="center" color="white">
+                  <Box
+                    w={9}
+                    h={9}
+                    bg="orange.500"
+                    rounded="lg"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    color="white"
+                  >
                     <FiFileText size={18} />
                   </Box>
                   <VStack align="start" spacing={0}>
-                    <Heading size="md">4. Additional Guarantees, Budget Allocation, & Information</Heading>
-                    <Text fontSize="xs" color="gray.500">Maintenance warranty, performance bonds, and general contract remarks</Text>
+                    <Heading size="md">
+                      4. Additional Guarantees, Budget Allocation, & Information
+                    </Heading>
+                    <Text fontSize="xs" color="gray.500">
+                      Maintenance warranty, performance bonds, and general
+                      contract remarks
+                    </Text>
                   </VStack>
                 </HStack>
               </CardHeader>
@@ -1148,11 +2220,18 @@ const VendorContractRegisterView = () => {
               <CardBody p={6}>
                 <VStack spacing={6} align="stretch">
                   {/* Maintenance Warranty */}
-                  <Heading size="xs" color="gray.600" textTransform="uppercase">Maintenance Warranty Bond (Jaminan Pemeliharaan)</Heading>
-                  <Grid templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }} gap={4}>
+                  <Heading size="xs" color="gray.600" textTransform="uppercase">
+                    Maintenance Warranty Bond (Jaminan Pemeliharaan)
+                  </Heading>
+                  <Grid
+                    templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }}
+                    gap={4}
+                  >
                     <GridItem>
                       <FormControl>
-                        <FormLabel fontSize="xs" fontWeight="bold">Warranty Bond Value (Rp.)</FormLabel>
+                        <FormLabel fontSize="xs" fontWeight="bold">
+                          Warranty Bond Value (Rp.)
+                        </FormLabel>
                         <CurrencyInput
                           size="sm"
                           rounded="md"
@@ -1164,24 +2243,86 @@ const VendorContractRegisterView = () => {
                     </GridItem>
                     <GridItem>
                       <FormControl>
-                        <FormLabel fontSize="xs" fontWeight="bold">Warranty Bond Start Date</FormLabel>
-                        <Input size="sm" type="date" rounded="md" {...formik.getFieldProps("maintenanceWarrantyStartDate")} />
+                        <FormLabel fontSize="xs" fontWeight="bold">
+                          Warranty Bond Start Date
+                        </FormLabel>
+                        <Input
+                          size="sm"
+                          type="date"
+                          rounded="md"
+                          {...formik.getFieldProps(
+                            "maintenanceWarrantyStartDate",
+                          )}
+                        />
                       </FormControl>
                     </GridItem>
                     <GridItem>
                       <FormControl>
-                        <FormLabel fontSize="xs" fontWeight="bold">Warranty Bond End Date</FormLabel>
-                        <Input size="sm" type="date" rounded="md" {...formik.getFieldProps("maintenanceWarrantyEndDate")} />
+                        <FormLabel fontSize="xs" fontWeight="bold">
+                          Warranty Bond End Date
+                        </FormLabel>
+                        <Input
+                          size="sm"
+                          type="date"
+                          rounded="md"
+                          {...formik.getFieldProps(
+                            "maintenanceWarrantyEndDate",
+                          )}
+                        />
+                        <HStack spacing={1.5} mt={2} wrap="wrap">
+                          <Text
+                            fontSize="2xs"
+                            color="gray.500"
+                            fontWeight="bold"
+                            mr={1}
+                          >
+                            Quick Extend:
+                          </Text>
+                          {DATE_EXTEND_PRESETS.map((preset) => (
+                            <Button
+                              key={preset.label}
+                              size="xs"
+                              variant="outline"
+                              colorScheme="purple"
+                              rounded="md"
+                              fontSize="2xs"
+                              fontWeight="bold"
+                              h="22px"
+                              px={2}
+                              onClick={() =>
+                                handleExtendEndDate(
+                                  formik.values.maintenanceWarrantyStartDate,
+                                  "maintenanceWarrantyEndDate",
+                                  preset.months,
+                                  preset.years,
+                                )
+                              }
+                              _hover={{
+                                bg: "purple.500",
+                                color: "white",
+                              }}
+                            >
+                              {preset.label}
+                            </Button>
+                          ))}
+                        </HStack>
                       </FormControl>
                     </GridItem>
                   </Grid>
 
                   {/* Performance Guarantee */}
-                  <Heading size="xs" color="gray.600" textTransform="uppercase">Performance Bond (Jaminan Pelaksanaan)</Heading>
-                  <Grid templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }} gap={4}>
+                  <Heading size="xs" color="gray.600" textTransform="uppercase">
+                    Performance Bond (Jaminan Pelaksanaan)
+                  </Heading>
+                  <Grid
+                    templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }}
+                    gap={4}
+                  >
                     <GridItem>
                       <FormControl>
-                        <FormLabel fontSize="xs" fontWeight="bold">Performance Bond Value (Rp.)</FormLabel>
+                        <FormLabel fontSize="xs" fontWeight="bold">
+                          Performance Bond Value (Rp.)
+                        </FormLabel>
                         <CurrencyInput
                           size="sm"
                           rounded="md"
@@ -1193,14 +2334,69 @@ const VendorContractRegisterView = () => {
                     </GridItem>
                     <GridItem>
                       <FormControl>
-                        <FormLabel fontSize="xs" fontWeight="bold">Performance Bond Start Date</FormLabel>
-                        <Input size="sm" type="date" rounded="md" {...formik.getFieldProps("performanceGuaranteeStartDate")} />
+                        <FormLabel fontSize="xs" fontWeight="bold">
+                          Performance Bond Start Date
+                        </FormLabel>
+                        <Input
+                          size="sm"
+                          type="date"
+                          rounded="md"
+                          {...formik.getFieldProps(
+                            "performanceGuaranteeStartDate",
+                          )}
+                        />
                       </FormControl>
                     </GridItem>
                     <GridItem>
                       <FormControl>
-                        <FormLabel fontSize="xs" fontWeight="bold">Performance Bond End Date</FormLabel>
-                        <Input size="sm" type="date" rounded="md" {...formik.getFieldProps("performanceGuaranteeEndDate")} />
+                        <FormLabel fontSize="xs" fontWeight="bold">
+                          Performance Bond End Date
+                        </FormLabel>
+                        <Input
+                          size="sm"
+                          type="date"
+                          rounded="md"
+                          {...formik.getFieldProps(
+                            "performanceGuaranteeEndDate",
+                          )}
+                        />
+                        <HStack spacing={1.5} mt={2} wrap="wrap">
+                          <Text
+                            fontSize="2xs"
+                            color="gray.500"
+                            fontWeight="bold"
+                            mr={1}
+                          >
+                            Quick Extend:
+                          </Text>
+                          {DATE_EXTEND_PRESETS.map((preset) => (
+                            <Button
+                              key={preset.label}
+                              size="xs"
+                              variant="outline"
+                              colorScheme="purple"
+                              rounded="md"
+                              fontSize="2xs"
+                              fontWeight="bold"
+                              h="22px"
+                              px={2}
+                              onClick={() =>
+                                handleExtendEndDate(
+                                  formik.values.performanceGuaranteeStartDate,
+                                  "performanceGuaranteeEndDate",
+                                  preset.months,
+                                  preset.years,
+                                )
+                              }
+                              _hover={{
+                                bg: "purple.500",
+                                color: "white",
+                              }}
+                            >
+                              {preset.label}
+                            </Button>
+                          ))}
+                        </HStack>
                       </FormControl>
                     </GridItem>
                   </Grid>
@@ -1209,7 +2405,9 @@ const VendorContractRegisterView = () => {
 
                   {/* General Contract Remarks */}
                   <FormControl>
-                    <FormLabel fontSize="xs" fontWeight="bold">General Contract Remarks / Note</FormLabel>
+                    <FormLabel fontSize="xs" fontWeight="bold">
+                      General Contract Remarks / Note
+                    </FormLabel>
                     <Textarea
                       size="sm"
                       rounded="md"
@@ -1218,8 +2416,314 @@ const VendorContractRegisterView = () => {
                       placeholder="ADD GENERAL CONTRACT NOTES, SLA COMMITMENTS, OR SPECIAL TERMS..."
                       name="note"
                       value={formik.values.note}
-                      onChange={(e) => formik.setFieldValue("note", e.target.value.toUpperCase())}
+                      onChange={(e) =>
+                        formik.setFieldValue(
+                          "note",
+                          e.target.value.toUpperCase(),
+                        )
+                      }
                       onBlur={formik.handleBlur}
+                    />
+                  </FormControl>
+                </VStack>
+              </CardBody>
+            </Card>
+
+            {/* SECTION 4: Contract Document & Supporting Files (MinIO Object Storage) */}
+            <Card
+              rounded="2xl"
+              shadow="md"
+              border="1px"
+              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+              bg={colorMode === "light" ? "white" : "gray.800"}
+            >
+              <CardHeader
+                borderBottom="1px"
+                borderColor={colorMode === "light" ? "gray.100" : "gray.700"}
+                py={4}
+              >
+                <Flex justify="space-between" align="center" wrap="wrap" gap={3}>
+                  <HStack spacing={3}>
+                    <Flex
+                      p={2}
+                      rounded="lg"
+                      bg={colorMode === "light" ? "teal.50" : "teal.900"}
+                      color="teal.500"
+                    >
+                      <Icon as={FiPaperclip} boxSize={5} />
+                    </Flex>
+                    <VStack align="start" spacing={0}>
+                      <HStack spacing={2}>
+                        <Heading size="sm">
+                          SECTION 4: Contract Documents & Legal Files
+                        </Heading>
+                        <Badge colorScheme="teal" rounded="full" px={2} fontSize="2xs">
+                          Optional Initial Upload
+                        </Badge>
+                      </HStack>
+                      <Text fontSize="xs" color="gray.500">
+                        Attach signed PKS agreements, SPK, or bank guarantees during registration (stored directly in MinIO Object Storage)
+                      </Text>
+                    </VStack>
+                  </HStack>
+                </Flex>
+              </CardHeader>
+
+              <CardBody p={6}>
+                <VStack spacing={5} align="stretch">
+                  <Grid
+                    templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }}
+                    gap={4}
+                    alignItems="flex-start"
+                  >
+                    <FormControl>
+                      <FormLabel
+                        display="inline-flex"
+                        alignItems="center"
+                        gap={1.5}
+                        fontSize="xs"
+                        fontWeight="bold"
+                        mb={1.5}
+                        minH="20px"
+                      >
+                        <Icon as={FiTag} />
+                        <span>Document Category</span>
+                      </FormLabel>
+                      <ChakraSelect
+                        size="sm"
+                        rounded="md"
+                        value={contractFileCategory}
+                        onChange={(e) => setContractFileCategory(e.target.value)}
+                      >
+                        <option value="PKS_MAIN">Perjanjian Kerjasama Utama (PKS / Contract Agreement)</option>
+                        <option value="SPK">Surat Perintah Kerja (SPK / Purchase Order)</option>
+                        <option value="ADDENDUM">Addendum / Contract Amendment Document</option>
+                        <option value="PERFORMANCE_GUARANTEE">Performance Guarantee (Jaminan Pelaksanaan)</option>
+                        <option value="WARRANTY_CERTIFICATE">Maintenance Warranty Certificate</option>
+                        <option value="SLA_DOCUMENT">Service Level Agreement (SLA) & Terms</option>
+                        <option value="OTHER">Other Legal / Supporting Document</option>
+                      </ChakraSelect>
+                    </FormControl>
+
+                    <FormControl>
+                      <FormLabel
+                        display="inline-flex"
+                        alignItems="center"
+                        gap={1.5}
+                        fontSize="xs"
+                        fontWeight="bold"
+                        mb={1.5}
+                        minH="20px"
+                      >
+                        <Icon as={FiFileText} />
+                        <span>Document Title</span>
+                      </FormLabel>
+                      <Input
+                        size="sm"
+                        rounded="md"
+                        placeholder="e.g. Surat Perjanjian Kerjasama Pengadaan Server 2026"
+                        value={contractDocName}
+                        onChange={(e) => setContractDocName(e.target.value)}
+                      />
+                    </FormControl>
+
+                    <FormControl>
+                      <FormLabel
+                        display="inline-flex"
+                        alignItems="center"
+                        gap={1.5}
+                        fontSize="xs"
+                        fontWeight="bold"
+                        mb={1.5}
+                        minH="20px"
+                      >
+                        <Icon as={FiHash} />
+                        <span>Document Reference Number</span>
+                      </FormLabel>
+                      <Input
+                        size="sm"
+                        rounded="md"
+                        placeholder="e.g. PKS/IT/2026/089"
+                        value={contractDocNumber}
+                        onChange={(e) => setContractDocNumber(e.target.value)}
+                      />
+                    </FormControl>
+                  </Grid>
+
+                  {/* Drag and Drop Box */}
+                  <FormControl>
+                    <FormLabel
+                      display="inline-flex"
+                      alignItems="center"
+                      gap={1.5}
+                      fontSize="xs"
+                      fontWeight="bold"
+                      mb={1.5}
+                      minH="20px"
+                    >
+                      <Icon as={FiUploadCloud} />
+                      <span>Attach Document File (PDF, DOCX, XLSX, Images, max 25MB)</span>
+                    </FormLabel>
+
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      style={{ display: "none" }}
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          setContractFile(file);
+                          if (!contractDocName) {
+                            setContractDocName(file.name.replace(/\.[^/.]+$/, ""));
+                          }
+                        }
+                      }}
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                    />
+
+                    {!contractFile ? (
+                      <Box
+                        p={6}
+                        border="2px dashed"
+                        borderColor={
+                          dragActive
+                            ? "teal.400"
+                            : colorMode === "light"
+                            ? "gray.300"
+                            : "gray.600"
+                        }
+                        rounded="xl"
+                        bg={
+                          dragActive
+                            ? colorMode === "light"
+                              ? "teal.50"
+                              : "teal.900"
+                            : colorMode === "light"
+                            ? "gray.50"
+                            : "gray.800"
+                        }
+                        textAlign="center"
+                        cursor="pointer"
+                        onClick={() => fileInputRef.current?.click()}
+                        onDragEnter={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setDragActive(true);
+                        }}
+                        onDragLeave={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setDragActive(false);
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setDragActive(true);
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setDragActive(false);
+                          if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                            const file = e.dataTransfer.files[0];
+                            setContractFile(file);
+                            if (!contractDocName) {
+                              setContractDocName(file.name.replace(/\.[^/.]+$/, ""));
+                            }
+                          }
+                        }}
+                        transition="all 0.2s ease"
+                        _hover={{
+                          borderColor: "teal.400",
+                          bg: colorMode === "light" ? "teal.50/50" : "gray.750",
+                        }}
+                      >
+                        <VStack spacing={2}>
+                          <Flex
+                            p={3}
+                            rounded="full"
+                            bg={colorMode === "light" ? "teal.100" : "teal.800"}
+                            color="teal.500"
+                          >
+                            <Icon as={FiUploadCloud} boxSize={6} />
+                          </Flex>
+                          <Text fontSize="sm" fontWeight="semibold">
+                            Click to browse or drag and drop file here
+                          </Text>
+                          <Text fontSize="xs" color="gray.500">
+                            Supports PDF, DOCX, XLSX, Scanned Images (Up to 25 MB)
+                          </Text>
+                        </VStack>
+                      </Box>
+                    ) : (
+                      <Box
+                        p={3.5}
+                        border="1px solid"
+                        borderColor="teal.300"
+                        rounded="xl"
+                        bg={colorMode === "light" ? "teal.50/60" : "teal.950/40"}
+                      >
+                        <Flex justify="space-between" align="center">
+                          <HStack spacing={3}>
+                            <Flex
+                              p={2}
+                              rounded="lg"
+                              bg="teal.500"
+                              color="white"
+                            >
+                              <Icon as={FiFileText} boxSize={5} />
+                            </Flex>
+                            <VStack align="start" spacing={0}>
+                              <Text fontSize="sm" fontWeight="bold" isTruncated maxW="280px">
+                                {contractFile.name}
+                              </Text>
+                              <HStack spacing={2}>
+                                <Badge colorScheme="teal" fontSize="3xs" rounded="md">
+                                  {(contractFile.size / 1024).toFixed(1)} KB
+                                </Badge>
+                                <Text fontSize="3xs" color="gray.500">
+                                  Will be stored in MinIO Object Storage upon submitting
+                                </Text>
+                              </HStack>
+                            </VStack>
+                          </HStack>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            colorScheme="red"
+                            onClick={() => {
+                              setContractFile(null);
+                              if (fileInputRef.current) fileInputRef.current.value = "";
+                            }}
+                            leftIcon={<FiX />}
+                          >
+                            Remove
+                          </Button>
+                        </Flex>
+                      </Box>
+                    )}
+                  </FormControl>
+
+                  {/* Alternative External Link */}
+                  <FormControl>
+                    <FormLabel
+                      display="inline-flex"
+                      alignItems="center"
+                      gap={1.5}
+                      fontSize="xs"
+                      fontWeight="bold"
+                      mb={1.5}
+                      minH="20px"
+                    >
+                      <Icon as={FiLink} />
+                      <span>Or External Cloud Document Link (Google Drive / SharePoint)</span>
+                    </FormLabel>
+                    <Input
+                      size="sm"
+                      rounded="md"
+                      placeholder="https://drive.google.com/... or https://sharepoint.com/..."
+                      value={contractLinkAttachment}
+                      onChange={(e) => setContractLinkAttachment(e.target.value)}
                     />
                   </FormControl>
                 </VStack>
@@ -1235,9 +2739,18 @@ const VendorContractRegisterView = () => {
               bg={colorMode === "light" ? "white" : "gray.800"}
             >
               <CardBody p={4}>
-                <Flex justify="space-between" align="center" wrap="wrap" gap={3}>
+                <Flex
+                  justify="space-between"
+                  align="center"
+                  wrap="wrap"
+                  gap={3}
+                >
                   <Link href="/vendor-management/contracts">
-                    <Button size="md" variant="outline" leftIcon={<FiArrowLeft />}>
+                    <Button
+                      size="md"
+                      variant="outline"
+                      leftIcon={<FiArrowLeft />}
+                    >
                       Cancel & Return
                     </Button>
                   </Link>
@@ -1271,15 +2784,34 @@ const VendorContractRegisterView = () => {
       />
 
       {/* Modal 2: Safety Confirmation Dialog with 5s Interval Countdown */}
-      <Modal isOpen={confirmModal.isOpen} onClose={confirmModal.onClose} isCentered size="md">
+      <Modal
+        isOpen={confirmModal.isOpen}
+        onClose={confirmModal.onClose}
+        isCentered
+        size="md"
+      >
         <ModalOverlay backdropFilter="blur(5px)" bg="blackAlpha.600" />
         <ModalContent rounded="2xl">
-          <ModalHeader borderBottom="1px" borderColor={colorMode === "light" ? "gray.100" : "gray.700"}>
+          <ModalHeader
+            borderBottom="1px"
+            borderColor={colorMode === "light" ? "gray.100" : "gray.700"}
+          >
             <HStack spacing={2}>
-              <Box w={8} h={8} bg="blue.500" rounded="lg" display="flex" alignItems="center" justifyContent="center" color="white">
+              <Box
+                w={8}
+                h={8}
+                bg="blue.500"
+                rounded="lg"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                color="white"
+              >
                 <FiCheckCircle size={18} />
               </Box>
-              <Text fontSize="md" fontWeight="bold">Confirm Contract Registration</Text>
+              <Text fontSize="md" fontWeight="bold">
+                Confirm Contract Registration
+              </Text>
             </HStack>
           </ModalHeader>
           <ModalCloseButton />
@@ -1290,23 +2822,58 @@ const VendorContractRegisterView = () => {
                 Please verify the registration parameters before finalizing:
               </Text>
 
-              <Box p={3} rounded="xl" bg={colorMode === "light" ? "gray.50" : "gray.700"} fontSize="xs">
+              <Box
+                p={3}
+                rounded="xl"
+                bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                fontSize="xs"
+              >
                 <VStack align="start" spacing={1.5}>
                   {selectedProject && (
-                    <Text><strong>Linked Project:</strong> {selectedProject.projectName} ({selectedProject.projectCode || selectedProject.projectNo})</Text>
+                    <Text>
+                      <strong>Linked Project:</strong>{" "}
+                      {selectedProject.projectName} (
+                      {selectedProject.projectCode || selectedProject.projectNo}
+                      )
+                    </Text>
                   )}
-                  <Text><strong>Vendor:</strong> {selectedVendor?.vendorName} ({selectedVendor?.vendorCode})</Text>
-                  <Text><strong>SPK / Corp Ref:</strong> {formik.values.corpNumber}</Text>
-                  <Text><strong>Contract Narrative:</strong> {formik.values.corpName}</Text>
-                  <Text><strong>Billing Model:</strong> <Badge colorScheme="purple" fontSize="2xs">{formik.values.contractBillingType || "MILESTONE"}</Badge></Text>
-                  <Text><strong>Total Work Value:</strong> <span style={{ color: "#319795", fontWeight: "bold" }}>{formatIDR(formik.values.workValue)}</span></Text>
-                  <Text><strong>TOP Steps:</strong> {formik.values.topList?.length || 0} payment steps ({formatIDR(totalTopValues)})</Text>
+                  <Text>
+                    <strong>Vendor:</strong> {selectedVendor?.vendorName} (
+                    {selectedVendor?.vendorCode})
+                  </Text>
+                  <Text>
+                    <strong>SPK / Corp Ref:</strong> {formik.values.corpNumber}
+                  </Text>
+                  <Text>
+                    <strong>Contract Narrative:</strong>{" "}
+                    {formik.values.corpName}
+                  </Text>
+                  <Text>
+                    <strong>Billing Model:</strong>{" "}
+                    <Badge colorScheme="purple" fontSize="2xs">
+                      {formik.values.contractBillingType || "MILESTONE"}
+                    </Badge>
+                  </Text>
+                  <Text>
+                    <strong>Total Work Value:</strong>{" "}
+                    <span style={{ color: "#319795", fontWeight: "bold" }}>
+                      {formatIDR(formik.values.workValue)}
+                    </span>
+                  </Text>
+                  <Text>
+                    <strong>TOP Steps:</strong>{" "}
+                    {formik.values.topList?.length || 0} payment steps (
+                    {formatIDR(totalTopValues)})
+                  </Text>
                 </VStack>
               </Box>
             </VStack>
           </ModalBody>
 
-          <ModalFooter borderTop="1px" borderColor={colorMode === "light" ? "gray.100" : "gray.700"}>
+          <ModalFooter
+            borderTop="1px"
+            borderColor={colorMode === "light" ? "gray.100" : "gray.700"}
+          >
             <HStack spacing={3}>
               <Button size="sm" variant="ghost" onClick={confirmModal.onClose}>
                 Cancel
@@ -1321,7 +2888,9 @@ const VendorContractRegisterView = () => {
                 onClick={handleExecuteSubmit}
                 leftIcon={<FiCheck />}
               >
-                {canSubmit ? "Confirm Submit" : `Confirm Submit (${countdown}s)`}
+                {canSubmit
+                  ? "Confirm Submit"
+                  : `Confirm Submit (${countdown}s)`}
               </Button>
             </HStack>
           </ModalFooter>
@@ -1335,6 +2904,7 @@ const VendorContractRegisterView = () => {
         onSelectProject={handleSelectProject}
         tokenData={tokenData}
         selectedProjectId={formik.values.projectId}
+        excludeHavingContract={true}
       />
 
       {/* Modal Vendor Selector */}
@@ -1356,7 +2926,9 @@ const VendorContractRegisterView = () => {
         contractStartDate={formik.values.contractStartDate}
         contractEndDate={formik.values.contractEndDate}
         initialBillingType={formik.values.contractBillingType}
-        onApplySchedule={(generated) => formik.setFieldValue("topList", generated)}
+        onApplySchedule={(generated) =>
+          formik.setFieldValue("topList", generated)
+        }
       />
     </LayoutAdmin>
   );

@@ -13,6 +13,7 @@ import {
   ORG_GROUP_WHITELIST_FULL_OVERRIDE,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
+import { useDownloadManagerModal } from "@/app/context/DownloadManagerContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useAppsCriticalReport, {
@@ -88,6 +89,7 @@ import {
   FiAlertTriangle,
   FiCheckCircle,
   FiClock,
+  FiDownload,
   FiEye,
   FiInfo,
   FiLayers,
@@ -131,6 +133,8 @@ export default function AppsAssessmentsDetailView() {
     GetUnassignedApps,
     AssignAppsToBatch,
   } = useAppsCriticalReport();
+  const { requestExport, openDownloadManager, activeJobsCount } =
+    useDownloadManagerModal();
   const { List: ListOrganization } = useOrganization();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState("");
@@ -532,241 +536,32 @@ export default function AppsAssessmentsDetailView() {
     setFilterQuick("ALL");
   };
 
-  const handleExportExcel = async () => {
-    if (!batchData || filteredAssessments.length === 0) return;
+  const handleExport = async (exportType: "XLSX" | "PDF") => {
+    if (!batchData) return;
     setExportLoading(true);
     try {
-      const XLSX = await import("xlsx-js-style");
-      const excelData = filteredAssessments.map((a, i) => {
-        // Get criteria values by position
-        const getScore = (pos: number) => {
-          const detail = a.details?.find((d) => d.appsCriteriaPos === pos);
-          return detail?.appsCriteriaScaleValue !== null &&
-            detail?.appsCriteriaScaleValue !== undefined
-            ? Number(detail.appsCriteriaScaleValue).toFixed(3)
-            : "-";
-        };
-        return {
-          "NO.": i + 1,
-          "NAMA APLIKASI": a.appShortName || "-",
-          "GRUP PENGELOLA": a.appManageByGroupName || "-",
-          "DAMPAK BISNIS (1-5)": getScore(1),
-          "FREKUENSI PENGGUNAAN (1-5)": getScore(2),
-          "KETERGANTUNGAN APLIKASI LAIN (1-5)": getScore(3),
-          "JUMLAH PENGGUNA TERDAMPAK (1-5)": getScore(4),
-          "REGULASI / KEPATUHAN (1-5)": getScore(5),
-          "KERAHASIAAN (1-5)": getScore(6),
-          "INTEGRITAS (1-5)": getScore(7),
-          "KETERSEDIAAN (1-5)": getScore(8),
-          "BERHUBUNGAN LANGSUNG DENGAN NASABAH (YA/TIDAK)":
-            a.isRelationWithCustomers === "TRUE" ? "Ya" : "Tidak",
-          "BERSIFAT TRANSAKSIONAL (YA/TIDAK)":
-            a.isTransactionalApp === "TRUE" ? "Ya" : "Tidak",
-          "MEMILIKI CUT OFF TIME YANG KETAT (YA/TIDAK)":
-            a.isStrictCutoffTime === "TRUE" ? "Ya" : "Tidak",
-          "BERHUBUNGAN DENGAN PEMDA (YA/TIDAK)":
-            a.isRelationWithGov === "TRUE" ? "Ya" : "Tidak",
-          "JUMLAH YA": a.countTrueIsAdditionalFlag || 0,
-          "FAKTOR PENGALI": a.weightTrueIsAdditionalFlag || 0,
-          "TOTAL SKOR": a.crtAssessmentScore || 0,
-          "RATA-RATA SKOR": a.crtAssessmentAverageScore || 0,
-          "SKOR FINAL": a.crtAssessmentFinalScore || 0,
-          "KATEGORI KRITIKALITAS": a.appCrtCategoryName || "-",
-          "RTO HARAPAN USER & MRO":
-            a.appsRtoSuggestionMinutes !== null
-              ? `${a.appsRtoSuggestionOperator || ""} ${(a.appsRtoSuggestionMinutes / 60).toFixed(2)} Jam`
-              : "-",
-          "RTO IT 2025":
-            a.appsRtoItMinutes !== null
-              ? `${a.appsRtoItOperator || ""} ${(a.appsRtoItMinutes / 60).toFixed(2)} Jam`
-              : "-",
-          RPO:
-            a.appsRpoMinutes !== null
-              ? `${a.appsRpoOperator || ""} ${(a.appsRpoMinutes / 60).toFixed(2)} Jam`
-              : "-",
-        };
-      });
-      const wb = XLSX.utils.book_new();
-      const headers = Object.keys(excelData[0] || {});
-
-      // Build AOA: row 0 = title, row 1 = blank, row 2 = headers, row 3+ = data
-      const aoa: unknown[][] = [
-        ["Penilaian Aplikasi Kritikal bank bjb"],
-        [],
-        headers,
-        ...excelData.map((row) =>
-          headers.map((h) => (row as Record<string, unknown>)[h]),
-        ),
-      ];
-      const ws = XLSX.utils.aoa_to_sheet(aoa);
-
-      // Style: title row
-      const baseFont = { name: "Trebuchet MS", sz: 12 };
-      const titleStyle = {
-        font: { ...baseFont, sz: 14, bold: true },
-        alignment: { horizontal: "center", vertical: "center" },
-      };
-      const headerStyle = {
-        font: { name: "Calibri", sz: 11, bold: true, color: { rgb: "FFFFFF" } },
-        fill: { fgColor: { rgb: "4472C4" } },
-        alignment: { horizontal: "center", vertical: "center", wrapText: true },
-        border: {
-          top: { style: "thin" },
-          bottom: { style: "thin" },
-          left: { style: "thin" },
-          right: { style: "thin" },
+      await requestExport({
+        moduleName: "APPS_ASSESSMENT_BATCH_DETAIL",
+        exportType: exportType,
+        reportTitle: `Apps Assessment Report - ${batchData.batchCode} (${batchData.quartalReport} ${batchData.yearReport})`,
+        filterParams: {
+          batchCode: batchData.batchCode,
+          search,
+          filterGroup,
+          filterStatus,
+          filterReview,
+          filterQuick,
         },
-      };
-      const cellStyle = {
-        font: baseFont,
-        alignment: { horizontal: "left", vertical: "top" },
-        border: {
-          top: { style: "thin" },
-          bottom: { style: "thin" },
-          left: { style: "thin" },
-          right: { style: "thin" },
-        },
-      };
-      const cellStyleWrap = {
-        font: baseFont,
-        alignment: { horizontal: "left", vertical: "top", wrapText: true },
-        border: {
-          top: { style: "thin" },
-          bottom: { style: "thin" },
-          left: { style: "thin" },
-          right: { style: "thin" },
-        },
-      };
-
-      const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
-      for (let R = range.s.r; R <= range.e.r; R++) {
-        for (let C = range.s.c; C <= range.e.c; C++) {
-          const addr = XLSX.utils.encode_cell({ r: R, c: C });
-          if (!ws[addr]) ws[addr] = { t: "s", v: "" };
-          if (R === 0) (ws[addr] as Record<string, unknown>).s = titleStyle;
-          else if (R === 2)
-            (ws[addr] as Record<string, unknown>).s = headerStyle;
-          else if (R > 2)
-            (ws[addr] as Record<string, unknown>).s =
-              C === 2 ? cellStyleWrap : cellStyle;
-        }
-      }
-
-      // Merge title across all columns
-      ws["!merges"] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: headers.length - 1 } },
-      ];
-      // Column widths
-      ws["!cols"] = headers.map((h, idx) => {
-        if (idx === 0) return { wch: 5 }; // NO.
-        if (idx === 1) return { wpx: 400 }; // Nama Aplikasi
-        // Last 3 columns: RTO Suggestion, RTO IT, RPO - same width
-        if (idx >= headers.length - 3) return { wch: 20 };
-        return { wch: Math.max(h.length + 2, 15) };
-      });
-      // Header row height
-      const rows: { hpx?: number }[] = [];
-      rows[2] = { hpx: 40 };
-      ws["!rows"] = rows;
-
-      XLSX.utils.book_append_sheet(wb, ws, "Perhitungan Kritikalitas");
-      const buf = XLSX.write(wb, {
-        bookType: "xlsx",
-        type: "array",
-        cellStyles: true,
-      });
-      const blob = new Blob([buf], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `Report_Apps_Assessment_${batchData.quartalReport}_${batchData.yearReport}-${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}.xlsx`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      showToast({
-        description: "Excel exported successfully",
-        statusToast: "success",
       });
     } catch (e) {
       console.error(e);
       showToast({
-        description: "Failed to export Excel",
+        description: `Failed to initiate ${exportType} export`,
         statusToast: "error",
       });
+    } finally {
+      setExportLoading(false);
     }
-    setExportLoading(false);
-  };
-
-  const handleExportPDF = async () => {
-    if (!batchData || filteredAssessments.length === 0) return;
-    setExportLoading(true);
-    try {
-      const { jsPDF } = await import("jspdf");
-      const autoTable = (await import("jspdf-autotable")).default;
-      const doc = new jsPDF("l", "mm", "a4");
-      doc.setFontSize(14);
-      doc.text(`Apps Assessment Report — ${batchData.batchCode}`, 14, 15);
-      doc.setFontSize(10);
-      doc.text(
-        `${batchData.quartalReport} ${batchData.yearReport} | Generated: ${new Date().toLocaleString()}`,
-        14,
-        22,
-      );
-      const tableData = filteredAssessments.map((a, i) => [
-        i + 1,
-        a.appShortName || "-",
-        a.appName || "-",
-        a.appManageByGroupName || "-",
-        a.statusReport || "-",
-        a.isRelationWithCustomers,
-        a.isTransactionalApp,
-        a.isStrictCutoffTime,
-        a.crtAssessmentFinalScore || 0,
-        a.appCrtCategoryName || "-",
-        a.isFullyReviewed ? "Reviewed" : "Pending",
-      ]);
-      autoTable(doc, {
-        head: [
-          [
-            "No",
-            "Short Name",
-            "App Name",
-            "Group",
-            "Status",
-            "Cust.",
-            "Trans.",
-            "Cutoff",
-            "Score",
-            "Category",
-            "Review",
-          ],
-        ],
-        body: tableData,
-        startY: 28,
-        styles: { fontSize: 7 },
-        headStyles: { fillColor: [41, 128, 185] },
-      });
-      const blob = doc.output("blob");
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `Report_Apps_Assessment_${batchData.quartalReport}_${batchData.yearReport}-${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      showToast({
-        description: "PDF exported successfully",
-        statusToast: "success",
-      });
-    } catch (e) {
-      console.error(e);
-      showToast({ description: "Failed to export PDF", statusToast: "error" });
-    }
-    setExportLoading(false);
   };
 
   const assessmentColumns = useMemo<
@@ -1167,6 +962,22 @@ export default function AppsAssessmentsDetailView() {
                   )}
                 </HStack>
                 <HStack spacing={2} flexWrap="wrap">
+                  {/* Download Manager button */}
+                  <Button
+                    size="sm"
+                    bg="whiteAlpha.200"
+                    color="white"
+                    _hover={{ bg: "whiteAlpha.300" }}
+                    leftIcon={<FiDownload />}
+                    onClick={openDownloadManager}
+                  >
+                    Download Manager
+                    {activeJobsCount > 0 && (
+                      <Badge colorScheme="blue" rounded="full" ml={2} px={1.5}>
+                        {activeJobsCount}
+                      </Badge>
+                    )}
+                  </Button>
                   {/* Refresh Data button */}
                   <Button
                     size="sm"
@@ -1187,8 +998,8 @@ export default function AppsAssessmentsDetailView() {
                     _hover={{ bg: "whiteAlpha.300" }}
                     leftIcon={<FaFileExcel />}
                     isLoading={exportLoading}
-                    isDisabled={filteredAssessments.length === 0}
-                    onClick={handleExportExcel}
+                    isDisabled={!batchData}
+                    onClick={() => handleExport("XLSX")}
                   >
                     Export Excel
                   </Button>
@@ -1199,8 +1010,8 @@ export default function AppsAssessmentsDetailView() {
                     _hover={{ bg: "whiteAlpha.300" }}
                     leftIcon={<FaFilePdf />}
                     isLoading={exportLoading}
-                    isDisabled={filteredAssessments.length === 0}
-                    onClick={handleExportPDF}
+                    isDisabled={!batchData}
+                    onClick={() => handleExport("PDF")}
                   >
                     Export PDF
                   </Button>

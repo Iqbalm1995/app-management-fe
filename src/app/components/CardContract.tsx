@@ -40,11 +40,12 @@ interface CardContractProps {
 
 export const formatIDR = (value: number, showValue: boolean = true) => {
   if (!showValue) return "Rp ••••••••••";
-  if (value === undefined || value === null) return "Rp 0";
+  if (value === undefined || value === null || isNaN(value)) return "Rp 0";
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
-    maximumFractionDigits: 0,
+    minimumFractionDigits: value % 1 !== 0 ? 2 : 0,
+    maximumFractionDigits: 2,
   }).format(value);
 };
 

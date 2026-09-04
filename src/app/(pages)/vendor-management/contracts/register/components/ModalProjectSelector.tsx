@@ -37,6 +37,7 @@ interface ModalProjectSelectorProps {
   onSelectProject: (project: ProjectDataResponse) => void;
   tokenData: string;
   selectedProjectId?: string | null;
+  excludeHavingContract?: boolean;
 }
 
 const ModalProjectSelector = ({
@@ -45,6 +46,7 @@ const ModalProjectSelector = ({
   onSelectProject,
   tokenData,
   selectedProjectId,
+  excludeHavingContract = false,
 }: ModalProjectSelectorProps) => {
   const { colorMode } = useColorMode();
   const { List: ListProjects } = useProjects();
@@ -72,6 +74,14 @@ const ModalProjectSelector = ({
       { field: "projectStatus", operator: "=", value: statusFilter || "PROJECT_STATUSES" },
     ];
 
+    if (excludeHavingContract) {
+      filterWhere.push({
+        field: "excludeHavingContract",
+        operator: "=",
+        value: "true",
+      });
+    }
+
     const res = await ListProjects(
       {
         page: 0,
@@ -88,7 +98,7 @@ const ModalProjectSelector = ({
       setProjects(res.data);
     }
     setIsLoading(false);
-  }, [tokenData, isOpen, debouncedSearch, statusFilter]);
+  }, [tokenData, isOpen, debouncedSearch, statusFilter, excludeHavingContract]);
 
   useEffect(() => {
     if (isOpen) {
@@ -123,7 +133,7 @@ const ModalProjectSelector = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="xl" isCentered scrollBehavior="inside">
+    <Modal isOpen={isOpen} onClose={onClose} size="4xl" isCentered scrollBehavior="inside">
       <ModalOverlay backdropFilter="blur(4px)" bg="blackAlpha.600" />
       <ModalContent rounded="2xl" shadow="2xl">
         <ModalHeader borderBottom="1px" borderColor={colorMode === "light" ? "gray.100" : "gray.700"}>

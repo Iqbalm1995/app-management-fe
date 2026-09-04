@@ -66,11 +66,12 @@ interface ModalTopAutoAdjustProps {
 }
 
 export const formatIDR = (value: number) => {
-  if (value === undefined || value === null) return "Rp 0";
+  if (value === undefined || value === null || isNaN(value)) return "Rp 0";
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
-    maximumFractionDigits: 0,
+    minimumFractionDigits: value % 1 !== 0 ? 2 : 0,
+    maximumFractionDigits: 2,
   }).format(value);
 };
 
@@ -237,22 +238,22 @@ export const ModalTopAutoAdjust = ({
       }
 
       const totalSteps = Math.max(1, list.length);
-      const baseAmount = Math.floor(workValue / totalSteps);
-      const remainder = workValue - baseAmount * totalSteps;
+      const baseAmount = Number((Math.floor((workValue / totalSteps) * 100) / 100).toFixed(2));
+      const remainder = Number((workValue - baseAmount * (totalSteps - 1)).toFixed(2));
 
       return list.map((item, idx) => ({
         ...item,
-        topValues: idx === totalSteps - 1 ? baseAmount + remainder : baseAmount,
+        topValues: idx === totalSteps - 1 ? remainder : baseAmount,
       }));
     } else if (mode === "EQUAL") {
       const count = Math.max(1, equalStepsCount);
-      const baseAmount = Math.floor(workValue / count);
-      const remainder = workValue - baseAmount * count;
+      const baseAmount = Number((Math.floor((workValue / count) * 100) / 100).toFixed(2));
+      const remainder = Number((workValue - baseAmount * (count - 1)).toFixed(2));
 
       const list: ContractTopInsertPayload[] = [];
       for (let i = 0; i < count; i++) {
         // Add remainder to the last step so total sum equals workValue perfectly
-        const amount = i === count - 1 ? baseAmount + remainder : baseAmount;
+        const amount = i === count - 1 ? remainder : baseAmount;
         const pctStr = workValue > 0 ? ((amount / workValue) * 100).toFixed(1) : "0";
         list.push({
           stepOrder: i + 1,
@@ -267,13 +268,13 @@ export const ModalTopAutoAdjust = ({
     } else {
       let accumulatedAmount = 0;
       const list: ContractTopInsertPayload[] = percentageSteps.map((step, i) => {
-        let amount = Math.round(((step.pct || 0) / 100) * workValue);
-        accumulatedAmount += amount;
+        let amount = Number((((step.pct || 0) / 100) * workValue).toFixed(2));
+        accumulatedAmount = Number((accumulatedAmount + amount).toFixed(2));
 
         // If it's the last step and total percentage is 100%, adjust rounding difference
         if (i === percentageSteps.length - 1 && isPercentageValid) {
-          const diff = workValue - accumulatedAmount;
-          amount += diff;
+          const diff = Number((workValue - accumulatedAmount).toFixed(2));
+          amount = Number((amount + diff).toFixed(2));
         }
 
         return {

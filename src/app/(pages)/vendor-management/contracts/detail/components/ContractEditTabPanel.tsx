@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Alert,
   AlertIcon,
@@ -37,9 +37,11 @@ import {
   SliderTrack,
   SliderFilledTrack,
   SliderThumb,
+  Spinner,
   Switch,
   Text,
   Textarea,
+  Tooltip,
   useColorMode,
   useDisclosure,
   VStack,
@@ -53,6 +55,7 @@ import {
   FiCheckCircle,
   FiDollarSign,
   FiInfo,
+  FiLayers,
   FiLock,
   FiPlus,
   FiRepeat,
@@ -210,7 +213,7 @@ export const ContractEditTabPanel = ({
     const currentTotalTop = (formik.values.topList || []).reduce((acc, curr) => acc + (curr.topValues || 0), 0);
 
     // Enforce 100% balance for Milestone contracts
-    if (formik.values.contractBillingType === "MILESTONE" && currentTotalTop !== currentWorkVal) {
+    if (formik.values.contractBillingType === "MILESTONE" && Math.abs(currentTotalTop - currentWorkVal) > 0.01) {
       showToast({
         description: `Milestone contract requires 100% balance between TOP schedule (${formatIDR(currentTotalTop)}) and Total Work Value (${formatIDR(currentWorkVal)}). Variance: ${formatIDR(Math.abs(currentTotalTop - currentWorkVal))}. Please use Auto-Balance or Auto-Sync.`,
         statusToast: "warning",
@@ -233,35 +236,74 @@ export const ContractEditTabPanel = ({
     }, 1000);
   };
 
+  // Debounce timers & adjusting indicators for manual CAPEX and OPEX nominal input
+  const [isCapexAdjusting, setIsCapexAdjusting] = useState(false);
+  const [isOvexAdjusting, setIsOvexAdjusting] = useState(false);
+  const capexDebounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const ovexDebounceTimer = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (capexDebounceTimer.current) clearTimeout(capexDebounceTimer.current);
+      if (ovexDebounceTimer.current) clearTimeout(ovexDebounceTimer.current);
+    };
+  }, []);
+
   // Synchronized CAPEX/OPEX Calculations
   const handleTotalWorkValueChange = (newWorkValue: number) => {
     formik.setFieldValue("workValue", newWorkValue);
     const capexPct = formik.values.capexPercentage || 0;
-    const cavexVal = (capexPct / 100) * newWorkValue;
-    const ovexVal = Math.max(0, newWorkValue - cavexVal);
+    const cavexVal = Number(((capexPct / 100) * newWorkValue).toFixed(2));
+    const ovexVal = Number(Math.max(0, newWorkValue - cavexVal).toFixed(2));
+    const ovexPct = parseFloat((100 - capexPct).toFixed(2));
+
     formik.setFieldValue("cavexValues", cavexVal);
     formik.setFieldValue("ovexValues", ovexVal);
+    formik.setFieldValue("ovexPercentage", ovexPct);
   };
 
-  const handleCapexValueChange = (inputVal: number) => {
+  // Sync CAPEX allocation with full validation and counterpart OPEX calculations
+  const syncCavexAllocation = (inputVal: number) => {
     const totalWV = formik.values.workValue || 0;
-    const boundedVal = Math.min(Math.max(0, inputVal), totalWV);
-    const capexPct = totalWV > 0 ? parseFloat(((boundedVal / totalWV) * 100).toFixed(2)) : 0;
-    const ovexVal = Math.max(0, totalWV - boundedVal);
+    const boundedVal = Number(Math.min(Math.max(0, inputVal), totalWV).toFixed(2));
+    const capexPct =
+      totalWV > 0 ? parseFloat(((boundedVal / totalWV) * 100).toFixed(2)) : 0;
+    const ovexVal = Number(Math.max(0, totalWV - boundedVal).toFixed(2));
     const ovexPct = parseFloat((100 - capexPct).toFixed(2));
 
     formik.setFieldValue("cavexValues", boundedVal);
     formik.setFieldValue("capexPercentage", capexPct);
     formik.setFieldValue("ovexValues", ovexVal);
     formik.setFieldValue("ovexPercentage", ovexPct);
+    setIsCapexAdjusting(false);
+  };
+
+  const handleCavexValueChange = (inputVal: number) => {
+    formik.setFieldValue("cavexValues", inputVal);
+    setIsCapexAdjusting(true);
+
+    if (capexDebounceTimer.current) {
+      clearTimeout(capexDebounceTimer.current);
+    }
+
+    capexDebounceTimer.current = setTimeout(() => {
+      syncCavexAllocation(inputVal);
+    }, 3000);
+  };
+
+  const handleCavexBlur = () => {
+    if (capexDebounceTimer.current) {
+      clearTimeout(capexDebounceTimer.current);
+    }
+    syncCavexAllocation(formik.values.cavexValues || 0);
   };
 
   const handleCapexPercentageChange = (inputPct: number) => {
     const totalWV = formik.values.workValue || 0;
     const boundedPct = Math.min(Math.max(0, inputPct), 100);
-    const cavexVal = (boundedPct / 100) * totalWV;
+    const cavexVal = Number(((boundedPct / 100) * totalWV).toFixed(2));
     const ovexPct = parseFloat((100 - boundedPct).toFixed(2));
-    const ovexVal = Math.max(0, totalWV - cavexVal);
+    const ovexVal = Number(Math.max(0, totalWV - cavexVal).toFixed(2));
 
     formik.setFieldValue("capexPercentage", boundedPct);
     formik.setFieldValue("cavexValues", cavexVal);
@@ -269,25 +311,48 @@ export const ContractEditTabPanel = ({
     formik.setFieldValue("ovexValues", ovexVal);
   };
 
-  const handleOvexValueChange = (inputVal: number) => {
+  // Sync OPEX allocation with full validation and counterpart CAPEX calculations
+  const syncOvexAllocation = (inputVal: number) => {
     const totalWV = formik.values.workValue || 0;
-    const boundedVal = Math.min(Math.max(0, inputVal), totalWV);
-    const ovexPct = totalWV > 0 ? parseFloat(((boundedVal / totalWV) * 100).toFixed(2)) : 0;
-    const cavexVal = Math.max(0, totalWV - boundedVal);
+    const boundedVal = Number(Math.min(Math.max(0, inputVal), totalWV).toFixed(2));
+    const ovexPct =
+      totalWV > 0 ? parseFloat(((boundedVal / totalWV) * 100).toFixed(2)) : 0;
+    const cavexVal = Number(Math.max(0, totalWV - boundedVal).toFixed(2));
     const capexPct = parseFloat((100 - ovexPct).toFixed(2));
 
     formik.setFieldValue("ovexValues", boundedVal);
     formik.setFieldValue("ovexPercentage", ovexPct);
     formik.setFieldValue("cavexValues", cavexVal);
     formik.setFieldValue("capexPercentage", capexPct);
+    setIsOvexAdjusting(false);
+  };
+
+  const handleOvexValueChange = (inputVal: number) => {
+    formik.setFieldValue("ovexValues", inputVal);
+    setIsOvexAdjusting(true);
+
+    if (ovexDebounceTimer.current) {
+      clearTimeout(ovexDebounceTimer.current);
+    }
+
+    ovexDebounceTimer.current = setTimeout(() => {
+      syncOvexAllocation(inputVal);
+    }, 3000);
+  };
+
+  const handleOvexBlur = () => {
+    if (ovexDebounceTimer.current) {
+      clearTimeout(ovexDebounceTimer.current);
+    }
+    syncOvexAllocation(formik.values.ovexValues || 0);
   };
 
   const handleOvexPercentageChange = (inputPct: number) => {
     const totalWV = formik.values.workValue || 0;
     const boundedPct = Math.min(Math.max(0, inputPct), 100);
-    const ovexVal = (boundedPct / 100) * totalWV;
+    const ovexVal = Number(((boundedPct / 100) * totalWV).toFixed(2));
     const capexPct = parseFloat((100 - boundedPct).toFixed(2));
-    const cavexVal = Math.max(0, totalWV - ovexVal);
+    const cavexVal = Number(Math.max(0, totalWV - ovexVal).toFixed(2));
 
     formik.setFieldValue("ovexPercentage", boundedPct);
     formik.setFieldValue("ovexValues", ovexVal);
@@ -466,9 +531,9 @@ export const ContractEditTabPanel = ({
 
   // Anomaly flags
   const isDeficitAnomaly = totalWorkValue < paidTopAmount; // CRITICAL: Work value less than already paid
-  const isScheduleMismatch = totalTopValues !== totalWorkValue;
-  const isTopMatch = totalTopValues === totalWorkValue;
-  const variance = totalTopValues - totalWorkValue;
+  const isScheduleMismatch = Math.abs(totalTopValues - totalWorkValue) > 0.01;
+  const isTopMatch = Math.abs(totalTopValues - totalWorkValue) < 0.01;
+  const variance = Number((totalTopValues - totalWorkValue).toFixed(2));
 
   // Synchronize Work Value to Total TOPs (ideal for subscription price adjustments or milestone additions)
   const handleSyncWorkValueToTopSum = () => {
@@ -479,21 +544,12 @@ export const ContractEditTabPanel = ({
     });
   };
 
-  // Auto-Balance Remaining Unpaid Milestones (distributes available budget across unpaid steps)
-  const handleAutoBalanceRemainingTops = () => {
-    if (isDeficitAnomaly) {
-      showToast({
-        description: "Cannot balance steps: Total Work Value is lower than already paid amount.",
-        statusToast: "error",
-      });
-      return;
-    }
-    const unpaidIndices: number[] = [];
-    (formik.values.topList || []).forEach((t, idx) => {
-      if (!t.topStatus || t.topStatus.toUpperCase() !== "PAID") {
-        unpaidIndices.push(idx);
-      }
-    });
+  // Auto-Balance remaining budget evenly across unpaid milestones
+  const handleAutoBalanceUnpaid = () => {
+    const unpaidIndices = (formik.values.topList || [])
+      .map((t, idx) => ({ t, idx }))
+      .filter(({ t }) => t.topStatus !== "PAID")
+      .map(({ idx }) => idx);
 
     if (unpaidIndices.length === 0) {
       showToast({
@@ -503,16 +559,16 @@ export const ContractEditTabPanel = ({
       return;
     }
 
-    const availableBudget = Math.max(0, remainingBudget);
+    const availableBudget = Number(Math.max(0, remainingBudget).toFixed(2));
     const count = unpaidIndices.length;
-    const baseAmount = Math.floor(availableBudget / count);
-    const remainder = availableBudget - baseAmount * count;
+    const baseAmount = Number((Math.floor((availableBudget / count) * 100) / 100).toFixed(2));
+    const remainder = Number((availableBudget - baseAmount * (count - 1)).toFixed(2));
 
     const updated = [...(formik.values.topList || [])];
     unpaidIndices.forEach((idx, i) => {
       updated[idx] = {
         ...updated[idx],
-        topValues: i === count - 1 ? baseAmount + remainder : baseAmount,
+        topValues: i === count - 1 ? remainder : baseAmount,
       };
     });
 
@@ -876,15 +932,42 @@ export const ContractEditTabPanel = ({
       {/* SECTION 2: Monetary Work Value & CAPEX / OPEX Allocation */}
       <Card rounded="2xl" shadow="sm" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
         <CardHeader bg={colorMode === "light" ? "gray.50" : "gray.900"} py={4} roundedTop="2xl">
-          <HStack spacing={3}>
-            <Box w={9} h={9} bg="secondary.500" rounded="lg" display="flex" alignItems="center" justifyContent="center" color="white">
-              <Icon as={FiDollarSign} boxSize={5} />
-            </Box>
-            <VStack align="start" spacing={0}>
-              <Heading size="md">2. Contract Monetary Value & CAPEX / OPEX Allocation</Heading>
-              <Text fontSize="xs" color="gray.500">Configure total work value (IDR) and financial category breakdown</Text>
-            </VStack>
-          </HStack>
+          <Flex justify="space-between" align="center" wrap="wrap" gap={3}>
+            <HStack spacing={3}>
+              <Box w={9} h={9} bg="secondary.500" rounded="lg" display="flex" alignItems="center" justifyContent="center" color="white">
+                <Icon as={FiDollarSign} boxSize={5} />
+              </Box>
+              <VStack align="start" spacing={0}>
+                <Heading size="md">2. Contract Monetary Value & CAPEX / OPEX Allocation</Heading>
+                <Text fontSize="xs" color="gray.500">Configure total work value (IDR) and multi-method financial category breakdown</Text>
+              </VStack>
+            </HStack>
+
+            <HStack spacing={2} wrap="wrap">
+              {(isCapexAdjusting || isOvexAdjusting) && (
+                <Badge
+                  colorScheme="orange"
+                  variant="solid"
+                  px={2.5}
+                  py={1}
+                  rounded="lg"
+                  fontSize="2xs"
+                  display="flex"
+                  alignItems="center"
+                  gap={1.5}
+                >
+                  <Spinner size="xs" color="white" />
+                  Auto-adjusting allocations in 3s...
+                </Badge>
+              )}
+              <Badge colorScheme="blue" px={2.5} py={1} rounded="lg" fontSize="2xs">
+                CAPEX: {formik.values.capexPercentage || 0}% ({formatIDR(formik.values.cavexValues || 0)})
+              </Badge>
+              <Badge colorScheme="purple" px={2.5} py={1} rounded="lg" fontSize="2xs">
+                OPEX: {formik.values.ovexPercentage || 0}% ({formatIDR(formik.values.ovexValues || 0)})
+              </Badge>
+            </HStack>
+          </Flex>
         </CardHeader>
 
         <CardBody p={6}>
@@ -901,109 +984,230 @@ export const ContractEditTabPanel = ({
               />
             </FormControl>
 
-            {/* CAPEX Allocation */}
-            <Box p={4} rounded="xl" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"} bg={colorMode === "light" ? "blue.50/30" : "gray.800"}>
-              <VStack spacing={3} align="stretch">
-                <Flex justify="space-between" align="center">
-                  <Text fontSize="xs" fontWeight="bold" color="blue.600">CAPEX (Capital Expenditure)</Text>
-                  <Badge colorScheme="blue" fontSize="2xs">{formik.values.capexPercentage || 0}%</Badge>
-                </Flex>
+            {/* 3 Synced Allocation Helpers Info Banner */}
+            <HStack
+              spacing={2.5}
+              bg={colorMode === "light" ? "blue.50/70" : "gray.800"}
+              border="1px solid"
+              borderColor={colorMode === "light" ? "blue.100" : "blue.900"}
+              p={2.5}
+              rounded="lg"
+              fontSize="xs"
+              color={colorMode === "light" ? "blue.800" : "blue.200"}
+            >
+              <Icon as={FiInfo} color="blue.500" flexShrink={0} />
+              <Text>
+                <strong>3 Input Allocation Methods:</strong> You can adjust budget distribution using{" "}
+                <strong>(1) Direct Percentage (%)</strong>, <strong>(2) Interactive Slider</strong>, or{" "}
+                <strong>(3) Exact Nominal (Rp.)</strong>. All inputs are bidirectional, debounced by 3 seconds, and automatically sync.
+              </Text>
+            </HStack>
 
-                <Grid templateColumns={{ base: "1fr", md: "1fr 140px" }} gap={3} alignItems="center">
-                  <GridItem>
-                    <FormControl>
-                      <FormLabel fontSize="2xs">CAPEX Amount (Rp.)</FormLabel>
-                      <CurrencyInput
-                        size="sm"
-                        rounded="md"
-                        name="cavexValues"
-                        value={formik.values.cavexValues || 0}
-                        onChange={(_, val) => handleCapexValueChange(val)}
-                      />
-                    </FormControl>
-                  </GridItem>
+            <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={4}>
+              {/* CAPEX Card */}
+              <Box
+                p={4}
+                rounded="xl"
+                border="1px"
+                borderColor={colorMode === "light" ? "blue.200" : "blue.800"}
+                bg={colorMode === "light" ? "blue.50/40" : "gray.800"}
+              >
+                <VStack align="stretch" spacing={3.5}>
+                  <Flex justify="space-between" align="center">
+                    <HStack spacing={2}>
+                      <Box w={3} h={3} rounded="full" bg="blue.500" />
+                      <VStack align="start" spacing={0}>
+                        <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "blue.700" : "blue.300"}>
+                          CAPEX Allocation
+                        </Text>
+                        <Text fontSize="2xs" color="gray.500">Method 1: Direct % Input</Text>
+                      </VStack>
+                    </HStack>
 
-                  <GridItem>
-                    <FormControl>
-                      <FormLabel fontSize="2xs">CAPEX %</FormLabel>
-                      <NumberInput
-                        size="sm"
-                        min={0}
-                        max={100}
-                        precision={1}
-                        value={formik.values.capexPercentage || 0}
-                        onChange={(_, val) => handleCapexPercentageChange(isNaN(val) ? 0 : val)}
-                      >
-                        <NumberInputField rounded="md" />
-                        <NumberInputStepper>
-                          <NumberIncrementStepper />
-                          <NumberDecrementStepper />
-                        </NumberInputStepper>
-                      </NumberInput>
-                    </FormControl>
-                  </GridItem>
-                </Grid>
+                    <Tooltip label="Method 1: Enter exact percentage (0-100%)" placement="top" hasArrow>
+                      <HStack spacing={1}>
+                        <NumberInput
+                          size="sm"
+                          maxW="90px"
+                          min={0}
+                          max={100}
+                          step={1}
+                          value={formik.values.capexPercentage || 0}
+                          onChange={(_, valNum) => handleCapexPercentageChange(isNaN(valNum) ? 0 : valNum)}
+                        >
+                          <NumberInputField rounded="md" textAlign="right" fontWeight="bold" fontSize="xs" />
+                          <NumberInputStepper>
+                            <NumberIncrementStepper />
+                            <NumberDecrementStepper />
+                          </NumberInputStepper>
+                        </NumberInput>
+                        <Text fontSize="xs" fontWeight="bold" color="gray.500">%</Text>
+                      </HStack>
+                    </Tooltip>
+                  </Flex>
 
-                <Slider
-                  value={formik.values.capexPercentage || 0}
-                  min={0}
-                  max={100}
-                  step={0.5}
-                  colorScheme="blue"
-                  onChange={(val) => handleCapexPercentageChange(val)}
-                >
-                  <SliderTrack rounded="full">
-                    <SliderFilledTrack />
-                  </SliderTrack>
-                  <SliderThumb />
-                </Slider>
-              </VStack>
-            </Box>
+                  {/* Method 2: Slider */}
+                  <VStack align="stretch" spacing={1} pt={1} pb={1} px={1}>
+                    <Flex justify="space-between" align="center">
+                      <HStack spacing={1}>
+                        <Icon as={FiSliders} fontSize="2xs" color="blue.500" />
+                        <Text fontSize="2xs" color="gray.500" fontWeight="bold">Method 2: Slide to Adjust Ratio</Text>
+                      </HStack>
+                      <Text fontSize="2xs" color="blue.600" fontWeight="bold">{formik.values.capexPercentage || 0}%</Text>
+                    </Flex>
+                    <Slider
+                      min={0}
+                      max={100}
+                      step={0.5}
+                      colorScheme="blue"
+                      value={formik.values.capexPercentage || 0}
+                      onChange={(val) => handleCapexPercentageChange(val)}
+                    >
+                      <SliderTrack h="6px" rounded="full">
+                        <SliderFilledTrack />
+                      </SliderTrack>
+                      <SliderThumb boxSize={5} shadow="md" bg="blue.500" />
+                    </Slider>
+                  </VStack>
 
-            {/* OPEX Allocation */}
-            <Box p={4} rounded="xl" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"} bg={colorMode === "light" ? "purple.50/30" : "gray.800"}>
-              <VStack spacing={3} align="stretch">
-                <Flex justify="space-between" align="center">
-                  <Text fontSize="xs" fontWeight="bold" color="purple.600">OPEX (Operational Expenditure)</Text>
-                  <Badge colorScheme="purple" fontSize="2xs">{formik.values.ovexPercentage || 0}%</Badge>
-                </Flex>
+                  {/* Method 3: Nominal Currency Input */}
+                  <FormControl>
+                    <Flex justify="space-between" align="center" mb={1}>
+                      <FormLabel fontSize="2xs" color="gray.500" fontWeight="bold" mb={0}>
+                        CAPEX Value (Rp.)
+                      </FormLabel>
+                      {isCapexAdjusting ? (
+                        <Badge
+                          colorScheme="orange"
+                          variant="subtle"
+                          fontSize="3xs"
+                          rounded="md"
+                          px={1.5}
+                          py={0.5}
+                          display="inline-flex"
+                          alignItems="center"
+                          gap={1}
+                        >
+                          <Spinner size="xs" color="orange.500" /> Auto-adjusting in 3s...
+                        </Badge>
+                      ) : (
+                        <Text fontSize="2xs" color="gray.400">Method 3: Exact Nominal</Text>
+                      )}
+                    </Flex>
+                    <CurrencyInput
+                      size="sm"
+                      rounded="md"
+                      name="cavexValues"
+                      value={formik.values.cavexValues || 0}
+                      onChange={(_, val) => handleCavexValueChange(val)}
+                      onBlur={handleCavexBlur}
+                    />
+                  </FormControl>
+                </VStack>
+              </Box>
 
-                <Grid templateColumns={{ base: "1fr", md: "1fr 140px" }} gap={3} alignItems="center">
-                  <GridItem>
-                    <FormControl>
-                      <FormLabel fontSize="2xs">OPEX Amount (Rp.)</FormLabel>
-                      <CurrencyInput
-                        size="sm"
-                        rounded="md"
-                        name="ovexValues"
-                        value={formik.values.ovexValues || 0}
-                        onChange={(_, val) => handleOvexValueChange(val)}
-                      />
-                    </FormControl>
-                  </GridItem>
+              {/* OPEX Card */}
+              <Box
+                p={4}
+                rounded="xl"
+                border="1px"
+                borderColor={colorMode === "light" ? "purple.200" : "purple.800"}
+                bg={colorMode === "light" ? "purple.50/40" : "gray.800"}
+              >
+                <VStack align="stretch" spacing={3.5}>
+                  <Flex justify="space-between" align="center">
+                    <HStack spacing={2}>
+                      <Box w={3} h={3} rounded="full" bg="purple.500" />
+                      <VStack align="start" spacing={0}>
+                        <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "purple.700" : "purple.300"}>
+                          OPEX Allocation
+                        </Text>
+                        <Text fontSize="2xs" color="gray.500">Method 1: Direct % Input</Text>
+                      </VStack>
+                    </HStack>
 
-                  <GridItem>
-                    <FormControl>
-                      <FormLabel fontSize="2xs">OPEX %</FormLabel>
-                      <NumberInput
-                        size="sm"
-                        min={0}
-                        max={100}
-                        precision={1}
-                        value={formik.values.ovexPercentage || 0}
-                        onChange={(_, val) => handleOvexPercentageChange(isNaN(val) ? 0 : val)}
-                      >
-                        <NumberInputField rounded="md" />
-                        <NumberInputStepper>
-                          <NumberIncrementStepper />
-                          <NumberDecrementStepper />
-                        </NumberInputStepper>
-                      </NumberInput>
-                    </FormControl>
-                  </GridItem>
-                </Grid>
-              </VStack>
-            </Box>
+                    <Tooltip label="Method 1: Enter exact percentage (0-100%)" placement="top" hasArrow>
+                      <HStack spacing={1}>
+                        <NumberInput
+                          size="sm"
+                          maxW="90px"
+                          min={0}
+                          max={100}
+                          step={1}
+                          value={formik.values.ovexPercentage || 0}
+                          onChange={(_, valNum) => handleOvexPercentageChange(isNaN(valNum) ? 0 : valNum)}
+                        >
+                          <NumberInputField rounded="md" textAlign="right" fontWeight="bold" fontSize="xs" />
+                          <NumberInputStepper>
+                            <NumberIncrementStepper />
+                            <NumberDecrementStepper />
+                          </NumberInputStepper>
+                        </NumberInput>
+                        <Text fontSize="xs" fontWeight="bold" color="gray.500">%</Text>
+                      </HStack>
+                    </Tooltip>
+                  </Flex>
+
+                  {/* Method 2: Slider */}
+                  <VStack align="stretch" spacing={1} pt={1} pb={1} px={1}>
+                    <Flex justify="space-between" align="center">
+                      <HStack spacing={1}>
+                        <Icon as={FiSliders} fontSize="2xs" color="purple.500" />
+                        <Text fontSize="2xs" color="gray.500" fontWeight="bold">Method 2: Slide to Adjust Ratio</Text>
+                      </HStack>
+                      <Text fontSize="2xs" color="purple.600" fontWeight="bold">{formik.values.ovexPercentage || 0}%</Text>
+                    </Flex>
+                    <Slider
+                      min={0}
+                      max={100}
+                      step={0.5}
+                      colorScheme="purple"
+                      value={formik.values.ovexPercentage || 0}
+                      onChange={(val) => handleOvexPercentageChange(val)}
+                    >
+                      <SliderTrack h="6px" rounded="full">
+                        <SliderFilledTrack />
+                      </SliderTrack>
+                      <SliderThumb boxSize={5} shadow="md" bg="purple.500" />
+                    </Slider>
+                  </VStack>
+
+                  {/* Method 3: Nominal Currency Input */}
+                  <FormControl>
+                    <Flex justify="space-between" align="center" mb={1}>
+                      <FormLabel fontSize="2xs" color="gray.500" fontWeight="bold" mb={0}>
+                        OPEX Value (Rp.)
+                      </FormLabel>
+                      {isOvexAdjusting ? (
+                        <Badge
+                          colorScheme="orange"
+                          variant="subtle"
+                          fontSize="3xs"
+                          rounded="md"
+                          px={1.5}
+                          py={0.5}
+                          display="inline-flex"
+                          alignItems="center"
+                          gap={1}
+                        >
+                          <Spinner size="xs" color="orange.500" /> Auto-adjusting in 3s...
+                        </Badge>
+                      ) : (
+                        <Text fontSize="2xs" color="gray.400">Method 3: Exact Nominal</Text>
+                      )}
+                    </Flex>
+                    <CurrencyInput
+                      size="sm"
+                      rounded="md"
+                      name="ovexValues"
+                      value={formik.values.ovexValues || 0}
+                      onChange={(_, val) => handleOvexValueChange(val)}
+                      onBlur={handleOvexBlur}
+                    />
+                  </FormControl>
+                </VStack>
+              </Box>
+            </Grid>
           </VStack>
         </CardBody>
       </Card>
@@ -1431,7 +1635,7 @@ export const ContractEditTabPanel = ({
                         size="xs"
                         colorScheme="orange"
                         variant="outline"
-                        onClick={handleAutoBalanceRemainingTops}
+                        onClick={handleAutoBalanceUnpaid}
                       >
                         Auto-Balance Remaining {unpaidTopList.length} Unpaid Step(s)
                       </Button>

@@ -61,6 +61,7 @@ import { formatIDR } from "@/app/components/CardContract";
 import { RES_CODE_OK, radiusStyle } from "@/app/constants/applicationConstants";
 import ModalProjectSelector from "../../register/components/ModalProjectSelector";
 import { useDisclosure } from "@chakra-ui/react";
+import { IoReceiptOutline } from "react-icons/io5";
 
 interface GeneratePaymentModalProps {
   isOpen: boolean;
@@ -295,7 +296,13 @@ export default function GeneratePaymentModal({
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose} size="4xl" isCentered scrollBehavior="inside">
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        size="4xl"
+        isCentered
+        scrollBehavior="inside"
+      >
         <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(4px)" />
         <ModalContent
           rounded={radiusStyle}
@@ -303,7 +310,11 @@ export default function GeneratePaymentModal({
           borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
         >
           {/* Header */}
-          <ModalHeader borderBottom="1px" borderColor={colorMode === "light" ? "gray.100" : "gray.700"} py={4}>
+          <ModalHeader
+            borderBottom="1px"
+            borderColor={colorMode === "light" ? "gray.100" : "gray.700"}
+            py={4}
+          >
             <Flex justify="space-between" align="center" pr={6}>
               <HStack spacing={3}>
                 <Flex
@@ -312,7 +323,7 @@ export default function GeneratePaymentModal({
                   bg={colorMode === "light" ? "blue.50" : "blue.900"}
                   color="blue.500"
                 >
-                  <Icon as={FiDollarSign} boxSize={5} />
+                  <Icon as={IoReceiptOutline} boxSize={5} />
                 </Flex>
                 <VStack align="start" spacing={0}>
                   <Text fontSize="md" fontWeight="bold">
@@ -324,7 +335,14 @@ export default function GeneratePaymentModal({
                 </VStack>
               </HStack>
 
-              <Badge colorScheme="blue" variant="subtle" px={2.5} py={0.5} rounded="md" fontSize="2xs">
+              <Badge
+                colorScheme="blue"
+                variant="subtle"
+                px={2.5}
+                py={0.5}
+                rounded="md"
+                fontSize="2xs"
+              >
                 1:1 Contract Payment Master
               </Badge>
             </Flex>
@@ -347,7 +365,11 @@ export default function GeneratePaymentModal({
                     <Flex justify="space-between" align="center" w="full">
                       <HStack spacing={1.5} color="blue.600">
                         <Icon as={FiBriefcase} />
-                        <Text fontSize="2xs" fontWeight="bold" textTransform="uppercase">
+                        <Text
+                          fontSize="2xs"
+                          fontWeight="bold"
+                          textTransform="uppercase"
+                        >
                           1. Project Information
                         </Text>
                       </HStack>
@@ -366,13 +388,21 @@ export default function GeneratePaymentModal({
                         {selectedProject?.projectName || "Parent Project"}
                       </Text>
                       <Text color="gray.500">
-                        Code: {selectedProject?.projectCode || selectedProject?.projectNo || "-"}
+                        Code:{" "}
+                        {selectedProject?.projectCode ||
+                          selectedProject?.projectNo ||
+                          "-"}
                       </Text>
                       <Text color="gray.500">
-                        Owner: <strong>{selectedProject?.proOwnerDivisionName || "Divisi IT"}</strong>
+                        Owner:{" "}
+                        <strong>
+                          {selectedProject?.proOwnerDivisionName || "Divisi IT"}
+                        </strong>
                       </Text>
                       <Text color="gray.500">
-                        Directorate: {selectedProject?.proOwnerDirectorateName || "Direktorat IT"}
+                        Directorate:{" "}
+                        {selectedProject?.proOwnerDirectorateName ||
+                          "Direktorat IT"}
                       </Text>
                     </VStack>
                   </VStack>
@@ -384,12 +414,18 @@ export default function GeneratePaymentModal({
                   rounded="xl"
                   bg={colorMode === "light" ? "purple.50/50" : "gray.800"}
                   border="1px"
-                  borderColor={colorMode === "light" ? "purple.200" : "purple.800"}
+                  borderColor={
+                    colorMode === "light" ? "purple.200" : "purple.800"
+                  }
                 >
                   <VStack align="start" spacing={2}>
                     <HStack spacing={1.5} color="purple.600">
                       <Icon as={FiUser} />
-                      <Text fontSize="2xs" fontWeight="bold" textTransform="uppercase">
+                      <Text
+                        fontSize="2xs"
+                        fontWeight="bold"
+                        textTransform="uppercase"
+                      >
                         2. Vendor Partner (Read-only)
                       </Text>
                     </HStack>
@@ -402,10 +438,12 @@ export default function GeneratePaymentModal({
                         Code: {contract.vendorCode || "-"}
                       </Text>
                       <Text color="gray.500">
-                        Type: {contract.vendor?.vendorType || "Corporate Vendor"}
+                        Type:{" "}
+                        {contract.vendor?.vendorType || "Corporate Vendor"}
                       </Text>
                       <Text color="gray.500">
-                        PIC: {contract.vendor?.picBusinessName || "-"} ({contract.vendor?.picBusinessEmail || "-"})
+                        PIC: {contract.vendor?.picBusinessName || "-"} (
+                        {contract.vendor?.picBusinessEmail || "-"})
                       </Text>
                     </VStack>
                   </VStack>
@@ -422,21 +460,29 @@ export default function GeneratePaymentModal({
                   <VStack align="start" spacing={2}>
                     <HStack spacing={1.5} color="teal.600">
                       <Icon as={FiShield} />
-                      <Text fontSize="2xs" fontWeight="bold" textTransform="uppercase">
+                      <Text
+                        fontSize="2xs"
+                        fontWeight="bold"
+                        textTransform="uppercase"
+                      >
                         3. Contract Summary (Read-only)
                       </Text>
                     </HStack>
 
                     <VStack align="start" spacing={1} fontSize="xs">
-                      <Text fontWeight="bold">
-                        SPK: {contract.corpNumber}
-                      </Text>
+                      <Text fontWeight="bold">SPK: {contract.corpNumber}</Text>
                       <Text fontWeight="bold" color="teal.600">
                         Value: {formatIDR(contract.workValue)}
                       </Text>
                       <Text color="gray.500">
-                        Period: {new Date(contract.contractStartDate).toLocaleDateString("en-US")} –{" "}
-                        {new Date(contract.contractEndDate).toLocaleDateString("en-US")}
+                        Period:{" "}
+                        {new Date(
+                          contract.contractStartDate,
+                        ).toLocaleDateString("en-US")}{" "}
+                        –{" "}
+                        {new Date(contract.contractEndDate).toLocaleDateString(
+                          "en-US",
+                        )}
                       </Text>
                       <Text color="gray.500">
                         Status: {contract.status || "ACTIVE"}
@@ -455,16 +501,29 @@ export default function GeneratePaymentModal({
                 bg={colorMode === "light" ? "white" : "gray.800"}
               >
                 <HStack spacing={2} mb={4} color="blue.500">
-                  <Icon as={FiDollarSign} />
-                  <Text fontSize="xs" fontWeight="bold" textTransform="uppercase">
+                  <Icon as={IoReceiptOutline} />
+                  <Text
+                    fontSize="xs"
+                    fontWeight="bold"
+                    textTransform="uppercase"
+                  >
                     Payment Parameters
                   </Text>
                 </HStack>
 
-                <SimpleGrid columns={{ base: 1, md: 2 }} spacingX={6} spacingY={4}>
+                <SimpleGrid
+                  columns={{ base: 1, md: 2 }}
+                  spacingX={6}
+                  spacingY={4}
+                >
                   {/* Payment Number */}
                   <FormControl isRequired>
-                    <FormLabel fontSize="xs" fontWeight="semibold" mb={1.5} color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                    <FormLabel
+                      fontSize="xs"
+                      fontWeight="semibold"
+                      mb={1.5}
+                      color={colorMode === "light" ? "gray.700" : "gray.300"}
+                    >
                       <HStack spacing={1.5}>
                         <Icon as={FiHash} boxSize={3.5} color="gray.500" />
                         <Text>Payment Reference No</Text>
@@ -481,7 +540,12 @@ export default function GeneratePaymentModal({
 
                   {/* Payment Memo Number */}
                   <FormControl isRequired>
-                    <FormLabel fontSize="xs" fontWeight="semibold" mb={1.5} color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                    <FormLabel
+                      fontSize="xs"
+                      fontWeight="semibold"
+                      mb={1.5}
+                      color={colorMode === "light" ? "gray.700" : "gray.300"}
+                    >
                       <HStack spacing={1.5}>
                         <Icon as={FiFileText} boxSize={3.5} color="gray.500" />
                         <Text>Payment Memo No</Text>
@@ -498,9 +562,18 @@ export default function GeneratePaymentModal({
 
                   {/* Initial Payment Status */}
                   <FormControl isRequired>
-                    <FormLabel fontSize="xs" fontWeight="semibold" mb={1.5} color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                    <FormLabel
+                      fontSize="xs"
+                      fontWeight="semibold"
+                      mb={1.5}
+                      color={colorMode === "light" ? "gray.700" : "gray.300"}
+                    >
                       <HStack spacing={1.5}>
-                        <Icon as={FiCheckCircle} boxSize={3.5} color="gray.500" />
+                        <Icon
+                          as={FiCheckCircle}
+                          boxSize={3.5}
+                          color="gray.500"
+                        />
                         <Text>Initial Status</Text>
                       </HStack>
                     </FormLabel>
@@ -519,7 +592,12 @@ export default function GeneratePaymentModal({
 
                   {/* Status Date */}
                   <FormControl isRequired>
-                    <FormLabel fontSize="xs" fontWeight="semibold" mb={1.5} color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                    <FormLabel
+                      fontSize="xs"
+                      fontWeight="semibold"
+                      mb={1.5}
+                      color={colorMode === "light" ? "gray.700" : "gray.300"}
+                    >
                       <HStack spacing={1.5}>
                         <Icon as={FiCalendar} boxSize={3.5} color="gray.500" />
                         <Text>Status Date</Text>
@@ -535,12 +613,26 @@ export default function GeneratePaymentModal({
                   </FormControl>
                 </SimpleGrid>
 
-                <Divider my={4} borderColor={colorMode === "light" ? "gray.200" : "gray.700"} />
+                <Divider
+                  my={4}
+                  borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                />
 
                 {/* Contract Work Value (Read-only Summary) */}
-                <Flex justify="space-between" align="center" bg={colorMode === "light" ? "gray.50" : "gray.700"} p={3} rounded="lg">
+                <Flex
+                  justify="space-between"
+                  align="center"
+                  bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                  p={3}
+                  rounded="lg"
+                >
                   <VStack align="start" spacing={0}>
-                    <Text fontSize="2xs" color="gray.500" fontWeight="bold" textTransform="uppercase">
+                    <Text
+                      fontSize="2xs"
+                      color="gray.500"
+                      fontWeight="bold"
+                      textTransform="uppercase"
+                    >
                       Contract Work Value (IDR)
                     </Text>
                     <Text fontSize="xs" color="gray.500">
@@ -574,12 +666,23 @@ export default function GeneratePaymentModal({
                     </VStack>
                   </HStack>
 
-                  <Badge colorScheme="blue" fontSize="2xs" px={2} py={0.5} rounded="md">
+                  <Badge
+                    colorScheme="blue"
+                    fontSize="2xs"
+                    px={2}
+                    py={0.5}
+                    rounded="md"
+                  >
                     Allocated: {formatIDR(workValue)}
                   </Badge>
                 </Flex>
 
-                <Box rounded="lg" overflow="hidden" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
+                <Box
+                  rounded="lg"
+                  overflow="hidden"
+                  border="1px"
+                  borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                >
                   <Table size="sm" variant="simple">
                     <Thead bg={colorMode === "light" ? "gray.50" : "gray.800"}>
                       <Tr>
@@ -612,14 +715,20 @@ export default function GeneratePaymentModal({
                                 {wp.workProgramAccName || wp.workProgramName}
                               </Text>
                               <Text fontSize="2xs" color="gray.500">
-                                Acc: {wp.workProgramAccNumber || "-"} • CC: {wp.workProgramAccCc || "-"}
+                                Acc: {wp.workProgramAccNumber || "-"} • CC:{" "}
+                                {wp.workProgramAccCc || "-"}
                               </Text>
                             </VStack>
                           </Td>
                           <Td isNumeric fontSize="xs" fontWeight="bold">
                             {formatIDR(wp.workProgramBudget || 0)}
                           </Td>
-                          <Td isNumeric fontSize="xs" fontWeight="bold" color="teal.500">
+                          <Td
+                            isNumeric
+                            fontSize="xs"
+                            fontWeight="bold"
+                            color="teal.500"
+                          >
                             {formatIDR(wp.workProgramReal || 0)}
                           </Td>
                         </Tr>
@@ -638,7 +747,13 @@ export default function GeneratePaymentModal({
             py={3}
           >
             <Flex justify="space-between" w="full">
-              <Button size="sm" variant="ghost" rounded="lg" onClick={onClose} isDisabled={isLoading}>
+              <Button
+                size="sm"
+                variant="ghost"
+                rounded="lg"
+                onClick={onClose}
+                isDisabled={isLoading}
+              >
                 Cancel
               </Button>
 
@@ -680,7 +795,8 @@ export default function GeneratePaymentModal({
             <AlertDialogBody py={3}>
               <VStack align="start" spacing={3} fontSize="xs">
                 <Text>
-                  Are you sure you want to generate the master payment record for this vendor contract?
+                  Are you sure you want to generate the master payment record
+                  for this vendor contract?
                 </Text>
 
                 <Box
@@ -708,7 +824,9 @@ export default function GeneratePaymentModal({
                 </Box>
 
                 <Text color="gray.500">
-                  This action will freeze the tripartite snapshot (Project, Vendor, Contract) and register the RBB work program budget allocations.
+                  This action will freeze the tripartite snapshot (Project,
+                  Vendor, Contract) and register the RBB work program budget
+                  allocations.
                 </Text>
               </VStack>
             </AlertDialogBody>

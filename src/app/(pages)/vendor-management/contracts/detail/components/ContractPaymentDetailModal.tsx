@@ -55,6 +55,7 @@ import useVendor, {
 import { formatIDR } from "@/app/components/CardContract";
 import { RES_CODE_OK, radiusStyle } from "@/app/constants/applicationConstants";
 import PaymentAttachmentUploadModal from "./PaymentAttachmentUploadModal";
+import { IoReceiptOutline } from "react-icons/io5";
 
 interface ContractPaymentDetailModalProps {
   isOpen: boolean;
@@ -118,7 +119,13 @@ export default function ContractPaymentDetailModal({
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose} size="4xl" isCentered scrollBehavior="inside">
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        size="4xl"
+        isCentered
+        scrollBehavior="inside"
+      >
         <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(4px)" />
         <ModalContent
           rounded={radiusStyle}
@@ -138,19 +145,23 @@ export default function ContractPaymentDetailModal({
                   bg={colorMode === "light" ? "blue.50" : "blue.900"}
                   color="blue.500"
                 >
-                  <Icon as={FiDollarSign} boxSize={5} />
+                  <Icon as={IoReceiptOutline} boxSize={5} />
                 </Flex>
                 <VStack align="start" spacing={0}>
                   <HStack spacing={2}>
                     <Text fontSize="md" fontWeight="bold">
                       Payment Record: {payment.paymentNo || "N/A"}
                     </Text>
-                    <Badge colorScheme={getStatusColorScheme(payment.paymentStatus)} fontSize="xs">
+                    <Badge
+                      colorScheme={getStatusColorScheme(payment.paymentStatus)}
+                      fontSize="xs"
+                    >
                       {payment.paymentStatus}
                     </Badge>
                   </HStack>
                   <Text fontSize="xs" color="gray.500">
-                    Memo: {payment.paymentMemoNo || "-"} • Step #{payment.paymentContractStepChangeNumber}
+                    Memo: {payment.paymentMemoNo || "-"} • Step #
+                    {payment.paymentContractStepChangeNumber}
                   </Text>
                 </VStack>
               </HStack>
@@ -170,7 +181,12 @@ export default function ContractPaymentDetailModal({
               >
                 <SimpleGrid columns={{ base: 1, md: 4 }} spacing={4}>
                   <Box>
-                    <Text fontSize="2xs" color="gray.500" textTransform="uppercase" fontWeight="bold">
+                    <Text
+                      fontSize="2xs"
+                      color="gray.500"
+                      textTransform="uppercase"
+                      fontWeight="bold"
+                    >
                       Disbursement Work Value
                     </Text>
                     <Text fontSize="md" fontWeight="900" color="blue.500">
@@ -178,7 +194,12 @@ export default function ContractPaymentDetailModal({
                     </Text>
                   </Box>
                   <Box>
-                    <Text fontSize="2xs" color="gray.500" textTransform="uppercase" fontWeight="bold">
+                    <Text
+                      fontSize="2xs"
+                      color="gray.500"
+                      textTransform="uppercase"
+                      fontWeight="bold"
+                    >
                       RBB Allocated Realization
                     </Text>
                     <Text fontSize="md" fontWeight="900" color="teal.500">
@@ -186,23 +207,37 @@ export default function ContractPaymentDetailModal({
                     </Text>
                   </Box>
                   <Box>
-                    <Text fontSize="2xs" color="gray.500" textTransform="uppercase" fontWeight="bold">
+                    <Text
+                      fontSize="2xs"
+                      color="gray.500"
+                      textTransform="uppercase"
+                      fontWeight="bold"
+                    >
                       Disbursement Status Date
                     </Text>
                     <Text fontSize="xs" fontWeight="bold">
                       {payment.paymentStatusDate
-                        ? new Date(payment.paymentStatusDate).toLocaleDateString("en-US")
+                        ? new Date(
+                            payment.paymentStatusDate,
+                          ).toLocaleDateString("en-US")
                         : "-"}
                     </Text>
                   </Box>
                   <Box>
-                    <Text fontSize="2xs" color="gray.500" textTransform="uppercase" fontWeight="bold">
+                    <Text
+                      fontSize="2xs"
+                      color="gray.500"
+                      textTransform="uppercase"
+                      fontWeight="bold"
+                    >
                       Created By / Date
                     </Text>
                     <Text fontSize="xs" fontWeight="semibold">
                       {payment.createdBy || "SYSTEM"} (
                       {payment.createdAt
-                        ? new Date(payment.createdAt).toLocaleDateString("en-US")
+                        ? new Date(payment.createdAt).toLocaleDateString(
+                            "en-US",
+                          )
                         : "-"}
                       )
                     </Text>
@@ -216,13 +251,17 @@ export default function ContractPaymentDetailModal({
                   <Tab rounded="lg" fontSize="xs" fontWeight="bold">
                     <HStack spacing={1.5}>
                       <Icon as={FiLayers} />
-                      <Text>RBB Work Programs ({payment.workPrograms?.length || 0})</Text>
+                      <Text>
+                        RBB Work Programs ({payment.workPrograms?.length || 0})
+                      </Text>
                     </HStack>
                   </Tab>
                   <Tab rounded="lg" fontSize="xs" fontWeight="bold">
                     <HStack spacing={1.5}>
                       <Icon as={FiFileText} />
-                      <Text>Attached Documents ({payment.attachments?.length || 0})</Text>
+                      <Text>
+                        Attached Documents ({payment.attachments?.length || 0})
+                      </Text>
                     </HStack>
                   </Tab>
                   <Tab rounded="lg" fontSize="xs" fontWeight="bold">
@@ -239,12 +278,16 @@ export default function ContractPaymentDetailModal({
                     <VStack spacing={3} align="stretch">
                       <Box
                         border="1px"
-                        borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                        borderColor={
+                          colorMode === "light" ? "gray.200" : "gray.700"
+                        }
                         rounded="xl"
                         overflow="hidden"
                       >
                         <Table size="sm" variant="simple">
-                          <Thead bg={colorMode === "light" ? "gray.50" : "gray.800"}>
+                          <Thead
+                            bg={colorMode === "light" ? "gray.50" : "gray.800"}
+                          >
                             <Tr>
                               <Th fontSize="2xs">RBB Account / Code</Th>
                               <Th fontSize="2xs">Account Name / Cost Center</Th>
@@ -275,20 +318,32 @@ export default function ContractPaymentDetailModal({
                                 <Td>
                                   <VStack align="start" spacing={0}>
                                     <Text fontSize="xs" fontWeight="semibold">
-                                      {wp.workProgramAccName || wp.workProgramName}
+                                      {wp.workProgramAccName ||
+                                        wp.workProgramName}
                                     </Text>
                                     <Text fontSize="2xs" color="gray.500">
-                                      Acc: {wp.workProgramAccNumber || "-"} • CC: {wp.workProgramAccCc || "-"}
+                                      Acc: {wp.workProgramAccNumber || "-"} •
+                                      CC: {wp.workProgramAccCc || "-"}
                                     </Text>
                                   </VStack>
                                 </Td>
                                 <Td isNumeric fontSize="xs" fontWeight="bold">
                                   {formatIDR(wp.workProgramBudget)}
                                 </Td>
-                                <Td isNumeric fontSize="xs" fontWeight="bold" color="teal.500">
+                                <Td
+                                  isNumeric
+                                  fontSize="xs"
+                                  fontWeight="bold"
+                                  color="teal.500"
+                                >
                                   {formatIDR(wp.workProgramReal)}
                                 </Td>
-                                <Td isNumeric fontSize="xs" fontWeight="bold" color="gray.600">
+                                <Td
+                                  isNumeric
+                                  fontSize="xs"
+                                  fontWeight="bold"
+                                  color="gray.600"
+                                >
                                   {formatIDR(wp.workProgramLeftovers)}
                                 </Td>
                               </Tr>
@@ -325,7 +380,9 @@ export default function ContractPaymentDetailModal({
                           direction="column"
                           gap={2}
                           border="1px dashed"
-                          borderColor={colorMode === "light" ? "gray.300" : "gray.700"}
+                          borderColor={
+                            colorMode === "light" ? "gray.300" : "gray.700"
+                          }
                           rounded="xl"
                         >
                           <Icon as={FiFileText} boxSize={6} color="gray.400" />
@@ -341,11 +398,18 @@ export default function ContractPaymentDetailModal({
                               p={4}
                               rounded="xl"
                               border="1px"
-                              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                              borderColor={
+                                colorMode === "light" ? "gray.200" : "gray.700"
+                              }
                               bg={colorMode === "light" ? "white" : "gray.800"}
                             >
                               <Flex justify="space-between" align="start">
-                                <VStack align="start" spacing={1} flex={1} mr={2}>
+                                <VStack
+                                  align="start"
+                                  spacing={1}
+                                  flex={1}
+                                  mr={2}
+                                >
                                   <HStack spacing={2} wrap="wrap">
                                     <Badge colorScheme="purple" fontSize="2xs">
                                       {att.documentType}
@@ -354,19 +418,29 @@ export default function ContractPaymentDetailModal({
                                       {att.documentVersion}
                                     </Badge>
                                   </HStack>
-                                  <Text fontSize="xs" fontWeight="bold" noOfLines={1}>
+                                  <Text
+                                    fontSize="xs"
+                                    fontWeight="bold"
+                                    noOfLines={1}
+                                  >
                                     {att.documentName}
                                   </Text>
                                   <Text fontSize="2xs" color="gray.500">
                                     Ref: {att.documentNumber} • Date:{" "}
-                                    {new Date(att.documentDate).toLocaleDateString("en-US")}
+                                    {new Date(
+                                      att.documentDate,
+                                    ).toLocaleDateString("en-US")}
                                   </Text>
                                 </VStack>
 
                                 <HStack spacing={1}>
-                                  {att.mediaObject?.objectData || att.linkAttachment ? (
+                                  {att.mediaObject?.objectData ||
+                                  att.linkAttachment ? (
                                     <a
-                                      href={att.linkAttachment || att.mediaObject?.objectData}
+                                      href={
+                                        att.linkAttachment ||
+                                        att.mediaObject?.objectData
+                                      }
                                       target="_blank"
                                       rel="noreferrer"
                                     >
@@ -387,7 +461,9 @@ export default function ContractPaymentDetailModal({
                                     size="xs"
                                     variant="ghost"
                                     colorScheme="red"
-                                    onClick={() => handleDeleteAttachment(att.id)}
+                                    onClick={() =>
+                                      handleDeleteAttachment(att.id)
+                                    }
                                   />
                                 </HStack>
                               </Flex>
@@ -406,16 +482,25 @@ export default function ContractPaymentDetailModal({
                         p={4}
                         rounded="xl"
                         border="1px"
-                        borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                        borderColor={
+                          colorMode === "light" ? "gray.200" : "gray.700"
+                        }
                         bg={colorMode === "light" ? "gray.50" : "gray.800"}
                       >
-                        <Text fontSize="xs" fontWeight="bold" mb={3} color="blue.500">
+                        <Text
+                          fontSize="xs"
+                          fontWeight="bold"
+                          mb={3}
+                          color="blue.500"
+                        >
                           Project Snapshot Metadata
                         </Text>
                         <VStack align="start" spacing={2} fontSize="xs">
                           <HStack justify="space-between" w="full">
                             <Text color="gray.500">Project Code:</Text>
-                            <Text fontWeight="bold">{payment.projectCode || "N/A"}</Text>
+                            <Text fontWeight="bold">
+                              {payment.projectCode || "N/A"}
+                            </Text>
                           </HStack>
                           <HStack justify="space-between" w="full">
                             <Text color="gray.500">Project Name:</Text>
@@ -425,7 +510,9 @@ export default function ContractPaymentDetailModal({
                           </HStack>
                           <HStack justify="space-between" w="full">
                             <Text color="gray.500">Owner Division:</Text>
-                            <Text fontWeight="semibold">{payment.proOwnerDivisionName || "-"}</Text>
+                            <Text fontWeight="semibold">
+                              {payment.proOwnerDivisionName || "-"}
+                            </Text>
                           </HStack>
                           <HStack justify="space-between" w="full">
                             <Text color="gray.500">Characteristic:</Text>
@@ -441,10 +528,17 @@ export default function ContractPaymentDetailModal({
                         p={4}
                         rounded="xl"
                         border="1px"
-                        borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                        borderColor={
+                          colorMode === "light" ? "gray.200" : "gray.700"
+                        }
                         bg={colorMode === "light" ? "gray.50" : "gray.800"}
                       >
-                        <Text fontSize="xs" fontWeight="bold" mb={3} color="purple.500">
+                        <Text
+                          fontSize="xs"
+                          fontWeight="bold"
+                          mb={3}
+                          color="purple.500"
+                        >
                           Vendor Snapshot Metadata
                         </Text>
                         <VStack align="start" spacing={2} fontSize="xs">
@@ -463,13 +557,15 @@ export default function ContractPaymentDetailModal({
                           <HStack justify="space-between" w="full">
                             <Text color="gray.500">Business PIC:</Text>
                             <Text fontWeight="semibold">
-                              {payment.vendorPicBusinessName} ({payment.vendorPicBusinessEmail})
+                              {payment.vendorPicBusinessName} (
+                              {payment.vendorPicBusinessEmail})
                             </Text>
                           </HStack>
                           <HStack justify="space-between" w="full">
                             <Text color="gray.500">Technical PIC:</Text>
                             <Text fontWeight="semibold">
-                              {payment.vendorPicTechnicalName} ({payment.vendorPicTechnicalEmail})
+                              {payment.vendorPicTechnicalName} (
+                              {payment.vendorPicTechnicalEmail})
                             </Text>
                           </HStack>
                         </VStack>

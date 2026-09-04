@@ -66,6 +66,7 @@ import useVendor, {
   ContractPaymentUpdatePayload,
 } from "@/app/services/useVendor";
 import useMediaObject from "@/app/services/useMediaObject";
+import { useDownloadManagerModal } from "@/app/context/DownloadManagerContext";
 import { renderFileIconSTR, formatKBMB } from "@/app/helper/MasterHelper";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { formatIDR } from "@/app/components/CardContract";
@@ -74,6 +75,7 @@ import GeneratePaymentModal from "./GeneratePaymentModal";
 import PaymentAttachmentUploadModal from "./PaymentAttachmentUploadModal";
 import TopPaymentStatusModal from "./TopPaymentStatusModal";
 import TopAttachmentUploadModal from "./TopAttachmentUploadModal";
+import { IoReceiptOutline } from "react-icons/io5";
 
 interface ContractPaymentTabPanelProps {
   contract: VendorContractResponse;
@@ -88,6 +90,7 @@ export default function ContractPaymentTabPanel({
 }: ContractPaymentTabPanelProps) {
   const { colorMode } = useColorMode();
   const showToast = useToastHelper();
+  const { openDownloadManager, activeJobsCount } = useDownloadManagerModal();
   const {
     GetPaymentByContractId,
     UpdatePayment,
@@ -160,7 +163,7 @@ export default function ContractPaymentTabPanel({
         [mediaObjectId],
         tokenData,
         contract.id,
-        "Vendor_TOP_Payment",
+        "VENDOR_CONTRACT_TOP_PAYMENT",
         `${fileName || "document"}.zip`
       );
       if (blob) {
@@ -476,7 +479,7 @@ export default function ContractPaymentTabPanel({
               bg={colorMode === "light" ? "blue.50" : "blue.900"}
               color="blue.500"
             >
-              <Icon as={FiDollarSign} boxSize={6} />
+              <Icon as={IoReceiptOutline} boxSize={6} />
             </Flex>
             <VStack align="start" spacing={1}>
               <HStack spacing={2}>
@@ -506,11 +509,11 @@ export default function ContractPaymentTabPanel({
                 </Badge>
               </HStack>
               <Text fontSize="xs" color="gray.500">
-                Memo No: <strong>{payment.paymentMemoNo || "N/A"}</strong> &bull;
-                Status Date:{" "}
+                Memo No: <strong>{payment.paymentMemoNo || "N/A"}</strong>{" "}
+                &bull; Status Date:{" "}
                 {payment.paymentStatusDate
                   ? new Date(payment.paymentStatusDate).toLocaleDateString(
-                      "en-US"
+                      "en-US",
                     )
                   : "-"}
               </Text>
@@ -518,6 +521,27 @@ export default function ContractPaymentTabPanel({
           </HStack>
 
           <HStack spacing={3}>
+            <Button
+              size="xs"
+              variant="outline"
+              rounded="lg"
+              leftIcon={<FiDownload />}
+              onClick={openDownloadManager}
+            >
+              Download Manager
+              {activeJobsCount > 0 && (
+                <Badge
+                  colorScheme="blue"
+                  rounded="full"
+                  ml={1.5}
+                  px={1.5}
+                  fontSize="2xs"
+                >
+                  {activeJobsCount}
+                </Badge>
+              )}
+            </Button>
+
             <Button
               size="xs"
               variant="outline"
@@ -701,20 +725,34 @@ export default function ContractPaymentTabPanel({
                 Contract Value: {formatIDR(contract.workValue)}
               </Text>
               <HStack spacing={1}>
-                <Badge colorScheme={contract.contractBillingType && contract.contractBillingType !== "MILESTONE" ? "purple" : "blue"} fontSize="2xs">
+                <Badge
+                  colorScheme={
+                    contract.contractBillingType &&
+                    contract.contractBillingType !== "MILESTONE"
+                      ? "purple"
+                      : "blue"
+                  }
+                  fontSize="2xs"
+                >
                   {contract.contractBillingType || "MILESTONE"}
                 </Badge>
-                {contract.subscriptionAutoRenew && <Badge colorScheme="green" fontSize="2xs">Auto-Renew</Badge>}
+                {contract.subscriptionAutoRenew && (
+                  <Badge colorScheme="green" fontSize="2xs">
+                    Auto-Renew
+                  </Badge>
+                )}
               </HStack>
-              {contract.contractBillingType && contract.contractBillingType !== "MILESTONE" && (
-                <Text color="purple.500" fontWeight="bold" fontSize="2xs">
-                  Rate: {formatIDR(contract.subscriptionPeriodValue || 0)} / cycle
-                </Text>
-              )}
+              {contract.contractBillingType &&
+                contract.contractBillingType !== "MILESTONE" && (
+                  <Text color="purple.500" fontWeight="bold" fontSize="2xs">
+                    Rate: {formatIDR(contract.subscriptionPeriodValue || 0)} /
+                    cycle
+                  </Text>
+                )}
               <Text color="gray.500">
                 Period:{" "}
                 {new Date(contract.contractStartDate).toLocaleDateString(
-                  "en-US"
+                  "en-US",
                 )}{" "}
                 &ndash;{" "}
                 {new Date(contract.contractEndDate).toLocaleDateString("en-US")}
@@ -764,7 +802,9 @@ export default function ContractPaymentTabPanel({
               </Badge>
             </HStack>
             <Text fontSize="xs" color="gray.500">
-              Track payment milestones, update milestone payment statuses, and manage supporting verification documents (BAST, Invoice, Tax Invoice, Transfer Proof).
+              Track payment milestones, update milestone payment statuses, and
+              manage supporting verification documents (BAST, Invoice, Tax
+              Invoice, Transfer Proof).
             </Text>
           </VStack>
         </Flex>
@@ -792,316 +832,522 @@ export default function ContractPaymentTabPanel({
               </Box>
             ) : (
               <VStack spacing={0} align="stretch">
-                {contract.topList.map((top: ContractTopResponse, idx: number) => {
-                  const stepAttachments = (payment.topAttachments || []).filter(
-                    (a: ContractPaymentTopAttachmentResponse) =>
-                      a.contractTopId === top.id
-                  );
-                  const topPercentage =
-                    contract.workValue > 0
-                      ? ((top.topValues / contract.workValue) * 100).toFixed(1)
-                      : "0";
-                  const isPaid = top.topStatus?.toUpperCase() === "PAID";
-                  const isLastItem = idx === contract.topList.length - 1;
+                {contract.topList.map(
+                  (top: ContractTopResponse, idx: number) => {
+                    const stepAttachments = (
+                      payment.topAttachments || []
+                    ).filter(
+                      (a: ContractPaymentTopAttachmentResponse) =>
+                        a.contractTopId === top.id,
+                    );
+                    const topPercentage =
+                      contract.workValue > 0
+                        ? ((top.topValues / contract.workValue) * 100).toFixed(
+                            1,
+                          )
+                        : "0";
+                    const isPaid = top.topStatus?.toUpperCase() === "PAID";
+                    const isLastItem = idx === contract.topList.length - 1;
 
-                  return (
-                    <Box key={top.id} position="relative">
-                      {/* Milestone Item Content */}
-                      <Box
-                        p={4}
-                        rounded="xl"
-                        transition="all 0.2s"
-                        bg={
-                          isPaid
-                            ? colorMode === "light"
-                              ? "green.50/60"
-                              : "rgba(16, 185, 129, 0.05)"
-                            : colorMode === "light"
-                            ? "gray.50/80"
-                            : "gray.850"
-                        }
-                        border="1px"
-                        borderColor={
-                          isPaid
-                            ? colorMode === "light"
-                              ? "green.200"
-                              : "green.800"
-                            : colorMode === "light"
-                            ? "gray.200"
-                            : "gray.700"
-                        }
-                      >
-                        {/* Top Summary Bar */}
-                        <Flex
-                          justify="space-between"
-                          align={{ base: "start", md: "center" }}
-                          wrap="wrap"
-                          gap={3}
-                          mb={3}
+                    return (
+                      <Box key={top.id} position="relative">
+                        {/* Milestone Item Content */}
+                        <Box
+                          p={4}
+                          rounded="xl"
+                          transition="all 0.2s"
+                          bg={
+                            isPaid
+                              ? colorMode === "light"
+                                ? "green.50/60"
+                                : "rgba(16, 185, 129, 0.05)"
+                              : colorMode === "light"
+                                ? "gray.50/80"
+                                : "gray.850"
+                          }
+                          border="1px"
+                          borderColor={
+                            isPaid
+                              ? colorMode === "light"
+                                ? "green.200"
+                                : "green.800"
+                              : colorMode === "light"
+                                ? "gray.200"
+                                : "gray.700"
+                          }
                         >
-                          <HStack spacing={3} align="center">
-                            <Box
-                              w={8}
-                              h={8}
-                              rounded="lg"
-                              display="flex"
-                              alignItems="center"
-                              justifyContent="center"
-                              fontWeight="bold"
-                              fontSize="xs"
-                              bg={isPaid ? "green.500" : "blue.500"}
-                              color="white"
-                              flexShrink={0}
-                            >
-                              {isPaid ? <Icon as={FiCheck} boxSize={4} /> : `#${top.stepOrder}`}
-                            </Box>
-
-                            <VStack align="start" spacing={0.5}>
-                              <HStack spacing={2} wrap="wrap" align="center">
-                                <Text fontSize="md" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
-                                  {formatIDR(top.topValues)}
-                                </Text>
-                                <Badge colorScheme="teal" variant="subtle" fontSize="2xs" px={2} py={0.5} rounded="md">
-                                  {topPercentage}% of Contract
-                                </Badge>
-                                <Badge
-                                  colorScheme={getTopStatusColor(top.topStatus)}
-                                  variant="solid"
-                                  fontSize="2xs"
-                                  px={2.5}
-                                  py={0.5}
-                                  rounded="full"
-                                >
-                                  {top.topStatus || "PENDING"}
-                                </Badge>
-                                {top.billingPeriodStart && top.billingPeriodEnd && (
-                                  <Badge colorScheme="purple" fontSize="2xs" px={2} py={0.5} rounded="md">
-                                    Periode: {new Date(top.billingPeriodStart).toLocaleDateString("en-US")} &rarr; {new Date(top.billingPeriodEnd).toLocaleDateString("en-US")}
-                                  </Badge>
+                          {/* Top Summary Bar */}
+                          <Flex
+                            justify="space-between"
+                            align={{ base: "start", md: "center" }}
+                            wrap="wrap"
+                            gap={3}
+                            mb={3}
+                          >
+                            <HStack spacing={3} align="center">
+                              <Box
+                                w={8}
+                                h={8}
+                                rounded="lg"
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
+                                fontWeight="bold"
+                                fontSize="xs"
+                                bg={isPaid ? "green.500" : "blue.500"}
+                                color="white"
+                                flexShrink={0}
+                              >
+                                {isPaid ? (
+                                  <Icon as={FiCheck} boxSize={4} />
+                                ) : (
+                                  `#${top.stepOrder}`
                                 )}
-                                {top.isAutoGenerated && (
-                                  <Badge colorScheme="cyan" variant="outline" fontSize="2xs" px={1.5} py={0.2} rounded="md">
-                                    Auto
-                                  </Badge>
-                                )}
-                              </HStack>
+                              </Box>
 
-                              <HStack spacing={3} fontSize="xs" color="gray.500" wrap="wrap">
-                                <HStack spacing={1}>
-                                  <Icon as={FiCalendar} boxSize={3.5} />
-                                  <Text>
-                                    Target: {top.topDate ? new Date(top.topDate).toLocaleDateString("en-US") : "-"}
+                              <VStack align="start" spacing={0.5}>
+                                <HStack spacing={2} wrap="wrap" align="center">
+                                  <Text
+                                    fontSize="md"
+                                    fontWeight="bold"
+                                    color={
+                                      colorMode === "light"
+                                        ? "gray.800"
+                                        : "white"
+                                    }
+                                  >
+                                    {formatIDR(top.topValues)}
                                   </Text>
+                                  <Badge
+                                    colorScheme="teal"
+                                    variant="subtle"
+                                    fontSize="2xs"
+                                    px={2}
+                                    py={0.5}
+                                    rounded="md"
+                                  >
+                                    {topPercentage}% of Contract
+                                  </Badge>
+                                  <Badge
+                                    colorScheme={getTopStatusColor(
+                                      top.topStatus,
+                                    )}
+                                    variant="solid"
+                                    fontSize="2xs"
+                                    px={2.5}
+                                    py={0.5}
+                                    rounded="full"
+                                  >
+                                    {top.topStatus || "PENDING"}
+                                  </Badge>
+                                  {top.billingPeriodStart &&
+                                    top.billingPeriodEnd && (
+                                      <Badge
+                                        colorScheme="purple"
+                                        fontSize="2xs"
+                                        px={2}
+                                        py={0.5}
+                                        rounded="md"
+                                      >
+                                        Periode:{" "}
+                                        {new Date(
+                                          top.billingPeriodStart,
+                                        ).toLocaleDateString("en-US")}{" "}
+                                        &rarr;{" "}
+                                        {new Date(
+                                          top.billingPeriodEnd,
+                                        ).toLocaleDateString("en-US")}
+                                      </Badge>
+                                    )}
+                                  {top.isAutoGenerated && (
+                                    <Badge
+                                      colorScheme="cyan"
+                                      variant="outline"
+                                      fontSize="2xs"
+                                      px={1.5}
+                                      py={0.2}
+                                      rounded="md"
+                                    >
+                                      Auto
+                                    </Badge>
+                                  )}
                                 </HStack>
-                                {top.topDescriptions && (
+
+                                <HStack
+                                  spacing={3}
+                                  fontSize="xs"
+                                  color="gray.500"
+                                  wrap="wrap"
+                                >
                                   <HStack spacing={1}>
-                                    <Icon as={FiFileText} boxSize={3.5} />
-                                    <Text noOfLines={1}>
-                                      {top.topDescriptions}
+                                    <Icon as={FiCalendar} boxSize={3.5} />
+                                    <Text>
+                                      Target:{" "}
+                                      {top.topDate
+                                        ? new Date(
+                                            top.topDate,
+                                          ).toLocaleDateString("en-US")
+                                        : "-"}
                                     </Text>
                                   </HStack>
-                                )}
-                              </HStack>
-                            </VStack>
-                          </HStack>
+                                  {top.topDescriptions && (
+                                    <HStack spacing={1}>
+                                      <Icon as={FiFileText} boxSize={3.5} />
+                                      <Text noOfLines={1}>
+                                        {top.topDescriptions}
+                                      </Text>
+                                    </HStack>
+                                  )}
+                                </HStack>
+                              </VStack>
+                            </HStack>
 
-                          {/* Action Buttons */}
-                          <HStack spacing={2} flexShrink={0}>
-                            <Button
-                              size="xs"
-                              variant="outline"
-                              colorScheme="blue"
-                              rounded="lg"
-                              leftIcon={<FiEdit2 />}
-                              onClick={() => setSelectedTopForStatus(top)}
-                            >
-                              Update Status
-                            </Button>
-                            <Button
-                              size="xs"
-                              colorScheme="teal"
-                              rounded="lg"
-                              leftIcon={<FiUploadCloud />}
-                              onClick={() => setSelectedTopForUpload(top)}
-                            >
-                              Upload Document
-                            </Button>
-                          </HStack>
-                        </Flex>
-
-                        {/* Documents Section inside this TOP Milestone */}
-                        <Box
-                          mt={2}
-                          pt={3}
-                          borderTop="1px dashed"
-                          borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-                        >
-                          <Flex justify="space-between" align="center" mb={2}>
-                            <HStack spacing={2}>
-                              <Icon as={FiFileText} color="gray.400" boxSize={3.5} />
-                              <Text fontSize="2xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
-                                Verification Documents ({stepAttachments.length})
-                              </Text>
+                            {/* Action Buttons */}
+                            <HStack spacing={2} flexShrink={0}>
+                              <Button
+                                size="xs"
+                                variant="outline"
+                                colorScheme="blue"
+                                rounded="lg"
+                                leftIcon={<FiEdit2 />}
+                                onClick={() => setSelectedTopForStatus(top)}
+                              >
+                                Update Status
+                              </Button>
+                              <Button
+                                size="xs"
+                                colorScheme="teal"
+                                rounded="lg"
+                                leftIcon={<FiUploadCloud />}
+                                onClick={() => setSelectedTopForUpload(top)}
+                              >
+                                Upload Document
+                              </Button>
                             </HStack>
                           </Flex>
 
-                          {stepAttachments.length === 0 ? (
-                            <Text fontSize="2xs" color="gray.400" fontStyle="italic" py={1}>
-                              No documents uploaded for this milestone yet. Click "Upload Document" to attach BAST, Invoice, Tax Invoice, or Payment Proof.tau Bukti Bayar.
-                            </Text>
-                          ) : (
-                            <Box
-                              rounded="lg"
-                              overflowX="auto"
-                              border="1px"
-                              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-                              bg={colorMode === "light" ? "white" : "gray.900"}
-                            >
-                              <Table size="sm" variant="simple">
-                                <Thead bg={colorMode === "light" ? "gray.50" : "gray.800"}>
-                                  <Tr>
-                                    <Th fontSize="2xs" py={2}>Document Type</Th>
-                                    <Th fontSize="2xs" py={2}>Nama & Nomor Ref</Th>
-                                    <Th fontSize="2xs" py={2}>Realization (Rp)</Th>
-                                    <Th fontSize="2xs" py={2}>Tax Invoice</Th>
-                                    <Th fontSize="2xs" py={2}>Date</Th>
-                                    <Th fontSize="2xs" py={2}>Versi</Th>
-                                    <Th fontSize="2xs" py={2} textAlign="right">Aksi</Th>
-                                  </Tr>
-                                </Thead>
-                                <Tbody>
-                                  {stepAttachments.map((att: ContractPaymentTopAttachmentResponse) => (
-                                    <Tr key={att.id}>
-                                      <Td py={2}>
-                                        <Badge colorScheme="purple" fontSize="2xs" px={2} py={0.5} rounded="md">
-                                          {att.documentType}
-                                        </Badge>
-                                      </Td>
-                                      <Td py={2}>
-                                        <VStack align="start" spacing={0.5}>
-                                          <HStack spacing={1.5} align="center">
-                                            {att.mediaObject && (
-                                              <Box flexShrink={0}>
-                                                {renderFileIconSTR(
-                                                  att.mediaObject.objectExtension?.replace(".", "") || "file"
-                                                )}
-                                              </Box>
-                                            )}
-                                            <Text fontSize="xs" fontWeight="bold">
-                                              {att.documentName}
-                                            </Text>
-                                          </HStack>
-                                          <HStack spacing={1.5} flexWrap="wrap">
-                                            <Text fontSize="3xs" color="gray.500">
-                                              Ref: {att.documentNumber || "-"}
-                                            </Text>
-                                            {att.mediaObject?.objectExtension && (
-                                              <Badge colorScheme="gray" fontSize="3xs" px={1} rounded="sm">
-                                                {att.mediaObject.objectExtension.replace(".", "").toUpperCase()}
-                                              </Badge>
-                                            )}
-                                            {att.mediaObject?.objectSize && (
-                                              <Badge colorScheme="blue" fontSize="3xs" px={1} rounded="sm">
-                                                {formatKBMB(att.mediaObject.objectSize)}
-                                              </Badge>
-                                            )}
-                                          </HStack>
-                                          {att.note && (
-                                            <Text fontSize="3xs" color="gray.400">
-                                              Note: {att.note}
-                                            </Text>
-                                          )}
-                                        </VStack>
-                                      </Td>
-                                      <Td py={2} fontSize="xs" fontWeight="semibold">
-                                        {att.topRealizationAmount ? formatIDR(att.topRealizationAmount) : "-"}
-                                      </Td>
-                                      <Td py={2} fontSize="xs">
-                                        {att.taxInvoiceNumber ? (
-                                          <Badge variant="outline" colorScheme="orange" fontSize="3xs">
-                                            {att.taxInvoiceNumber}
-                                          </Badge>
-                                        ) : (
-                                          "-"
-                                        )}
-                                      </Td>
-                                      <Td py={2} fontSize="xs">
-                                        {att.documentDate ? new Date(att.documentDate).toLocaleDateString("en-US") : "-"}
-                                      </Td>
-                                      <Td py={2} fontSize="xs">
-                                        <Badge variant="outline" fontSize="3xs">
-                                          {att.documentVersion || "V.0"}
-                                        </Badge>
-                                      </Td>
-                                      <Td py={2} textAlign="right">
-                                        <HStack spacing={1} justify="flex-end">
-                                          {att.linkAttachment && (
-                                            <Tooltip label="Buka External Link" fontSize="2xs">
-                                              <a href={att.linkAttachment} target="_blank" rel="noopener noreferrer">
-                                                <IconButton
-                                                  aria-label="Open link"
-                                                  icon={<FiExternalLink />}
-                                                  size="xs"
-                                                  variant="ghost"
-                                                />
-                                              </a>
-                                            </Tooltip>
-                                          )}
-                                          {att.mediaObjectId && (
-                                            <Tooltip label="Download File (Secure OTP)" fontSize="2xs">
-                                              <IconButton
-                                                aria-label="Download attachment"
-                                                icon={<FiDownload />}
-                                                size="xs"
-                                                colorScheme="blue"
-                                                variant="ghost"
-                                                isLoading={!!downloadingIds[att.id]}
-                                                onClick={() =>
-                                                  handleSecureDownload(
-                                                    att.mediaObjectId!,
-                                                    att.documentName || att.mediaObject?.objectRawName || "document",
-                                                    att.id
-                                                  )
-                                                }
-                                              />
-                                            </Tooltip>
-                                          )}
-                                          <Tooltip label="Delete Document" fontSize="2xs">
-                                            <IconButton
-                                              aria-label="Delete attachment"
-                                              icon={<FiTrash2 />}
-                                              size="xs"
-                                              colorScheme="red"
-                                              variant="ghost"
-                                              onClick={() => handleDeleteTopAttachment(att.id)}
-                                            />
-                                          </Tooltip>
-                                        </HStack>
-                                      </Td>
-                                    </Tr>
-                                  ))}
-                                </Tbody>
-                              </Table>
-                            </Box>
-                          )}
-                        </Box>
-                      </Box>
+                          {/* Documents Section inside this TOP Milestone */}
+                          <Box
+                            mt={2}
+                            pt={3}
+                            borderTop="1px dashed"
+                            borderColor={
+                              colorMode === "light" ? "gray.200" : "gray.700"
+                            }
+                          >
+                            <Flex justify="space-between" align="center" mb={2}>
+                              <HStack spacing={2}>
+                                <Icon
+                                  as={FiFileText}
+                                  color="gray.400"
+                                  boxSize={3.5}
+                                />
+                                <Text
+                                  fontSize="2xs"
+                                  fontWeight="bold"
+                                  color="gray.500"
+                                  textTransform="uppercase"
+                                >
+                                  Verification Documents (
+                                  {stepAttachments.length})
+                                </Text>
+                              </HStack>
+                            </Flex>
 
-                      {/* Divider between items */}
-                      {!isLastItem && (
-                        <Divider my={4} borderColor={colorMode === "light" ? "gray.200" : "gray.700"} />
-                      )}
-                    </Box>
-                  );
-                })}
+                            {stepAttachments.length === 0 ? (
+                              <Text
+                                fontSize="2xs"
+                                color="gray.400"
+                                fontStyle="italic"
+                                py={1}
+                              >
+                                No documents uploaded for this milestone yet.
+                                Click "Upload Document" to attach BAST, Invoice,
+                                Tax Invoice, or Payment Proof.tau Bukti Bayar.
+                              </Text>
+                            ) : (
+                              <Box
+                                rounded="lg"
+                                overflowX="auto"
+                                border="1px"
+                                borderColor={
+                                  colorMode === "light"
+                                    ? "gray.200"
+                                    : "gray.700"
+                                }
+                                bg={
+                                  colorMode === "light" ? "white" : "gray.900"
+                                }
+                              >
+                                <Table size="sm" variant="simple">
+                                  <Thead
+                                    bg={
+                                      colorMode === "light"
+                                        ? "gray.50"
+                                        : "gray.800"
+                                    }
+                                  >
+                                    <Tr>
+                                      <Th fontSize="2xs" py={2}>
+                                        Document Type
+                                      </Th>
+                                      <Th fontSize="2xs" py={2}>
+                                        Nama & Nomor Ref
+                                      </Th>
+                                      <Th fontSize="2xs" py={2}>
+                                        Realization (Rp)
+                                      </Th>
+                                      <Th fontSize="2xs" py={2}>
+                                        Tax Invoice
+                                      </Th>
+                                      <Th fontSize="2xs" py={2}>
+                                        Date
+                                      </Th>
+                                      <Th fontSize="2xs" py={2}>
+                                        Versi
+                                      </Th>
+                                      <Th
+                                        fontSize="2xs"
+                                        py={2}
+                                        textAlign="right"
+                                      >
+                                        Aksi
+                                      </Th>
+                                    </Tr>
+                                  </Thead>
+                                  <Tbody>
+                                    {stepAttachments.map(
+                                      (
+                                        att: ContractPaymentTopAttachmentResponse,
+                                      ) => (
+                                        <Tr key={att.id}>
+                                          <Td py={2}>
+                                            <Badge
+                                              colorScheme="purple"
+                                              fontSize="2xs"
+                                              px={2}
+                                              py={0.5}
+                                              rounded="md"
+                                            >
+                                              {att.documentType}
+                                            </Badge>
+                                          </Td>
+                                          <Td py={2}>
+                                            <VStack align="start" spacing={0.5}>
+                                              <HStack
+                                                spacing={1.5}
+                                                align="center"
+                                              >
+                                                {att.mediaObject && (
+                                                  <Box flexShrink={0}>
+                                                    {renderFileIconSTR(
+                                                      att.mediaObject.objectExtension?.replace(
+                                                        ".",
+                                                        "",
+                                                      ) || "file",
+                                                    )}
+                                                  </Box>
+                                                )}
+                                                <Text
+                                                  fontSize="xs"
+                                                  fontWeight="bold"
+                                                >
+                                                  {att.documentName}
+                                                </Text>
+                                              </HStack>
+                                              <HStack
+                                                spacing={1.5}
+                                                flexWrap="wrap"
+                                              >
+                                                <Text
+                                                  fontSize="3xs"
+                                                  color="gray.500"
+                                                >
+                                                  Ref:{" "}
+                                                  {att.documentNumber || "-"}
+                                                </Text>
+                                                {att.mediaObject
+                                                  ?.objectExtension && (
+                                                  <Badge
+                                                    colorScheme="gray"
+                                                    fontSize="3xs"
+                                                    px={1}
+                                                    rounded="sm"
+                                                  >
+                                                    {att.mediaObject.objectExtension
+                                                      .replace(".", "")
+                                                      .toUpperCase()}
+                                                  </Badge>
+                                                )}
+                                                {att.mediaObject
+                                                  ?.objectSize && (
+                                                  <Badge
+                                                    colorScheme="blue"
+                                                    fontSize="3xs"
+                                                    px={1}
+                                                    rounded="sm"
+                                                  >
+                                                    {formatKBMB(
+                                                      att.mediaObject
+                                                        .objectSize,
+                                                    )}
+                                                  </Badge>
+                                                )}
+                                              </HStack>
+                                              {att.note && (
+                                                <Text
+                                                  fontSize="3xs"
+                                                  color="gray.400"
+                                                >
+                                                  Note: {att.note}
+                                                </Text>
+                                              )}
+                                            </VStack>
+                                          </Td>
+                                          <Td
+                                            py={2}
+                                            fontSize="xs"
+                                            fontWeight="semibold"
+                                          >
+                                            {att.topRealizationAmount
+                                              ? formatIDR(
+                                                  att.topRealizationAmount,
+                                                )
+                                              : "-"}
+                                          </Td>
+                                          <Td py={2} fontSize="xs">
+                                            {att.taxInvoiceNumber ? (
+                                              <Badge
+                                                variant="outline"
+                                                colorScheme="orange"
+                                                fontSize="3xs"
+                                              >
+                                                {att.taxInvoiceNumber}
+                                              </Badge>
+                                            ) : (
+                                              "-"
+                                            )}
+                                          </Td>
+                                          <Td py={2} fontSize="xs">
+                                            {att.documentDate
+                                              ? new Date(
+                                                  att.documentDate,
+                                                ).toLocaleDateString("en-US")
+                                              : "-"}
+                                          </Td>
+                                          <Td py={2} fontSize="xs">
+                                            <Badge
+                                              variant="outline"
+                                              fontSize="3xs"
+                                            >
+                                              {att.documentVersion || "V.0"}
+                                            </Badge>
+                                          </Td>
+                                          <Td py={2} textAlign="right">
+                                            <HStack
+                                              spacing={1}
+                                              justify="flex-end"
+                                            >
+                                              {att.linkAttachment && (
+                                                <Tooltip
+                                                  label="Buka External Link"
+                                                  fontSize="2xs"
+                                                >
+                                                  <a
+                                                    href={att.linkAttachment}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                  >
+                                                    <IconButton
+                                                      aria-label="Open link"
+                                                      icon={<FiExternalLink />}
+                                                      size="xs"
+                                                      variant="ghost"
+                                                    />
+                                                  </a>
+                                                </Tooltip>
+                                              )}
+                                              {att.mediaObjectId && (
+                                                <Tooltip
+                                                  label="Download File (Secure OTP)"
+                                                  fontSize="2xs"
+                                                >
+                                                  <IconButton
+                                                    aria-label="Download attachment"
+                                                    icon={<FiDownload />}
+                                                    size="xs"
+                                                    colorScheme="blue"
+                                                    variant="ghost"
+                                                    isLoading={
+                                                      !!downloadingIds[att.id]
+                                                    }
+                                                    onClick={() =>
+                                                      handleSecureDownload(
+                                                        att.mediaObjectId!,
+                                                        att.documentName ||
+                                                          att.mediaObject
+                                                            ?.objectRawName ||
+                                                          "document",
+                                                        att.id,
+                                                      )
+                                                    }
+                                                  />
+                                                </Tooltip>
+                                              )}
+                                              <Tooltip
+                                                label="Delete Document"
+                                                fontSize="2xs"
+                                              >
+                                                <IconButton
+                                                  aria-label="Delete attachment"
+                                                  icon={<FiTrash2 />}
+                                                  size="xs"
+                                                  colorScheme="red"
+                                                  variant="ghost"
+                                                  onClick={() =>
+                                                    handleDeleteTopAttachment(
+                                                      att.id,
+                                                    )
+                                                  }
+                                                />
+                                              </Tooltip>
+                                            </HStack>
+                                          </Td>
+                                        </Tr>
+                                      ),
+                                    )}
+                                  </Tbody>
+                                </Table>
+                              </Box>
+                            )}
+                          </Box>
+                        </Box>
+
+                        {/* Divider between items */}
+                        {!isLastItem && (
+                          <Divider
+                            my={4}
+                            borderColor={
+                              colorMode === "light" ? "gray.200" : "gray.700"
+                            }
+                          />
+                        )}
+                      </Box>
+                    );
+                  },
+                )}
               </VStack>
             )}
           </Box>
 
           {/* RIGHT 30%: Additional Info & Summary Widgets */}
           <Box flex={{ base: "1", lg: "3" }} w={{ base: "100%", lg: "30%" }}>
-            <VStack spacing={4} align="stretch" position={{ lg: "sticky" }} top="20px">
-              
+            <VStack
+              spacing={4}
+              align="stretch"
+              position={{ lg: "sticky" }}
+              top="20px"
+            >
               {/* Widget 1: TOP Financial & Realization Progress */}
               <Box
                 p={4}
@@ -1112,15 +1358,26 @@ export default function ContractPaymentTabPanel({
               >
                 <HStack spacing={2} mb={3} color="purple.500">
                   <Icon as={FiPieChart} boxSize={4} />
-                  <Text fontSize="xs" fontWeight="bold" textTransform="uppercase">
+                  <Text
+                    fontSize="xs"
+                    fontWeight="bold"
+                    textTransform="uppercase"
+                  >
                     TOP Realization Summary
                   </Text>
                 </HStack>
 
                 <VStack spacing={3} align="stretch">
                   <Box>
-                    <Flex justify="space-between" align="center" mb={1} fontSize="xs">
-                      <Text color="gray.500">Disbursed ({paidTopCount}/{totalTopCount} Milestones)</Text>
+                    <Flex
+                      justify="space-between"
+                      align="center"
+                      mb={1}
+                      fontSize="xs"
+                    >
+                      <Text color="gray.500">
+                        Disbursed ({paidTopCount}/{totalTopCount} Milestones)
+                      </Text>
                       <Text fontWeight="bold" color="teal.500">
                         {topPaidPercentage.toFixed(1)}%
                       </Text>
@@ -1134,7 +1391,11 @@ export default function ContractPaymentTabPanel({
                     />
                   </Box>
 
-                  <Divider borderColor={colorMode === "light" ? "gray.200" : "gray.700"} />
+                  <Divider
+                    borderColor={
+                      colorMode === "light" ? "gray.200" : "gray.700"
+                    }
+                  />
 
                   <VStack spacing={2} align="stretch" fontSize="xs">
                     <Flex justify="space-between">
@@ -1168,19 +1429,36 @@ export default function ContractPaymentTabPanel({
                   rounded="xl"
                   border="1px"
                   borderColor={colorMode === "light" ? "blue.200" : "blue.800"}
-                  bg={colorMode === "light" ? "blue.50/50" : "rgba(59, 130, 246, 0.05)"}
+                  bg={
+                    colorMode === "light"
+                      ? "blue.50/50"
+                      : "rgba(59, 130, 246, 0.05)"
+                  }
                 >
                   <HStack spacing={2} mb={2} color="blue.500">
                     <Icon as={FiClock} boxSize={4} />
-                    <Text fontSize="xs" fontWeight="bold" textTransform="uppercase">
+                    <Text
+                      fontSize="xs"
+                      fontWeight="bold"
+                      textTransform="uppercase"
+                    >
                       Next Pending Milestone
                     </Text>
                   </HStack>
 
                   <VStack align="start" spacing={1.5} fontSize="xs">
                     <HStack justify="space-between" w="100%">
-                      <Text fontWeight="bold">Milestone #{nextUpcomingTop.stepOrder}</Text>
-                      <Badge colorScheme={getTopStatusColor(nextUpcomingTop.topStatus)} fontSize="3xs" px={2} rounded="full">
+                      <Text fontWeight="bold">
+                        Milestone #{nextUpcomingTop.stepOrder}
+                      </Text>
+                      <Badge
+                        colorScheme={getTopStatusColor(
+                          nextUpcomingTop.topStatus,
+                        )}
+                        fontSize="3xs"
+                        px={2}
+                        rounded="full"
+                      >
                         {nextUpcomingTop.topStatus || "PENDING"}
                       </Badge>
                     </HStack>
@@ -1192,7 +1470,12 @@ export default function ContractPaymentTabPanel({
                     <HStack spacing={1} color="gray.500" fontSize="2xs">
                       <Icon as={FiCalendar} boxSize={3} />
                       <Text>
-                        Target: {nextUpcomingTop.topDate ? new Date(nextUpcomingTop.topDate).toLocaleDateString("en-US") : "Not set"}
+                        Target:{" "}
+                        {nextUpcomingTop.topDate
+                          ? new Date(
+                              nextUpcomingTop.topDate,
+                            ).toLocaleDateString("en-US")
+                          : "Not set"}
                       </Text>
                     </HStack>
 
@@ -1216,7 +1499,11 @@ export default function ContractPaymentTabPanel({
                   rounded="xl"
                   border="1px"
                   borderColor="green.200"
-                  bg={colorMode === "light" ? "green.50/50" : "rgba(16, 185, 129, 0.05)"}
+                  bg={
+                    colorMode === "light"
+                      ? "green.50/50"
+                      : "rgba(16, 185, 129, 0.05)"
+                  }
                 >
                   <HStack spacing={2} color="green.500">
                     <Icon as={FiCheckCircle} boxSize={4} />
@@ -1240,7 +1527,11 @@ export default function ContractPaymentTabPanel({
               >
                 <HStack spacing={2} mb={2.5} color="teal.500">
                   <Icon as={FiShield} boxSize={4} />
-                  <Text fontSize="xs" fontWeight="bold" textTransform="uppercase">
+                  <Text
+                    fontSize="xs"
+                    fontWeight="bold"
+                    textTransform="uppercase"
+                  >
                     Document Compliance
                   </Text>
                 </HStack>
@@ -1260,7 +1551,9 @@ export default function ContractPaymentTabPanel({
 
                   <Flex justify="space-between">
                     <Text color="gray.500">Invoice / Tagihan:</Text>
-                    <Text fontWeight="semibold">{invoiceDocCount} Documents</Text>
+                    <Text fontWeight="semibold">
+                      {invoiceDocCount} Documents
+                    </Text>
                   </Flex>
 
                   <Flex justify="space-between">
@@ -1268,11 +1561,19 @@ export default function ContractPaymentTabPanel({
                     <Text fontWeight="semibold">{taxDocCount} Documents</Text>
                   </Flex>
 
-                  <Divider borderColor={colorMode === "light" ? "gray.200" : "gray.700"} my={1} />
+                  <Divider
+                    borderColor={
+                      colorMode === "light" ? "gray.200" : "gray.700"
+                    }
+                    my={1}
+                  />
 
                   <HStack spacing={1.5} color="gray.400" fontSize="3xs">
                     <Icon as={FiInfo} boxSize={3} />
-                    <Text>File downloads are protected with OTP Secure Password sent to your email.</Text>
+                    <Text>
+                      File downloads are protected with OTP Secure Password sent
+                      to your email.
+                    </Text>
                   </HStack>
                 </VStack>
               </Box>
@@ -1288,7 +1589,11 @@ export default function ContractPaymentTabPanel({
                 >
                   <HStack spacing={2} mb={2} color="blue.500">
                     <Icon as={FiTag} boxSize={4} />
-                    <Text fontSize="xs" fontWeight="bold" textTransform="uppercase">
+                    <Text
+                      fontSize="xs"
+                      fontWeight="bold"
+                      textTransform="uppercase"
+                    >
                       Billing Cadence
                     </Text>
                   </HStack>
@@ -1296,28 +1601,37 @@ export default function ContractPaymentTabPanel({
                   <VStack spacing={1.5} align="stretch" fontSize="xs">
                     <Flex justify="space-between" align="center">
                       <Text color="gray.500">Model Skema:</Text>
-                      <Badge colorScheme={contract.contractBillingType !== "MILESTONE" ? "purple" : "blue"} fontSize="2xs">
+                      <Badge
+                        colorScheme={
+                          contract.contractBillingType !== "MILESTONE"
+                            ? "purple"
+                            : "blue"
+                        }
+                        fontSize="2xs"
+                      >
                         {contract.contractBillingType}
                       </Badge>
                     </Flex>
-                    {contract.subscriptionPeriodValue && contract.subscriptionPeriodValue > 0 && (
-                      <Flex justify="space-between">
-                        <Text color="gray.500">Rate Siklus:</Text>
-                        <Text fontWeight="bold" color="purple.500">
-                          {formatIDR(contract.subscriptionPeriodValue)}
-                        </Text>
-                      </Flex>
-                    )}
+                    {contract.subscriptionPeriodValue &&
+                      contract.subscriptionPeriodValue > 0 && (
+                        <Flex justify="space-between">
+                          <Text color="gray.500">Rate Siklus:</Text>
+                          <Text fontWeight="bold" color="purple.500">
+                            {formatIDR(contract.subscriptionPeriodValue)}
+                          </Text>
+                        </Flex>
+                      )}
                     {contract.subscriptionAutoRenew && (
                       <Flex justify="space-between">
                         <Text color="gray.500">Perpanjangan:</Text>
-                        <Badge colorScheme="green" fontSize="3xs">Auto-Renew</Badge>
+                        <Badge colorScheme="green" fontSize="3xs">
+                          Auto-Renew
+                        </Badge>
                       </Flex>
                     )}
                   </VStack>
                 </Box>
               )}
-
             </VStack>
           </Box>
         </Flex>
@@ -1332,13 +1646,7 @@ export default function ContractPaymentTabPanel({
         bg={colorMode === "light" ? "white" : "gray.800"}
         shadow="sm"
       >
-        <Flex
-          justify="space-between"
-          align="center"
-          mb={4}
-          wrap="wrap"
-          gap={2}
-        >
+        <Flex justify="space-between" align="center" mb={4} wrap="wrap" gap={2}>
           <VStack align="start" spacing={0.5}>
             <HStack spacing={2}>
               <Icon as={FiLayers} color="blue.500" />
@@ -1460,13 +1768,7 @@ export default function ContractPaymentTabPanel({
         bg={colorMode === "light" ? "white" : "gray.800"}
         shadow="sm"
       >
-        <Flex
-          justify="space-between"
-          align="center"
-          mb={4}
-          wrap="wrap"
-          gap={2}
-        >
+        <Flex justify="space-between" align="center" mb={4} wrap="wrap" gap={2}>
           <VStack align="start" spacing={0.5}>
             <HStack spacing={2}>
               <Icon as={FiFileText} color="teal.500" />
@@ -1556,7 +1858,10 @@ export default function ContractPaymentTabPanel({
                             {att.mediaObject && (
                               <Box flexShrink={0}>
                                 {renderFileIconSTR(
-                                  att.mediaObject.objectExtension?.replace(".", "") || "file"
+                                  att.mediaObject.objectExtension?.replace(
+                                    ".",
+                                    "",
+                                  ) || "file",
                                 )}
                               </Box>
                             )}
@@ -1569,12 +1874,24 @@ export default function ContractPaymentTabPanel({
                               Ref: {att.documentNumber}
                             </Text>
                             {att.mediaObject?.objectExtension && (
-                              <Badge colorScheme="gray" fontSize="3xs" px={1} rounded="sm">
-                                {att.mediaObject.objectExtension.replace(".", "").toUpperCase()}
+                              <Badge
+                                colorScheme="gray"
+                                fontSize="3xs"
+                                px={1}
+                                rounded="sm"
+                              >
+                                {att.mediaObject.objectExtension
+                                  .replace(".", "")
+                                  .toUpperCase()}
                               </Badge>
                             )}
                             {att.mediaObject?.objectSize && (
-                              <Badge colorScheme="blue" fontSize="3xs" px={1} rounded="sm">
+                              <Badge
+                                colorScheme="blue"
+                                fontSize="3xs"
+                                px={1}
+                                rounded="sm"
+                              >
                                 {formatKBMB(att.mediaObject.objectSize)}
                               </Badge>
                             )}
@@ -1584,7 +1901,7 @@ export default function ContractPaymentTabPanel({
                       <Td fontSize="xs">
                         {att.documentDate
                           ? new Date(att.documentDate).toLocaleDateString(
-                              "en-US"
+                              "en-US",
                             )
                           : "-"}
                       </Td>
@@ -1596,17 +1913,14 @@ export default function ContractPaymentTabPanel({
                       <Td fontSize="2xs" color="gray.500">
                         {att.mediaObject?.objectSize
                           ? `${(att.mediaObject.objectSize / 1024).toFixed(
-                              1
+                              1,
                             )} KB`
                           : "-"}
                       </Td>
                       <Td textAlign="right">
                         <HStack spacing={1} justify="flex-end">
                           {att.linkAttachment && (
-                            <Tooltip
-                              label="Open External Link"
-                              fontSize="2xs"
-                            >
+                            <Tooltip label="Open External Link" fontSize="2xs">
                               <a
                                 href={att.linkAttachment}
                                 target="_blank"
@@ -1622,7 +1936,10 @@ export default function ContractPaymentTabPanel({
                             </Tooltip>
                           )}
                           {att.mediaObjectId && (
-                            <Tooltip label="Download File (Secure OTP)" fontSize="2xs">
+                            <Tooltip
+                              label="Download File (Secure OTP)"
+                              fontSize="2xs"
+                            >
                               <IconButton
                                 aria-label="Download attachment"
                                 icon={<FiDownload />}
@@ -1636,7 +1953,7 @@ export default function ContractPaymentTabPanel({
                                     att.documentName ||
                                       att.mediaObject?.objectRawName ||
                                       "document",
-                                    att.id
+                                    att.id,
                                   )
                                 }
                               />
@@ -1655,7 +1972,7 @@ export default function ContractPaymentTabPanel({
                         </HStack>
                       </Td>
                     </Tr>
-                  )
+                  ),
                 )}
               </Tbody>
             </Table>

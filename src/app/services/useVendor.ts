@@ -97,6 +97,8 @@ export interface VendorMediaResponse {
   objectData: string;
   objectExtension?: string | null;
   objectSize?: number | null;
+  fileUrl?: string | null;
+  createdBy?: string | null;
   createdAt: string;
 }
 
@@ -735,6 +737,18 @@ interface useVendorServices {
     id: string,
     token: string
   ) => Promise<ApiGenericResponse<VendorContractResponse | null> | null>;
+  UploadContractAttachment: (
+    formData: FormData,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  DeleteContractAttachment: (
+    relId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  GetContractAttachments: (
+    contractId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<VendorMediaResponse[] | null> | null>;
   ListPayment: (
     payload: PaggingListPayload,
     token: string
@@ -1152,6 +1166,87 @@ const useVendor = (): useVendorServices => {
     try {
       const response = await axiosInstance.get<ApiGenericResponse<VendorContractResponse>>(
         `${UrlEndpoint}/v1/Vendor/contract/detail/${id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || "An error occurred.");
+        return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: err.response?.data?.message || "Error", error: null };
+      }
+      setError("An unknown error occurred.");
+      return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error", error: null };
+    }
+  };
+
+  const UploadContractAttachment = async (
+    formData: FormData,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    try {
+      const response = await axiosInstance.post<ApiGenericResponse<string>>(
+        `${UrlEndpoint}/v1/Vendor/contract/attachment/upload`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || "An error occurred.");
+        return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: err.response?.data?.message || "Error", error: null };
+      }
+      setError("An unknown error occurred.");
+      return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error", error: null };
+    }
+  };
+
+  const DeleteContractAttachment = async (
+    relId: string,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    try {
+      const response = await axiosInstance.delete<ApiGenericResponse<string>>(
+        `${UrlEndpoint}/v1/Vendor/contract/attachment/delete/${relId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || "An error occurred.");
+        return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: err.response?.data?.message || "Error", error: null };
+      }
+      setError("An unknown error occurred.");
+      return { statusCode: RES_CODE_SERVER_ERROR, data: null, message: "Error", error: null };
+    }
+  };
+
+  const GetContractAttachments = async (
+    contractId: string,
+    token: string
+  ): Promise<ApiGenericResponse<VendorMediaResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    try {
+      const response = await axiosInstance.get<ApiGenericResponse<VendorMediaResponse[]>>(
+        `${UrlEndpoint}/v1/Vendor/contract/attachment/list/${contractId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setIsLoading(false);
@@ -1594,6 +1689,9 @@ const useVendor = (): useVendorServices => {
     ListContract,
     InsertContract,
     GetContractDetail,
+    UploadContractAttachment,
+    DeleteContractAttachment,
+    GetContractAttachments,
     ListPayment,
     GetPaymentDetail,
     GetPaymentByContractId,
