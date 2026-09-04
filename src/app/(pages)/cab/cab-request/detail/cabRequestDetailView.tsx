@@ -21,7 +21,15 @@ import {
   HStack,
   Icon,
   IconButton,
+  Image,
   Input,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
   Progress,
   Radio,
   RadioGroup,
@@ -46,6 +54,7 @@ import {
 } from "@chakra-ui/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useDropzone } from "react-dropzone";
 import {
   FiAlertCircle,
   FiAlertTriangle,
@@ -56,8 +65,11 @@ import {
   FiCheckCircle,
   FiCheckSquare,
   FiClock,
+  FiDownload,
   FiEdit2,
+  FiEye,
   FiFileText,
+  FiImage,
   FiInfo,
   FiLayers,
   FiList,
@@ -68,6 +80,7 @@ import {
   FiSend,
   FiShield,
   FiTrash2,
+  FiUploadCloud,
   FiUser,
   FiUsers,
   FiX,
@@ -92,7 +105,7 @@ import useRequirements, { RequirementsResponse } from "@/app/services/useRequire
 import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
 import { MAX_SIZE_TABLE, RES_CODE_OK } from "@/app/constants/applicationConstants";
 import { PaggingListPayload } from "@/app/types/masterTypes";
-import { CabCommitteeMember, CabPicInternalIT, CabRequestDetail, CabSoftwareApplicationItem } from "@/app/types/cabTypes";
+import { BuktiImplementasiItem, CabCommitteeMember, CabPicInternalIT, CabRequestDetail, CabSoftwareApplicationItem } from "@/app/types/cabTypes";
 import { getDynamicCabActivities } from "@/app/json/cabRequestMock";
 import PicMigrasiField from "../create/components/PicMigrasiField";
 import CommitteeCabField from "../create/components/CommitteeCabField";
@@ -110,8 +123,7 @@ export const CAB_LIFECYCLE_STAGES = [
   { stage: 1, key: "PENGAJUAN", label: "Pengajuan", role: "Maker", desc: "Pengajuan Permohonan" },
   { stage: 2, key: "PELAKSANAAN", label: "Pelaksanaan", role: "Scheduler & Tim", desc: "Pelaksanaan Sidang CAB" },
   { stage: 3, key: "IMPLEMENTASI", label: "Implementasi", role: "Scheduler", desc: "Evaluasi & Checklist Implementasi" },
-  { stage: 4, key: "SEND TO APPROVAL", label: "Send to Approval", role: "Scheduler", desc: "Menunggu Persetujuan" },
-  { stage: 5, key: "COMPLETED", label: "Completed", role: "Approver", desc: "Keputusan Final" },
+  { stage: 4, key: "COMPLETED", label: "Completed", role: "Selesai", desc: "Implementasi Selesai" },
 ];
 
 export const getStageIndex = (status?: string): number => {
@@ -119,6 +131,7 @@ export const getStageIndex = (status?: string): number => {
   switch (s) {
     case "PENGAJUAN":
     case "REQUEST":
+    case "DRAFT":
       return 1;
     case "PELAKSANAAN":
     case "CONFIRM":
@@ -135,12 +148,11 @@ export const getStageIndex = (status?: string): number => {
     case "WAITING APPROVE":
     case "PENDING_APPROVAL":
     case "IN_REVIEW":
-      return 4;
     case "COMPLETED":
     case "APPROVED":
     case "REJECTED":
     case "CANCELED":
-      return 5;
+      return 4;
     default:
       return 1;
   }
@@ -161,16 +173,9 @@ export const getStep2Title = (status?: string): string => {
     case "IMPLEMENTASI":
     case "IMPLEMENT":
       return "Evaluasi & Checklist Implementasi";
-    case "SEND TO APPROVAL":
-    case "SEND_TO_APPROVAL":
-    case "WAITING APPROVAL":
-    case "WAITING APPROVE":
-    case "PENDING_APPROVAL":
-    case "IN_REVIEW":
-      return "Keputusan Persetujuan";
     case "COMPLETED":
     case "APPROVED":
-      return "Hasil Persetujuan";
+      return "Hasil Selesai";
     case "REJECTED":
       return "Hasil Penolakan";
     default:
@@ -192,19 +197,12 @@ export const getStep2Desc = (status?: string): string => {
       return "Pencatatan kesepakatan & komitmen pelaksanaan migrasi bersama tim";
     case "IMPLEMENTASI":
     case "IMPLEMENT":
-      return "Evaluasi hasil sidang CAB, verifikasi checklist & pengiriman ke Approver";
-    case "SEND TO APPROVAL":
-    case "SEND_TO_APPROVAL":
-    case "WAITING APPROVAL":
-    case "WAITING APPROVE":
-    case "PENDING_APPROVAL":
-    case "IN_REVIEW":
-      return "Tinjauan berkas & keputusan resmi Approver";
+      return "Evaluasi hasil sidang CAB, verifikasi checklist & penyelesaian implementasi";
     case "COMPLETED":
     case "APPROVED":
-      return "Permohonan CAB telah resmi disetujui & selesai";
+      return "Permohonan CAB telah resmi diselesaikan & terarsip";
     case "REJECTED":
-      return "Permohonan CAB telah ditolak oleh Approver";
+      return "Permohonan CAB telah ditolak";
     default:
       return "Detail dan eksekusi tindakan tahapan CAB";
   }
@@ -229,6 +227,7 @@ const CabRequestDetailView = () => {
     UpdateCabRequest,
     UpdateCabResult,
     SendToApproval,
+    CompleteCabRequest,
     ActionCabRequest,
     ConfirmCabMeeting,
     SetCabImplementStatus,
@@ -457,7 +456,7 @@ const CabRequestDetailView = () => {
     rfcKodeProject: "",
     itspKode: "",
     aplikasiKategori: "",
-    jenisCab: "WEEKLY",
+    jenisCab: "NORMAL",
     jenisCabEmergencyAlasan: "",
     description: "",
     impactAnalysis: "",
@@ -518,6 +517,93 @@ const CabRequestDetailView = () => {
     implementationStatus: "",
   });
 
+  // Bukti Implementasi (Images Only, Multiple, Drag & Drop)
+  const [buktiFiles, setBuktiFiles] = useState<BuktiImplementasiItem[]>([]);
+
+  // Image Lightbox / Full-size Preview Modal
+  const [previewModalData, setPreviewModalData] = useState<{
+    isOpen: boolean;
+    url: string;
+    name: string;
+    size?: number;
+  }>({
+    isOpen: false,
+    url: "",
+    name: "",
+    size: 0,
+  });
+
+  const handleOpenImagePreview = (item: BuktiImplementasiItem) => {
+    setPreviewModalData({
+      isOpen: true,
+      url: item.url,
+      name: item.name,
+      size: item.size,
+    });
+  };
+
+  const handleCloseImagePreview = () => {
+    setPreviewModalData((prev) => ({ ...prev, isOpen: false }));
+  };
+
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return "";
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  };
+
+  const handleRemoveBuktiFile = (idToRemove: string) => {
+    setBuktiFiles((prev) => prev.filter((item) => item.id !== idToRemove));
+  };
+
+  // Dropzone setup for Bukti Implementasi
+  const {
+    getRootProps: getBuktiRootProps,
+    getInputProps: getBuktiInputProps,
+    isDragActive: isBuktiDragActive,
+  } = useDropzone({
+    accept: {
+      "image/png": [".png"],
+      "image/jpeg": [".jpg", ".jpeg"],
+      "image/webp": [".webp"],
+    },
+    maxSize: 10 * 1024 * 1024, // 10MB limit per image
+    multiple: true,
+    onDrop: (acceptedFiles) => {
+      if (acceptedFiles.length > 0) {
+        const newItems: BuktiImplementasiItem[] = acceptedFiles.map((file) => ({
+          id: `bukti-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          name: file.name,
+          size: file.size,
+          url: URL.createObjectURL(file),
+          type: file.type,
+          uploadedAt: new Date().toISOString(),
+        }));
+        setBuktiFiles((prev) => [...prev, ...newItems]);
+        showToast({
+          description: `${acceptedFiles.length} berkas bukti implementasi berhasil ditambahkan.`,
+          statusToast: "success",
+        });
+      }
+    },
+    onDropRejected: (fileRejections) => {
+      fileRejections.forEach((rejection) => {
+        if (rejection.errors[0]?.code === "file-too-large") {
+          showToast({
+            description: `Berkas ${rejection.file.name} melebihi batas ukuran 10MB.`,
+            statusToast: "error",
+          });
+        } else if (rejection.errors[0]?.code === "file-invalid-type") {
+          showToast({
+            description: `Berkas ${rejection.file.name} bukan format gambar yang didukung (Hanya PNG, JPG, JPEG, WEBP).`,
+            statusToast: "error",
+          });
+        }
+      });
+    },
+  });
+
   // Approval
   const [approvalNote, setApprovalNote] = useState("");
 
@@ -546,15 +632,15 @@ const CabRequestDetailView = () => {
         ? d.applications
         : (d.applicationName || d.projectName)
           ? [
-              {
-                id: "app-main-0",
-                applicationId: d.applicationId || "app-001",
-                applicationName: d.applicationName || d.projectName || "",
-                aplikasiKategori: d.aplikasiKategori || "Transaksional",
-                rfcKodeProject: d.rfcKodeProject || "RFC-2026-088",
-                itspKode: d.itspKode || "ITSP-BJB-990",
-              },
-            ]
+            {
+              id: "app-main-0",
+              applicationId: d.applicationId || "app-001",
+              applicationName: d.applicationName || d.projectName || "",
+              aplikasiKategori: d.aplikasiKategori || "Transaksional",
+              rfcKodeProject: d.rfcKodeProject || "RFC-2026-088",
+              itspKode: d.itspKode || "ITSP-BJB-990",
+            },
+          ]
           : [];
 
     return {
@@ -568,7 +654,7 @@ const CabRequestDetailView = () => {
       rfcKodeProject: d.rfcKodeProject || rawApps[0]?.rfcKodeProject || "RFC-2026-088",
       itspKode: d.itspKode || rawApps[0]?.itspKode || "ITSP-BJB-990",
       aplikasiKategori: d.aplikasiKategori || rawApps[0]?.aplikasiKategori || "Transaksional",
-      jenisCab: d.jenisCab || "WEEKLY",
+      jenisCab: d.jenisCab === "WEEKLY" ? "NORMAL" : (d.jenisCab || "NORMAL"),
       jenisCabEmergencyAlasan: d.jenisCabEmergencyAlasan || "",
       description: d.description || "",
       impactAnalysis: d.impactAnalysis || "",
@@ -617,6 +703,7 @@ const CabRequestDetailView = () => {
       setData(res.data);
       // Pre-fill result form if data exists
       if (res.data.cabResult) setResultForm({ cabResult: res.data.cabResult, cabNotes: res.data.cabNotes || "", implementationStatus: res.data.implementationStatus || "" });
+      if (res.data.buktiImplementasi) setBuktiFiles(res.data.buktiImplementasi);
       if (res.data.scheduledDate) {
         setScheduleForm({ scheduledDate: res.data.scheduledDate.slice(0, 16), scheduledEndDate: res.data.scheduledEndDate?.slice(0, 16) || "", cabLocation: res.data.cabLocation || "" });
       } else if (res.data.requestedCabDate) {
@@ -956,6 +1043,7 @@ const CabRequestDetailView = () => {
         cabResult: resultForm.cabResult,
         cabNotes: resultForm.cabNotes,
         implementationStatus: (resultForm.implementationStatus || "SUCCESS") as "SUCCESS" | "FAILED" | "PARTIAL",
+        buktiImplementasi: buktiFiles,
       });
     }
     const success = await SetCabImplementStatus(tokenData, requestId);
@@ -977,28 +1065,29 @@ const CabRequestDetailView = () => {
       cabResult: resultForm.cabResult,
       cabNotes: resultForm.cabNotes,
       implementationStatus: resultForm.implementationStatus as "SUCCESS" | "FAILED" | "PARTIAL",
+      buktiImplementasi: buktiFiles,
     });
-    if (success) showToast({ description: "Hasil CAB berhasil disimpan", statusToast: "success" });
+    if (success) showToast({ description: "Hasil CAB dan bukti implementasi berhasil disimpan", statusToast: "success" });
   };
 
   const handleSendToApproval = async () => {
     if (Data?.status !== "IMPLEMENTASI" && Data?.status !== "IMPLEMENT") {
       showToast({
-        description: "Status permohonan harus Implementasi sebelum mengirim request ini ke Approver.",
+        description: "Status permohonan harus Implementasi sebelum menyelesaikan permohonan ini.",
         statusToast: "warning",
       });
       return;
     }
     if (!resultForm.cabResult || !resultForm.implementationStatus) {
       showToast({
-        description: "Hasil Evaluasi dan Status Implementasi wajib diisi sebelum mengirim ke Approver.",
+        description: "Hasil Evaluasi dan Status Implementasi wajib diisi sebelum menyelesaikan permohonan.",
         statusToast: "warning",
       });
       return;
     }
     if (!allActivitiesDone) {
       showToast({
-        description: `Harap selesaikan seluruh aktivitas checklist CAB (${completedActivitiesCount}/${totalActivitiesCount} selesai) sebelum mengirim ke Approver.`,
+        description: `Harap selesaikan seluruh aktivitas checklist CAB (${completedActivitiesCount}/${totalActivitiesCount} selesai) sebelum menyelesaikan permohonan.`,
         statusToast: "warning",
       });
       return;
@@ -1031,11 +1120,12 @@ const CabRequestDetailView = () => {
         cabResult: resultForm.cabResult,
         cabNotes: resultForm.cabNotes,
         implementationStatus: (resultForm.implementationStatus || "SUCCESS") as "SUCCESS" | "FAILED" | "PARTIAL",
+        buktiImplementasi: buktiFiles,
       });
     }
-    const success = await SendToApproval(tokenData, requestId!);
+    const success = await CompleteCabRequest(tokenData, requestId!);
     if (success) {
-      showToast({ description: "Request berhasil dikirim ke approver (Status: Send to Approval)", statusToast: "success" });
+      showToast({ description: "Permohonan CAB berhasil diselesaikan (Status: COMPLETED)", statusToast: "success" });
       setIsEditingRequest(false);
       loadDetail();
     }
@@ -1109,7 +1199,9 @@ const CabRequestDetailView = () => {
             <Link href="/cab/cab-request">
               <Button leftIcon={<FiArrowLeft />} variant="ghost" size="sm" color="white" bg="whiteAlpha.100" border="1px solid" borderColor="whiteAlpha.200" _hover={{ bg: "whiteAlpha.200" }} rounded="full" px={4}>Back</Button>
             </Link>
-            <Button leftIcon={<FiRefreshCcw />} variant="ghost" size="sm" color="white" bg="whiteAlpha.100" border="1px solid" borderColor="whiteAlpha.200" _hover={{ bg: "whiteAlpha.200" }} rounded="full" px={3} onClick={() => loadDetail()}>Refresh</Button>
+            <HStack spacing={2}>
+              <Button leftIcon={<FiRefreshCcw />} variant="ghost" size="sm" color="white" bg="whiteAlpha.100" border="1px solid" borderColor="whiteAlpha.200" _hover={{ bg: "whiteAlpha.200" }} rounded="full" px={3} onClick={() => loadDetail()}>Refresh</Button>
+            </HStack>
           </HStack>
           <HStack spacing={4} align="center">
             <Box w="60px" h="60px" bg="whiteAlpha.200" rounded="xl" display="flex" alignItems="center" justifyContent="center">
@@ -1194,7 +1286,7 @@ const CabRequestDetailView = () => {
                       const currentIdx = getStageIndex(Data.status);
                       const isPassed =
                         st.stage < currentIdx ||
-                        (currentIdx === 6 && (Data.status === "COMPLETED" || Data.status === "APPROVED"));
+                        (currentIdx === 4 && (Data.status === "COMPLETED" || Data.status === "APPROVED"));
                       const isCurrent = st.stage === currentIdx;
 
                       return (
@@ -1231,9 +1323,9 @@ const CabRequestDetailView = () => {
                       const currentIdx = getStageIndex(Data.status);
                       const isPassed =
                         st.stage < currentIdx ||
-                        (currentIdx === 6 && (Data.status === "COMPLETED" || Data.status === "APPROVED"));
+                        (currentIdx === 4 && (Data.status === "COMPLETED" || Data.status === "APPROVED"));
                       const isCurrent = st.stage === currentIdx;
-                      const isRejected = currentIdx === 6 && Data.status === "REJECTED";
+                      const isRejected = currentIdx === 4 && Data.status === "REJECTED";
                       const isFirst = idx === 0;
                       const isLast = idx === CAB_LIFECYCLE_STAGES.length - 1;
 
@@ -1392,7 +1484,7 @@ const CabRequestDetailView = () => {
                       leftIcon={<Icon as={FiCheckSquare} />}
                       onClick={() => setActiveDetailStep(2)}
                     >
-                      2. Schedule
+                      2. Action
                     </Button>
                   </SimpleGrid>
                 </Box>
@@ -1495,7 +1587,7 @@ const CabRequestDetailView = () => {
                                 value={requestEditForm.jenisCab}
                                 onChange={(e) => setRequestEditForm({ ...requestEditForm, jenisCab: e.target.value })}
                               >
-                                <option value="WEEKLY">WEEKLY</option>
+                                <option value="NORMAL">NORMAL</option>
                                 <option value="EMERGENCY">EMERGENCY</option>
                               </Select>
                             </FormControl>
@@ -1520,15 +1612,15 @@ const CabRequestDetailView = () => {
                             const apps = requestEditForm.applications && requestEditForm.applications.length > 0
                               ? requestEditForm.applications
                               : [
-                                  {
-                                    id: "app-main-0",
-                                    applicationId: requestEditForm.applicationId || "app-001",
-                                    applicationName: requestEditForm.applicationName || requestEditForm.projectName || "",
-                                    aplikasiKategori: requestEditForm.aplikasiKategori || "Transaksional",
-                                    rfcKodeProject: requestEditForm.rfcKodeProject || "",
-                                    itspKode: requestEditForm.itspKode || "",
-                                  },
-                                ];
+                                {
+                                  id: "app-main-0",
+                                  applicationId: requestEditForm.applicationId || "app-001",
+                                  applicationName: requestEditForm.applicationName || requestEditForm.projectName || "",
+                                  aplikasiKategori: requestEditForm.aplikasiKategori || "Transaksional",
+                                  rfcKodeProject: requestEditForm.rfcKodeProject || "",
+                                  itspKode: requestEditForm.itspKode || "",
+                                },
+                              ];
 
                             const handleUpdateApp = (index: number, field: keyof CabSoftwareApplicationItem, val: string) => {
                               const updated = [...apps];
@@ -1666,10 +1758,10 @@ const CabRequestDetailView = () => {
                                         value={
                                           apps[0]?.applicationId
                                             ? appOptions.find((opt) => opt.value === apps[0].applicationId) || {
-                                                label: apps[0].applicationName || "Aplikasi",
-                                                value: apps[0].applicationId,
-                                                data: { appName: apps[0].applicationName } as any,
-                                              }
+                                              label: apps[0].applicationName || "Aplikasi",
+                                              value: apps[0].applicationId,
+                                              data: { appName: apps[0].applicationName } as any,
+                                            }
                                             : null
                                         }
                                         onChange={(opt: any) => handleSelectApp(0, opt)}
@@ -1690,9 +1782,9 @@ const CabRequestDetailView = () => {
                                         value={
                                           apps[0]?.rfcKodeProject
                                             ? {
-                                                label: apps[0].rfcKodeProject,
-                                                value: apps[0].rfcKodeProject,
-                                              }
+                                              label: apps[0].rfcKodeProject,
+                                              value: apps[0].rfcKodeProject,
+                                            }
                                             : null
                                         }
                                         onChange={(opt: any) => handleSelectProject(0, opt)}
@@ -1810,10 +1902,10 @@ const CabRequestDetailView = () => {
                                                   value={
                                                     app.applicationId
                                                       ? appOptions.find((opt) => opt.value === app.applicationId) || {
-                                                          label: app.applicationName || "Aplikasi",
-                                                          value: app.applicationId,
-                                                          data: { appName: app.applicationName } as any,
-                                                        }
+                                                        label: app.applicationName || "Aplikasi",
+                                                        value: app.applicationId,
+                                                        data: { appName: app.applicationName } as any,
+                                                      }
                                                       : null
                                                   }
                                                   onChange={(opt: any) => handleSelectApp(actualIndex, opt)}
@@ -1834,9 +1926,9 @@ const CabRequestDetailView = () => {
                                                   value={
                                                     app.rfcKodeProject
                                                       ? {
-                                                          label: app.rfcKodeProject,
-                                                          value: app.rfcKodeProject,
-                                                        }
+                                                        label: app.rfcKodeProject,
+                                                        value: app.rfcKodeProject,
+                                                      }
                                                       : null
                                                   }
                                                   onChange={(opt: any) => handleSelectProject(actualIndex, opt)}
@@ -1906,7 +1998,7 @@ const CabRequestDetailView = () => {
                             <InfoItem label="Nomor Request" value={Data.requestNo} />
                             <InfoItem label="Tipe Perubahan" value={Data.requestType} />
                             <InfoItem label="Sisi Aplikasi" value={Data.appSide === "OTHER" ? `OTHER (${Data.appSideOther || "-"})` : (Data.appSide || "WEB")} />
-                            <InfoItem label="Jenis CAB" value={Data.jenisCab || "WEEKLY"} />
+                            <InfoItem label="Jenis CAB" value={Data.jenisCab === "WEEKLY" ? "NORMAL" : (Data.jenisCab || "NORMAL")} />
                             <InfoItem label="Target Date" value={new Date(Data.targetDate).toLocaleDateString("id-ID")} />
                             <InfoItem label="Requester" value={`${Data.requesterName} (${Data.requesterEmail})`} />
                             <InfoItem label="Tanggal Request" value={new Date(Data.requestDate).toLocaleDateString("id-ID")} />
@@ -1921,15 +2013,15 @@ const CabRequestDetailView = () => {
                                 ? Data.applications
                                 : (Data.applicationName || Data.projectName)
                                   ? [
-                                      {
-                                        id: "app-main-0",
-                                        applicationId: Data.applicationId || "app-001",
-                                        applicationName: Data.applicationName || Data.projectName || "-",
-                                        aplikasiKategori: Data.aplikasiKategori || "CORE_BANKING",
-                                        rfcKodeProject: Data.rfcKodeProject || "-",
-                                        itspKode: Data.itspKode || "-",
-                                      },
-                                    ]
+                                    {
+                                      id: "app-main-0",
+                                      applicationId: Data.applicationId || "app-001",
+                                      applicationName: Data.applicationName || Data.projectName || "-",
+                                      aplikasiKategori: Data.aplikasiKategori || "CORE_BANKING",
+                                      rfcKodeProject: Data.rfcKodeProject || "-",
+                                      itspKode: Data.itspKode || "-",
+                                    },
+                                  ]
                                   : [];
 
                             const mainApp = appsList[0] || {
@@ -3016,16 +3108,16 @@ const CabRequestDetailView = () => {
                                                     cm.type === "INTERNAL_IT"
                                                       ? "blue"
                                                       : cm.type === "INTERNAL_BJB"
-                                                      ? "green"
-                                                      : "purple"
+                                                        ? "green"
+                                                        : "purple"
                                                   }
                                                   variant="subtle"
                                                 >
                                                   {cm.type === "INTERNAL_IT"
                                                     ? "Internal IT"
                                                     : cm.type === "INTERNAL_BJB"
-                                                    ? "Internal BJB"
-                                                    : "Eksternal"}
+                                                      ? "Internal BJB"
+                                                      : "Eksternal"}
                                                 </Badge>
                                               </Td>
                                             </Tr>
@@ -3082,7 +3174,7 @@ const CabRequestDetailView = () => {
                             shadow="sm"
                             fontWeight="bold"
                           >
-                           Selanjutnya
+                            Selanjutnya
                           </Button>
                         </Flex>
                       </CardBody>
@@ -3129,12 +3221,55 @@ const CabRequestDetailView = () => {
                             </HStack>
                           </CardHeader>
                           <CardBody px={5} py={4}>
-                            <VStack align="start" spacing={2.5}>
+                            <VStack align="start" spacing={2.5} w="full">
                               <Text fontSize="sm" lineHeight="tall">{Data.cabResult}</Text>
+                              {Data.cabNotes && (
+                                <Box p={3} bg={colorMode === "light" ? "purple.50" : "gray.750"} rounded="lg" w="full" border="1px" borderColor={colorMode === "light" ? "purple.100" : "gray.650"}>
+                                  <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "purple.800" : "purple.200"} mb={0.5}>
+                                    Catatan Tambahan CAB:
+                                  </Text>
+                                  <Text fontSize="xs" color={colorMode === "light" ? "gray.700" : "gray.300"}>{Data.cabNotes}</Text>
+                                </Box>
+                              )}
                               {Data.implementationStatus && (
                                 <Badge colorScheme={Data.implementationStatus === "SUCCESS" ? "green" : Data.implementationStatus === "FAILED" ? "red" : "orange"} px={2} py={0.5} rounded="md">
                                   Status Implementasi: {Data.implementationStatus}
                                 </Badge>
+                              )}
+                              {Data.buktiImplementasi && Data.buktiImplementasi.length > 0 && (
+                                <Box w="full" pt={2} borderTop="1px" borderColor={colorMode === "light" ? "gray.100" : "gray.700"}>
+                                  <Text fontSize="xs" fontWeight="bold" color="gray.600" mb={2}>
+                                    Bukti Implementasi ({Data.buktiImplementasi.length}):
+                                  </Text>
+                                  <SimpleGrid columns={{ base: 2, sm: 3, md: 4 }} spacing={3}>
+                                    {Data.buktiImplementasi.map((item) => (
+                                      <Box
+                                        key={item.id}
+                                        p={2}
+                                        border="1px solid"
+                                        borderColor={colorMode === "light" ? "purple.200" : "gray.600"}
+                                        bg={colorMode === "light" ? "white" : "gray.750"}
+                                        rounded="lg"
+                                        cursor="pointer"
+                                        onClick={() => handleOpenImagePreview(item)}
+                                        transition="all 0.15s ease"
+                                        _hover={{ shadow: "sm", borderColor: "purple.400", transform: "translateY(-1px)" }}
+                                      >
+                                        <Box w="full" h="70px" rounded="md" overflow="hidden" bg="gray.100" mb={1.5} position="relative">
+                                          <Image src={item.url} alt={item.name} w="full" h="full" objectFit="cover" />
+                                        </Box>
+                                        <Text fontSize="2xs" fontWeight="medium" isTruncated title={item.name}>
+                                          {item.name}
+                                        </Text>
+                                        {item.size && (
+                                          <Text fontSize="3xs" color="gray.500">
+                                            {formatFileSize(item.size)}
+                                          </Text>
+                                        )}
+                                      </Box>
+                                    ))}
+                                  </SimpleGrid>
+                                </Box>
                               )}
                             </VStack>
                           </CardBody>
@@ -3157,7 +3292,7 @@ const CabRequestDetailView = () => {
                         <CardBody px={5} py={4}>
                           <VStack spacing={2} align="stretch">
                             <Text fontSize="sm" color={colorMode === "light" ? "gray.700" : "gray.300"}>
-                              Permohonan CAB ini telah disetujui secara resmi oleh Approver dan seluruh alur proses telah selesai.
+                              Permohonan CAB ini telah selesai diimplementasikan, seluruh checklist kepatuhan telah terverifikasi, dan seluruh alur proses telah rampung.
                             </Text>
                           </VStack>
                         </CardBody>
@@ -3178,7 +3313,7 @@ const CabRequestDetailView = () => {
                     borderColor={colorMode === "light" ? "blue.200" : "blue.800"}
                     bg={colorMode === "light" ? "blue.50" : "gray.850"}
                   > */}
-                    {/* <CardBody px={5} py={4}>
+                  {/* <CardBody px={5} py={4}>
                       <Flex justify="space-between" align="center" wrap="wrap" gap={3} mb={3.5}>
                         <HStack spacing={2.5}>
                           <Box w="4px" h="20px" bg="blue.500" rounded="full" />
@@ -3220,7 +3355,7 @@ const CabRequestDetailView = () => {
                         </Box>
                       </SimpleGrid>
                     </CardBody> */}
-                  
+
 
                   {/* ─── STAGE 2: Penjadwalan Rapat CAB (Status: REQUEST / PENGAJUAN) ─── */}
                   {(Data.status === "PENGAJUAN" || Data.status === "REQUEST") && (
@@ -3896,7 +4031,7 @@ const CabRequestDetailView = () => {
                           <Flex justify="space-between" align="center" w="full">
                             <HStack spacing={2}>
                               <Icon as={FiFileText} color="purple.500" />
-                              <Heading size="sm" color="purple.700">Evaluasi Migrasi & Hasil Sidang CAB (Mark as Done)</Heading>
+                              <Heading size="sm" color="purple.700">Evaluasi Migrasi & Hasil Sidang CAB</Heading>
                             </HStack>
                             <Badge colorScheme="purple" variant="solid" rounded="full" px={2.5} py={0.5} fontSize="2xs">
                               TAHAP: IMPLEMENTASI
@@ -3943,6 +4078,182 @@ const CabRequestDetailView = () => {
                                     onChange={(e) => setResultForm({ ...resultForm, cabNotes: e.target.value })}
                                   />
                                 </FormControl>
+
+                                {/* Bukti Implementasi (Optional - Multiple PNG/JPG/WEBP only) */}
+                                <FormControl>
+                                  <Flex justify="space-between" align="center" mb={1.5}>
+                                    <HStack spacing={2}>
+                                      <FormLabel fontSize="sm" fontWeight="semibold" mb={0}>
+                                        Bukti Implementasi
+                                      </FormLabel>
+                                      {/* <Badge colorScheme="purple" variant="subtle" fontSize="2xs" rounded="md" px={2} py={0.5}>
+                                        PNG / JPG / WEBP only
+                                      </Badge> */}
+                                    </HStack>
+                                    <Text fontSize="2xs" color="gray.500">
+                                      Maks. 10MB
+                                    </Text>
+                                  </Flex>
+
+                                  {/* Drag & Drop Zone */}
+                                  <Box
+                                    {...getBuktiRootProps()}
+                                    p={5}
+                                    border="2px dashed"
+                                    borderColor={
+                                      isBuktiDragActive
+                                        ? "purple.500"
+                                        : colorMode === "light"
+                                          ? "purple.200"
+                                          : "purple.600"
+                                    }
+                                    bg={
+                                      isBuktiDragActive
+                                        ? colorMode === "light"
+                                          ? "purple.100"
+                                          : "purple.900"
+                                        : colorMode === "light"
+                                          ? "white"
+                                          : "gray.750"
+                                    }
+                                    rounded="xl"
+                                    cursor="pointer"
+                                    textAlign="center"
+                                    transition="all 0.2s ease"
+                                    _hover={{
+                                      borderColor: "purple.400",
+                                      bg: colorMode === "light" ? "purple.50" : "gray.700",
+                                    }}
+                                  >
+                                    <input {...getBuktiInputProps()} />
+                                    <VStack spacing={2}>
+                                      <Flex
+                                        w="44px"
+                                        h="44px"
+                                        rounded="full"
+                                        bg={colorMode === "light" ? "purple.50" : "gray.700"}
+                                        color="purple.500"
+                                        align="center"
+                                        justify="center"
+                                        shadow="xs"
+                                      >
+                                        <Icon as={FiUploadCloud} boxSize={5} />
+                                      </Flex>
+                                      <VStack spacing={0.5}>
+                                        <Text fontSize="sm" fontWeight="semibold" color={colorMode === "light" ? "purple.900" : "purple.200"}>
+                                          {isBuktiDragActive
+                                            ? "Drop your file here"
+                                            : "Drag & Drop File"}
+                                        </Text>
+                                        <Text fontSize="xs" color="gray.500">
+                                          atau <Text as="span" color="purple.500" fontWeight="bold" textDecoration="underline">Klik untuk Memilih File</Text>
+                                        </Text>
+                                      </VStack>
+                                    </VStack>
+                                  </Box>
+
+                                  {/* Uploaded Bukti Images Grid */}
+                                  {buktiFiles.length > 0 && (
+                                    <Box mt={3}>
+                                      <Flex justify="space-between" align="center" mb={2}>
+                                        <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "purple.800" : "purple.200"}>
+                                          Uploaded ({buktiFiles.length}):
+                                        </Text>
+                                        <Button
+                                          size="2xs"
+                                          variant="ghost"
+                                          colorScheme="red"
+                                          onClick={() => setBuktiFiles([])}
+                                        >
+                                          Hapus Semua
+                                        </Button>
+                                      </Flex>
+                                      <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={3}>
+                                        {buktiFiles.map((item) => (
+                                          <Box
+                                            key={item.id}
+                                            p={2.5}
+                                            border="1px solid"
+                                            borderColor={colorMode === "light" ? "purple.200" : "gray.600"}
+                                            bg={colorMode === "light" ? "white" : "gray.750"}
+                                            rounded="xl"
+                                            shadow="xs"
+                                            position="relative"
+                                            transition="all 0.15s ease"
+                                            _hover={{ shadow: "md", borderColor: "purple.400" }}
+                                          >
+                                            <Flex gap={2.5} align="center">
+                                              <Box
+                                                w="50px"
+                                                h="50px"
+                                                rounded="lg"
+                                                overflow="hidden"
+                                                bg="gray.100"
+                                                flexShrink={0}
+                                                cursor="pointer"
+                                                onClick={() => handleOpenImagePreview(item)}
+                                                position="relative"
+                                                _hover={{ opacity: 0.85 }}
+                                              >
+                                                <Image
+                                                  src={item.url}
+                                                  alt={item.name}
+                                                  w="full"
+                                                  h="full"
+                                                  objectFit="cover"
+                                                />
+                                              </Box>
+
+                                              <VStack align="start" spacing={0.5} flex={1} minW={0}>
+                                                <Text
+                                                  fontSize="xs"
+                                                  fontWeight="semibold"
+                                                  isTruncated
+                                                  maxW="full"
+                                                  title={item.name}
+                                                >
+                                                  {item.name}
+                                                </Text>
+                                                {item.size && (
+                                                  <Text fontSize="3xs" color="gray.500">
+                                                    {formatFileSize(item.size)}
+                                                  </Text>
+                                                )}
+                                                <Badge colorScheme="purple" variant="subtle" fontSize="3xs" px={1.5} rounded="md">
+                                                  IMG
+                                                </Badge>
+                                              </VStack>
+
+                                              <HStack spacing={1}>
+                                                <Tooltip label="Lihat Gambar Penuh" placement="top">
+                                                  <IconButton
+                                                    aria-label="Preview image"
+                                                    icon={<FiEye />}
+                                                    size="xs"
+                                                    variant="ghost"
+                                                    colorScheme="purple"
+                                                    onClick={() => handleOpenImagePreview(item)}
+                                                  />
+                                                </Tooltip>
+                                                <Tooltip label="Hapus Berkas" placement="top">
+                                                  <IconButton
+                                                    aria-label="Delete image"
+                                                    icon={<FiTrash2 />}
+                                                    size="xs"
+                                                    variant="ghost"
+                                                    colorScheme="red"
+                                                    onClick={() => handleRemoveBuktiFile(item.id)}
+                                                  />
+                                                </Tooltip>
+                                              </HStack>
+                                            </Flex>
+                                          </Box>
+                                        ))}
+                                      </SimpleGrid>
+                                    </Box>
+                                  )}
+                                </FormControl>
+
                                 <FormControl isRequired>
                                   <FormLabel fontSize="sm" fontWeight="semibold">Status Implementasi</FormLabel>
                                   <Select
@@ -3970,22 +4281,22 @@ const CabRequestDetailView = () => {
                         </CardBody>
                       </Card>
 
-                      {/* Send to Approval Action Card */}
+                      {/* Selesaikan Permohonan CAB Action Card */}
                       {canSchedule && (
-                        <Card rounded={radiusStyle} shadow="sm" border="2px solid" borderColor="orange.300" bg={colorMode === "light" ? "orange.50" : "gray.800"}>
-                          <CardHeader py={3} px={5} borderBottom="1px" borderColor={colorMode === "light" ? "orange.100" : "gray.700"}>
+                        <Card rounded={radiusStyle} shadow="sm" border="2px solid" borderColor="green.300" bg={colorMode === "light" ? "green.50" : "gray.800"}>
+                          <CardHeader py={3} px={5} borderBottom="1px" borderColor={colorMode === "light" ? "green.100" : "gray.700"}>
                             <Flex justify="space-between" align="center" w="full">
                               <HStack spacing={2}>
-                                <Icon as={FiSend} color="orange.500" />
-                                <Heading size="sm" color="orange.700">Kirim ke Approver (Send to Approval)</Heading>
+                                <Icon as={FiCheckCircle} color="green.500" />
+                                <Heading size="sm" color="green.700">Selesaikan Permohonan CAB</Heading>
                               </HStack>
                             </Flex>
                           </CardHeader>
                           <CardBody px={5} py={4}>
                             <VStack spacing={4} align="stretch">
-                              <Box p={3.5} bg={colorMode === "light" ? "white" : "gray.750"} rounded="lg" border="1px" borderColor={colorMode === "light" ? "orange.200" : "gray.600"}>
+                              <Box p={3.5} bg={colorMode === "light" ? "white" : "gray.750"} rounded="lg" border="1px" borderColor={colorMode === "light" ? "green.200" : "gray.600"}>
                                 <Text fontSize="xs" color="gray.600">
-                                  Hasil evaluasi migrasi dan checklist verifikasi pra-approval telah siap. Pastikan seluruh poin checklist di atas telah dicentang dan form evaluasi terisi sebelum mengirim berkas permohonan ke Approver.
+                                  Hasil evaluasi migrasi dan checklist verifikasi kepatuhan telah selesai. Pastikan seluruh poin checklist di atas telah dicentang dan form evaluasi terisi sebelum menyelesaikan permohonan.
                                 </Text>
                               </Box>
 
@@ -3998,29 +4309,20 @@ const CabRequestDetailView = () => {
                                 </HStack>
                               )}
 
-                              {!allActivitiesDone && (
-                                <HStack p={3} bg={colorMode === "light" ? "orange.50" : "orange.950"} border="1px solid" borderColor="orange.300" rounded="lg" spacing={2.5}>
-                                  <Icon as={FiAlertTriangle} color="orange.500" boxSize={4} flexShrink={0} />
-                                  <Text fontSize="xs" color={colorMode === "light" ? "orange.800" : "orange.200"}>
-                                    Perhatian: Anda wajib mencentang seluruh <strong>Activity Checklist CAB ({completedActivitiesCount}/{totalActivitiesCount})</strong> di atas sebelum mengirim permohonan ke Approver.
-                                  </Text>
-                                </HStack>
-                              )}
-
                               <Flex justify="end" pt={2}>
                                 <Button
-                                  colorScheme="orange"
-                                  bg="orange.500"
+                                  colorScheme="green"
+                                  bg="green.600"
                                   color="white"
-                                  _hover={{ bg: "orange.600" }}
+                                  _hover={{ bg: "green.700" }}
                                   size="sm"
-                                  leftIcon={<FiSend />}
+                                  leftIcon={<FiCheckCircle />}
                                   onClick={handleSendToApproval}
                                   isLoading={loading}
                                   isDisabled={!allActivitiesDone || !resultForm.cabResult || !resultForm.implementationStatus}
                                   px={6}
                                 >
-                                  Submit
+                                  Selesaikan Permohonan (COMPLETED)
                                 </Button>
                               </Flex>
                             </VStack>
@@ -4028,75 +4330,6 @@ const CabRequestDetailView = () => {
                         </Card>
                       )}
                     </VStack>
-                  )}
-
-                  {/* ─── STAGE 6: Approval Action (Status: SEND TO APPROVAL / WAITING APPROVAL) ─── */}
-                  {["SEND TO APPROVAL", "SEND_TO_APPROVAL", "WAITING APPROVAL", "WAITING APPROVE", "PENDING_APPROVAL", "IN_REVIEW"].includes(Data.status) && (
-                    <Card rounded={radiusStyle} shadow="sm" border="2px solid" borderColor="orange.300" bg={colorMode === "light" ? "orange.50" : "gray.800"}>
-                      <CardHeader py={3} px={5} borderBottom="1px" borderColor={colorMode === "light" ? "orange.100" : "gray.700"}>
-                        <Flex justify="space-between" align="center" w="full">
-                          <HStack spacing={2}>
-                            <Icon as={FiCheckCircle} color="orange.500" />
-                            <Heading size="sm" color="orange.700">Keputusan Persetujuan (Approval Action)</Heading>
-                          </HStack>
-                          <Badge colorScheme="orange" variant="solid" rounded="full" px={2.5} py={0.5} fontSize="2xs">
-                            STAGE 6: APPROVAL DECISION
-                          </Badge>
-                        </Flex>
-                      </CardHeader>
-                      <CardBody px={5} py={4}>
-                        <VStack spacing={4} align="stretch">
-                          {/* Executive Dossier for Approver */}
-                          {Data.cabResult && (
-                            <Box p={3.5} bg={colorMode === "light" ? "white" : "gray.700"} rounded="lg" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.600"}>
-                              <Text fontSize="xs" fontWeight="bold" color="gray.500" mb={1}>Hasil CAB Meeting & Evaluasi Migrasi:</Text>
-                              <Text fontSize="sm" lineHeight="tall">{Data.cabResult}</Text>
-                              <HStack spacing={2} mt={2.5} wrap="wrap">
-                                {Data.implementationStatus && (
-                                  <Badge colorScheme={Data.implementationStatus === "SUCCESS" ? "green" : Data.implementationStatus === "FAILED" ? "red" : "orange"}>
-                                    Status Implementasi: {Data.implementationStatus}
-                                  </Badge>
-                                )}
-                                <Badge colorScheme="green" variant="subtle">
-                                  ✓ Checklist Pra-Approval: Terverifikasi Selesai
-                                </Badge>
-                              </HStack>
-                            </Box>
-                          )}
-
-                          {canApprove ? (
-                            <>
-                              <FormControl>
-                                <FormLabel fontSize="sm" fontWeight="semibold">Catatan Approver</FormLabel>
-                                <Textarea
-                                  placeholder="Tambahkan catatan persetujuan (wajib jika menolak/reject)..."
-                                  size="sm"
-                                  rounded="lg"
-                                  bg={colorMode === "light" ? "white" : "gray.750"}
-                                  value={approvalNote}
-                                  onChange={(e) => setApprovalNote(e.target.value)}
-                                  rows={3}
-                                />
-                              </FormControl>
-                              <HStack justify="end" spacing={3} pt={2}>
-                                <Button colorScheme="red" variant="outline" size="sm" leftIcon={<FiX />} onClick={() => handleApprovalAction("REJECT")} isLoading={loading}>
-                                  Tolak (REJECTED)
-                                </Button>
-                                <Button colorScheme="green" bg="green.600" color="white" _hover={{ bg: "green.700" }} size="sm" leftIcon={<FiCheck />} onClick={() => handleApprovalAction("APPROVE")} isLoading={loading}>
-                                  Setujui Permohonan (COMPLETED)
-                                </Button>
-                              </HStack>
-                            </>
-                          ) : (
-                            <Box p={3} bg={colorMode === "light" ? "white" : "gray.750"} rounded="md" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.650"}>
-                              <Text fontSize="xs" color="gray.500">
-                                ℹ Permohonan CAB telah diajukan ke Approver dan sedang menunggu keputusan persetujuan resmi.
-                              </Text>
-                            </Box>
-                          )}
-                        </VStack>
-                      </CardBody>
-                    </Card>
                   )}
 
                   {/* ─── Rejected Summary (when REJECTED) ─── */}
@@ -4326,6 +4559,68 @@ const CabRequestDetailView = () => {
           </GridItem>
         </Grid>
       </Box>
+
+      {/* ─── Lightbox / Image Preview Modal ─── */}
+      <Modal isOpen={previewModalData.isOpen} onClose={handleCloseImagePreview} size="3xl" isCentered>
+        <ModalOverlay bg="blackAlpha.700" backdropFilter="blur(4px)" />
+        <ModalContent rounded="xl" overflow="hidden" bg={colorMode === "light" ? "white" : "gray.850"}>
+          <ModalHeader py={3} px={5} borderBottom="1px" borderColor={colorMode === "light" ? "gray.100" : "gray.700"}>
+            <Flex justify="space-between" align="center" pr={6}>
+              <HStack spacing={2.5}>
+                <Icon as={FiImage} color="purple.500" />
+                <VStack align="start" spacing={0}>
+                  <Text fontSize="sm" fontWeight="bold" isTruncated maxW="450px">
+                    {previewModalData.name}
+                  </Text>
+                  {previewModalData.size ? (
+                    <Text fontSize="2xs" color="gray.500">
+                      Ukuran: {formatFileSize(previewModalData.size)}
+                    </Text>
+                  ) : null}
+                </VStack>
+              </HStack>
+            </Flex>
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody p={4} bg={colorMode === "light" ? "gray.50" : "gray.900"}>
+            <Flex justify="center" align="center" minH="300px" maxH="75vh" overflow="auto">
+              {previewModalData.url && (
+                <Image
+                  src={previewModalData.url}
+                  alt={previewModalData.name}
+                  maxH="70vh"
+                  maxW="100%"
+                  objectFit="contain"
+                  rounded="lg"
+                  shadow="md"
+                />
+              )}
+            </Flex>
+          </ModalBody>
+          <ModalFooter py={3} px={5} borderTop="1px" borderColor={colorMode === "light" ? "gray.100" : "gray.700"}>
+            <HStack spacing={3}>
+              {previewModalData.url && (
+                <Button
+                  as="a"
+                  href={previewModalData.url}
+                  download={previewModalData.name || "bukti-implementasi.png"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="sm"
+                  variant="outline"
+                  colorScheme="purple"
+                  leftIcon={<FiDownload />}
+                >
+                  Unduh Gambar
+                </Button>
+              )}
+              <Button size="sm" onClick={handleCloseImagePreview}>
+                Tutup
+              </Button>
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </LayoutAdmin>
   );
 };

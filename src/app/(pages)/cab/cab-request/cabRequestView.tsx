@@ -10,8 +10,11 @@ import {
   CardBody,
   CardHeader,
   Checkbox,
+  Collapse,
   Divider,
   Flex,
+  FormControl,
+  FormLabel,
   Grid,
   GridItem,
   Heading,
@@ -21,12 +24,24 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  InputRightElement,
   Modal,
   ModalBody,
   ModalCloseButton,
   ModalContent,
   ModalHeader,
   ModalOverlay,
+  Popover,
+  PopoverArrow,
+  PopoverBody,
+  PopoverCloseButton,
+  PopoverContent,
+  PopoverTrigger,
+  Portal,
+  Select,
+  SimpleGrid,
+  Spacer,
+  Stack,
   Tab,
   TabList,
   TabPanel,
@@ -61,6 +76,7 @@ import {
   FiShield,
   FiUser,
   FiUsers,
+  FiX,
   FiZap,
 } from "react-icons/fi";
 import FullCalendar from "@fullcalendar/react";
@@ -80,6 +96,7 @@ import { HeaderContent } from "@/app/components/headerContent";
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import LoadingMiniSignature from "@/app/components/loadingMini";
 import { TableComponentFull } from "@/app/components/tableComponents";
+import { TableComponentWithFilterCTX } from "@/app/components/tableComponentV2";
 import { StatusBadge } from "@/app/components/StatusBadge";
 import { radiusStyle } from "@/app/constants/applicationConstants";
 import { AppTabList, AppTabItem } from "@/app/components/TabsCustom";
@@ -88,6 +105,12 @@ import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useCabRequest from "@/app/services/useCabRequest";
 import { BulkScheduleCabItemPayload, CabRequestItem } from "@/app/types/cabTypes";
+import {
+  ColumnMetaCustom,
+  ListSearchByParamProps,
+  addParamFilterUpdate,
+  removeParamFilter,
+} from "@/app/types/masterTypes";
 import CabReportsTab from "./components/CabReportsTab";
 import BulkScheduleModal from "./components/BulkScheduleModal";
 import BulkSendToApprovalModal from "./components/BulkSendToApprovalModal";
@@ -735,10 +758,35 @@ const CabRequestView = () => {
   const bulkApprovalModal = useDisclosure();
   const [schedulerStatusFilter, setSchedulerStatusFilter] = useState<"ALL" | "REQUEST" | "CONFIRM" | "IMPLEMENTASI">("ALL");
 
-  // Table pagination (CAB List - excludes REQUEST)
+  // Table pagination & column filters (CAB List - excludes REQUEST)
   const [{ pageIndex, pageSize }, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
   const pagination = useMemo(() => ({ pageIndex, pageSize }), [pageIndex, pageSize]);
-  const [globalFilter, setGlobalFilter] = useState<string>("");
+  const [ParamFilter, setParamFilter] = useState<ListSearchByParamProps[]>([]);
+  const {
+    isOpen: isFilterPopoverOpen,
+    onOpen: onFilterPopoverOpen,
+    onClose: onFilterPopoverClose,
+  } = useDisclosure();
+
+  const handleFilterChange = (newFilters: ListSearchByParamProps[]) => {
+    const updatedFilters = newFilters.reduce(
+      (acc, filter) => addParamFilterUpdate(acc, filter),
+      ParamFilter
+    );
+    setParamFilter(updatedFilters);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
+
+  const removeFilterData = (target: ListSearchByParamProps) => {
+    const updated = removeParamFilter(ParamFilter, target);
+    setParamFilter(updated);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
+
+  const clearAllFilters = () => {
+    setParamFilter([]);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
 
   // CAB List only (Exclude REQUEST/PENGAJUAN items from CAB List tab)
   const cabListOnly = useMemo(
@@ -749,6 +797,72 @@ const CabRequestView = () => {
       }),
     [DataList]
   );
+
+  // Filtered CAB List applying per-column filters
+  const filteredCabList = useMemo(() => {
+    return cabListOnly.filter((item) => {
+      // Column-specific filters from ParamFilter (from header popovers)
+      for (const filter of ParamFilter) {
+        if (!filter.value || !String(filter.value).trim()) continue;
+        const filterVal = String(filter.value).trim();
+        const field = filter.field as keyof CabRequestItem;
+        const itemVal = item[field];
+        const itemStr = itemVal !== null && itemVal !== undefined ? String(itemVal) : "";
+
+        if (filter.operator === "like" || filter.operator === "%") {
+          if (!itemStr.toLowerCase().includes(filterVal.toLowerCase())) {
+            return false;
+          }
+        } else if (filter.operator === "=") {
+          if (filter.field === "status") {
+            const fStatus = filterVal.toUpperCase();
+            const iStatus = itemStr.toUpperCase();
+            if (fStatus === "PENJADWALAN" || fStatus === "SCHEDULED" || fStatus === "SUBMITTED") {
+              if (iStatus !== "PENJADWALAN" && iStatus !== "SCHEDULED" && iStatus !== "SUBMITTED") return false;
+            } else if (fStatus === "PELAKSANAAN" || fStatus === "CONFIRM") {
+              if (iStatus !== "PELAKSANAAN" && iStatus !== "CONFIRM") return false;
+            } else if (fStatus === "IMPLEMENTASI" || fStatus === "IMPLEMENT") {
+              if (iStatus !== "IMPLEMENTASI" && iStatus !== "IMPLEMENT") return false;
+            } else if (fStatus === "APPROVED" || fStatus === "COMPLETED") {
+              if (iStatus !== "APPROVED" && iStatus !== "COMPLETED") return false;
+            } else if (fStatus === "WAITING APPROVE" || fStatus === "SEND TO APPROVAL") {
+              if (iStatus !== "WAITING APPROVE" && iStatus !== "WAITING APPROVAL" && iStatus !== "SEND TO APPROVAL" && iStatus !== "SEND_TO_APPROVAL") return false;
+            } else if (fStatus === "REJECTED") {
+              if (iStatus !== "REJECTED") return false;
+            } else {
+              if (iStatus !== fStatus) return false;
+            }
+          } else {
+            if (itemStr.toLowerCase() !== filterVal.toLowerCase()) {
+              return false;
+            }
+          }
+        } else if (filter.operator === "!=") {
+          if (itemStr.toLowerCase() === filterVal.toLowerCase()) {
+            return false;
+          }
+        } else if (filter.operator === ">=") {
+          const itemDate = itemStr.slice(0, 10);
+          const filterDate = filterVal.slice(0, 10);
+          if (itemDate < filterDate) return false;
+        } else if (filter.operator === "<=") {
+          const itemDate = itemStr.slice(0, 10);
+          const filterDate = filterVal.slice(0, 10);
+          if (itemDate > filterDate) return false;
+        } else if (filter.operator === ">") {
+          const itemDate = itemStr.slice(0, 10);
+          const filterDate = filterVal.slice(0, 10);
+          if (itemDate <= filterDate) return false;
+        } else if (filter.operator === "<") {
+          const itemDate = itemStr.slice(0, 10);
+          const filterDate = filterVal.slice(0, 10);
+          if (itemDate >= filterDate) return false;
+        }
+      }
+
+      return true;
+    });
+  }, [cabListOnly, ParamFilter]);
 
   // Pending Table pagination & filter (CAB Request Tab - Status REQUEST/PENGAJUAN, CONFIRM/PELAKSANAAN, IMPLEMENTASI/IMPLEMENT - Scheduler only)
   const [{ pageIndex: pendingPageIndex, pageSize: pendingPageSize }, setPendingPagination] =
@@ -868,13 +982,13 @@ const CabRequestView = () => {
     }
   };
 
-  // Bulk Send to Approval Handlers (for CONFIRM status)
+  // Bulk Selesaikan Permohonan Handlers (for CONFIRM status)
   const handleConfirmBulkSendToApproval = async (ids: string[], note?: string) => {
     const success = await BulkSendToApproval(tokenData, ids);
     if (success) {
       toast({
-        title: "Permohonan Berhasil Diajukan",
-        description: `${ids.length} permohonan berhasil diajukan ke antrean approval (Status ➔ WAITING APPROVAL).`,
+        title: "Permohonan Berhasil Diselesaikan",
+        description: `${ids.length} permohonan berhasil diselesaikan (Status ➔ COMPLETED).`,
         status: "success",
         duration: 3500,
         isClosable: true,
@@ -885,8 +999,8 @@ const CabRequestView = () => {
       loadData();
     } else {
       toast({
-        title: "Gagal Mengajukan Permohonan",
-        description: "Terjadi kesalahan saat memproses pengajuan approval massal.",
+        title: "Gagal Menyelesaikan Permohonan",
+        description: "Terjadi kesalahan saat memproses penyelesaian permohonan massal.",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -1389,6 +1503,7 @@ const CabRequestView = () => {
   };
 
   // Table columns (CAB List tab - no checkbox)
+  // Table columns (CAB List tab - with ColumnMetaCustom for TableComponentWithFilterCTX)
   const columns = useMemo<ColumnDef<CabRequestItem>[]>(
     () => [
       {
@@ -1399,18 +1514,35 @@ const CabRequestView = () => {
             {info.row.index + 1 + pagination.pageIndex * pagination.pageSize}.
           </Text>
         ),
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
       },
       {
         accessorKey: "requestNo",
+        id: "requestNo",
         header: "REQUEST NO",
         cell: (info) => (
           <Text fontSize="sm" fontWeight="semibold" color="secondary.600">
             {info.getValue() as string}
           </Text>
         ),
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "requestNo",
+              operator: "like",
+              value: "",
+              filterType: "text",
+              filterLabel: "Nomor CAB",
+            },
+          ],
+        } as ColumnMetaCustom,
       },
       {
         accessorKey: "requestTitle",
+        id: "requestTitle",
         header: "TITLE",
         cell: (info) => (
           <VStack align="start" spacing={0}>
@@ -1422,23 +1554,77 @@ const CabRequestView = () => {
             </Text>
           </VStack>
         ),
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "requestTitle",
+              operator: "like",
+              value: "",
+              filterType: "text",
+              filterLabel: "Judul Perubahan",
+            },
+            {
+              field: "projectName",
+              operator: "like",
+              value: "",
+              filterType: "text",
+              filterLabel: "Nama Proyek",
+            },
+          ],
+        } as ColumnMetaCustom,
       },
       {
         accessorKey: "requestType",
+        id: "requestType",
         header: "TYPE",
         cell: (info) => (
           <Badge colorScheme="purple" variant="subtle" rounded="full" px={2} fontSize="xs">
             {info.getValue() as string}
           </Badge>
         ),
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "requestType",
+              operator: "=",
+              value: "",
+              filterType: "select",
+              filterLabel: "Tipe Perubahan",
+              sourceListData: [
+                { label: "SOFTWARE", value: "SOFTWARE" },
+                { label: "HARDWARE", value: "HARDWARE" },
+                { label: "DEPLOYMENT", value: "DEPLOYMENT" },
+                { label: "INFRASTRUCTURE", value: "INFRASTRUCTURE" },
+                { label: "CONFIGURATION", value: "CONFIGURATION" },
+                { label: "MAINTENANCE", value: "MAINTENANCE" },
+              ],
+            },
+          ],
+        } as ColumnMetaCustom,
       },
       {
         accessorKey: "requesterName",
+        id: "requesterName",
         header: "REQUESTER",
         cell: (info) => <Text fontSize="sm">{info.getValue() as string}</Text>,
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "requesterName",
+              operator: "like",
+              value: "",
+              filterType: "text",
+              filterLabel: "Nama Requester",
+            },
+          ],
+        } as ColumnMetaCustom,
       },
       {
         accessorKey: "requestDate",
+        id: "requestDate",
         header: "REQ DATE",
         cell: (info) => {
           const val = info.getValue() as string | null | undefined;
@@ -1450,9 +1636,29 @@ const CabRequestView = () => {
             </Text>
           );
         },
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "requestDate",
+              operator: ">=",
+              value: "",
+              filterType: "date",
+              filterLabel: "Dari Tgl Permohonan",
+            },
+            {
+              field: "requestDate",
+              operator: "<=",
+              value: "",
+              filterType: "date",
+              filterLabel: "Sampai Tgl Permohonan",
+            },
+          ],
+        } as ColumnMetaCustom,
       },
       {
         accessorKey: "scheduledDate",
+        id: "scheduledDate",
         header: "CAB DATE",
         cell: (info) => {
           const val = info.getValue() as string | null | undefined;
@@ -1482,11 +1688,50 @@ const CabRequestView = () => {
             </VStack>
           );
         },
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "scheduledDate",
+              operator: ">=",
+              value: "",
+              filterType: "date",
+              filterLabel: "Dari Tgl Sidang",
+            },
+            {
+              field: "scheduledDate",
+              operator: "<=",
+              value: "",
+              filterType: "date",
+              filterLabel: "Sampai Tgl Sidang",
+            },
+          ],
+        } as ColumnMetaCustom,
       },
       {
         accessorKey: "status",
+        id: "status",
         header: "STATUS",
         cell: (info) => <StatusBadge status={info.getValue() as string} rounded="full" px={3} py={1} fontSize="xs" />,
+        meta: {
+          isFilterable: true,
+          filterData: [
+            {
+              field: "status",
+              operator: "=",
+              value: "",
+              filterType: "select",
+              filterLabel: "Status CAB",
+              sourceListData: [
+                { label: "PENJADWALAN (SCHEDULED)", value: "PENJADWALAN" },
+                { label: "PELAKSANAAN (CONFIRM)", value: "PELAKSANAAN" },
+                { label: "IMPLEMENTASI (IMPLEMENT)", value: "IMPLEMENTASI" },
+                { label: "COMPLETED (APPROVED)", value: "COMPLETED" },
+                { label: "REJECTED", value: "REJECTED" },
+              ],
+            },
+          ],
+        } as ColumnMetaCustom,
       },
       {
         id: "actions",
@@ -1502,34 +1747,23 @@ const CabRequestView = () => {
             Detail
           </Button>
         ),
+        meta: {
+          isFilterable: false,
+        } as ColumnMetaCustom,
       },
     ],
     [router, pagination]
   );
 
   const table = useReactTable({
-    data: cabListOnly,
+    data: filteredCabList,
     columns,
-    state: { globalFilter, pagination },
+    state: { pagination },
     getRowId: (row) => row.id,
     onPaginationChange: setPagination,
-    globalFilterFn: (row, columnId, filterValue) => {
-      const safeFilter = String(filterValue || "").toLowerCase();
-      if (!safeFilter) return true;
-      const original = row.original;
-      return (
-        String(original.requestNo || "").toLowerCase().includes(safeFilter) ||
-        String(original.requestTitle || "").toLowerCase().includes(safeFilter) ||
-        String(original.projectName || "").toLowerCase().includes(safeFilter) ||
-        String(original.requesterName || "").toLowerCase().includes(safeFilter) ||
-        String(original.status || "").toLowerCase().includes(safeFilter) ||
-        String(original.requestType || "").toLowerCase().includes(safeFilter)
-      );
-    },
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    onGlobalFilterChange: setGlobalFilter,
   });
 
   // Pending Table columns (Status REQUEST & CONFIRM - Scheduler only)
@@ -1848,6 +2082,103 @@ const CabRequestView = () => {
                 <TabPanels>
                   {/* ─── Tab 1: All CAB List (Excludes REQUEST) ─── */}
                   <TabPanel px={0} pt={4}>
+                    <Flex
+                      justifyContent="flex-end"
+                      alignItems="center"
+                      gap={2}
+                      w={"full"}
+                      mb={3}
+                      wrap="wrap"
+                    >
+                      <Popover
+                        isOpen={isFilterPopoverOpen}
+                        onOpen={onFilterPopoverOpen}
+                        onClose={onFilterPopoverClose}
+                        closeOnBlur={true}
+                        placement={"bottom"}
+                      >
+                        <PopoverTrigger>
+                          <Button size={"md"} leftIcon={<FiFilter />}>
+                            Filter{" "}
+                            {ParamFilter.length > 0 && (
+                              <Flex
+                                as={"span"}
+                                pl={1}
+                                color={"secondary.500"}
+                                fontWeight={600}
+                              >
+                                ({ParamFilter.length})
+                              </Flex>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent width="auto" minW="xs">
+                          <PopoverBody>
+                            <Flex as={Stack} w={"full"}>
+                              <Text fontWeight={600}>Filter Data</Text>
+                              <Divider />
+
+                              <Stack spacing={2}>
+                                {ParamFilter.map((dt, idx) => (
+                                  <Flex
+                                    key={idx}
+                                    w={"full"}
+                                    alignItems="center"
+                                    as={HStack}
+                                    spacing={2}
+                                  >
+                                    <Text fontSize="sm">
+                                      {dt.filterLabel} :{" "}
+                                      <Text as={"span"} fontWeight={600}>
+                                        {dt.value}
+                                      </Text>
+                                    </Text>
+                                    <Button
+                                      size={"xs"}
+                                      colorScheme={"red"}
+                                      justifyContent={"center"}
+                                      variant={"ghost"}
+                                      onClick={() => removeFilterData(dt)}
+                                    >
+                                      <FiX />
+                                    </Button>
+                                  </Flex>
+                                ))}
+                              </Stack>
+                              {ParamFilter.length > 0 && (
+                                <>
+                                  <Divider />
+                                  <Button
+                                    size="sm"
+                                    colorScheme="red"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setParamFilter([]);
+                                      onFilterPopoverClose();
+                                    }}
+                                    w="full"
+                                  >
+                                    Clear All
+                                  </Button>
+                                </>
+                              )}
+                            </Flex>
+                          </PopoverBody>
+                        </PopoverContent>
+                      </Popover>
+
+                      <Button
+                        size={"md"}
+                        leftIcon={<FiRefreshCcw />}
+                        onClick={() => {
+                          clearAllFilters();
+                          setRefreshData((p) => p + 1);
+                        }}
+                      >
+                        Refresh
+                      </Button>
+                    </Flex>
+
                     {IsLoadingProcess ? (
                       <VStack spacing={4} py={16}>
                         <LoadingMiniSignature />
@@ -1866,11 +2197,12 @@ const CabRequestView = () => {
                         </VStack>
                       </VStack>
                     ) : (
-                      <Box w="full">
-                        <Box w="full" overflowX="auto">
-                          <Box minW="1100px">
-                            <TableComponentFull table={table} />
-                          </Box>
+                      <Box overflowX="auto" w="full">
+                        <Box minW="1200px">
+                          <TableComponentWithFilterCTX
+                            table={table}
+                            handleFilterChange={handleFilterChange}
+                          />
                         </Box>
                       </Box>
                     )}
@@ -2093,12 +2425,12 @@ const CabRequestView = () => {
                                       </Button>
                                     )}
 
-                                    {/* Action 2: Bulk Send to Approval (for CONFIRM/PELAKSANAAN items) */}
+                                    {/* Action 2: Bulk Selesaikan Permohonan (for CONFIRM/PELAKSANAAN items) */}
                                     {selectedConfirmItems.length > 0 && (
                                       <Button
                                         size="sm"
                                         colorScheme="green"
-                                        leftIcon={<FiSend />}
+                                        leftIcon={<FiCheckCircle />}
                                         fontWeight="semibold"
                                         fontSize="xs"
                                         px={3.5}
@@ -2106,7 +2438,7 @@ const CabRequestView = () => {
                                           bulkApprovalModal.onOpen();
                                         }}
                                       >
-                                        Kirim ke Approval ({selectedConfirmItems.length})
+                                        Selesaikan ({selectedConfirmItems.length})
                                       </Button>
                                     )}
                                   </HStack>

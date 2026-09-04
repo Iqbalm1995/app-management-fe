@@ -668,7 +668,7 @@ const SoftwareStep1 = ({
           </InputLayout>
         </FormControl>
 
-        <FormControl isRequired>
+        <FormControl>
           <InputLayout>
             <FormLabel h="full" mt={2}>Kode ITSP</FormLabel>
             <Stack spacing={0}>
@@ -698,7 +698,7 @@ const SoftwareStep1 = ({
           value={data.jenisCab}
           onChange={(val) => onChange({ ...data, jenisCab: val as any })}
           options={[
-            { label: "Weekly", value: "WEEKLY" },
+            { label: "Normal", value: "NORMAL" },
             { label: "Emergency", value: "EMERGENCY" },
           ]}
           isRequired

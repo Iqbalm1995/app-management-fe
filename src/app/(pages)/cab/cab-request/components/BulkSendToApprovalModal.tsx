@@ -143,21 +143,21 @@ export const BulkSendToApprovalModal = ({
               w={10}
               h={10}
               rounded="lg"
-              bg="blue.500"
+              bg="green.500"
               color="white"
               display="flex"
               alignItems="center"
               justifyContent="center"
               flexShrink={0}
             >
-              <Icon as={FiSend} boxSize={5} />
+              <Icon as={FiCheckCircle} boxSize={5} />
             </Box>
             <VStack align="start" spacing={0.5}>
               <Heading size="md" color={isDark ? "white" : "gray.800"}>
-                Kirim ke Approval
+                Selesaikan Permohonan CAB Massal
               </Heading>
               <Text fontSize="xs" color="gray.500">
-                Pengajuan persetujuan massal berkas CAB terkonfirmasi
+                Penyelesaian implementasi berkas CAB secara massal (Status: COMPLETED)
               </Text>
             </VStack>
           </HStack>
@@ -172,15 +172,15 @@ export const BulkSendToApprovalModal = ({
             {/* Info Box */}
             <Box
               p={3.5}
-              bg={isDark ? "blue.950" : "blue.50"}
+              bg={isDark ? "green.950" : "green.50"}
               border="1px solid"
-              borderColor={isDark ? "blue.800" : "blue.200"}
+              borderColor={isDark ? "green.800" : "green.200"}
               rounded="lg"
             >
               <HStack spacing={2.5} align="start">
-                <Icon as={FiCheckSquare} color="blue.500" boxSize={4} mt={0.5} />
-                <Text fontSize="xs" color={isDark ? "blue.200" : "blue.800"} lineHeight="tall">
-                  Sebanyak <b>{selectedRequests.length}</b> permohonan berstatus <b>Pelaksanaan</b> akan diajukan ke antrean persetujuan (<i>Approval Inbox</i>).
+                <Icon as={FiCheckSquare} color="green.500" boxSize={4} mt={0.5} />
+                <Text fontSize="xs" color={isDark ? "green.200" : "green.800"} lineHeight="tall">
+                  Sebanyak <b>{selectedRequests.length}</b> permohonan akan diselesaikan implementasinya secara resmi (Status ➔ <b>COMPLETED</b>).
                 </Text>
               </HStack>
             </Box>
@@ -357,13 +357,16 @@ export const BulkSendToApprovalModal = ({
           </Button>
           <Button
             size="sm"
-            colorScheme="blue"
-            leftIcon={<FiSend />}
+            colorScheme="green"
+            bg="green.600"
+            color="white"
+            _hover={{ bg: "green.700" }}
+            leftIcon={<FiCheckCircle />}
             isLoading={isLoading}
-            loadingText="Mengirim..."
+            loadingText="Memproses..."
             onClick={handleConfirm}
           >
-            Kirim ke Approval ({selectedRequests.length})
+            Selesaikan Permohonan ({selectedRequests.length})
           </Button>
         </ModalFooter>
       </ModalContent>

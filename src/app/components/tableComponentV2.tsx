@@ -796,7 +796,7 @@ const FilterColumnTable = ({
                                     id={inputKey}
                                     name={inputKey}
                                     type="text"
-                                    value={values[ft.field]}
+                                    value={values[inputKey] ?? ""}
                                     onChange={handleChange}
                                   />
                                 </FormControl>
@@ -811,7 +811,7 @@ const FilterColumnTable = ({
                                     id={inputKey}
                                     name={inputKey}
                                     type="date"
-                                    value={values[ft.field]}
+                                    value={values[inputKey] ?? ""}
                                     onChange={handleChange}
                                   />
                                 </FormControl>

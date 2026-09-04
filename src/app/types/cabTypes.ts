@@ -73,6 +73,8 @@ export interface CabRequestItem {
   tanggalImplementasi?: string | null;
   rekomendasiUat?: "REKOMENDASI_MIGRASI" | "PENGUJIAN_ULANG" | string;
   rekomendasiMigrasi?: "YA" | "TIDAK" | "Y" | "N" | boolean | string;
+  buktiImplementasi?: BuktiImplementasiItem[];
+  implementationStatus?: "SUCCESS" | "FAILED" | "PARTIAL" | null;
 }
 
 // ─── Detail (untuk halaman detail) ───────────────────────────────────────────
@@ -85,6 +87,7 @@ export interface CabRequestDetail extends CabRequestItem {
   cabResult?: string;
   cabNotes?: string;
   implementationStatus?: "SUCCESS" | "FAILED" | "PARTIAL" | null;
+  buktiImplementasi?: BuktiImplementasiItem[];
   approvalHistory: CabApprovalStep[];
   checklistItems?: CabChecklistItem[];
   activityChecklist?: CabActivityItem[];
@@ -225,10 +228,20 @@ export interface BulkScheduleCabPayload {
   items: BulkScheduleCabItemPayload[];
 }
 
+export interface BuktiImplementasiItem {
+  id: string;
+  name: string;
+  size?: number;
+  url: string;
+  type?: string;
+  uploadedAt?: string;
+}
+
 export interface UpdateCabResultPayload {
-  cabResult: string;
-  cabNotes: string;
-  implementationStatus: "SUCCESS" | "FAILED" | "PARTIAL";
+  cabResult?: string;
+  cabNotes?: string;
+  implementationStatus?: "SUCCESS" | "FAILED" | "PARTIAL";
+  buktiImplementasi?: BuktiImplementasiItem[];
 }
 
 export interface ApproveCabPayload {
@@ -238,7 +251,7 @@ export interface ApproveCabPayload {
 
 // ─── CAB Create Form — Category & Jenis ──────────────────────────────────────
 export type CabCategory = "SOFTWARE" | "HARDWARE";
-export type CabJenisCab = "WEEKLY" | "EMERGENCY";
+export type CabJenisCab = "NORMAL" | "EMERGENCY" | "WEEKLY";
 
 // ─── PIC Types ───────────────────────────────────────────────────────────────
 export interface CabPicInternalIT {
@@ -263,9 +276,14 @@ export type CabPic = CabPicInternalIT | CabPicInternalBJB | CabPicVendor;
 
 // ─── Committee ───────────────────────────────────────────────────────────────
 export interface CabCommitteeMember {
+  id?: string;
   type: "INTERNAL_IT" | "INTERNAL_BJB" | "EXTERNAL";
   userId?: string;
   userName: string;
+  nama?: string;
+  name?: string;
+  jabatan?: string;
+  divisi?: string;
   asalInstitusi?: string;
   asalDivisi?: string;
 }

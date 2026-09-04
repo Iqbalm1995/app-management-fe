@@ -65,6 +65,8 @@ export async function exportCabReportsGroupPdf(options: ExportCabReportPdfOption
     const resultText = item.cabResult || item.status || "APPROVED";
     const notesText = item.cabNotes || "-";
     const categoryText = getCabCategory(item);
+    const buktiCount = item.buktiImplementasi ? item.buktiImplementasi.length : 0;
+    const buktiText = buktiCount > 0 ? `Lengkap (${buktiCount})` : "Belum Ada";
 
     return [
       String(index + 1),
@@ -77,6 +79,7 @@ export async function exportCabReportsGroupPdf(options: ExportCabReportPdfOption
       item.requesterName,
       resultText,
       notesText,
+      buktiText,
     ];
   });
 
@@ -94,6 +97,7 @@ export async function exportCabReportsGroupPdf(options: ExportCabReportPdfOption
       "Pemohon",
       "Keputusan CAB",
       "Catatan / Kesimpulan",
+      "Bukti Impl.",
     ]],
     body: tableData,
     theme: "grid",
@@ -111,16 +115,17 @@ export async function exportCabReportsGroupPdf(options: ExportCabReportPdfOption
       valign: "top",
     },
     columnStyles: {
-      0: { cellWidth: 10, halign: "center" },
-      1: { cellWidth: 26, fontStyle: "bold" },
-      2: { cellWidth: 46 },
-      3: { cellWidth: 34 },
-      4: { cellWidth: 24, halign: "center", fontStyle: "bold" },
-      5: { cellWidth: 20, halign: "center" },
-      6: { cellWidth: 22, halign: "center" },
-      7: { cellWidth: 24 },
-      8: { cellWidth: 26, halign: "center", fontStyle: "bold" },
-      9: { cellWidth: 38 },
+      0: { cellWidth: 8, halign: "center" },
+      1: { cellWidth: 24, fontStyle: "bold" },
+      2: { cellWidth: 42 },
+      3: { cellWidth: 32 },
+      4: { cellWidth: 22, halign: "center", fontStyle: "bold" },
+      5: { cellWidth: 18, halign: "center" },
+      6: { cellWidth: 20, halign: "center" },
+      7: { cellWidth: 22 },
+      8: { cellWidth: 24, halign: "center", fontStyle: "bold" },
+      9: { cellWidth: 34 },
+      10: { cellWidth: 22, halign: "center", fontStyle: "bold" },
     },
     didDrawPage: (data) => {
       // Footer
@@ -242,12 +247,55 @@ export async function exportSingleCabMeetingPdf(item: CabRequestItem): Promise<v
     },
   });
 
-  // Section 3: Tanda Tangan & Persetujuan
-  currentY = (doc as any).lastAutoTable.finalY + 14;
+  // Section 3: Lampiran Bukti Implementasi (Screenshots / Verification Evidence)
+  currentY = (doc as any).lastAutoTable.finalY + 8;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(9);
   doc.setTextColor(...BRAND_BLUE);
-  doc.text("III. PERSETUJUAN KOMITE CHANGE ADVISORY BOARD", margin, currentY);
+  doc.text("III. LAMPIRAN BUKTI IMPLEMENTASI & VERIFIKASI", margin, currentY);
+
+  const buktiList = item.buktiImplementasi || [];
+  if (buktiList.length > 0) {
+    const buktiRows = buktiList.map((b, bIdx) => [
+      String(bIdx + 1),
+      b.name,
+      b.size ? `${(b.size / 1024).toFixed(1)} KB` : "-",
+      b.uploadedAt ? new Date(b.uploadedAt).toLocaleString("id-ID") : "Terverifikasi",
+      "✓ VALID / TERLAMPIR",
+    ]);
+
+    autoTable(doc, {
+      startY: currentY + 3,
+      margin: { left: margin, right: margin },
+      head: [["No", "Nama Berkas Gambar / Screenshot", "Ukuran", "Waktu Unggah", "Status Verifikasi"]],
+      body: buktiRows,
+      theme: "grid",
+      headStyles: { fillColor: BRAND_BLUE, fontSize: 7.5, fontStyle: "bold", halign: "center" },
+      styles: { fontSize: 7.5, cellPadding: 2.5, textColor: TEXT_MAIN },
+      columnStyles: {
+        0: { cellWidth: 10, halign: "center" },
+        1: { cellWidth: 70 },
+        2: { cellWidth: 25, halign: "center" },
+        3: { cellWidth: 40, halign: "center" },
+        4: { cellWidth: 35, halign: "center", fontStyle: "bold" },
+      },
+    });
+  } else {
+    autoTable(doc, {
+      startY: currentY + 3,
+      margin: { left: margin, right: margin },
+      body: [["Belum ada bukti implementasi digital yang dilampirkan."]],
+      theme: "plain",
+      styles: { fontSize: 7.5, fontStyle: "italic", textColor: [220, 53, 69] },
+    });
+  }
+
+  // Section 4: Tanda Tangan & Persetujuan
+  currentY = (doc as any).lastAutoTable.finalY + 12;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.setTextColor(...BRAND_BLUE);
+  doc.text("IV. PERSETUJUAN KOMITE CHANGE ADVISORY BOARD", margin, currentY);
 
   const sigY = currentY + 7;
   const colW = contentW / 3;

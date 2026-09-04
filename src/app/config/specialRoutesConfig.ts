@@ -115,10 +115,10 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
     baseMenu: "/cab",
     permission: "make",
   },
-  {
-    pattern: "/cab/cab-approve",
-    baseMenu: "/cab",
-  },
+  // {
+  //   pattern: "/cab/cab-approve",
+  //   baseMenu: "/cab",
+  // },
 
   // ===== REQUIREMENTS =====
   // BRD routes
@@ -276,6 +276,10 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
   {
     pattern: "/master-data/sequences-config",
     baseMenu: "/master-data/sequences-config",
+  },
+  {
+    pattern: "/user-data/assign-module",
+    baseMenu: "/user-data/assign-module",
   },
   {
     pattern: "/master-data/workflow/preset-workflow-detail",

@@ -107,7 +107,7 @@ const SoftwareStep2 = ({ data, onChange }: SoftwareStep2Props) => {
           options={[
             { label: "Berhasil Baik", value: "BERHASIL_BAIK" },
             { label: "Berhasil (dengan catatan)", value: "BERHASIL_CATATAN" },
-            { label: "Tidak Berhasil", value: "TIDAK_BERHASIL" },
+            // { label: "Tidak Berhasil", value: "TIDAK_BERHASIL" },
           ]}
           isRequired
           showChildren={currentHasilUat === "BERHASIL_CATATAN"}
@@ -126,13 +126,13 @@ const SoftwareStep2 = ({ data, onChange }: SoftwareStep2Props) => {
         </RadioGroupField>
 
         <RadioGroupField
-          label="Rekomendasi UAT"
+          label="Rekomendasi Hasil UAT"
           name="rekomendasiUat"
           value={data.rekomendasiUat}
           onChange={(val) => onChange({ ...data, rekomendasiUat: val as any })}
           options={[
             { label: "Rekomendasi Migrasi", value: "REKOMENDASI_MIGRASI" },
-            { label: "Pengujian Ulang", value: "PENGUJIAN_ULANG" },
+            // { label: "Pengujian Ulang", value: "PENGUJIAN_ULANG" },
           ]}
           isRequired
         />
