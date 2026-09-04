@@ -13,15 +13,16 @@ import {
 import { redirect, usePathname } from "next/navigation";
 
 const isTokenExpiredByDate = (expiration: string | null | undefined): boolean => {
-  if (!expiration) return true;
+  if (!expiration) return false;
   try {
     const tokenDate = new Date(expiration);
+    if (isNaN(tokenDate.getTime())) return false;
     tokenDate.setHours(0, 0, 0, 0);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return today > tokenDate;
   } catch {
-    return true;
+    return false;
   }
 };
 
@@ -124,7 +125,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     
     // Check if need to redirect to change password BEFORE setTimeout
     const shouldRedirectToChangePassword = localStorage.getItem("redirectToChangePassword");
-    console.log("Checking redirect flag:", shouldRedirectToChangePassword);
+    const isDevMode = localStorage.getItem("dev_mode") === "true";
+    console.log("Checking redirect flag:", shouldRedirectToChangePassword, "isDevMode:", isDevMode);
     
     setTimeout(() => {
       localStorage.setItem("authData", JSON.stringify(authData));
@@ -135,6 +137,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         localStorage.removeItem("redirectToChangePassword");
         console.log("Redirecting to change-password");
         redirect("/change-password");
+      } else if (isDevMode) {
+        console.log("Redirecting to developer mode");
+        redirect("/dev");
       } else {
         console.log("Redirecting to home");
         redirect(LINK_MENU_HOME);

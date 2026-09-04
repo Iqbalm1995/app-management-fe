@@ -65,6 +65,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FiLogIn } from "react-icons/fi";
 import * as Yup from "yup";
+import DevAuthForm from "./DevAuthForm";
 
 interface AuthCorporateUserModel {
   username: string;
@@ -84,6 +85,7 @@ const FormSchema = Yup.object().shape({
 const AuthPanelModal = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { colorMode } = useColorMode();
+  const [authMode, setAuthMode] = useState<"normal" | "dev">("normal");
   const isCentered = useBreakpointValue({
     base: false,
     sm: false,
@@ -314,13 +316,60 @@ const AuthPanelModal = () => {
                 <Flex
                   w={"full"}
                   h={"full"}
-                  alignItems={"center"}
-                  justifyContent={"center"}
-                  p={8}
+                  direction="column"
                   overflowY={"auto"}
                 >
-                  <AuthForm />
-                  {/* <CaptchaGoogleComps /> */}
+                  {/* Mode Selector Tabs */}
+                  <HStack
+                    w="full"
+                    px={8}
+                    pt={6}
+                    pb={1}
+                    spacing={4}
+                    borderBottom="1px solid"
+                    borderColor={colorMode === "light" ? "gray.100" : "gray.800"}
+                  >
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      borderBottom="2px solid"
+                      borderColor={authMode === "normal" ? "secondary.500" : "transparent"}
+                      borderRadius={0}
+                      px={1}
+                      pb={2}
+                      onClick={() => setAuthMode("normal")}
+                      fontWeight={authMode === "normal" ? 600 : 400}
+                      color={authMode === "normal" ? (colorMode === "light" ? "secondary.600" : "secondary.300") : "gray.500"}
+                      _hover={{ bg: "transparent" }}
+                    >
+                      Standard
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      borderBottom="2px solid"
+                      borderColor={authMode === "dev" ? "purple.500" : "transparent"}
+                      borderRadius={0}
+                      px={1}
+                      pb={2}
+                      onClick={() => setAuthMode("dev")}
+                      fontWeight={authMode === "dev" ? 600 : 400}
+                      color={authMode === "dev" ? "purple.500" : "gray.500"}
+                      _hover={{ bg: "transparent" }}
+                    >
+                      Developer
+                    </Button>
+                  </HStack>
+
+                  <Flex
+                    w={"full"}
+                    flex={1}
+                    alignItems={"center"}
+                    justifyContent={"center"}
+                    p={8}
+                  >
+                    {authMode === "normal" ? <AuthForm /> : <DevAuthForm />}
+                  </Flex>
                 </Flex>
               </GridItem>
             </Grid>
@@ -464,6 +513,7 @@ const AuthForm = () => {
         console.log("Default password detected, flag set:", localStorage.getItem("redirectToChangePassword"));
       }
       
+      localStorage.removeItem("dev_mode");
       await goLogin(getDataUser, authDataToken);
       setIsError(false);
       setIsLoadingProcess(false);
