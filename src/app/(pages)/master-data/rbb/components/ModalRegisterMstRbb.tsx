@@ -320,7 +320,7 @@ export default function ModalRegisterMstRbb({ isOpen, onClose, onSuccess }: Moda
                   <HStack spacing={2} color="secondary.600">
                     <Icon as={FiLayers} boxSize={5} />
                     <Heading size="xs" textTransform="uppercase" letterSpacing="wider">
-                      Section 1 - Data Master RBB Target & Organization
+                      Section 1 - Master RBB Target & Organization Data
                     </Heading>
                   </HStack>
                   <Divider />

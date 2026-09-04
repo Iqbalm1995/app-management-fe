@@ -56,7 +56,8 @@ import {
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { downloadWatermarkedPdf } from "@/app/helper/PdfWatermarkHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
-import { MediaObjectResponse } from "@/app/services/useMediaObject";
+import useMediaObject, { MediaObjectResponse } from "@/app/services/useMediaObject";
+import { useDownloadManagerModal } from "@/app/context/DownloadManagerContext";
 import useRequirements, {
   BacklogDataResponse,
   RequirementsResponse,
@@ -359,6 +360,7 @@ function RequirementDetailView() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { colorMode } = useColorMode();
+  const { openDownloadManager, activeJobsCount } = useDownloadManagerModal();
   const reqId = searchParams.get("reqId");
   const reqType = searchParams.get("type") || "BRD"; // Dynamic type from URL
   const approvalMode = searchParams.get("approvalMode") === "true"; // Check if in approval mode
@@ -947,7 +949,29 @@ function RequirementDetailView() {
           </Link>
         </GridItem>
         <GridItem colSpan={{ base: 2, sm: 2, md: 1, lg: 1 }} w={"full"}>
-          <Flex as={Wrap} justifyContent={"end"} px={0} w={"full"}>
+          <Flex as={Wrap} justifyContent={"end"} px={0} w={"full"} gap={2}>
+            <Button
+              size={"md"}
+              leftIcon={<FiDownload />}
+              onClick={openDownloadManager}
+              variant="outline"
+              position="relative"
+            >
+              Download Manager
+              {activeJobsCount > 0 && (
+                <Badge
+                  colorScheme="red"
+                  variant="solid"
+                  borderRadius="full"
+                  fontSize="xs"
+                  position="absolute"
+                  top="-2"
+                  right="-2"
+                >
+                  {activeJobsCount}
+                </Badge>
+              )}
+            </Button>
             <Button
               size={"md"}
               leftIcon={<FiRefreshCcw />}
@@ -3124,38 +3148,101 @@ const ReqInfoSummaryFileAttachmentsView = ({
 }: ReqSectionProps) => {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
-  const { SecureDownloadFiles, error: secureDownloadError } = useRequirements();
-  const [isDownloading, setIsDownloading] = useState(false);
+  const { SecureDownloadFiles: secureDownloadMedia, error: secureDownloadError } = useMediaObject();
+  const { openDownloadManager, activeJobsCount } = useDownloadManagerModal();
+  const [downloadingDocIds, setDownloadingDocIds] = useState<{ [id: string]: boolean }>({});
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
 
-  const handleSecureDownload = async (mediaObjectIds: string[]) => {
+  const handleSecureDownloadSingle = async (item: MediaObjectResponse) => {
     if (!tokenData) {
       showToast({ description: "Token tidak tersedia", statusToast: "error" });
       return;
     }
-    if (!DataRequirement?.id) {
-      showToast({ description: "Data requirement tidak tersedia", statusToast: "error" });
-      return;
-    }
-    setIsDownloading(true);
+    const cleanName = (item.objectRawName || "document").replace(/\.[^/.]+$/, "");
+    const zipName = `${cleanName}.zip`;
+    setDownloadingDocIds((prev) => ({ ...prev, [item.id]: true }));
     try {
-      const blob = await SecureDownloadFiles(DataRequirement.id, mediaObjectIds, tokenData);
+      const blob = await secureDownloadMedia(
+        [item.id],
+        tokenData,
+        DataRequirement?.id,
+        "REQUIREMENT_DOCUMENT",
+        zipName
+      );
       if (blob) {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `REQ-${DataRequirement.reqNumber || "download"}-${new Date().toISOString().slice(0, 10)}.zip`;
+        a.download = zipName;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-        showToast({ description: "File berhasil diunduh. Password dikirim ke email Anda.", statusToast: "success" });
+        showToast({
+          description: "File berhasil diunduh. Password dikirim ke email Anda.",
+          statusToast: "success",
+        });
       } else {
-        showToast({ description: secureDownloadError || "Gagal mengunduh file", statusToast: "error" });
+        showToast({
+          description: secureDownloadError || "Gagal mengunduh file",
+          statusToast: "error",
+        });
       }
     } catch {
-      showToast({ description: "Terjadi kesalahan saat mengunduh file", statusToast: "error" });
+      showToast({
+        description: "Terjadi kesalahan saat mengunduh file",
+        statusToast: "error",
+      });
     } finally {
-      setIsDownloading(false);
+      setDownloadingDocIds((prev) => ({ ...prev, [item.id]: false }));
+    }
+  };
+
+  const handleSecureDownloadAll = async (items: MediaObjectResponse[]) => {
+    if (!tokenData) {
+      showToast({ description: "Token tidak tersedia", statusToast: "error" });
+      return;
+    }
+    const validItems = items.filter((f) => f.objectName !== "EXTERNAL_LINK");
+    if (validItems.length === 0) return;
+    const fileIds = validItems.map((f) => f.id);
+    const reqNum = DataRequirement?.reqNumber || "download";
+    const zipName = `REQ-${reqNum}-attachments-${new Date().toISOString().slice(0, 10)}.zip`;
+    setIsDownloadingAll(true);
+    try {
+      const blob = await secureDownloadMedia(
+        fileIds,
+        tokenData,
+        DataRequirement?.id,
+        "REQUIREMENT_DOCUMENT_BUNDLE",
+        zipName
+      );
+      if (blob) {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = zipName;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        showToast({
+          description: "Semua file berhasil diunduh. Password dikirim ke email Anda.",
+          statusToast: "success",
+        });
+      } else {
+        showToast({
+          description: secureDownloadError || "Gagal mengunduh file",
+          statusToast: "error",
+        });
+      }
+    } catch {
+      showToast({
+        description: "Terjadi kesalahan saat mengunduh file",
+        statusToast: "error",
+      });
+    } finally {
+      setIsDownloadingAll(false);
     }
   };
 
@@ -3287,9 +3374,9 @@ const ReqInfoSummaryFileAttachmentsView = ({
                   size={"sm"}
                   colorScheme={"blue"}
                   leftIcon={<FiDownload />}
-                  isLoading={isDownloading}
+                  isLoading={downloadingDocIds[info.row.original.id] || false}
                   onClick={() =>
-                    handleSecureDownload([info.row.original.id])
+                    handleSecureDownloadSingle(info.row.original)
                   }
                 >
                   Unduh
@@ -3319,7 +3406,7 @@ const ReqInfoSummaryFileAttachmentsView = ({
         footer: (props) => props.column.id,
       },
     ],
-    []
+    [downloadingDocIds]
   );
 
   const table = useReactTable({
@@ -3411,19 +3498,36 @@ const ReqInfoSummaryFileAttachmentsView = ({
           </ModalContent>
         </Modal>
 
-        <Flex justifyContent="flex-end" mb={2}>
+        <Flex justifyContent="flex-end" alignItems="center" gap={2} mb={2}>
+          <Button
+            size="sm"
+            variant="outline"
+            leftIcon={<FiDownload />}
+            onClick={openDownloadManager}
+            position="relative"
+          >
+            Download Manager
+            {activeJobsCount > 0 && (
+              <Badge
+                colorScheme="red"
+                variant="solid"
+                borderRadius="full"
+                fontSize="xs"
+                position="absolute"
+                top="-2"
+                right="-2"
+              >
+                {activeJobsCount}
+              </Badge>
+            )}
+          </Button>
           {DataAttachment && DataAttachment.filter(f => f.objectName !== "EXTERNAL_LINK").length > 1 && (
             <Button
               size="sm"
               colorScheme="blue"
               leftIcon={<FiDownload />}
-              isLoading={isDownloading}
-              onClick={() => {
-                const fileIds = DataAttachment
-                  .filter(f => f.objectName !== "EXTERNAL_LINK")
-                  .map(f => f.id);
-                handleSecureDownload(fileIds);
-              }}
+              isLoading={isDownloadingAll}
+              onClick={() => handleSecureDownloadAll(DataAttachment || [])}
             >
               Unduh Semua
             </Button>

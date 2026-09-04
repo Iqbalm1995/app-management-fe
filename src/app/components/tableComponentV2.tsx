@@ -58,19 +58,37 @@ import {
 import { Select } from "chakra-react-select";
 
 export function ControlTableCTX({ table }: any) {
-  const pageCount = table.getPageCount();
-  const currentPage = table.getState().pagination.pageIndex + 1;
+  const pageCount = Math.max(1, table.getPageCount() || 1);
+  const currentPage = (table.getState().pagination.pageIndex || 0) + 1;
   const [pageInput, setPageInput] = useState("");
 
   useEffect(() => {
     setPageInput(String(currentPage)); // sync input with current page
   }, [currentPage]);
 
-  // Create array for page numbers
-  const visiblePages = Array.from(
-    { length: Math.min(5, pageCount) },
-    (_, i) => i + 1
-  ); // Show first 5 pages for now
+  // Create array for page numbers (sliding window of up to 5 pages)
+  const getVisiblePages = () => {
+    const maxVisible = 5;
+    if (pageCount <= maxVisible) {
+      return Array.from({ length: pageCount }, (_, i) => i + 1);
+    }
+    let start = Math.max(1, currentPage - 2);
+    let end = Math.min(pageCount, start + maxVisible - 1);
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  };
+
+  const visiblePages = getVisiblePages();
+  const showFirstPage = visiblePages.length > 0 && !visiblePages.includes(1);
+  const showFirstEllipsis = visiblePages.length > 0 && visiblePages[0] > 2;
+  const showLastEllipsis =
+    visiblePages.length > 0 &&
+    visiblePages[visiblePages.length - 1] < pageCount - 1;
+  const showLastPage =
+    visiblePages.length > 0 && !visiblePages.includes(pageCount);
+
   return (
     <Flex
       minWidth="max-content"
@@ -131,6 +149,44 @@ export function ControlTableCTX({ table }: any) {
                   Previous
                 </Text>
               </Button>
+              {/* First page */}
+              {showFirstPage && (
+                <Button
+                  onClick={() => table.setPageIndex(0)}
+                  isActive={currentPage === 1}
+                  minW="35px"
+                  _active={{
+                    bg: "secondary.500",
+                    color: "white",
+                  }}
+                  display={{
+                    base: "none",
+                    sm: "none",
+                    md: "none",
+                    lg: "block",
+                  }}
+                  rounded={"md"}
+                >
+                  1
+                </Button>
+              )}
+              {/* First ellipsis */}
+              {showFirstEllipsis && (
+                <Button
+                  minW="35px"
+                  isDisabled
+                  cursor="default"
+                  _hover={{ bg: "transparent" }}
+                  display={{
+                    base: "none",
+                    sm: "none",
+                    md: "none",
+                    lg: "block",
+                  }}
+                >
+                  ...
+                </Button>
+              )}
               {/* Page numbers */}
               {visiblePages.map((page) => (
                 <Button
@@ -153,9 +209,13 @@ export function ControlTableCTX({ table }: any) {
                   {page}
                 </Button>
               ))}
-              {currentPage !== 1 ? (
+              {/* Last ellipsis */}
+              {showLastEllipsis && (
                 <Button
                   minW="35px"
+                  isDisabled
+                  cursor="default"
+                  _hover={{ bg: "transparent" }}
                   display={{
                     base: "none",
                     sm: "none",
@@ -165,19 +225,24 @@ export function ControlTableCTX({ table }: any) {
                 >
                   ...
                 </Button>
-              ) : (
-                ""
               )}
-              {currentPage !== 1 && (
+              {/* Last page */}
+              {showLastPage && (
                 <Button
                   onClick={() => table.setPageIndex(pageCount - 1)}
+                  isActive={currentPage === pageCount}
                   minW="35px"
+                  _active={{
+                    bg: "secondary.500",
+                    color: "white",
+                  }}
                   display={{
                     base: "none",
                     sm: "none",
                     md: "none",
                     lg: "block",
                   }}
+                  rounded={"md"}
                 >
                   {pageCount}
                 </Button>

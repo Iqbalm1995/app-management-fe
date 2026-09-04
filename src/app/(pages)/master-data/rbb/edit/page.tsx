@@ -71,6 +71,7 @@ import useMstRbb, { MstRbbUpdatePayload, MstRbbWorkProgramUpdatePayload, MstRbbR
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { radiusStyle, RES_CODE_OK } from "@/app/constants/applicationConstants";
 import { formatIDR } from "@/app/components/CardContract";
+import { useDocumentTitle } from "@/app/hooks/useDocumentTitle";
 
 interface WorkProgramEditFormItem {
   id?: string; // DB ID if editing existing WP
@@ -132,6 +133,7 @@ const parseRupiahNumber = (value: string): number => {
 };
 
 function EditMasterRbbView() {
+  useDocumentTitle("Edit Master RBB");
   const searchParams = useSearchParams();
   const router = useRouter();
   const { colorMode } = useColorMode();
@@ -783,7 +785,7 @@ function EditMasterRbbView() {
                           <Input
                             size="md"
                             rounded="lg"
-                            placeholder="TEKNOLOGI INFORMASI"
+                            placeholder="INFORMATION TECHNOLOGY"
                             value={wp.itspName}
                             onChange={(e) => updateWorkProgramField(index, "itspName", e.target.value.toUpperCase())}
                           />
@@ -967,7 +969,7 @@ function EditMasterRbbView() {
                           <Input
                             size="md"
                             rounded="lg"
-                            placeholder="BEBAN OPERASIONAL TEKNOLOGI INFORMASI"
+                            placeholder="INFORMATION TECHNOLOGY OPERATIONAL EXPENSE"
                             value={wp.lgAccountName}
                             onChange={(e) => updateWorkProgramField(index, "lgAccountName", e.target.value.toUpperCase())}
                           />

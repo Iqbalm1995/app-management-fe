@@ -740,6 +740,12 @@ const FeatureBacklogsView = ({
             {info.row.original.backlogEnddate != null ? (
               <DeadlineStatusTag
                 deadline={info.row.original.backlogEnddate}
+                status={info.row.original.developmentStatus}
+                isDone={
+                  info.row.original.developmentStatus?.toUpperCase() === "DONE" ||
+                  info.row.original.progressionPercentage === 100
+                }
+                completedDate={info.row.original.backlogImplementEnddate}
                 remindBeforeDays={10}
               />
             ) : (
@@ -2631,6 +2637,12 @@ const FeatureBacklogsView = ({
                                   deadline={
                                     selectedBacklogPreview.backlogEnddate
                                   }
+                                  status={selectedBacklogPreview.developmentStatus}
+                                  isDone={
+                                    selectedBacklogPreview.developmentStatus?.toUpperCase() === "DONE" ||
+                                    selectedBacklogPreview.progressionPercentage === 100
+                                  }
+                                  completedDate={selectedBacklogPreview.backlogImplementEnddate}
                                   remindBeforeDays={10}
                                 />
                               )}
@@ -4604,6 +4616,12 @@ const WorkflowBacklogTable = ({
                   {workflow.workflowBacklog.backlogEnddate ? (
                     <DeadlineStatusTag
                       deadline={workflow.workflowBacklog.backlogEnddate}
+                      status={workflow.workflowBacklog.developmentStatus}
+                      isDone={
+                        workflow.workflowBacklog.developmentStatus?.toUpperCase() === "DONE" ||
+                        workflow.workflowBacklog.progressionPercentage === 100
+                      }
+                      completedDate={workflow.workflowBacklog.backlogImplementEnddate}
                       remindBeforeDays={10}
                     />
                   ) : (

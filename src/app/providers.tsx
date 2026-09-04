@@ -14,6 +14,7 @@ import "@fontsource/source-sans-pro/400.css";
 import "@fontsource/source-sans-pro/700.css";
 import { Global, css } from "@emotion/react";
 import { AuthProvider } from "./context/AuthContext";
+import { DownloadManagerProvider } from "./context/DownloadManagerContext";
 
 // import "@/styles/global.css";
 
@@ -212,7 +213,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
               }
             `}
           />
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <DownloadManagerProvider>{children}</DownloadManagerProvider>
+          </AuthProvider>
         </DndProvider>
       </ChakraProvider>
     </CacheProvider>

@@ -105,7 +105,7 @@ export const ContractHistoryTabPanel = ({
               const revNumber = historyList.length - idx;
               const snapshotDate = history.updatedAt || history.createdAt;
               const formattedDate = snapshotDate
-                ? new Date(snapshotDate).toLocaleString("id-ID", {
+                ? new Date(snapshotDate).toLocaleString("en-US", {
                     day: "numeric",
                     month: "short",
                     year: "numeric",
@@ -197,7 +197,7 @@ export const ContractHistoryTabPanel = ({
                           <VStack align="start" spacing={0}>
                             <Text fontSize="2xs" color="gray.500" fontWeight="bold">SIGNING DATE</Text>
                             <Text fontSize="xs" fontWeight="bold">
-                              {history.contractDate ? new Date(history.contractDate).toLocaleDateString("id-ID") : "-"}
+                              {history.contractDate ? new Date(history.contractDate).toLocaleDateString("en-US") : "-"}
                             </Text>
                           </VStack>
                         </GridItem>
@@ -262,7 +262,7 @@ export const ContractHistoryTabPanel = ({
                                       {formatIDR(topStep.topValues || 0)}
                                     </Td>
                                     <Td textAlign="right" fontSize="xs">
-                                      {topStep.topDate ? new Date(topStep.topDate).toLocaleDateString("id-ID") : "-"}
+                                      {topStep.topDate ? new Date(topStep.topDate).toLocaleDateString("en-US") : "-"}
                                     </Td>
                                   </Tr>
                                 ))}

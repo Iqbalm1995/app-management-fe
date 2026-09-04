@@ -11,6 +11,8 @@ import useAppsCriticalReporting, {
   AppsCriticalReportingDocumentResponse,
   AppsCriticalReportingPeriodDetailResponse,
 } from "@/app/services/useAppsCriticalReporting";
+import useMediaObject from "@/app/services/useMediaObject";
+import { useDownloadManagerModal } from "@/app/context/DownloadManagerContext";
 import {
   Badge, Box, Button, Card, CardBody, Divider, Flex, FormControl,
   FormErrorMessage, FormLabel, Grid, GridItem, HStack, Icon, IconButton,
@@ -35,6 +37,8 @@ export default function ReportingPeriodDetailView() {
   const periodId = searchParams.get("id");
 
   const { GetDetail, Update, Delete, UploadDocument, UpdateDocument, DeleteDocument } = useAppsCriticalReporting();
+  const { SecureDownloadFiles, error: secureDownloadError } = useMediaObject();
+  const { openDownloadManager, activeJobsCount } = useDownloadManagerModal();
 
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState("");
@@ -48,6 +52,7 @@ export default function ReportingPeriodDetailView() {
   const [isDeleteDocOpen, setIsDeleteDocOpen] = useState(false);
   const [isDeletePeriodOpen, setIsDeletePeriodOpen] = useState(false);
   const [deletingDocId, setDeletingDocId] = useState("");
+  const [downloadingDocId, setDownloadingDocId] = useState<string | null>(null);
   const { isOpen: isUploadOpen, onOpen: onUploadOpen, onClose: onUploadClose } = useDisclosure();
   const { isOpen: isEditDocOpen, onOpen: onEditDocOpen, onClose: onEditDocClose } = useDisclosure();
 
@@ -130,6 +135,76 @@ export default function ReportingPeriodDetailView() {
     onEditDocOpen();
   };
 
+  const handleDownloadDocument = async (doc: AppsCriticalReportingDocumentResponse) => {
+    // If it's an external link attachment, open in new tab
+    if (doc.linkAttachment) {
+      window.open(doc.linkAttachment, "_blank");
+      return;
+    }
+
+    if (!doc.mediaObjectId) {
+      if (doc.fileUrl) {
+        window.open(doc.fileUrl, "_blank");
+      } else {
+        showToast({
+          description: "Tidak ada file yang dapat diunduh",
+          statusToast: "warning",
+        });
+      }
+      return;
+    }
+
+    if (!tokenData) {
+      showToast({
+        description: "Autentikasi diperlukan. Silakan login kembali.",
+        statusToast: "error",
+      });
+      return;
+    }
+
+    setDownloadingDocId(doc.id);
+    try {
+      const rawName = doc.fileName || doc.reportName || "document";
+      const baseName = rawName.replace(/\.[^/.]+$/, "");
+      const zipFileName = `${baseName}.zip`;
+
+      const blob = await SecureDownloadFiles(
+        [doc.mediaObjectId],
+        tokenData,
+        doc.id,
+        "AppsCriticalReporting",
+        zipFileName
+      );
+
+      if (blob) {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = zipFileName;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        showToast({
+          description: "File berhasil diunduh. Password ZIP telah dikirim ke email Anda.",
+          statusToast: "success",
+        });
+      } else {
+        showToast({
+          description: secureDownloadError || "Gagal mengunduh file",
+          statusToast: "error",
+        });
+      }
+    } catch (err: any) {
+      showToast({
+        description: err?.message || "Terjadi kesalahan saat mengunduh file",
+        statusToast: "error",
+      });
+    } finally {
+      setDownloadingDocId(null);
+    }
+  };
+
   if (loading) return <LayoutAdmin><Box p={10} textAlign="center"><Spinner size="xl" color="secondary.500" /></Box></LayoutAdmin>;
 
   return (
@@ -163,6 +238,21 @@ export default function ReportingPeriodDetailView() {
                   </VStack>
                 </HStack>
                 <HStack spacing={2}>
+                  <Button
+                    size="sm"
+                    bg="whiteAlpha.200"
+                    color="white"
+                    _hover={{ bg: "whiteAlpha.300" }}
+                    leftIcon={<FiDownload />}
+                    onClick={openDownloadManager}
+                  >
+                    Download Manager
+                    {activeJobsCount > 0 && (
+                      <Badge colorScheme="blue" rounded="full" ml={2} px={1.5}>
+                        {activeJobsCount}
+                      </Badge>
+                    )}
+                  </Button>
                   <Button size="sm" bg="whiteAlpha.200" color="white" _hover={{ bg: "whiteAlpha.300" }} leftIcon={<FiPlus />} onClick={onUploadOpen}>Upload Document</Button>
                   <Button size="sm" bg="red.400" color="white" _hover={{ bg: "red.500" }} leftIcon={<FiTrash2 />} onClick={() => setIsDeletePeriodOpen(true)}>Delete Period</Button>
                 </HStack>
@@ -247,9 +337,17 @@ export default function ReportingPeriodDetailView() {
                       </Box>
                       {/* Right: Action group (fixed 130px, vertically centered, right-aligned) */}
                       <HStack spacing="10px" justify="flex-end" align="center" minH="32px" w="130px">
-                        {(doc.fileUrl || doc.linkAttachment) && (
-                          <IconButton aria-label="Download" icon={<FiDownload />} size="sm" colorScheme="blue" variant="ghost"
-                            onClick={() => window.open(doc.linkAttachment || doc.fileUrl || "", "_blank")} />
+                        {(doc.mediaObjectId || doc.fileUrl || doc.linkAttachment) && (
+                          <IconButton
+                            aria-label="Download"
+                            icon={<FiDownload />}
+                            size="sm"
+                            colorScheme="blue"
+                            variant="ghost"
+                            isLoading={downloadingDocId === doc.id}
+                            isDisabled={downloadingDocId !== null}
+                            onClick={() => handleDownloadDocument(doc)}
+                          />
                         )}
                         <IconButton aria-label="Edit" icon={<FiEdit />} size="sm" colorScheme="blue" variant="ghost" onClick={() => handleEditDoc(doc)} />
                         <IconButton aria-label="Delete" icon={<FiTrash2 />} size="sm" colorScheme="red" variant="ghost"

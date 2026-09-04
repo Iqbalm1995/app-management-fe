@@ -77,11 +77,12 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import React, { useEffect, useMemo, useState } from "react";
-import { FiRefreshCcw, FiCamera } from "react-icons/fi";
-import { FaFileExcel } from "react-icons/fa";
+import { FiRefreshCcw, FiCamera, FiDownload } from "react-icons/fi";
+import { FaFileExcel, FaFilePdf } from "react-icons/fa";
 import { TbListDetails } from "react-icons/tb";
 import { useRouter } from "next/navigation";
 import SdlcReportModal from "./components/SdlcReportModal";
+import { useDownloadManagerModal } from "@/app/context/DownloadManagerContext";
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Project Active Portfolio Report",
@@ -94,11 +95,11 @@ function ProjectActivePortfolioReportPage() {
   const { colorMode } = useColorMode();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
-  const { ListProjectActivePortofolio, ExportProjectActivePortofolioExcel, ExportProjectActivePortofolioListExcel, isLoading: reportLoading } = useReports();
+  const { ListProjectActivePortofolio, isLoading: reportLoading } = useReports();
   const { projectActivePortofolio, isLoading: snapshotLoading } = useSnapshotServices();
+  const { requestExport, openDownloadManager, activeJobsCount } = useDownloadManagerModal();
   const router = useRouter();
   const { isOpen: isSdlcModalOpen, onOpen: onSdlcModalOpen, onClose: onSdlcModalClose } = useDisclosure();
-  const { isOpen: isCautionModalOpen, onOpen: onCautionModalOpen, onClose: onCautionModalClose } = useDisclosure();
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
   const [selectedProjectName, setSelectedProjectName] = useState<string>("");
   const [isExporting, setIsExporting] = useState(false);
@@ -203,140 +204,41 @@ function ProjectActivePortfolioReportPage() {
     onSdlcModalOpen();
   };
 
-  // Handle Excel Export
-  const handleExportToExcel = () => {
-    onCautionModalOpen();
-  };
-
-  // Handle Live Data Excel Export
-  const handleExportLiveDataToExcel = async () => {
+  // Handle Asynchronous Export via Download Manager
+  const handleExport = async (exportType: "XLSX" | "PDF") => {
     setIsExporting(true);
 
-    if (!DataAuth || !tokenData) {
-      showToast({
-        description: "Authentication required",
-        statusToast: "error",
-      });
-      setIsExporting(false);
-      return;
-    }
-
-    // Add year and quarter filters like the table does
     const initialFilters: any[] = [];
-    
     if (FilterYear) {
       initialFilters.push({ Field: "yearPeriod", Value: FilterYear, Operator: "=" });
     }
-    
     if (FilterQuarter) {
       initialFilters.push({ Field: "quartalPeriod", Value: FilterQuarter, Operator: "=" });
     }
 
-    // Convert ParamFilter to backend format
     const backendFilters = ParamFilter.map(filter => ({
       Field: filter.field,
       Value: filter.value,
       Operator: filter.operator
     }));
 
-    // Create final payload with proper backend format
-    const finalExportPayload = {
+    const exportPayload: PaggingListPayloadCustom = {
       search: globalFilter,
       limit: -1,
       page: 0,
-      FilterWhere: [...backendFilters, ...initialFilters], // Convert to capital F
-      FieldOrder: ["projectRegisterDate"], // Convert to capital F
-      OrderDir: "desc", // Convert to capital O
-    };
-
-    try {
-      const blob = await ExportProjectActivePortofolioListExcel(finalExportPayload as any, tokenData);
-      
-      if (blob) {
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `Project_Active_Portfolio_${new Date().toISOString().split('T')[0]}.xlsx`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        
-        showToast({
-          description: "Excel file exported successfully",
-          statusToast: "success",
-        });
-      } else {
-        showToast({
-          description: "No data to export",
-          statusToast: "error",
-        });
-      }
-    } catch (error) {
-      console.error("Export error:", error);
-      showToast({
-        description: "Failed to export Excel file",
-        statusToast: "error",
-      });
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  const confirmExportToExcel = async () => {
-    onCautionModalClose();
-    setIsExporting(true);
-
-    if (!DataAuth || !tokenData) {
-      showToast({
-        description: "Authentication required",
-        statusToast: "error",
-      });
-      setIsExporting(false);
-      return;
-    }
-
-    const exportPayload: PaggingListPayloadCustom = {
-      search: globalFilter,
-      limit: -1, // Get all records
-      page: 0,
-      filterWhere: ParamFilter,
+      filterWhere: [...backendFilters, ...initialFilters],
       fieldOrder: ["projectRegisterDate"],
       orderDir: "desc",
     };
 
-    try {
-      const blob = await ExportProjectActivePortofolioExcel(exportPayload, tokenData);
-      
-      if (blob) {
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `Project_Active_Portfolio_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        
-        showToast({
-          description: "Excel file exported successfully",
-          statusToast: "success",
-        });
-      } else {
-        showToast({
-          description: "No data to export",
-          statusToast: "warning",
-        });
-      }
-    } catch (error) {
-      console.error("Export error:", error);
-      showToast({
-        description: "Failed to export Excel file",
-        statusToast: "error",
-      });
-    } finally {
-      setIsExporting(false);
-    }
+    await requestExport({
+      moduleName: "PROJECT_ACTIVE_PORTFOLIO",
+      exportType: exportType,
+      reportTitle: `Project Active Portfolio Report (${FilterQuarter ? `Q${FilterQuarter}` : "All Q"} ${FilterYear || ""})`,
+      filterParams: exportPayload,
+    });
+
+    setIsExporting(false);
   };
 
   // Column definitions
@@ -1002,22 +904,45 @@ function ProjectActivePortfolioReportPage() {
         <CardHeader>
           <Flex justify="space-between" align="center">
             <Heading size="md">Project Active Portfolio</Heading>
-            <HStack spacing={3}>
+            <HStack spacing={2} wrap="wrap">
+              <Button
+                leftIcon={<FiDownload />}
+                colorScheme="blue"
+                variant="outline"
+                size="sm"
+                onClick={openDownloadManager}
+              >
+                Download Manager
+                {activeJobsCount > 0 && (
+                  <Badge colorScheme="blue" rounded="full" ml={2} px={1.5}>
+                    {activeJobsCount}
+                  </Badge>
+                )}
+              </Button>
               <Button
                 leftIcon={<FaFileExcel />}
                 colorScheme="green"
-                variant="outline"
                 size="sm"
-                onClick={handleExportLiveDataToExcel}
+                onClick={() => handleExport("XLSX")}
                 isDisabled={isExporting}
                 isLoading={isExporting}
-                loadingText="Exporting..."
               >
                 Export Excel
               </Button>
               <Button
+                leftIcon={<FaFilePdf />}
+                colorScheme="red"
+                size="sm"
+                onClick={() => handleExport("PDF")}
+                isDisabled={isExporting}
+                isLoading={isExporting}
+              >
+                Export PDF
+              </Button>
+              <Button
                 leftIcon={<FiCamera />}
-                colorScheme="green"
+                colorScheme="teal"
+                variant="outline"
                 size="sm"
                 onClick={CreateSnapshot}
                 isLoading={snapshotLoading}
@@ -1028,7 +953,7 @@ function ProjectActivePortfolioReportPage() {
               <Button
                 leftIcon={<FiRefreshCcw />}
                 colorScheme="blue"
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={RefreshAction}
                 isLoading={IsLoadingProcess}
@@ -1194,37 +1119,6 @@ function ProjectActivePortfolioReportPage() {
         projectName={selectedProjectName}
       />
 
-      {/* Export Caution Modal */}
-      <Modal isOpen={isCautionModalOpen} onClose={onCautionModalClose} size="md">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Export Confirmation</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <Alert status="warning" mb={4}>
-              <AlertIcon />
-              This export may take some time to process due to the large amount of data.
-            </Alert>
-            <Text>
-              Are you sure you want to export all project active portfolio data to Excel? 
-              This will include all current filters and may generate a large file.
-            </Text>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="ghost" mr={3} onClick={onCautionModalClose}>
-              Cancel
-            </Button>
-            <Button 
-              colorScheme="green" 
-              onClick={confirmExportToExcel}
-              isLoading={isExporting}
-              loadingText="Exporting..."
-            >
-              Export Excel
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
     </LayoutAdmin>
   );
 }

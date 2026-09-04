@@ -575,6 +575,8 @@ export default function AppsAssessmentDetailView() {
                     onClick={() => {
                       if (sourceParam === "pending")
                         router.push("/report/apps-assessments-pending-approve");
+                      else if (sourceParam === "workspace")
+                        router.push("/workspace/applications?tab=assessments");
                       else router.back();
                     }}
                   />

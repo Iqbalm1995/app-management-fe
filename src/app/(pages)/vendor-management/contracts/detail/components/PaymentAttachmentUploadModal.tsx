@@ -48,11 +48,11 @@ interface PaymentAttachmentUploadModalProps {
 
 const DOCUMENT_TYPES = [
   { value: "BAST", label: "Berita Acara Serah Terima (BAST)" },
-  { value: "INVOICE", label: "Invoice / Tagihan Pembayaran" },
-  { value: "SPP", label: "Surat Permohonan Pembayaran (SPP)" },
-  { value: "SPTJB", label: "Surat Pernyataan Tanggung Jawab Belanja (SPTJB)" },
-  { value: "FAKTUR_PAJAK", label: "Faktur Pajak (e-Faktur)" },
-  { value: "OTHER", label: "Dokumen Pendukung Lainnya" },
+  { value: "INVOICE", label: "Invoice / Payment Billing" },
+  { value: "SPP", label: "Payment Request Letter (SPP)" },
+  { value: "SPTJB", label: "Expenditure Responsibility Statement (SPTJB)" },
+  { value: "FAKTUR_PAJAK", label: "Tax Invoice (e-Faktur)" },
+  { value: "OTHER", label: "Other Supporting Documents" },
 ];
 
 export default function PaymentAttachmentUploadModal({
@@ -213,13 +213,19 @@ export default function PaymentAttachmentUploadModal({
         <ModalBody py={5}>
           <VStack spacing={4} align="stretch">
             {/* Document Type & Version */}
-            <Flex gap={3} direction={{ base: "column", md: "row" }}>
+            <Flex gap={3} direction={{ base: "column", md: "row" }} align="flex-start">
               <FormControl isRequired isInvalid={!!errors.documentType} flex={2}>
-                <FormLabel fontSize="xs" fontWeight="bold">
-                  <HStack spacing={1}>
-                    <Icon as={FiTag} />
-                    <Text>Document Classification</Text>
-                  </HStack>
+                <FormLabel
+                  display="inline-flex"
+                  alignItems="center"
+                  gap={1.5}
+                  fontSize="xs"
+                  fontWeight="bold"
+                  mb={1.5}
+                  minH="20px"
+                >
+                  <Icon as={FiTag} />
+                  <span>Document Classification</span>
                 </FormLabel>
                 <Select
                   size="sm"
@@ -239,8 +245,16 @@ export default function PaymentAttachmentUploadModal({
               </FormControl>
 
               <FormControl flex={1}>
-                <FormLabel fontSize="xs" fontWeight="bold">
-                  Version Tag
+                <FormLabel
+                  display="inline-flex"
+                  alignItems="center"
+                  gap={1.5}
+                  fontSize="xs"
+                  fontWeight="bold"
+                  mb={1.5}
+                  minH="20px"
+                >
+                  <span>Version Tag</span>
                 </FormLabel>
                 <Input
                   size="sm"
@@ -254,18 +268,24 @@ export default function PaymentAttachmentUploadModal({
 
             {/* Document Name */}
             <FormControl isRequired isInvalid={!!errors.documentName}>
-              <FormLabel fontSize="xs" fontWeight="bold">
-                <HStack spacing={1}>
-                  <Icon as={FiFileText} />
-                  <Text>Document Title / Description</Text>
-                </HStack>
+              <FormLabel
+                display="inline-flex"
+                alignItems="center"
+                gap={1.5}
+                fontSize="xs"
+                fontWeight="bold"
+                mb={1.5}
+                minH="20px"
+              >
+                <Icon as={FiFileText} />
+                <span>Document Title / Description</span>
               </FormLabel>
               <Input
                 size="sm"
                 rounded="lg"
                 value={documentName}
                 onChange={(e) => setDocumentName(e.target.value)}
-                placeholder="e.g. BAST Tahap 1 Milestone Integrasi API"
+                placeholder="e.g. BAST Milestone 1 API Integration"
               />
               {errors.documentName && (
                 <FormErrorMessage fontSize="2xs">{errors.documentName}</FormErrorMessage>
@@ -273,13 +293,19 @@ export default function PaymentAttachmentUploadModal({
             </FormControl>
 
             {/* Document Number & Date */}
-            <Flex gap={3} direction={{ base: "column", md: "row" }}>
+            <Flex gap={3} direction={{ base: "column", md: "row" }} align="flex-start">
               <FormControl isRequired isInvalid={!!errors.documentNumber} flex={1}>
-                <FormLabel fontSize="xs" fontWeight="bold">
-                  <HStack spacing={1}>
-                    <Icon as={FiHash} />
-                    <Text>Document Number / Reference</Text>
-                  </HStack>
+                <FormLabel
+                  display="inline-flex"
+                  alignItems="center"
+                  gap={1.5}
+                  fontSize="xs"
+                  fontWeight="bold"
+                  mb={1.5}
+                  minH="20px"
+                >
+                  <Icon as={FiHash} />
+                  <span>Document Number / Reference</span>
                 </FormLabel>
                 <Input
                   size="sm"
@@ -294,11 +320,17 @@ export default function PaymentAttachmentUploadModal({
               </FormControl>
 
               <FormControl isRequired isInvalid={!!errors.documentDate} flex={1}>
-                <FormLabel fontSize="xs" fontWeight="bold">
-                  <HStack spacing={1}>
-                    <Icon as={FiCalendar} />
-                    <Text>Official Document Date</Text>
-                  </HStack>
+                <FormLabel
+                  display="inline-flex"
+                  alignItems="center"
+                  gap={1.5}
+                  fontSize="xs"
+                  fontWeight="bold"
+                  mb={1.5}
+                  minH="20px"
+                >
+                  <Icon as={FiCalendar} />
+                  <span>Official Document Date</span>
                 </FormLabel>
                 <Input
                   type="date"
@@ -315,11 +347,17 @@ export default function PaymentAttachmentUploadModal({
 
             {/* File Drag and Drop Zone */}
             <FormControl isInvalid={!!errors.file}>
-              <FormLabel fontSize="xs" fontWeight="bold">
-                <HStack spacing={1}>
-                  <Icon as={FiUploadCloud} />
-                  <Text>Attachment File (PDF, DOCX, XLSX, Images up to 25MB)</Text>
-                </HStack>
+              <FormLabel
+                display="inline-flex"
+                alignItems="center"
+                gap={1.5}
+                fontSize="xs"
+                fontWeight="bold"
+                mb={1.5}
+                minH="20px"
+              >
+                <Icon as={FiUploadCloud} />
+                <span>Attachment File (PDF, DOCX, XLSX, Images up to 25MB)</span>
               </FormLabel>
 
               <input

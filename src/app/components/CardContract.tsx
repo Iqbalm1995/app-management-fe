@@ -40,11 +40,12 @@ interface CardContractProps {
 
 export const formatIDR = (value: number, showValue: boolean = true) => {
   if (!showValue) return "Rp ••••••••••";
-  if (value === undefined || value === null) return "Rp 0";
+  if (value === undefined || value === null || isNaN(value)) return "Rp 0";
   return new Intl.NumberFormat("id-ID", {
     style: "currency",
     currency: "IDR",
-    maximumFractionDigits: 0,
+    minimumFractionDigits: value % 1 !== 0 ? 2 : 0,
+    maximumFractionDigits: 2,
   }).format(value);
 };
 
@@ -85,7 +86,7 @@ export const getContractDeadlineStatus = (endDateStr?: string | null): ContractD
       isExpiringSoon: false,
       badgeColor: "red",
       badgeLabel: `EXPIRED (${expiredDays}d ago)`,
-      warningMessage: `This contract expired ${expiredDays} day(s) ago on ${new Date(endDateStr).toLocaleDateString("id-ID")}. Immediate action or extension required!`,
+      warningMessage: `This contract expired ${expiredDays} day(s) ago on ${new Date(endDateStr).toLocaleDateString("en-US")}. Immediate action or extension required!`,
     };
   }
 
@@ -96,7 +97,7 @@ export const getContractDeadlineStatus = (endDateStr?: string | null): ContractD
       isExpiringSoon: true,
       badgeColor: "orange",
       badgeLabel: `EXPIRING SOON (${daysRemaining}d left)`,
-      warningMessage: `Contract Expiration Warning: This contract will expire in ${daysRemaining} day(s) on ${new Date(endDateStr).toLocaleDateString("id-ID")}. 1-month notice active.`,
+      warningMessage: `Contract Expiration Warning: This contract will expire in ${daysRemaining} day(s) on ${new Date(endDateStr).toLocaleDateString("en-US")}. 1-month notice active.`,
     };
   }
 
@@ -241,7 +242,7 @@ const CardContract = ({ data, showWorkValue = false }: CardContractProps) => {
                 <Text color="gray.500">Contract Period:</Text>
               </HStack>
               <Text fontWeight="600">
-                {new Date(data.contractStartDate).toLocaleDateString("id-ID")} - {new Date(data.contractEndDate).toLocaleDateString("id-ID")}
+                {new Date(data.contractStartDate).toLocaleDateString("en-US")} - {new Date(data.contractEndDate).toLocaleDateString("en-US")}
               </Text>
             </HStack>
 

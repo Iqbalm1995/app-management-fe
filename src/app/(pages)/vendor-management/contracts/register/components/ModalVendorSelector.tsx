@@ -93,7 +93,7 @@ const ModalVendorSelector = ({
   }, [fetchVendors]);
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="xl" isCentered scrollBehavior="inside">
+    <Modal isOpen={isOpen} onClose={onClose} size="4xl" isCentered scrollBehavior="inside">
       <ModalOverlay backdropFilter="blur(4px)" bg="blackAlpha.600" />
       <ModalContent rounded="2xl" shadow="2xl">
         <ModalHeader borderBottom="1px" borderColor={colorMode === "light" ? "gray.100" : "gray.700"}>

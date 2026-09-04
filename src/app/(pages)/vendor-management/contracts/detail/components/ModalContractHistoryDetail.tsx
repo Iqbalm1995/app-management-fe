@@ -63,7 +63,7 @@ export const ModalContractHistoryDetail = ({
 
   const snapshotDate = history.updatedAt || history.createdAt;
   const formattedDate = snapshotDate
-    ? new Date(snapshotDate).toLocaleString("id-ID", {
+    ? new Date(snapshotDate).toLocaleString("en-US", {
         day: "numeric",
         month: "short",
         year: "numeric",
@@ -77,7 +77,7 @@ export const ModalContractHistoryDetail = ({
 
   const formatDateStr = (dateStr?: string | null) => {
     if (!dateStr) return "-";
-    return new Date(dateStr).toLocaleDateString("id-ID", {
+    return new Date(dateStr).toLocaleDateString("en-US", {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -376,10 +376,10 @@ export const ModalContractHistoryDetail = ({
 
                     <HStack spacing={2}>
                       <Badge colorScheme="blue" fontSize="2xs" px={2} py={0.5} rounded="md">
-                        Anggaran RBB: {formatIDR(history.costGovernanceHistory.totalBudgetRbb || 0)}
+                        RBB Budget: {formatIDR(history.costGovernanceHistory.totalBudgetRbb || 0)}
                       </Badge>
                       <Badge colorScheme={history.costGovernanceHistory.globalResapanPercentage >= 0 ? "teal" : "red"} fontSize="2xs" px={2} py={0.5} rounded="md">
-                        Resapan: {history.costGovernanceHistory.globalResapanPercentage?.toFixed(2)}%
+                        Absorption: {history.costGovernanceHistory.globalResapanPercentage?.toFixed(2)}%
                       </Badge>
                     </HStack>
                   </Flex>
@@ -394,8 +394,8 @@ export const ModalContractHistoryDetail = ({
                             <Th>HPS Model</Th>
                             <Th>Tag</Th>
                             <Th textAlign="right">Nilai HPS (IDR)</Th>
-                            <Th textAlign="right">vs Anggaran RBB</Th>
-                            <Th textAlign="right">vs Nilai Kontrak</Th>
+                            <Th textAlign="right">vs RBB Budget</Th>
+                            <Th textAlign="right">vs Contract Value</Th>
                           </Tr>
                         </Thead>
                         <Tbody>

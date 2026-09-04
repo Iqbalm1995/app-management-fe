@@ -104,6 +104,7 @@ import {
   FiClock,
   FiList,
   FiGrid,
+  FiDownload,
 } from "react-icons/fi";
 import { IconType } from "react-icons";
 import { GoDotFill } from "react-icons/go";
@@ -123,6 +124,7 @@ import {
   useToastHelperShort,
 } from "../helper/ToastMessagesHelper";
 import { AuthDataModelInterface, useAuth } from "../context/AuthContext";
+import { useDownloadManagerModal } from "../context/DownloadManagerContext";
 import { getIconComponent } from "../utils/iconRegistry";
 import {
   DELAY_ZERO,
@@ -257,6 +259,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const { Logout } = useAuthentications();
   const showToast = useToastHelper();
+  const { openDownloadManager, activeJobsCount } = useDownloadManagerModal();
 
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -778,6 +781,40 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                 <Button onClick={toggleColorMode} variant={"ghost"}>
                   {colorMode === "light" ? <MoonIcon /> : <SunIcon />}
                 </Button>
+                <Tooltip label="Download Manager (Riwayat & Antrean Ekspor)" borderRadius="md" hasArrow>
+                  <Box position="relative">
+                    <IconButton
+                      aria-label="Download Manager"
+                      icon={<FiDownload />}
+                      variant="ghost"
+                      onClick={openDownloadManager}
+                      color={useColorModeValue("gray.700", "gray.200")}
+                      _hover={{
+                        bg: useColorModeValue("blue.50", "gray.700"),
+                        color: "blue.500",
+                      }}
+                      fontSize="lg"
+                    />
+                    {activeJobsCount > 0 && (
+                      <Badge
+                        colorScheme="blue"
+                        variant="solid"
+                        borderRadius="full"
+                        position="absolute"
+                        top="0"
+                        right="0"
+                        fontSize="10px"
+                        minW="18px"
+                        h="18px"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                      >
+                        {activeJobsCount}
+                      </Badge>
+                    )}
+                  </Box>
+                </Tooltip>
                 <Link href={"/workspace"}>
                   <Button
                     leftIcon={<FaCode />}
@@ -918,6 +955,25 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                         Profile
                       </MenuItem>
                     </Link> */}
+                    <MenuItem
+                      color={useColorModeValue("gray.800", "white")}
+                      bg={useColorModeValue("white", "gray.900")}
+                      _hover={{
+                        bg: useColorModeValue("gray.100", "gray.700"),
+                        color: useColorModeValue("gray.900", "white"),
+                      }}
+                      icon={<FiDownload />}
+                      onClick={openDownloadManager}
+                    >
+                      <Flex justify="space-between" align="center" w="full">
+                        <Text>Download Manager</Text>
+                        {activeJobsCount > 0 && (
+                          <Badge colorScheme="blue" rounded="full" px={1.5} fontSize="3xs">
+                            {activeJobsCount}
+                          </Badge>
+                        )}
+                      </Flex>
+                    </MenuItem>
                     <Link href="/change-password">
                       <MenuItem
                         color={useColorModeValue("gray.800", "white")}

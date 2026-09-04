@@ -95,6 +95,14 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
     baseMenu: "/workspace",
   },
   {
+    pattern: "/workspace/applications",
+    baseMenu: "/workspace",
+  },
+  {
+    pattern: "/workspace/applications/assessment",
+    baseMenu: "/workspace",
+  },
+  {
     pattern: "/cab/cab-request",
     baseMenu: "/cab",
   },
@@ -222,18 +230,20 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
     baseMenu: "/vendor-management",
   },
 
-  ///master-data/rbb/register/
+  // ===== MASTER DATA RBB =====
   {
     pattern: "/master-data/rbb/register",
     baseMenu: "/master-data/rbb",
+    permission: "make",
   },
   {
     pattern: "/master-data/rbb/detail",
     baseMenu: "/master-data/rbb",
   },
   {
-    pattern: "/master-data/rbb/edi",
+    pattern: "/master-data/rbb/edit",
     baseMenu: "/master-data/rbb",
+    permission: "make",
   },
 
   {
@@ -298,6 +308,10 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
     pattern: "/report/upload-report-assessments-apps/detail",
     baseMenu: "/report/upload-report-assessments-apps",
   },
+  {
+    pattern: "/report/reports/download-manager",
+    baseMenu: "/download-manager",
+  },
 
   // Menus
   {
@@ -324,6 +338,10 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
   },
 
   // Application
+  {
+    pattern: "/master-data/Application/add",
+    baseMenu: "/master-data",
+  },
   {
     pattern: "/master-data/Application/detail",
     baseMenu: "/master-data",

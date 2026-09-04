@@ -148,7 +148,7 @@ export default function ContractCostGovernanceTabPanel({
           id: wp.id || `contract_wp_${idx}`,
           source: wp.workProgramSource || "RBB (Project)",
           code: wp.workProgramCode || "-",
-          name: wp.workProgramAccName || wp.workProgramName || "Pos Anggaran Proyek",
+          name: wp.workProgramAccName || wp.workProgramName || "Project Budget Line",
           accNumber: wp.workProgramAccNumber || "-",
           accCc: wp.workProgramAccCc || "-",
           budget: wp.workProgramBudget || 0,
@@ -168,7 +168,7 @@ export default function ContractCostGovernanceTabPanel({
             id: wp.id || `prj_wp_${idx}`,
             source: wp.workProgramSource || "RBB (Project)",
             code: wp.workProgramCode || "-",
-            name: wp.workProgramAccName || wp.workProgramName || "Pos Anggaran Proyek",
+            name: wp.workProgramAccName || wp.workProgramName || "Project Budget Line",
             accNumber: wp.workProgramAccNumber || "-",
             accCc: wp.workProgramAccCc || "-",
             budget: wp.workProgramBudget || 0,
@@ -189,7 +189,7 @@ export default function ContractCostGovernanceTabPanel({
             id: wp.id || wp.reqWorkProgramId || `pmt_wp_${idx}`,
             source: wp.workProgramSource || "RBB (Payment)",
             code: wp.workProgramCode || "-",
-            name: wp.workProgramAccName || wp.workProgramName || "Pos Anggaran Kontrak",
+            name: wp.workProgramAccName || wp.workProgramName || "Contract Budget Line",
             accNumber: wp.workProgramAccNumber || "-",
             accCc: wp.workProgramAccCc || "-",
             budget: wp.workProgramBudget || 0,
@@ -263,7 +263,7 @@ export default function ContractCostGovernanceTabPanel({
         nominal: Math.round(baseC * 1.02), // Default: 102% of contract (Procurement benchmark)
         isRemovable: true,
         isBenchmark: false,
-        notes: "Estimasi unit pengadaan / Procurement",
+        notes: "Procurement unit estimation",
       },
       {
         id: "hps_komite",
@@ -273,7 +273,7 @@ export default function ContractCostGovernanceTabPanel({
         nominal: Math.round(baseC * 1.0), // Default: Target final tender committee limit
         isRemovable: true,
         isBenchmark: true, // Primary benchmark
-        notes: "Plafon yang disetujui Komite Tender / Direksi",
+        notes: "Ceiling approved by Tender Committee / Board",
       },
     ];
   };
@@ -446,7 +446,7 @@ export default function ContractCostGovernanceTabPanel({
       nominal: defaultNominal,
       isRemovable: true,
       isBenchmark: false,
-      notes: "Estimasi tambahan / Reviewer independen",
+      notes: "Additional estimation / Independent reviewer",
     };
     setHpsList((prev) => [...prev, newItem]);
     setActiveSelectedHpsId(newId);
@@ -471,7 +471,7 @@ export default function ContractCostGovernanceTabPanel({
     setActiveSelectedHpsId("hps_komite");
     toast({
       title: "Reset Parameter HPS",
-      description: "HPS telah dikembalikan ke 3 varian default (IT, Umum, Komite)",
+      description: "HPS baselines reset to 3 default variants (IT, General, Committee)",
       status: "info",
       duration: 3000,
       isClosable: true,
@@ -483,8 +483,8 @@ export default function ContractCostGovernanceTabPanel({
     if (totalWorkProgramBudget > 0) {
       setManualBudgetRbb(totalWorkProgramBudget);
       toast({
-        title: "Sinkronisasi Berhasil",
-        description: `Total Anggaran RBB telah disinkronkan menjadi ${formatIDR(totalWorkProgramBudget)}`,
+        title: "Sync Successful",
+        description: `Total RBB Budget synchronized to ${formatIDR(totalWorkProgramBudget)}`,
         status: "success",
         duration: 3000,
         isClosable: true,
@@ -514,7 +514,7 @@ export default function ContractCostGovernanceTabPanel({
         itVsKomitePercentage: itVsKomitePct,
         governanceNotes: governanceNotes.trim() || null,
         status: "ACTIVE",
-        revisionReason: revisionReason.trim() || "Perubahan Tata Kelola Biaya & Parameter HPS",
+        revisionReason: revisionReason.trim() || "Cost Governance & HPS Parameter Modification",
         hpsItems: evaluatedHpsList.map((item, idx) => ({
           id:
             item.id.startsWith("hps_custom_") ||
@@ -543,14 +543,14 @@ export default function ContractCostGovernanceTabPanel({
       };
 
       if (typeof SaveCostGovernance !== "function") {
-        throw new Error("Service penyimpanan belum siap. Silakan refresh halaman.");
+        throw new Error("Storage service is not ready. Please refresh the page.");
       }
 
       const res = await SaveCostGovernance(payload, tokenData);
       if (res?.statusCode === RES_CODE_OK) {
         toast({
-          title: "Berhasil Menyimpan",
-          description: "Data Tata Kelola Biaya & Perbandingan HPS berhasil diperbarui",
+          title: "Save Successful",
+          description: "Cost Governance data & HPS comparisons updated successfully",
           status: "success",
           duration: 4000,
           isClosable: true,
@@ -562,8 +562,8 @@ export default function ContractCostGovernanceTabPanel({
         onRefreshContract?.();
       } else {
         toast({
-          title: "Gagal Menyimpan",
-          description: res?.message || "Terjadi kesalahan saat menyimpan",
+          title: "Failed to Save",
+          description: res?.message || "An error occurred while saving",
           status: "error",
           duration: 4000,
           isClosable: true,
@@ -572,7 +572,7 @@ export default function ContractCostGovernanceTabPanel({
       }
     } catch (err: any) {
       toast({
-        title: "Gagal Menyimpan",
+        title: "Failed to Save",
         description: err?.message || "Terjadi kesalahan jaringan",
         status: "error",
         duration: 4000,
@@ -588,16 +588,16 @@ export default function ContractCostGovernanceTabPanel({
   // CALCULATIONS & FORMULAS (Multi-HPS Governance Matrix)
   // -------------------------------------------------------------
 
-  // Global Ratio: Anggaran RBB vs Nilai Kontrak (Budget Absorption)
+  // Global Ratio: Anggaran RBB vs Contract Value (Budget Absorption)
   // Formula: (A - C) / A
   const diff3Nominal = A - C;
   const diff3Percentage = A > 0 ? (diff3Nominal / A) * 100 : 0;
   const note3 =
     diff3Nominal > 0
-      ? "Terdapat Resapan Anggaran RBB"
+      ? "RBB Budget Surplus / Remaining"
       : diff3Nominal === 0
-      ? "Sesuai Pagu Anggaran RBB"
-      : "Kontrak Melebihi Anggaran RBB";
+      ? "Matches RBB Budget Ceiling"
+      : "Contract Exceeds RBB Budget";
 
   // Calculations for each HPS item
   const evaluatedHpsList = useMemo(() => {
@@ -610,8 +610,8 @@ export default function ContractCostGovernanceTabPanel({
       const diff1Percentage = A > 0 ? (diff1Nominal / A) * 100 : 0;
       const isBudgetSufficient = diff1Nominal >= 0;
       const note1 = isBudgetSufficient
-        ? "Anggaran RBB Masih Mencukupi"
-        : "Anggaran RBB Tidak Mencukupi";
+        ? "RBB Budget is Sufficient"
+        : "RBB Budget is Insufficient";
 
       // 2. Ratio HPS vs Kontrak (Procurement Savings vs HPS)
       // Formula: (H - C) / H
@@ -622,7 +622,7 @@ export default function ContractCostGovernanceTabPanel({
           ? "Terdapat Penghematan"
           : diff2Nominal === 0
           ? "Sesuai HPS"
-          : "Kontrak Melebihi HPS";
+          : "Contract Exceeds HPS";
 
       return {
         ...item,
@@ -732,12 +732,12 @@ export default function ContractCostGovernanceTabPanel({
                       _hover={{ bg: "blue.500", color: "white" }}
                       onClick={() => setIsHistoryModalOpen(true)}
                     >
-                      {costGovHistories.length} Snapshot Riwayat
+                      {costGovHistories.length} Snapshot History
                     </Badge>
                   )}
                 </HStack>
                 <Text fontSize="sm" color="gray.500">
-                  Analisis komparasi 3 pilar: Anggaran RBB Work Program, Multi-HPS (IT, Umum, Komite), dan Nilai Kontrak Vendor
+                  3-pillar comparison analytics: RBB Work Program Budget, Multi-HPS (IT, General, Committee), and Vendor Contract Value
                 </Text>
               </VStack>
             </HStack>
@@ -752,11 +752,11 @@ export default function ContractCostGovernanceTabPanel({
               <VStack align={{ base: "start", md: "end" }} spacing={0}>
                 <HStack spacing={1.5}>
                   <Text fontSize="xs" fontWeight="bold" color="blue.600" textTransform="uppercase">
-                    Total Anggaran RBB (A)
+                    Total RBB Budget (A)
                   </Text>
-                  <Tooltip label="Klik untuk mengubah atau menyesuaikan Pagu Anggaran RBB" fontSize="xs">
+                  <Tooltip label="Click to modify or adjust RBB Budget Ceiling" fontSize="xs">
                     <IconButton
-                      aria-label="Edit Pagu RBB"
+                      aria-label="Edit RBB Budget Ceiling"
                       icon={<FiEdit3 />}
                       size="xs"
                       variant="ghost"
@@ -773,7 +773,7 @@ export default function ContractCostGovernanceTabPanel({
               {/* Metric C: Nilai Kontrak */}
               <VStack align={{ base: "start", md: "end" }} spacing={0}>
                 <Text fontSize="xs" fontWeight="bold" color="teal.600" textTransform="uppercase">
-                  Nilai Kontrak (C)
+                  Contract Value (C)
                 </Text>
                 <Heading size="md" color="teal.600" fontWeight="800">
                   {formatIDR(C)}
@@ -783,7 +783,7 @@ export default function ContractCostGovernanceTabPanel({
               {/* Metric A vs C: Resapan Anggaran RBB */}
               <VStack align={{ base: "start", md: "end" }} spacing={0}>
                 <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
-                  Resapan Anggaran (A vs C)
+                  Budget Absorption (A vs C)
                 </Text>
                 <HStack spacing={2}>
                   <Text
@@ -818,10 +818,10 @@ export default function ContractCostGovernanceTabPanel({
               <Grid templateColumns={{ base: "1fr", md: "1.5fr 1fr" }} gap={4} alignItems="center">
                 <VStack align="start" spacing={1}>
                   <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "gray.700" : "gray.200"}>
-                    Penyesuaian Manual Pagu Anggaran RBB (A):
+                    Manual Adjustment of RBB Budget Ceiling (A):
                   </Text>
                   <Text fontSize="xs" color="gray.500">
-                    Nilai ini menjadi baseline perbandingan terhadap seluruh varian HPS dan Nilai Kontrak.
+                    This value serves as the comparison baseline against all HPS variants and Contract Value.
                   </Text>
                   <Box w="full" maxW="380px" mt={1}>
                     <CurrencyInput
@@ -852,7 +852,7 @@ export default function ContractCostGovernanceTabPanel({
                     colorScheme="gray"
                     onClick={() => setIsEditingRbb(false)}
                   >
-                    Tutup Panel Penyesuaian
+                    Close Adjustment Panel
                   </Button>
                 </VStack>
               </Grid>
@@ -884,7 +884,7 @@ export default function ContractCostGovernanceTabPanel({
                   Konfigurasi Dynamic HPS ({evaluatedHpsList.length} Model)
                 </Heading>
                 <Text fontSize="sm" color="gray.500">
-                  HPS IT bersifat wajib (minimum 1 HPS). HPS Umum & Komite aktif secara default. Anda dapat menambah HPS kustom secara dinamis.
+                  IT HPS is required (minimum 1 HPS). General & Committee HPS are active by default. You can dynamically add custom HPS.
                 </Text>
               </VStack>
             </HStack>
@@ -907,7 +907,7 @@ export default function ContractCostGovernanceTabPanel({
                 leftIcon={<FiPlus />}
                 onClick={handleAddCustomHps}
               >
-                Tambah HPS Kustom
+                Add Custom HPS
               </Button>
 
               <Button
@@ -915,10 +915,10 @@ export default function ContractCostGovernanceTabPanel({
                 colorScheme="blue"
                 leftIcon={<FiSave />}
                 isLoading={isSaving}
-                loadingText="Menyimpan..."
+                loadingText="Saving..."
                 onClick={handleSaveGovernance}
               >
-                Simpan Tata Kelola Biaya
+                Save Cost Governance
               </Button>
             </HStack>
           </Flex>
@@ -1021,7 +1021,7 @@ export default function ContractCostGovernanceTabPanel({
                           </Tooltip>
 
                           {item.isRemovable && (
-                            <Tooltip label="Hapus HPS ini" fontSize="xs">
+                            <Tooltip label="Delete this HPS" fontSize="xs">
                               <IconButton
                                 aria-label="Delete HPS"
                                 icon={<FiTrash2 />}
@@ -1049,7 +1049,7 @@ export default function ContractCostGovernanceTabPanel({
                       {/* Card Subtext / Mini Stats */}
                       <Flex justify="space-between" align="center" fontSize="xs" pt={1}>
                         <HStack spacing={1}>
-                          <Text color="gray.500">vs Anggaran RBB:</Text>
+                          <Text color="gray.500">vs RBB Budget:</Text>
                           <Text
                             fontWeight="bold"
                             color={item.isBudgetSufficient ? "green.500" : "red.500"}
@@ -1058,7 +1058,7 @@ export default function ContractCostGovernanceTabPanel({
                           </Text>
                         </HStack>
                         <HStack spacing={1}>
-                          <Text color="gray.500">vs Kontrak:</Text>
+                          <Text color="gray.500">vs Contract:</Text>
                           <Text
                             fontWeight="bold"
                             color={
@@ -1091,9 +1091,9 @@ export default function ContractCostGovernanceTabPanel({
           <HStack spacing={2}>
             <Icon as={FiPieChart} color="blue.500" boxSize={5} />
             <VStack align="start" spacing={0}>
-              <Heading size="md">Hasil Komparasi & Deviasi Biaya</Heading>
+              <Heading size="md">Cost Comparison & Deviation Analytics</Heading>
               <Text fontSize="sm" color="gray.500">
-                Pilih pilar HPS untuk melihat hasil evaluasi deviasi nominal, persentase, dan indikator tren naik/turun
+                Select an HPS baseline to view deviation evaluations, percentage differences, and trend indicators
               </Text>
             </VStack>
           </HStack>
@@ -1121,7 +1121,7 @@ export default function ContractCostGovernanceTabPanel({
         {/* 3 Large Result Cards (Nominal + Percentage + Up/Down Arrows) */}
         {selectedHpsItem && (
           <Grid templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }} gap={4}>
-            {/* Card 1: Kecukupan Anggaran RBB (A vs Selected HPS) */}
+            {/* Card 1: RBB Budget Sufficiency (A vs Selected HPS) */}
             <GridItem>
               <Box
                 p={5}
@@ -1147,10 +1147,10 @@ export default function ContractCostGovernanceTabPanel({
                         fontWeight="bold"
                         color={selectedHpsItem.isBudgetSufficient ? "green.600" : "red.600"}
                       >
-                        1. Kecukupan Anggaran RBB
+                        1. RBB Budget Sufficiency
                       </Text>
                       <Text fontSize="xs" color="gray.500">
-                        Total Anggaran RBB vs {selectedHpsItem.tag}
+                        Total RBB Budget vs {selectedHpsItem.tag}
                       </Text>
                     </VStack>
                     <Icon
@@ -1187,7 +1187,7 @@ export default function ContractCostGovernanceTabPanel({
                   <Divider borderColor={colorMode === "light" ? "gray.200" : "gray.700"} />
 
                   <Text fontSize="xs" color="gray.500">
-                    Formula: (Total Anggaran RBB - {selectedHpsItem.tag}) / Total Anggaran RBB
+                    Formula: (Total RBB Budget - {selectedHpsItem.tag}) / Total RBB Budget
                   </Text>
                 </VStack>
               </Box>
@@ -1235,10 +1235,10 @@ export default function ContractCostGovernanceTabPanel({
                             : "red.600"
                         }
                       >
-                        2. Efisiensi Pengadaan vs HPS
+                        2. Procurement Efficiency vs HPS
                       </Text>
                       <Text fontSize="xs" color="gray.500">
-                        {selectedHpsItem.tag} vs Nilai Kontrak
+                        {selectedHpsItem.tag} vs Contract Value
                       </Text>
                     </VStack>
                     <Icon
@@ -1299,7 +1299,7 @@ export default function ContractCostGovernanceTabPanel({
                   <Divider borderColor={colorMode === "light" ? "gray.200" : "gray.700"} />
 
                   <Text fontSize="xs" color="gray.500">
-                    Formula: ({selectedHpsItem.tag} - Nilai Kontrak) / {selectedHpsItem.tag}
+                    Formula: ({selectedHpsItem.tag} - Contract Value) / {selectedHpsItem.tag}
                   </Text>
                 </VStack>
               </Box>
@@ -1347,10 +1347,10 @@ export default function ContractCostGovernanceTabPanel({
                             : "red.600"
                         }
                       >
-                        3. Resapan Anggaran RBB
+                        3. RBB Budget Absorption
                       </Text>
                       <Text fontSize="xs" color="gray.500">
-                        Total Anggaran RBB vs Nilai Kontrak
+                        Total RBB Budget vs Contract Value
                       </Text>
                     </VStack>
                     <Icon
@@ -1411,7 +1411,7 @@ export default function ContractCostGovernanceTabPanel({
                   <Divider borderColor={colorMode === "light" ? "gray.200" : "gray.700"} />
 
                   <Text fontSize="xs" color="gray.500">
-                    Formula: (Total Anggaran RBB - Nilai Kontrak) / Total Anggaran RBB
+                    Formula: (Total RBB Budget - Contract Value) / Total RBB Budget
                   </Text>
                 </VStack>
               </Box>
@@ -1439,9 +1439,9 @@ export default function ContractCostGovernanceTabPanel({
             <HStack spacing={2.5}>
               <Icon as={FiPieChart} color="teal.500" boxSize={5} />
               <VStack align="start" spacing={0}>
-                <Heading size="md">Matriks Komparasi Multi-HPS</Heading>
+                <Heading size="md">Multi-HPS Comparison Matrix</Heading>
                 <Text fontSize="sm" color="gray.500">
-                  Matriks komparasi komprehensif seluruh varian HPS terhadap Anggaran RBB dan Nilai Kontrak
+                  Comprehensive comparison matrix of all HPS variants against RBB Budget and Contract Value
                 </Text>
               </VStack>
             </HStack>
@@ -1469,16 +1469,16 @@ export default function ContractCostGovernanceTabPanel({
                     Nominal HPS (Rp.)
                   </Th>
                   <Th fontSize="xs" py={3} isNumeric>
-                    vs Anggaran RBB (A - H)
+                    vs RBB Budget (A - H)
                   </Th>
                   <Th fontSize="xs" py={3}>
-                    Kecukupan Anggaran RBB
+                    RBB Budget Sufficiency
                   </Th>
                   <Th fontSize="xs" py={3} isNumeric>
-                    vs Nilai Kontrak (H - C)
+                    vs Contract Value (H - C)
                   </Th>
                   <Th fontSize="xs" py={3}>
-                    Efisiensi Terhadap HPS
+                    Efficiency vs HPS
                   </Th>
                 </Tr>
               </Thead>
@@ -1529,7 +1529,7 @@ export default function ContractCostGovernanceTabPanel({
                               )}
                             </HStack>
                             <Text fontSize="xs" color="gray.500">
-                              {item.notes || "Model HPS evaluasi pengadaan"}
+                              {item.notes || "Procurement evaluation HPS model"}
                             </Text>
                           </VStack>
                         </HStack>
@@ -1569,7 +1569,7 @@ export default function ContractCostGovernanceTabPanel({
                         </Badge>
                       </Td>
 
-                      {/* vs Nilai Kontrak */}
+                      {/* vs Contract Value */}
                       <Td isNumeric>
                         <VStack align="end" spacing={0}>
                           <Text
@@ -1656,7 +1656,7 @@ export default function ContractCostGovernanceTabPanel({
               </HStack>
 
               <HStack spacing={1.5}>
-                <Text fontWeight="bold">Resapan Global Kontrak (A vs C):</Text>
+                <Text fontWeight="bold">Global Contract Absorption (A vs C):</Text>
                 <Badge
                   colorScheme={diff3Percentage >= 0 ? "blue" : "red"}
                   fontSize="xs"
@@ -1693,10 +1693,10 @@ export default function ContractCostGovernanceTabPanel({
               <Icon as={FiFileText} color="blue.500" boxSize={5} />
               <VStack align="start" spacing={0}>
                 <Heading size="md">
-                  Catatan Tata Kelola & Riwayat Perubahan
+                  Governance Notes & Change Log
                 </Heading>
                 <Text fontSize="sm" color="gray.500">
-                  Simpan parameter evaluasi HPS dan catat alasan revisi untuk jejak audit kepatuhan pengadaan
+                  Save HPS evaluation parameters and document revision rationale for procurement compliance audit trail
                 </Text>
               </VStack>
             </HStack>
@@ -1710,7 +1710,7 @@ export default function ContractCostGovernanceTabPanel({
                 isLoading={isLoadingHistory}
                 onClick={() => setIsHistoryModalOpen(true)}
               >
-                Riwayat Snapshot ({costGovHistories.length})
+                Snapshot History ({costGovHistories.length})
               </Button>
             </HStack>
           </Flex>
@@ -1722,9 +1722,9 @@ export default function ContractCostGovernanceTabPanel({
               <VStack align="start" spacing={1.5}>
                 <HStack spacing={1.5}>
                   <Text fontSize="xs" fontWeight="bold" color="gray.600" textTransform="uppercase">
-                    Catatan Tata Kelola / Rationale (Opsional)
+                    Governance Notes / Rationale (Optional)
                   </Text>
-                  <Tooltip label="Catatan tambahan mengenai latar belakang perhitungan atau rekomendasi reviewer." fontSize="xs">
+                  <Tooltip label="Additional notes regarding calculation rationale or reviewer recommendations." fontSize="xs">
                     <Box as="span" cursor="pointer"><Icon as={FiInfo} color="gray.400" boxSize={3.5} /></Box>
                   </Tooltip>
                 </HStack>
@@ -1743,9 +1743,9 @@ export default function ContractCostGovernanceTabPanel({
               <VStack align="start" spacing={1.5}>
                 <HStack spacing={1.5}>
                   <Text fontSize="xs" fontWeight="bold" color="gray.600" textTransform="uppercase">
-                    Alasan Perubahan / Revision Reason
+                    Revision Reason / Change Rationale
                   </Text>
-                  <Tooltip label="Alasan revisi akan dicatat pada log snapshot riwayat perubahan tata kelola biaya." fontSize="xs">
+                  <Tooltip label="Revision reason will be recorded in the cost governance change history snapshot log." fontSize="xs">
                     <Box as="span" cursor="pointer"><Icon as={FiInfo} color="gray.400" boxSize={3.5} /></Box>
                   </Tooltip>
                 </HStack>
@@ -1753,7 +1753,7 @@ export default function ContractCostGovernanceTabPanel({
                   size="sm"
                   rows={3}
                   rounded="lg"
-                  placeholder="Contoh: Penyesuaian HPS IT mengikuti update arsitektur cloud tier..."
+                  placeholder="e.g. IT HPS adjustment following cloud tier architecture updates..."
                   value={revisionReason}
                   onChange={(e) => setRevisionReason(e.target.value)}
                 />
@@ -1767,7 +1767,7 @@ export default function ContractCostGovernanceTabPanel({
             <HStack spacing={2} color="gray.500" fontSize="xs">
               <Icon as={FiCheckCircle} color="green.500" boxSize={4} />
               <Text>
-                Perubahan pada data HPS akan otomatis mengunci snapshot riwayat untuk audit trail jika kontrak dimutakhirkan.
+                Modifications to HPS parameters will automatically capture a snapshot log for audit trail.
               </Text>
             </HStack>
 
@@ -1777,12 +1777,12 @@ export default function ContractCostGovernanceTabPanel({
                 colorScheme="blue"
                 leftIcon={<FiSave />}
                 isLoading={isSaving}
-                loadingText="Menyimpan Tata Kelola..."
+                loadingText="Saving Cost Governance..."
                 onClick={handleSaveGovernance}
                 px={6}
                 shadow="md"
               >
-                Simpan Tata Kelola Biaya
+                Save Cost Governance
               </Button>
             </HStack>
           </Flex>
@@ -1809,14 +1809,14 @@ export default function ContractCostGovernanceTabPanel({
               <Icon as={FiBriefcase} color="purple.500" boxSize={5} />
               <VStack align="start" spacing={0}>
                 <Heading size="md">
-                  RBB Work Programs Allocation ({unifiedWorkPrograms.length} Pos Anggaran)
+                  RBB Work Programs Allocation ({unifiedWorkPrograms.length} Budget Lines)
                 </Heading>
                 <Text fontSize="sm" color="gray.500">
                   {project
                     ? `Proyek Terhubung: ${project.projectCode || "-"} • ${project.projectName || "-"}`
                     : paymentData
-                    ? "Alokasi pos program kerja dari data pembayaran kontrak"
-                    : "Pos alokasi program kerja yang terhubung dengan kontrak"}
+                    ? "Work program budget allocation from contract payment data"
+                    : "Work program budget allocation linked to this contract"}
                 </Text>
               </VStack>
             </HStack>
@@ -1834,18 +1834,18 @@ export default function ContractCostGovernanceTabPanel({
             <Flex justify="center" align="center" py={8} gap={2}>
               <Spinner size="sm" color="purple.500" />
               <Text fontSize="sm" color="gray.500">
-                Memuat rincian pos anggaran program kerja...
+                Loading work program budget item details...
               </Text>
             </Flex>
           ) : unifiedWorkPrograms.length === 0 ? (
             <Box p={6} textAlign="center">
               <VStack spacing={2}>
                 <Text fontSize="sm" color="gray.500">
-                  Belum ada rincian pos anggaran program kerja spesifik yang terhubung ke proyek ini.
+                  No specific work program budget items currently linked to this project.
                 </Text>
                 <Text fontSize="xs" color="gray.400">
-                  Pagu baseline Anggaran RBB saat ini menggunakan nominal acuan kontrak sebesar{" "}
-                  <strong>{formatIDR(A)}</strong>. Anda dapat menyesuaikan Pagu Anggaran RBB melalui tombol edit di banner atas.
+                  Current RBB Budget baseline ceiling uses the contract reference value of{" "}
+                  <strong>{formatIDR(A)}</strong>. You can adjust the RBB Budget Ceiling using the edit button in the header banner above.
                 </Text>
               </VStack>
             </Box>
@@ -1870,13 +1870,13 @@ export default function ContractCostGovernanceTabPanel({
                       No. Rekening & Cost Center
                     </Th>
                     <Th fontSize="xs" py={3} isNumeric>
-                      Pagu Anggaran RBB (Rp.)
+                      RBB Budget Ceiling (Rp.)
                     </Th>
                     <Th fontSize="xs" py={3} isNumeric>
-                      Realisasi Kontrak (Rp.)
+                      Contract Realization (Rp.)
                     </Th>
                     <Th fontSize="xs" py={3} isNumeric>
-                      Sisa Anggaran (Rp.)
+                      Remaining Budget (Rp.)
                     </Th>
                     <Th fontSize="xs" py={3} isNumeric>
                       Porsi (%)
@@ -1947,7 +1947,7 @@ export default function ContractCostGovernanceTabPanel({
                 <Tfoot bg={colorMode === "light" ? "gray.100" : "gray.900"} fontWeight="bold">
                   <Tr>
                     <Td colSpan={5} fontSize="sm">
-                      Total Alokasi Pos Anggaran Program Kerja
+                      Total Work Program Budget Lines Allocation
                     </Td>
                     <Td isNumeric color="blue.600" fontSize="sm">
                       {formatIDR(totalWorkProgramBudget)}

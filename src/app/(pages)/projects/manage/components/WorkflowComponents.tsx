@@ -151,36 +151,53 @@ export const WorkflowLevel2Box = ({
   );
 
   const { SecureDownloadFiles, error: secureDownloadError } = useMediaObject();
-  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadingDocIds, setDownloadingDocIds] = useState<{
+    [key: string]: boolean;
+  }>({});
 
-  const handleSecureDownload = async (mediaObjectId: string, fileName: string) => {
+  const handleSecureDownload = async (
+    mediaObjectId: string,
+    fileName: string,
+    docId: string,
+  ) => {
     if (!tokenData) return;
-    setIsDownloading(true);
+    setDownloadingDocIds((prev) => ({ ...prev, [docId]: true }));
     try {
+      const cleanFileName = fileName.replace(/\.[^/.]+$/, "");
       const blob = await SecureDownloadFiles(
         [mediaObjectId],
         tokenData,
         workflow.projectId,
-        "Project_Workflow",
-        `${fileName || "document"}.zip`
+        "PROJECT_WORKFLOW_DOCUMENT",
+        `${cleanFileName || "document"}.zip`,
       );
       if (blob) {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `${fileName || "document"}.zip`;
+        a.download = `${cleanFileName || "document"}.zip`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-        showToast({ description: "File berhasil diunduh. Password dikirim ke email Anda.", statusToast: "success" });
+        showToast({
+          description:
+            "File berhasil diunduh. Password OTP dikirim ke email Anda.",
+          statusToast: "success",
+        });
       } else {
-        showToast({ description: secureDownloadError || "Gagal mengunduh file", statusToast: "error" });
+        showToast({
+          description: secureDownloadError || "Gagal mengunduh file",
+          statusToast: "error",
+        });
       }
     } catch {
-      showToast({ description: "Terjadi kesalahan saat mengunduh file", statusToast: "error" });
+      showToast({
+        description: "Terjadi kesalahan saat mengunduh file",
+        statusToast: "error",
+      });
     } finally {
-      setIsDownloading(false);
+      setDownloadingDocIds((prev) => ({ ...prev, [docId]: false }));
     }
   };
 
@@ -1038,12 +1055,16 @@ export const WorkflowLevel2Box = ({
                                       size="md"
                                       colorScheme="green"
                                       leftIcon={<FiDownload />}
-                                      isLoading={isDownloading}
+                                      isLoading={!!downloadingDocIds[item.id]}
                                       onClick={() => {
                                         if (item.mediaObjectId) {
                                           handleSecureDownload(
                                             item.mediaObjectId,
-                                            item.mediaObjectData?.objectRawName || item.mediaObjectData?.objectName || "document",
+                                            item.mediaObjectData?.objectRawName ||
+                                              item.mediaObjectData?.objectName ||
+                                              item.documentName ||
+                                              "document",
+                                            item.id,
                                           );
                                         }
                                       }}
@@ -1536,36 +1557,53 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
   );
 
   const { SecureDownloadFiles: SecureDownloadFiles2, error: secureDownloadError2 } = useMediaObject();
-  const [isDownloading2, setIsDownloading2] = useState(false);
+  const [downloadingDocIds2, setDownloadingDocIds2] = useState<{
+    [key: string]: boolean;
+  }>({});
 
-  const handleSecureDownload2 = async (mediaObjectId: string, fileName: string) => {
+  const handleSecureDownload2 = async (
+    mediaObjectId: string,
+    fileName: string,
+    docId: string,
+  ) => {
     if (!tokenData) return;
-    setIsDownloading2(true);
+    setDownloadingDocIds2((prev) => ({ ...prev, [docId]: true }));
     try {
+      const cleanFileName = fileName.replace(/\.[^/.]+$/, "");
       const blob = await SecureDownloadFiles2(
         [mediaObjectId],
         tokenData,
         workflow.projectId,
-        "Project_Workflow",
-        `${fileName || "document"}.zip`
+        "PROJECT_WORKFLOW_DOCUMENT",
+        `${cleanFileName || "document"}.zip`,
       );
       if (blob) {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `${fileName || "document"}.zip`;
+        a.download = `${cleanFileName || "document"}.zip`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-        showToast({ description: "File berhasil diunduh. Password dikirim ke email Anda.", statusToast: "success" });
+        showToast({
+          description:
+            "File berhasil diunduh. Password OTP dikirim ke email Anda.",
+          statusToast: "success",
+        });
       } else {
-        showToast({ description: secureDownloadError2 || "Gagal mengunduh file", statusToast: "error" });
+        showToast({
+          description: secureDownloadError2 || "Gagal mengunduh file",
+          statusToast: "error",
+        });
       }
     } catch {
-      showToast({ description: "Terjadi kesalahan saat mengunduh file", statusToast: "error" });
+      showToast({
+        description: "Terjadi kesalahan saat mengunduh file",
+        statusToast: "error",
+      });
     } finally {
-      setIsDownloading2(false);
+      setDownloadingDocIds2((prev) => ({ ...prev, [docId]: false }));
     }
   };
 
@@ -2416,12 +2454,16 @@ const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
                                     size="md"
                                     colorScheme="green"
                                     leftIcon={<FiDownload />}
-                                    isLoading={isDownloading2}
+                                    isLoading={!!downloadingDocIds2[item.id]}
                                     onClick={() => {
                                       if (item.mediaObjectId) {
                                         handleSecureDownload2(
                                           item.mediaObjectId,
-                                          item.mediaObjectData?.objectRawName || item.mediaObjectData?.objectName || "document",
+                                          item.mediaObjectData?.objectRawName ||
+                                            item.mediaObjectData?.objectName ||
+                                            item.documentName ||
+                                            "document",
+                                          item.id,
                                         );
                                       }
                                     }}

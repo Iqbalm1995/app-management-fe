@@ -28,6 +28,7 @@ import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useReports, {
   ReportProjectPortofolioDataResponse,
 } from "@/app/services/useReports";
+import { useDownloadManagerModal } from "@/app/context/DownloadManagerContext";
 import { PROJECT_STATUS_OPTIONS } from "@/app/constants/masterStatusConstants";
 import useOrganization, {
   OrganizationResponse,
@@ -85,12 +86,8 @@ function ProjectPortfolioReportPage() {
   const router = useRouter();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
-  const {
-    ListReportProjectPortofolio,
-    ExportProjectPortofolioExcel,
-    ExportProjectPortofolioPDF,
-    isLoading: exportLoading,
-  } = useReports();
+  const { ListReportProjectPortofolio, isLoading: reportLoading } = useReports();
+  const { requestExport, openDownloadManager, activeJobsCount } = useDownloadManagerModal();
   const { List: ListOrganization } = useOrganization();
 
   useEffect(() => {
@@ -206,12 +203,6 @@ function ProjectPortfolioReportPage() {
   };
 
   const ExportToExcel = async () => {
-    console.log("Export button clicked");
-    if (!DataAuth || !tokenData) {
-      console.log("No auth data or token");
-      return;
-    }
-
     const exportPayload: PaggingListPayloadCustom = {
       search: globalFilter,
       limit: -1,
@@ -221,52 +212,15 @@ function ProjectPortfolioReportPage() {
       orderDir: "desc",
     };
 
-    console.log("Export payload:", exportPayload);
-
-    try {
-      console.log("Calling export service...");
-      const blob = await ExportProjectPortofolioExcel(exportPayload, tokenData);
-      console.log("Export response:", blob);
-
-      if (blob) {
-        const now = new Date();
-        const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}_${String(now.getHours()).padStart(2,"0")}-${String(now.getMinutes()).padStart(2,"0")}-${String(now.getSeconds()).padStart(2,"0")}`;
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `Project_Portfolio_Report_${ts}.xlsx`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-
-        showToast({
-          description: "Excel file exported successfully",
-          statusToast: "success",
-        });
-      } else {
-        console.log("No blob returned");
-        showToast({
-          description: "No data to export",
-          statusToast: "warning",
-        });
-      }
-    } catch (error) {
-      console.error("Export error:", error);
-      showToast({
-        description: "Failed to export Excel file",
-        statusToast: "error",
-      });
-    }
+    await requestExport({
+      moduleName: "PROJECT_PORTFOLIO",
+      reportTitle: `Project Portfolio Report (${FilterProjectType || "All Types"}${selectedYear !== "all" ? ` - ${selectedYear}` : ""})`,
+      exportType: "XLSX",
+      filterParams: exportPayload,
+    });
   };
 
   const ExportToPDF = async () => {
-    console.log("Export PDF button clicked");
-    if (!DataAuth || !tokenData) {
-      console.log("No auth data or token");
-      return;
-    }
-
     const exportPayload: PaggingListPayloadCustom = {
       search: globalFilter,
       limit: -1,
@@ -276,38 +230,12 @@ function ProjectPortfolioReportPage() {
       orderDir: "desc",
     };
 
-    try {
-      const blob = await ExportProjectPortofolioPDF(exportPayload, tokenData);
-
-      if (blob) {
-        const now = new Date();
-        const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}_${String(now.getHours()).padStart(2,"0")}-${String(now.getMinutes()).padStart(2,"0")}-${String(now.getSeconds()).padStart(2,"0")}`;
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `Project_Portfolio_Report_${ts}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-
-        showToast({
-          description: "PDF file exported successfully",
-          statusToast: "success",
-        });
-      } else {
-        showToast({
-          description: "No data to export",
-          statusToast: "warning",
-        });
-      }
-    } catch (error) {
-      console.error("PDF Export error:", error);
-      showToast({
-        description: "Failed to export PDF file",
-        statusToast: "error",
-      });
-    }
+    await requestExport({
+      moduleName: "PROJECT_PORTFOLIO",
+      reportTitle: `Project Portfolio Report (${FilterProjectType || "All Types"}${selectedYear !== "all" ? ` - ${selectedYear}` : ""})`,
+      exportType: "PDF",
+      filterParams: exportPayload,
+    });
   };
 
   const columnsData = useMemo<ColumnDef<ReportProjectPortofolioDataResponse>[]>(
@@ -869,10 +797,23 @@ function ProjectPortfolioReportPage() {
                 <Flex gap={2}>
                   <Button
                     size={"sm"}
+                    colorScheme="blue"
+                    variant="outline"
+                    onClick={openDownloadManager}
+                    leftIcon={<FiDownload />}
+                  >
+                    Download Manager
+                    {activeJobsCount > 0 && (
+                      <Badge colorScheme="blue" rounded="full" ml={2} px={1.5}>
+                        {activeJobsCount}
+                      </Badge>
+                    )}
+                  </Button>
+                  <Button
+                    size={"sm"}
                     colorScheme="green"
                     onClick={ExportToExcel}
-                    isDisabled={DataReport.length === 0 || exportLoading}
-                    isLoading={exportLoading}
+                    isDisabled={DataReport.length === 0}
                     leftIcon={<FaFileExcel />}
                   >
                     Export Excel
@@ -881,8 +822,7 @@ function ProjectPortfolioReportPage() {
                     size={"sm"}
                     colorScheme="red"
                     onClick={ExportToPDF}
-                    isDisabled={DataReport.length === 0 || exportLoading}
-                    isLoading={exportLoading}
+                    isDisabled={DataReport.length === 0}
                     leftIcon={<FaFilePdf />}
                   >
                     Export PDF

@@ -436,8 +436,8 @@ const VendorContractsPage = () => {
                                   <Td py={3}><Text fontSize="xs" fontWeight="600" maxW="200px" noOfLines={1}>{contract.corpName}</Text></Td>
                                   <Td py={3}><Text fontSize="xs">{contract.contractNumber}</Text></Td>
                                   <Td py={3}><Text fontSize="xs" fontWeight="700">{formatIDR(contract.workValue, showWorkValue)}</Text></Td>
-                                  <Td py={3}><Text fontSize="xs">{new Date(contract.contractStartDate).toLocaleDateString("id-ID")}</Text></Td>
-                                  <Td py={3}><Text fontSize="xs">{new Date(contract.contractEndDate).toLocaleDateString("id-ID")}</Text></Td>
+                                  <Td py={3}><Text fontSize="xs">{new Date(contract.contractStartDate).toLocaleDateString("en-US")}</Text></Td>
+                                  <Td py={3}><Text fontSize="xs">{new Date(contract.contractEndDate).toLocaleDateString("en-US")}</Text></Td>
                                   <Td py={3}>
                                     <Badge
                                       colorScheme={getContractDeadlineStatus(contract.contractEndDate).badgeColor}
