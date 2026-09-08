@@ -74,6 +74,7 @@ import {
   FiHardDrive,
   FiFilter,
   FiInfo,
+  FiMail,
 } from "react-icons/fi";
 import { FaFileExcel, FaFilePdf } from "react-icons/fa";
 import {
@@ -144,6 +145,7 @@ function DownloadManagerPage() {
     ListDownloadJobs,
     DeleteDownloadJob,
     DownloadExportFile,
+    ResendOtp,
     isLoading: isActionLoading,
   } = useDownloadManager();
 
@@ -252,6 +254,26 @@ function DownloadManagerPage() {
       });
     }
     setDownloadingId(null);
+  };
+
+  // Handle Resend OTP
+  const [resendingOtpId, setResendingOtpId] = useState<string | null>(null);
+  const handleResendOtp = async (job: DownloadManagerItemResponse) => {
+    if (!tokenData) return;
+    setResendingOtpId(job.id);
+    const res = await ResendOtp(job.id, tokenData);
+    if (res?.statusCode === RES_CODE_OK) {
+      showToast({
+        description: res.message || "Kode OTP berhasil dikirim ulang ke email Anda.",
+        statusToast: "success",
+      });
+    } else {
+      showToast({
+        description: res?.message || "Gagal mengirim ulang kode OTP.",
+        statusToast: "error",
+      });
+    }
+    setResendingOtpId(null);
   };
 
   // Handle Delete Confirmation
@@ -506,6 +528,18 @@ function DownloadManagerPage() {
                   Unduh
                 </Button>
               </Tooltip>
+              <Tooltip label="Kirim ulang password OTP ke email">
+                <IconButton
+                  aria-label="Kirim Ulang OTP"
+                  icon={<FiMail />}
+                  size="xs"
+                  variant="outline"
+                  colorScheme="purple"
+                  isDisabled={!isCompleted}
+                  isLoading={resendingOtpId === item.id}
+                  onClick={() => handleResendOtp(item)}
+                />
+              </Tooltip>
               <Tooltip label="Hapus riwayat">
                 <IconButton
                   aria-label="Hapus"
@@ -524,7 +558,7 @@ function DownloadManagerPage() {
         },
       },
     ],
-    [pageIndex, pageSize, downloadingId]
+    [pageIndex, pageSize, downloadingId, resendingOtpId]
   );
 
   const table = useReactTable({

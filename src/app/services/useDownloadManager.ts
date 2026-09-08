@@ -227,12 +227,44 @@ const useDownloadManager = () => {
     []
   );
 
+  const ResendOtp = useCallback(
+    async (
+      jobId: string,
+      token: string,
+    ): Promise<ApiGenericResponse<any>> => {
+      const baseUrl = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+      const url = `${baseUrl}/api/v1/download-manager/resend-otp/${jobId}`;
+
+      try {
+        const response = await axiosInstance.post<ApiGenericResponse<any>>(
+          url,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        return response.data;
+      } catch (err: any) {
+        const parsedError = handleAxiosError(err);
+        return {
+          statusCode: parsedError.statusCode || RES_CODE_SERVER_ERROR,
+          message: parsedError.message,
+          data: undefined,
+        };
+      }
+    },
+    []
+  );
+
   return {
     RequestExportJob,
     ListDownloadJobs,
     GetDownloadJobStatus,
     DeleteDownloadJob,
     DownloadExportFile,
+    ResendOtp,
     isLoading,
     error,
   };
