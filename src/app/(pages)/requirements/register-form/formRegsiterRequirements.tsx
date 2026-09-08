@@ -6438,7 +6438,7 @@ function RegisterRequirementFormPage({
                               memilih file
                             </Text>
                             <Text fontSize="sm" color="gray.500">
-                              Format: PDF, DOCX, XLSX, CSV, Images (Max 120MB
+                              Format: PDF, DOCX, XLSX, CSV, RAR, Zip, assignedToDate Images (Max 120MB
                               per file)
                             </Text>
                           </VStack>

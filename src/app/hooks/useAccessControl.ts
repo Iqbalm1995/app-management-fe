@@ -45,27 +45,27 @@ export const useAccessControl = (isAuthenticated: boolean, isAuthLoading: boolea
       // Strip query params from pathname for comparison
       const cleanPath = pathname.split('?')[0];
       
-      console.log('=== ACCESS CONTROL START ===');
-      console.log('[Access Control] Original pathname:', pathname);
-      console.log('[Access Control] Clean path:', cleanPath);
-      console.log('[Access Control] isAuthLoading:', isAuthLoading);
+      // console.log('=== ACCESS CONTROL START ===');
+      // console.log('[Access Control] Original pathname:', pathname);
+      // console.log('[Access Control] Clean path:', cleanPath);
+      // console.log('[Access Control] isAuthLoading:', isAuthLoading);
 
       // Wait for auth to finish loading
       if (isAuthLoading) {
-        console.log('[Access Control] Waiting for auth to load...');
+        // console.log('[Access Control] Waiting for auth to load...');
         return;
       }
 
       // 1. Check if route is public
       if (publicRoutes.includes(cleanPath)) {
-        console.log('[Access Control] Step 1 - Public route ALLOW');
+        // console.log('[Access Control] Step 1 - Public route ALLOW');
         setResult({ hasAccess: true, isLoading: false });
         return;
       }
 
       // 2. Check if user is authenticated
       if (!isAuthenticated) {
-        console.log('[Access Control] Step 2 - Not authenticated DENY');
+        // console.log('[Access Control] Step 2 - Not authenticated DENY');
         setResult({
           hasAccess: false,
           isLoading: false,
@@ -77,7 +77,7 @@ export const useAccessControl = (isAuthenticated: boolean, isAuthLoading: boolea
       // 3. Check route redirects
       const redirect = routeRedirects[cleanPath];
       if (redirect) {
-        console.log('[Access Control] Step 3 - Redirect to:', redirect.authenticated);
+        // console.log('[Access Control] Step 3 - Redirect to:', redirect.authenticated);
         setResult({
           hasAccess: false,
           isLoading: false,
@@ -88,7 +88,7 @@ export const useAccessControl = (isAuthenticated: boolean, isAuthLoading: boolea
 
       // 4. Check authenticated-only routes
       if (authenticatedOnlyRoutes.includes(cleanPath)) {
-        console.log('[Access Control] Step 4 - Authenticated-only route ALLOW');
+        // console.log('[Access Control] Step 4 - Authenticated-only route ALLOW');
         setResult({ hasAccess: true, isLoading: false });
         return;
       }
@@ -96,7 +96,7 @@ export const useAccessControl = (isAuthenticated: boolean, isAuthLoading: boolea
       // 5. Get access data from localStorage
       const accessDataStr = localStorage.getItem("accessData");
       if (!accessDataStr) {
-        console.log('[Access Control] Step 5 - No accessData');
+        // console.log('[Access Control] Step 5 - No accessData');
         
         // Before redirecting, check if this route is in a whitelist that would need accessData
         // If it is, we should retry instead of redirecting immediately
@@ -124,7 +124,7 @@ export const useAccessControl = (isAuthenticated: boolean, isAuthLoading: boolea
         if (authDataStr && tokenData && isWhitelisted && retryCount < MAX_RETRIES) {
           // User is authenticated and route is whitelisted but accessData is missing
           // Retry after a short delay to allow data to load
-          console.log(`[Access Control] Whitelisted route - Retry ${retryCount + 1}/${MAX_RETRIES} - waiting for accessData`);
+          // console.log(`[Access Control] Whitelisted route - Retry ${retryCount + 1}/${MAX_RETRIES} - waiting for accessData`);
           setTimeout(() => {
             setRetryCount(prev => prev + 1);
           }, 500);
@@ -150,7 +150,7 @@ export const useAccessControl = (isAuthenticated: boolean, isAuthLoading: boolea
       try {
         accessData = JSON.parse(accessDataStr);
       } catch (error) {
-        console.error('[Access Control] Step 5 - Failed to parse accessData, redirect to landing');
+        // console.error('[Access Control] Step 5 - Failed to parse accessData, redirect to landing');
         setResult({
           hasAccess: false,
           isLoading: false,
@@ -159,7 +159,7 @@ export const useAccessControl = (isAuthenticated: boolean, isAuthLoading: boolea
         return;
       }
       
-      console.log('[Access Control] Step 5 - AccessData loaded');
+      // console.log('[Access Control] Step 5 - AccessData loaded');
 
       // 6. FIRST: Check if route matches user's accessible menus (EXACT MATCH)
       const flatMenus = flattenMenus(accessData.accessibleMenus);
@@ -168,7 +168,7 @@ export const useAccessControl = (isAuthenticated: boolean, isAuthLoading: boolea
         return cleanMenuLink === cleanPath;
       });
       if (exactMenuMatch) {
-        console.log('[Access Control] Step 6 - Exact menu match ALLOW');
+        // console.log('[Access Control] Step 6 - Exact menu match ALLOW');
         setResult({ hasAccess: true, isLoading: false });
         return;
       }
@@ -176,7 +176,7 @@ export const useAccessControl = (isAuthenticated: boolean, isAuthLoading: boolea
       // 7. Check aggregated permission routes
       const aggregatedPermission = aggregatedPermissionRoutes[cleanPath];
       if (aggregatedPermission) {
-        console.log('[Access Control] Step 6 - Checking aggregated permission:', aggregatedPermission);
+        // console.log('[Access Control] Step 6 - Checking aggregated permission:', aggregatedPermission);
         const hasPermission = checkAggregatedPermission(
           aggregatedPermission,
           accessData
@@ -192,7 +192,7 @@ export const useAccessControl = (isAuthenticated: boolean, isAuthLoading: boolea
       // 7. Check module-only routes
       const moduleRoute = moduleOnlyRoutes[cleanPath];
       if (moduleRoute) {
-        console.log('[Access Control] Step 7 - Checking module-only route:', moduleRoute.moduleCode);
+        // console.log('[Access Control] Step 7 - Checking module-only route:', moduleRoute.moduleCode);
         const hasAccess = checkModuleAccess(
           moduleRoute.moduleCode,
           moduleRoute.permission,
@@ -209,14 +209,14 @@ export const useAccessControl = (isAuthenticated: boolean, isAuthLoading: boolea
       // 8. Check dynamic route patterns
       const dynamicPattern = findDynamicPattern(cleanPath, dynamicRoutePatterns);
       if (dynamicPattern) {
-        console.log('[Access Control] Step 8 - Dynamic pattern matched:', dynamicPattern);
+        // console.log('[Access Control] Step 8 - Dynamic pattern matched:', dynamicPattern);
         let hasAccess = false;
 
         // Check if user has the required menu
         if (dynamicPattern.baseMenu) {
           const flatMenus = flattenMenus(accessData.accessibleMenus);
           const hasMenu = flatMenus.some(menu => menu.menuLink.startsWith(dynamicPattern.baseMenu!));
-          console.log('[Access Control] Base menu check:', dynamicPattern.baseMenu, 'Result:', hasMenu);
+          // console.log('[Access Control] Base menu check:', dynamicPattern.baseMenu, 'Result:', hasMenu);
           
           if (!hasMenu) {
             hasAccess = false;
@@ -227,14 +227,14 @@ export const useAccessControl = (isAuthenticated: boolean, isAuthLoading: boolea
               : [dynamicPattern.permission];
             
             hasAccess = permissions.some(perm => checkAggregatedPermission(perm, accessData));
-            console.log('[Access Control] Permission check:', permissions, 'Result:', hasAccess);
+            // console.log('[Access Control] Permission check:', permissions, 'Result:', hasAccess);
           } else {
             // No permission required, just menu access
             hasAccess = true;
           }
         } else if (dynamicPattern.moduleCode) {
           // Only check module if no baseMenu specified
-          console.log('[Access Control] Checking module:', dynamicPattern.moduleCode);
+          // console.log('[Access Control] Checking module:', dynamicPattern.moduleCode);
           
           if (dynamicPattern.permission && Array.isArray(dynamicPattern.permission)) {
             // Multiple permissions - check if user has any
@@ -249,7 +249,7 @@ export const useAccessControl = (isAuthenticated: boolean, isAuthLoading: boolea
               accessData.accessibleModules
             );
           }
-          console.log('[Access Control] Module access result:', hasAccess);
+          // console.log('[Access Control] Module access result:', hasAccess);
         }
 
         setResult({
@@ -262,7 +262,7 @@ export const useAccessControl = (isAuthenticated: boolean, isAuthLoading: boolea
 
       // 9. Check any menu access routes
       if (anyMenuAccessRoutes.includes(cleanPath)) {
-        console.log('[Access Control] Step 9 - Any menu access route');
+        // console.log('[Access Control] Step 9 - Any menu access route');
         const hasAnyMenu = accessData.accessibleMenus.length > 0;
         setResult({
           hasAccess: hasAnyMenu,
@@ -275,7 +275,7 @@ export const useAccessControl = (isAuthenticated: boolean, isAuthLoading: boolea
       // 10. Check route access map
       const routeRule = routeAccessMap[cleanPath];
       if (routeRule) {
-        console.log('[Access Control] Step 10 - Route access map matched:', routeRule);
+        // console.log('[Access Control] Step 10 - Route access map matched:', routeRule);
         const hasAccess = checkRouteAccess(routeRule, cleanPath, accessData);
         setResult({
           hasAccess,
@@ -285,25 +285,25 @@ export const useAccessControl = (isAuthenticated: boolean, isAuthLoading: boolea
         return;
       }
       
-      console.log('[Access Control] Reached step 11 - Final fallback');
+      // console.log('[Access Control] Reached step 11 - Final fallback');
 
       // 11. Check if route matches any accessible menu (FINAL FALLBACK)
-      console.log('[Access Control] Step 11 - Final menu check');
-      console.log('[Access Control] Clean path:', cleanPath);
-      console.log('[Access Control] All accessible menus:', accessData.accessibleMenus.map(m => m.menuLink));
+      // console.log('[Access Control] Step 11 - Final menu check');
+      // console.log('[Access Control] Clean path:', cleanPath);
+      // console.log('[Access Control] All accessible menus:', accessData.accessibleMenus.map(m => m.menuLink));
       
       const { matched } = matchesMenuPath(cleanPath, accessData.accessibleMenus);
-      console.log('[Access Control] matchesMenuPath result:', matched);
+      // console.log('[Access Control] matchesMenuPath result:', matched);
       
       // If not matched by path, check exact menu link match
       if (!matched) {
         const flatMenus = flattenMenus(accessData.accessibleMenus);
-        console.log('[Access Control] Flat menus:', flatMenus.map(m => m.menuLink));
+        // console.log('[Access Control] Flat menus:', flatMenus.map(m => m.menuLink));
         const exactMatch = flatMenus.some(menu => {
           const cleanMenuLink = menu.menuLink.split('?')[0];
           return cleanMenuLink === cleanPath;
         });
-        console.log('[Access Control] Exact match result:', exactMatch);
+        // console.log('[Access Control] Exact match result:', exactMatch);
         setResult({
           hasAccess: exactMatch,
           isLoading: false,
@@ -312,7 +312,7 @@ export const useAccessControl = (isAuthenticated: boolean, isAuthLoading: boolea
         return;
       }
       
-      console.log('[Access Control] ALLOW - matched by path');
+      // console.log('[Access Control] ALLOW - matched by path');
       setResult({
         hasAccess: matched,
         isLoading: false,

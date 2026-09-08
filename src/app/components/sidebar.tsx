@@ -36,6 +36,7 @@ import {
   Input,
   InputRightElement,
   Button,
+  Portal,
   FormLabel,
   SimpleGrid,
   Spacer,
@@ -142,6 +143,7 @@ import {
   RiOrganizationChart,
 } from "react-icons/ri";
 import { LogoApplications, LogoApplicationsLite } from "./logoApps";
+import { LoadingOverlay } from "./loadingOverlay";
 import { buildUrlPort, truncateToTwoWords } from "../helper/MasterHelper";
 import {
   FaChess,
@@ -258,9 +260,18 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
   const { isAuthenticated, authData, goLogout } = useAuth();
   const { colorMode, toggleColorMode } = useColorMode();
   const pathname = usePathname();
+  const router = useRouter();
   const { Logout } = useAuthentications();
   const showToast = useToastHelper();
   const { openDownloadManager, activeJobsCount } = useDownloadManagerModal();
+
+  const [isEnteringDev, setIsEnteringDev] = useState<boolean>(false);
+
+  const handleEnterDev = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsEnteringDev(true);
+    router.push("/dev");
+  };
 
   // SetUp auth data on current page
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -861,7 +872,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                     My Workspace
                   </Button>
                 </Link>
-                <Link href={"/dev"}>
+                <Link href={"/dev"} onClick={handleEnterDev}>
                   <Button
                     leftIcon={<FaTerminal />}
                     mx={2}
@@ -876,6 +887,8 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                     py={2}
                     overflow="hidden"
                     transition="all 0.3s ease"
+                    isLoading={isEnteringDev}
+                    isDisabled={isEnteringDev}
                     _hover={{
                       _before: {
                         opacity: 1,
@@ -1092,6 +1105,9 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
         <FooterAdminPanel />
         <SignatureLineColor />
       </Box>
+      <Portal>
+        <LoadingOverlay isLoading={isEnteringDev} />
+      </Portal>
     </>
   );
 }

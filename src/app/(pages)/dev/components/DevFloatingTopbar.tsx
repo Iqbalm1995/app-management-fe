@@ -25,6 +25,7 @@ import {
   MenuList,
   MenuItem,
   MenuDivider,
+  Portal,
   useColorMode,
 } from "@chakra-ui/react";
 import { MoonIcon, SunIcon } from "@chakra-ui/icons";
@@ -43,6 +44,7 @@ import { radiusStyle } from "@/app/constants/applicationConstants";
 import useAuthentications, { AuthDataResponse } from "@/app/services/useAuthentications";
 import { useAuth } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
+import { LoadingOverlay } from "@/app/components/loadingOverlay";
 
 interface DevFloatingTopbarProps {
   projectName?: string;
@@ -78,6 +80,8 @@ export const DevFloatingTopbar: React.FC<DevFloatingTopbarProps> = ({
   const [isOpenSwitcher, setIsOpenSwitcher] = useState(false);
   const [dataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState("");
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [navTarget, setNavTarget] = useState<"apps" | "projects" | null>(null);
 
   // Transparent at rest (scrollY === 0), dynamic glassmorphism on scroll matching global topbar
   const isScrolled = scrollY > 0;
@@ -200,12 +204,16 @@ export const DevFloatingTopbar: React.FC<DevFloatingTopbarProps> = ({
   };
 
   const handleBackToApps = () => {
+    setIsNavigating(true);
+    setNavTarget("apps");
     localStorage.removeItem("dev_mode");
     localStorage.removeItem("dev_selected_project");
     router.push("/home");
   };
 
   const handleBackToProjects = () => {
+    setIsNavigating(true);
+    setNavTarget("projects");
     localStorage.removeItem("dev_selected_project");
     window.dispatchEvent(new CustomEvent("dev_project_switched", { detail: null }));
     router.push(backHref);
@@ -271,6 +279,8 @@ export const DevFloatingTopbar: React.FC<DevFloatingTopbarProps> = ({
               color={textColor}
               _hover={{ bg: hoverBg }}
               onClick={handleBackToProjects}
+              isLoading={isNavigating && navTarget === "projects"}
+              isDisabled={isNavigating}
             >
               {backLabel}
             </Button>
@@ -313,6 +323,8 @@ export const DevFloatingTopbar: React.FC<DevFloatingTopbarProps> = ({
             color={textColor}
             _hover={{ bg: hoverBg }}
             onClick={handleBackToApps}
+            isLoading={isNavigating && navTarget === "apps"}
+            isDisabled={isNavigating}
           >
             <Text display={{ base: "none", sm: "inline" }}>Back to Apps</Text>
           </Button>
@@ -415,6 +427,7 @@ export const DevFloatingTopbar: React.FC<DevFloatingTopbarProps> = ({
                     bg: hoverBg,
                   }}
                   onClick={handleBackToApps}
+                  isDisabled={isNavigating}
                   rounded={radiusStyle}
                 >
                   Back to Apps
@@ -437,6 +450,9 @@ export const DevFloatingTopbar: React.FC<DevFloatingTopbarProps> = ({
           )}
         </HStack>
       </Flex>
+      <Portal>
+        <LoadingOverlay isLoading={isNavigating} />
+      </Portal>
     </Flex>
   );
 };
