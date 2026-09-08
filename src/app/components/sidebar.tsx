@@ -152,6 +152,7 @@ import {
   FaO,
   FaPowerOff,
   FaRegFolderOpen,
+  FaTerminal,
   FaUserPlus,
   FaUsersGear,
   FaUsersRays,
@@ -860,7 +861,53 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                     My Workspace
                   </Button>
                 </Link>
+                <Link href={"/dev"}>
+                  <Button
+                    leftIcon={<FaTerminal />}
+                    mx={2}
+                    variant="outline"
+                    bg="whiteAlpha"
+                    borderWidth="0"
+                    borderColor="purple.500"
+                    color={colorMode === "light" ? "purple.600" : "purple.300"}
+                    position="relative"
+                    rounded="full"
+                    px={4}
+                    py={2}
+                    overflow="hidden"
+                    transition="all 0.3s ease"
+                    _hover={{
+                      _before: {
+                        opacity: 1,
+                      },
+                      borderWidth: "0",
+                      borderColor: "gray.300",
+                    }}
+                    _before={{
+                      content: '""',
+                      position: "absolute",
+                      inset: "-6px",
+                      background:
+                        "radial-gradient(circle at 50% 50%, #7c3aed, #a855f7, #d946ef)",
+                      borderRadius: "full",
+                      opacity: 0,
+                      transition: "opacity 0.3s ease",
+                      zIndex: -2,
+                    }}
+                    _after={{
+                      content: '""',
+                      position: "absolute",
+                      inset: "2px",
+                      bg: colorMode === "light" ? "gray.100" : "gray.900",
+                      borderRadius: "full",
+                      zIndex: -1,
+                    }}
+                  >
+                    Developer Mode
+                  </Button>
+                </Link>
               </Flex>
+
 
               <Flex alignItems={"center"}>
                 <Menu>

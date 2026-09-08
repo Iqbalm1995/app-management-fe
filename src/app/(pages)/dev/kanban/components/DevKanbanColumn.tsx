@@ -10,14 +10,17 @@ import {
   Button,
   Input,
   IconButton,
+  Card,
+  CardHeader,
+  CardBody,
   useColorMode,
-  Flex,
-  Spacer,
 } from "@chakra-ui/react";
 import { useDrop } from "react-dnd";
 import { TaskBoardViewModel, TaskViewModel } from "@/app/services/useTasks";
+import { BacklogDataResponse } from "@/app/services/useRequirements";
 import DevKanbanCard from "./DevKanbanCard";
-import { FiPlus, FiX } from "react-icons/fi";
+import { FiPlus, FiX, FiInbox } from "react-icons/fi";
+import { radiusStyle } from "@/app/constants/applicationConstants";
 
 interface DevKanbanColumnProps {
   board: TaskBoardViewModel;
@@ -26,13 +29,59 @@ interface DevKanbanColumnProps {
   onAddTask: (boardId: string, taskName: string) => Promise<boolean>;
   onTaskClick: (task: TaskViewModel) => void;
   recentlyMovedTaskId?: string | null;
+  isCompactView?: boolean;
+  dataBacklogs?: BacklogDataResponse[];
+  onOpenCreateModal?: (boardId: string) => void;
 }
 
-const stageColorMap: Record<string, string> = {
-  TODO: "gray.400",
-  INPROGRESS: "blue.400",
-  REVIEW: "yellow.400",
-  DONE: "green.400",
+const stageThemeMap: Record<
+  string,
+  {
+    barColor: string;
+    badgeScheme: string;
+    headerBgDark: string;
+    headerBgLight: string;
+    borderColorDark: string;
+    borderColorLight: string;
+    iconColor: string;
+  }
+> = {
+  TODO: {
+    barColor: "#818cf8",
+    badgeScheme: "purple",
+    headerBgDark: "linear-gradient(180deg, rgba(129, 140, 248, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%)",
+    headerBgLight: "linear-gradient(180deg, rgba(129, 140, 248, 0.08) 0%, rgba(248, 250, 252, 0.95) 100%)",
+    borderColorDark: "rgba(129, 140, 248, 0.18)",
+    borderColorLight: "rgba(129, 140, 248, 0.2)",
+    iconColor: "#818cf8",
+  },
+  INPROGRESS: {
+    barColor: "#f59e0b",
+    badgeScheme: "orange",
+    headerBgDark: "linear-gradient(180deg, rgba(245, 158, 11, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%)",
+    headerBgLight: "linear-gradient(180deg, rgba(245, 158, 11, 0.08) 0%, rgba(254, 252, 232, 0.95) 100%)",
+    borderColorDark: "rgba(245, 158, 11, 0.25)",
+    borderColorLight: "rgba(245, 158, 11, 0.25)",
+    iconColor: "#f59e0b",
+  },
+  REVIEW: {
+    barColor: "#ec4899",
+    badgeScheme: "pink",
+    headerBgDark: "linear-gradient(180deg, rgba(236, 72, 153, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%)",
+    headerBgLight: "linear-gradient(180deg, rgba(236, 72, 153, 0.08) 0%, rgba(253, 242, 248, 0.95) 100%)",
+    borderColorDark: "rgba(236, 72, 153, 0.18)",
+    borderColorLight: "rgba(236, 72, 153, 0.2)",
+    iconColor: "#ec4899",
+  },
+  DONE: {
+    barColor: "#10b981",
+    badgeScheme: "green",
+    headerBgDark: "linear-gradient(180deg, rgba(16, 185, 129, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%)",
+    headerBgLight: "linear-gradient(180deg, rgba(16, 185, 129, 0.08) 0%, rgba(240, 253, 244, 0.95) 100%)",
+    borderColorDark: "rgba(16, 185, 129, 0.18)",
+    borderColorLight: "rgba(16, 185, 129, 0.2)",
+    iconColor: "#10b981",
+  },
 };
 
 export const DevKanbanColumn: React.FC<DevKanbanColumnProps> = ({
@@ -42,16 +91,19 @@ export const DevKanbanColumn: React.FC<DevKanbanColumnProps> = ({
   onAddTask,
   onTaskClick,
   recentlyMovedTaskId,
+  isCompactView = false,
+  dataBacklogs = [],
+  onOpenCreateModal,
 }) => {
   const { colorMode } = useColorMode();
   const isDark = colorMode === "dark";
-  const columnRef = useRef<HTMLDivElement>(null);
+  const dropRef = useRef<HTMLDivElement>(null);
 
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskName, setNewTaskName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [{ isOver }, dropRef] = useDrop({
+  const [{ isOver }, drop] = useDrop({
     accept: "task",
     drop: (item: { id: string; boardId: string }) => {
       if (item.boardId !== board.id) {
@@ -63,9 +115,27 @@ export const DevKanbanColumn: React.FC<DevKanbanColumnProps> = ({
     }),
   });
 
-  dropRef(columnRef);
+  drop(dropRef);
 
-  const stageColor = stageColorMap[board.boardCodeStage] || "purple.400";
+  const stageTheme =
+    stageThemeMap[board.boardCodeStage] ||
+    (board.boardName?.toUpperCase().includes("TODO") || board.boardName?.toUpperCase() === "TO DO"
+      ? stageThemeMap.TODO
+      : board.boardName?.toUpperCase().includes("PROGRESS")
+      ? stageThemeMap.INPROGRESS
+      : board.boardName?.toUpperCase().includes("REVIEW")
+      ? stageThemeMap.REVIEW
+      : board.boardName?.toUpperCase().includes("DONE")
+      ? stageThemeMap.DONE
+      : {
+          barColor: "#8b5cf6",
+          badgeScheme: "purple",
+          headerBgDark: "linear-gradient(180deg, rgba(139, 92, 246, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%)",
+          headerBgLight: "linear-gradient(180deg, rgba(139, 92, 246, 0.08) 0%, rgba(250, 245, 255, 0.95) 100%)",
+          borderColorDark: "rgba(139, 92, 246, 0.18)",
+          borderColorLight: "rgba(139, 92, 246, 0.2)",
+          iconColor: "#8b5cf6",
+        });
 
   const handleCreateTask = async () => {
     if (!newTaskName.trim() || isSubmitting) return;
@@ -92,166 +162,204 @@ export const DevKanbanColumn: React.FC<DevKanbanColumnProps> = ({
   };
 
   return (
-    <Box
-      ref={columnRef}
-      w="320px"
-      minW="320px"
-      maxW="320px"
-      borderRadius="xl"
-      bg={isDark ? "gray.925" : "gray.100"}
-      border="1px solid"
+    <Card
+      size="sm"
+      variant="outline"
+      boxShadow={isOver ? "lg" : isDark ? "md" : "sm"}
+      _hover={{ boxShadow: "xl" }}
+      bg={isDark ? "rgba(15, 23, 42, 0.75)" : "white"}
+      backdropFilter="blur(16px)"
+      minH="600px"
+      w="full"
+      transition="all 0.2s ease"
+      rounded={radiusStyle}
+      overflow="hidden"
+      borderWidth="1px"
+      borderStyle="solid"
       borderColor={
         isOver
-          ? "purple.400"
+          ? "blue.400"
           : isDark
-          ? "gray.800"
+          ? "rgba(255, 255, 255, 0.08)"
           : "gray.200"
       }
-      p={3.5}
-      display="flex"
-      flexDirection="column"
-      maxH="calc(100vh - 170px)"
-      transition="border-color 0.15s ease"
+      style={{
+        borderTopWidth: "3px",
+        borderTopStyle: "solid",
+        borderTopColor: stageTheme.barColor,
+      }}
       sx={{
-        backgroundColor: isDark
-          ? isOver
-            ? "rgba(128, 90, 213, 0.08)"
-            : "gray.900"
-          : isOver
-          ? "rgba(128, 90, 213, 0.05)"
-          : "gray.50",
+        borderTopWidth: "3px !important",
+        borderTopStyle: "solid !important",
+        borderTopColor: `${stageTheme.barColor} !important`,
       }}
     >
-      {/* Column Header */}
-      <HStack mb={3} px={1}>
-        <Box w="3px" h="14px" borderRadius="full" bg={stageColor} />
-        <Text
-          fontWeight={700}
-          fontSize="xs"
-          textTransform="uppercase"
-          letterSpacing="0.05em"
-          color={isDark ? "gray.300" : "gray.700"}
-        >
-          {board.boardName}
-        </Text>
-        <Spacer />
-        <Badge
-          borderRadius="full"
-          px={2}
-          py={0.5}
-          fontSize="2xs"
-          fontFamily="mono"
-          variant="subtle"
-          colorScheme="gray"
-        >
-          {tasks.length}
-        </Badge>
-      </HStack>
-
-      {/* Task Cards List */}
-      <VStack
-        spacing={2.5}
-        align="stretch"
-        flex={1}
-        overflowY="auto"
-        pr={1}
-        sx={{
-          "&::-webkit-scrollbar": {
-            width: "4px",
-          },
-          "&::-webkit-scrollbar-thumb": {
-            background: isDark ? "gray.700" : "gray.300",
-            borderRadius: "4px",
-          },
+      <div
+        ref={dropRef}
+        style={{
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+          minHeight: "600px",
         }}
       >
-        {tasks.map((task) => (
-          <DevKanbanCard
-            key={task.id}
-            task={task}
-            onTaskClick={onTaskClick}
-            isRecentlyMoved={recentlyMovedTaskId === task.id}
-          />
-        ))}
+        {/* Column Header: calibrated subtle tint wash (not bland, not over gradient) */}
+        <CardHeader
+          bg={isDark ? stageTheme.headerBgDark : stageTheme.headerBgLight}
+          borderBottom="1px solid"
+          borderColor={isDark ? stageTheme.borderColorDark : stageTheme.borderColorLight}
+          px={3.5}
+          py={3}
+        >
+          <HStack justify="space-between" align="center">
+            <HStack spacing={2} align="center">
+              <Badge
+                colorScheme={stageTheme.badgeScheme}
+                variant="subtle"
+                fontSize="xs"
+                fontWeight={700}
+                borderRadius="md"
+                px={2.5}
+                py={0.5}
+                letterSpacing="0.04em"
+                textTransform="uppercase"
+              >
+                {board.boardName}
+              </Badge>
+              <Text
+                fontSize="xs"
+                fontWeight={600}
+                color={isDark ? "gray.400" : "gray.500"}
+                sx={{ fontVariantNumeric: "tabular-nums" }}
+              >
+                {tasks.length}
+              </Text>
+            </HStack>
 
-        {tasks.length === 0 && !isAddingTask && (
-          <Flex
-            h="90px"
-            border="1px dashed"
-            borderColor={isDark ? "gray.800" : "gray.300"}
-            borderRadius="lg"
-            align="center"
-            justify="center"
-          >
-            <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"}>
-              Drag tasks here
-            </Text>
-          </Flex>
-        )}
-      </VStack>
-
-      {/* Quick Add Task */}
-      <Box pt={3}>
-        {isAddingTask ? (
-          <VStack spacing={2} align="stretch">
-            <Input
-              size="sm"
-              placeholder="Task name... (Enter to save)"
-              value={newTaskName}
-              onChange={(e) => setNewTaskName(e.target.value)}
-              onKeyDown={handleKeyDown}
-              autoFocus
+            <IconButton
+              aria-label="Add task"
+              icon={<FiPlus size={14} />}
+              size="xs"
+              variant="ghost"
               borderRadius="md"
-              bg={isDark ? "gray.800" : "white"}
-              border="1px solid"
-              borderColor={isDark ? "gray.700" : "gray.300"}
-              _focus={{
-                borderColor: "purple.500",
+              color={isDark ? "gray.400" : "gray.600"}
+              _hover={{
+                bg: isDark ? "rgba(255, 255, 255, 0.08)" : "gray.200",
+                color: isDark ? "white" : "gray.900",
+              }}
+              onClick={() => {
+                if (onOpenCreateModal) {
+                  onOpenCreateModal(board.id);
+                } else {
+                  setIsAddingTask(true);
+                }
               }}
             />
-            <HStack justify="flex-end" spacing={2}>
-              <IconButton
-                aria-label="Cancel"
-                size="xs"
-                variant="ghost"
-                icon={<FiX />}
-                onClick={() => {
-                  setIsAddingTask(false);
-                  setNewTaskName("");
-                }}
-              />
-              <Button
-                size="xs"
-                colorScheme="purple"
-                onClick={handleCreateTask}
-                isLoading={isSubmitting}
-                isDisabled={!newTaskName.trim()}
+          </HStack>
+        </CardHeader>
+
+        {/* Scrollable Column Body */}
+        <CardBody flex={1} p={3} overflowY="auto" maxH="calc(100vh - 350px)">
+          <VStack spacing={2.5} align="stretch">
+            {/* Quick Add Inline Task Form */}
+            {isAddingTask && (
+              <Box
+                p={3}
+                bg={isDark ? "rgba(30, 41, 59, 0.9)" : "white"}
+                borderRadius={radiusStyle}
+                border="1px solid"
+                borderColor="blue.400"
+                boxShadow="sm"
               >
-                Add
-              </Button>
-            </HStack>
+                <Input
+                  size="sm"
+                  placeholder="Task name... (Enter to save, Esc to cancel)"
+                  value={newTaskName}
+                  onChange={(e) => setNewTaskName(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  autoFocus
+                  borderRadius="md"
+                  bg={isDark ? "gray.900" : "white"}
+                  fontSize="xs"
+                  mb={2}
+                />
+                <HStack justify="flex-end" spacing={2}>
+                  <IconButton
+                    aria-label="Cancel"
+                    size="xs"
+                    variant="ghost"
+                    icon={<FiX />}
+                    onClick={() => {
+                      setIsAddingTask(false);
+                      setNewTaskName("");
+                    }}
+                  />
+                  <Button
+                    size="xs"
+                    colorScheme="blue"
+                    onClick={handleCreateTask}
+                    isLoading={isSubmitting}
+                    isDisabled={!newTaskName.trim()}
+                  >
+                    Add
+                  </Button>
+                </HStack>
+              </Box>
+            )}
+
+            {/* Task list */}
+            {tasks.map((task) => (
+              <DevKanbanCard
+                key={task.id}
+                task={task}
+                onTaskClick={onTaskClick}
+                isRecentlyMoved={recentlyMovedTaskId === task.id}
+                isCompactView={isCompactView}
+                dataBacklogs={dataBacklogs}
+              />
+            ))}
+
+            {/* Empty state */}
+            {tasks.length === 0 && !isAddingTask && (
+              <Box
+                p={8}
+                textAlign="center"
+                color={isDark ? "gray.500" : "gray.400"}
+                border="2px dashed"
+                borderColor={isDark ? "whiteAlpha.200" : "gray.200"}
+                rounded={radiusStyle}
+              >
+                <VStack spacing={2}>
+                  <FiInbox size={24} />
+                  <Text fontSize="sm" fontWeight="medium">
+                    No tasks yet
+                  </Text>
+                  <Text fontSize="xs">
+                    Drag tasks here or click "+" to add
+                  </Text>
+                </VStack>
+              </Box>
+            )}
+
+            {/* Drag hover drop indicator */}
+            {isOver && (
+              <Box
+                p={4}
+                border="2px dashed"
+                borderColor="blue.400"
+                rounded={radiusStyle}
+                bg={isDark ? "rgba(59, 130, 246, 0.1)" : "blue.50"}
+                textAlign="center"
+              >
+                <Text fontSize="xs" color="blue.500" fontWeight="medium">
+                  Drop task here
+                </Text>
+              </Box>
+            )}
           </VStack>
-        ) : (
-          <Button
-            size="sm"
-            variant="ghost"
-            w="full"
-            justifyContent="start"
-            leftIcon={<FiPlus />}
-            fontSize="xs"
-            color={isDark ? "gray.400" : "gray.600"}
-            _hover={{
-              bg: isDark ? "gray.800" : "gray.200",
-              color: isDark ? "white" : "gray.800",
-            }}
-            borderRadius="md"
-            onClick={() => setIsAddingTask(true)}
-          >
-            Add task
-          </Button>
-        )}
-      </Box>
-    </Box>
+        </CardBody>
+      </div>
+    </Card>
   );
 };
 

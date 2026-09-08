@@ -13,7 +13,6 @@ import {
   SimpleGrid,
   Spinner,
   Badge,
-  useColorMode,
   Flex,
   Button,
 } from "@chakra-ui/react";
@@ -22,11 +21,11 @@ import { useRouter } from "next/navigation";
 import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
 import DevFloatingTopbar from "./components/DevFloatingTopbar";
 import DevProjectCard from "./components/DevProjectCard";
+import { radiusStyle } from "@/app/constants/applicationConstants";
 
 export default function DevProjectPickerPage() {
   const router = useRouter();
-  const { colorMode } = useColorMode();
-  const isDark = colorMode === "dark";
+  // Dev Mode is a developer hub — always dark, regardless of the app-wide color mode.
 
   const { GetAssignedProjects, isLoading } = useProjects();
   const [projects, setProjects] = useState<ProjectDataResponse[]>([]);
@@ -66,8 +65,23 @@ export default function DevProjectPickerPage() {
   };
 
   useEffect(() => {
+    // Check if project is already selected in localStorage -> skip directly to board
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("dev_selected_project");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed?.id) {
+            router.replace("/dev/kanban");
+            return;
+          }
+        } catch (e) {
+          console.error("Invalid saved project in localStorage:", e);
+        }
+      }
+    }
     fetchProjects();
-  }, []);
+  }, [router]);
 
   const filteredProjects = useMemo(() => {
     if (!searchTerm.trim()) return projects;
@@ -98,85 +112,116 @@ export default function DevProjectPickerPage() {
       JSON.stringify(selectedPayload)
     );
 
+    window.dispatchEvent(
+      new CustomEvent("dev_project_switched", { detail: selectedPayload })
+    );
+
     router.push("/dev/kanban");
   };
 
   return (
-    <Box minH="100vh" pb={16}>
-      <DevFloatingTopbar />
+    <Box
+      minH="100vh"
+      position="relative"
+      bg="#090514"
+      color="gray.100"
+      overflow="hidden"
+      display="flex"
+      flexDirection="column"
+    >
+      {/* Subtle ambient aura/glow in background */}
+      <Box
+        position="absolute"
+        top="-120px"
+        left="50%"
+        transform="translateX(-50%)"
+        w={{ base: "360px", md: "720px" }}
+        h={{ base: "300px", md: "460px" }}
+        bg="radial-gradient(ellipse at center, rgba(139, 92, 246, 0.18) 0%, rgba(236, 72, 153, 0.06) 45%, transparent 75%)"
+        filter="blur(70px)"
+        pointerEvents="none"
+        zIndex={0}
+      />
 
-      <Container maxW="1200px" pt={{ base: "84px", md: "96px" }} px={6}>
-        <VStack spacing={6} align="stretch">
-          {/* Header section */}
-          <Flex
-            direction={{ base: "column", sm: "row" }}
-            justify="space-between"
-            align={{ base: "start", sm: "center" }}
-            gap={4}
-          >
-            <VStack align="start" spacing={1}>
-              <HStack spacing={3}>
-                <Text
-                  fontSize="2xl"
-                  fontWeight={700}
-                  letterSpacing="-0.02em"
-                  color={isDark ? "white" : "gray.900"}
-                >
-                  Projects
-                </Text>
-                <Badge
-                  colorScheme="purple"
-                  variant="subtle"
-                  borderRadius="full"
-                  px={2.5}
-                  py={0.5}
-                  fontSize="xs"
-                >
-                  {projects.length} available
-                </Badge>
-              </HStack>
-              <Text fontSize="sm" color={isDark ? "gray.400" : "gray.500"}>
-                Select a project to enter its developer kanban and backlog view
-              </Text>
-            </VStack>
+      {/* Minimal Navbar */}
+      <DevFloatingTopbar isSelectionMode />
 
-            <Button
-              size="sm"
-              variant="ghost"
-              leftIcon={<FiRefreshCw />}
-              onClick={fetchProjects}
-              isLoading={isFetching}
+      {/* Main Area: Centered, Focused, Gated - matching topbar maxW="1400px" */}
+      <Container
+        maxW="1400px"
+        w={{ base: "calc(100% - 24px)", md: "calc(100% - 48px)" }}
+        pt={{ base: "110px", md: "130px" }}
+        pb={12}
+        px={{ base: 2, sm: 4 }}
+        position="relative"
+        zIndex={1}
+        flex={1}
+        display="flex"
+        flexDirection="column"
+        justifyContent="center"
+      >
+        <VStack spacing={7} align="stretch" w="full">
+          {/* Header */}
+          <VStack spacing={2} textAlign="center" px={4}>
+            <Text
+              fontSize={{ base: "2xl", sm: "3xl", md: "4xl" }}
+              fontWeight={800}
+              letterSpacing="-0.03em"
+              color="white"
             >
-              Refresh
-            </Button>
-          </Flex>
+              Select Your Project
+            </Text>
+            <Text
+              fontSize={{ base: "xs", sm: "sm" }}
+              color="gray.400"
+              maxW="540px"
+              lineHeight="tall"
+            >
+              Choose a project to enter its developer workspace and unlock your Kanban sprint board.
+            </Text>
+          </VStack>
 
-          {/* Search bar */}
-          <InputGroup size="md">
-            <InputLeftElement pointerEvents="none" color="gray.400">
-              <FiSearch />
-            </InputLeftElement>
-            <Input
-              placeholder="Filter projects by name, code, or team..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              bg={isDark ? "gray.900" : "white"}
-              border="1px solid"
-              borderColor={isDark ? "gray.800" : "gray.200"}
-              borderRadius="xl"
-              _focus={{
-                borderColor: "purple.500",
-                boxShadow: "0 0 0 1px var(--chakra-colors-purple-500)",
-              }}
-            />
-          </InputGroup>
+          {/* Glass Search Bar */}
+          <Box maxW="640px" w="full" mx="auto">
+            <InputGroup size="lg">
+              <InputLeftElement pointerEvents="none" color="gray.500" pl={4}>
+                <FiSearch size={18} />
+              </InputLeftElement>
+              <Input
+                placeholder="Search project name, code (#FE-2024), or team..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                bg="rgba(255, 255, 255, 0.03)"
+                border="1px solid"
+                borderColor="rgba(255, 255, 255, 0.08)"
+                borderRadius={radiusStyle}
+                color="white"
+                pl="48px"
+                fontSize="sm"
+                _placeholder={{ color: "gray.500" }}
+                backdropFilter="blur(16px)"
+                transition="all 0.2s ease"
+                _focus={{
+                  borderColor: "purple.500",
+                  boxShadow: "0 0 0 1px #8b5cf6, 0 0 20px rgba(139, 92, 246, 0.25)",
+                  bg: "rgba(255, 255, 255, 0.05)",
+                }}
+              />
+            </InputGroup>
+          </Box>
 
-          {/* Projects Grid */}
+          {/* Project Cards Grid / Loading / Empty */}
           {isFetching ? (
-            <Flex justify="center" align="center" minH="300px" direction="column" gap={3}>
-              <Spinner size="lg" color="purple.500" thickness="3px" />
-              <Text fontSize="sm" color={isDark ? "gray.400" : "gray.500"}>
-                Loading your assigned projects...
+            <Flex
+              justify="center"
+              align="center"
+              minH="260px"
+              direction="column"
+              gap={3}
+            >
+              <Spinner size="lg" color="purple.400" thickness="2.5px" />
+              <Text fontSize="xs" color="gray.400">
+                Fetching assigned projects...
               </Text>
             </Flex>
           ) : filteredProjects.length === 0 ? (
@@ -184,34 +229,52 @@ export default function DevProjectPickerPage() {
               direction="column"
               align="center"
               justify="center"
-              p={12}
+              p={10}
               borderRadius="2xl"
-              border="1px dashed"
-              borderColor={isDark ? "gray.800" : "gray.200"}
-              bg={isDark ? "gray.900" : "white"}
+              border="1px solid"
+              borderColor="rgba(255, 255, 255, 0.06)"
+              bg="rgba(255, 255, 255, 0.02)"
+              backdropFilter="blur(16px)"
               minH="260px"
               textAlign="center"
+              maxW="560px"
+              mx="auto"
+              w="full"
             >
               <Flex
-                w="48px"
-                h="48px"
+                w="52px"
+                h="52px"
                 borderRadius="xl"
-                bg={isDark ? "gray.800" : "gray.100"}
+                bg="rgba(139, 92, 246, 0.12)"
+                border="1px solid"
+                borderColor="rgba(139, 92, 246, 0.25)"
                 align="center"
                 justify="center"
-                color="gray.400"
+                color="purple.300"
                 mb={3}
               >
-                <FiLayers size={22} />
+                <FiLayers size={24} />
               </Flex>
-              <Text fontWeight={600} fontSize="md" mb={1}>
-                {searchTerm ? "No matching projects found" : "No projects assigned"}
+              <Text fontWeight={700} fontSize="md" color="white" mb={1}>
+                {searchTerm ? "No matching projects found" : "No projects assigned yet"}
               </Text>
-              <Text fontSize="sm" color={isDark ? "gray.400" : "gray.500"} maxW="400px">
+              <Text fontSize="xs" color="gray.400" maxW="400px" mb={4}>
                 {searchTerm
                   ? `No project matches "${searchTerm}". Try adjusting your keywords.`
-                  : "You do not have any assigned projects in this workspace yet."}
+                  : "You have not been added to any workspace projects yet. Contact your administrator or project lead."}
               </Text>
+              <Button
+                size="xs"
+                variant="outline"
+                colorScheme="purple"
+                leftIcon={<FiRefreshCw />}
+                onClick={fetchProjects}
+                isLoading={isFetching}
+                fontSize="xs"
+                borderRadius="lg"
+              >
+                Refresh
+              </Button>
             </Flex>
           ) : (
             <SimpleGrid columns={{ base: 1, sm: 2, lg: 3 }} spacing={4}>
@@ -224,6 +287,22 @@ export default function DevProjectPickerPage() {
               ))}
             </SimpleGrid>
           )}
+
+          {/* Secondary helper link at bottom */}
+          <Flex justify="center" pt={4}>
+            <Text fontSize="xs" color="gray.500">
+              Don&apos;t see your project?{" "}
+              <Button
+                variant="link"
+                color="purple.400"
+                fontSize="xs"
+                fontWeight={500}
+                onClick={fetchProjects}
+              >
+                Refresh assignments
+              </Button>
+            </Text>
+          </Flex>
         </VStack>
       </Container>
     </Box>

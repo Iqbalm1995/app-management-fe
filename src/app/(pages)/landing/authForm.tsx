@@ -58,14 +58,15 @@ import {
   AlertTitle,
   AlertDescription,
   useColorMode,
+  Badge,
 } from "@chakra-ui/react";
 import { useFormik } from "formik";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { FiLogIn } from "react-icons/fi";
+import { FiLogIn, FiLayers, FiCheckSquare } from "react-icons/fi";
 import * as Yup from "yup";
-import DevAuthForm from "./DevAuthForm";
+import { DEV_THEME } from "@/app/(pages)/dev/constants/devThemeConstants";
 
 interface AuthCorporateUserModel {
   username: string;
@@ -85,7 +86,7 @@ const FormSchema = Yup.object().shape({
 const AuthPanelModal = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { colorMode } = useColorMode();
-  const [authMode, setAuthMode] = useState<"normal" | "dev">("normal");
+  const [isDevMode, setIsDevMode] = useState(false);
   const isCentered = useBreakpointValue({
     base: false,
     sm: false,
@@ -148,163 +149,320 @@ const AuthPanelModal = () => {
                   roundedLeft={radiusStyle}
                   w={"full"}
                   h={"full"}
-                  bgGradient={"linear(to-br, #1e3a8a, #3b82f6, #06b6d4)"}
+                  bgGradient={
+                    isDevMode
+                      ? DEV_THEME.gradients.panel
+                      : "linear(to-br, #1e3a8a, #3b82f6, #06b6d4)"
+                  }
+                  transition="all 0.4s ease-in-out"
                   pos={"relative"}
                   alignItems="center"
                   justifyContent="center"
                 >
-                  {/* Animated Wave Lines */}
-                  <Box
-                    pos="absolute"
-                    top="0"
-                    left="0"
-                    w="full"
-                    h="full"
-                    overflow="hidden"
-                  >
-                    <style jsx>{`
-                      @keyframes wave1 {
-                        0%, 100% { transform: translateX(0) translateY(0); }
-                        50% { transform: translateX(-25%) translateY(-10%); }
-                      }
-                      @keyframes wave2 {
-                        0%, 100% { transform: translateX(0) translateY(0); }
-                        50% { transform: translateX(25%) translateY(10%); }
-                      }
-                      @keyframes wave3 {
-                        0%, 100% { transform: translateX(0) translateY(0); }
-                        50% { transform: translateX(-15%) translateY(15%); }
-                      }
-                      @keyframes float {
-                        0%, 100% { transform: translateY(0px); }
-                        50% { transform: translateY(-20px); }
-                      }
-                    `}</style>
-
-                    {/* Wave 1 */}
-                    <svg
-                      style={{
-                        position: 'absolute',
-                        top: '10%',
-                        left: '-10%',
-                        width: '120%',
-                        height: '100%',
-                        opacity: 0.15,
-                        animation: 'wave1 20s ease-in-out infinite'
-                      }}
-                      viewBox="0 0 1200 600"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M0,100 Q300,50 600,100 T1200,100 L1200,0 L0,0 Z"
-                        fill="white"
+                  {/* Left Side Content & Visuals */}
+                  {isDevMode ? (
+                    <>
+                      {/* Subtle Static Developer Blueprint Dot Grid */}
+                      <Box
+                        pos="absolute"
+                        top="0"
+                        left="0"
+                        w="full"
+                        h="full"
+                        opacity={0.18}
+                        pointerEvents="none"
+                        backgroundImage="radial-gradient(rgba(255, 255, 255, 0.7) 1px, transparent 1px)"
+                        backgroundSize="20px 20px"
                       />
-                      <path
-                        d="M0,200 Q300,150 600,200 T1200,200"
-                        stroke="white"
-                        strokeWidth="3"
-                        fill="none"
-                      />
-                    </svg>
 
-                    {/* Wave 2 */}
-                    <svg
-                      style={{
-                        position: 'absolute',
-                        top: '30%',
-                        left: '-5%',
-                        width: '110%',
-                        height: '100%',
-                        opacity: 0.1,
-                        animation: 'wave2 15s ease-in-out infinite'
-                      }}
-                      viewBox="0 0 1200 600"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M0,150 Q400,100 800,150 T1200,150"
-                        stroke="white"
-                        strokeWidth="4"
-                        fill="none"
-                      />
-                      <path
-                        d="M0,250 Q400,200 800,250 T1200,250"
-                        stroke="white"
-                        strokeWidth="2"
-                        fill="none"
-                      />
-                    </svg>
+                      <style jsx>{`
+                        @keyframes simpleFloat {
+                          0%, 100% {
+                            transform: translateY(0px);
+                          }
+                          50% {
+                            transform: translateY(-8px);
+                          }
+                        }
+                      `}</style>
 
-                    {/* Wave 3 */}
-                    <svg
-                      style={{
-                        position: 'absolute',
-                        bottom: '0',
-                        left: '0',
-                        width: '100%',
-                        height: '50%',
-                        opacity: 0.2,
-                        animation: 'wave3 25s ease-in-out infinite'
-                      }}
-                      viewBox="0 0 1200 300"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M0,100 Q300,50 600,100 T1200,100 L1200,300 L0,300 Z"
-                        fill="white"
-                      />
-                    </svg>
+                      {/* Developer Workspace Content */}
+                      <VStack
+                        spacing={5}
+                        zIndex={2}
+                        color="white"
+                        textAlign="center"
+                        px={6}
+                        w="full"
+                      >
+                        <VStack spacing={2}>
+                          <Badge
+                            colorScheme="pink"
+                            variant="solid"
+                            fontSize="xs"
+                            px={3}
+                            py={0.5}
+                            rounded="full"
+                            textTransform="uppercase"
+                            letterSpacing="wider"
+                          >
+                            Developer Workspace
+                          </Badge>
+                          <Text fontSize="2xl" fontWeight="bold" letterSpacing="-0.02em">
+                            Developer Mode
+                          </Text>
+                          <Text fontSize="xs" opacity={0.85} maxW="280px">
+                            Sign in to access project boards, backlog & sprint kanban
+                          </Text>
+                        </VStack>
 
-                    {/* Floating Circles */}
-                    <Box
-                      pos="absolute"
-                      top="20%"
-                      right="15%"
-                      w="80px"
-                      h="80px"
-                      borderRadius="full"
-                      border="2px solid"
-                      borderColor="whiteAlpha.300"
-                      style={{ animation: 'float 6s ease-in-out infinite' }}
-                    />
-                    <Box
-                      pos="absolute"
-                      bottom="25%"
-                      left="10%"
-                      w="60px"
-                      h="60px"
-                      borderRadius="full"
-                      border="2px solid"
-                      borderColor="whiteAlpha.200"
-                      style={{ animation: 'float 8s ease-in-out infinite 1s' }}
-                    />
-                    <Box
-                      pos="absolute"
-                      top="50%"
-                      right="25%"
-                      w="40px"
-                      h="40px"
-                      borderRadius="full"
-                      bg="whiteAlpha.200"
-                      style={{ animation: 'float 7s ease-in-out infinite 2s' }}
-                    />
-                  </Box>
+                        {/* Simple Clean Developer Sprint Card with Smooth Floating Animation */}
+                        <Box
+                          w="full"
+                          maxW="300px"
+                          p={4}
+                          borderRadius="xl"
+                          bg="rgba(15, 10, 30, 0.65)"
+                          backdropFilter="blur(16px)"
+                          border="1px solid rgba(255, 255, 255, 0.16)"
+                          textAlign="left"
+                          boxShadow="0 16px 36px rgba(0, 0, 0, 0.3), 0 0 24px rgba(139, 92, 246, 0.2)"
+                          style={{ animation: "simpleFloat 4.5s ease-in-out infinite" }}
+                        >
+                          {/* Card Top: Sprint / Project Info */}
+                          <HStack justify="space-between" mb={3}>
+                            <HStack spacing={2.5}>
+                              <Flex
+                                w="32px"
+                                h="32px"
+                                borderRadius="lg"
+                                bg="whiteAlpha.150"
+                                border="1px solid rgba(255, 255, 255, 0.2)"
+                                align="center"
+                                justify="center"
+                                color="purple.200"
+                              >
+                                <FiLayers size={16} />
+                              </Flex>
+                              <VStack align="start" spacing={0}>
+                                <Text fontSize="xs" fontWeight={700} color="white" lineHeight="shorter">
+                                  Sprint 14 · Active
+                                </Text>
+                                <Text fontSize="3xs" color="whiteAlpha.600" fontFamily="mono">
+                                  PROJ-KOBRA
+                                </Text>
+                              </VStack>
+                            </HStack>
+                            <Badge
+                              colorScheme="pink"
+                              variant="solid"
+                              fontSize="3xs"
+                              px={2}
+                              py={0.5}
+                              borderRadius="full"
+                              letterSpacing="wider"
+                            >
+                              DEV
+                            </Badge>
+                          </HStack>
 
-                  {/* Content Overlay */}
-                  <VStack
-                    spacing={4}
-                    zIndex={2}
-                    color="white"
-                    textAlign="center"
-                    px={8}
-                  >
-                    <Text fontSize="3xl" fontWeight="bold">
-                      Welcome Back
-                    </Text>
-                    <Text fontSize="md" opacity={0.9}>
-                      Sign in to continue to your dashboard
-                    </Text>
-                  </VStack>
+                          {/* Mini Kanban Task Progress */}
+                          <Box
+                            p={3}
+                            borderRadius="lg"
+                            bg="blackAlpha.300"
+                            border="1px solid rgba(255, 255, 255, 0.08)"
+                            mb={3}
+                          >
+                            <HStack justify="space-between" mb={1.5}>
+                              <Text fontSize="xs" fontWeight={600} color="white" noOfLines={1}>
+                                Kanban & Backlog Workflow
+                              </Text>
+                              <Text fontSize="3xs" color="purple.200" fontFamily="mono" fontWeight={600}>
+                                80%
+                              </Text>
+                            </HStack>
+                            <Box w="full" h="4px" bg="whiteAlpha.200" borderRadius="full" overflow="hidden">
+                              <Box
+                                w="80%"
+                                h="full"
+                                bgGradient="linear(to-r, pink.400, purple.400)"
+                                borderRadius="full"
+                              />
+                            </Box>
+                          </Box>
+
+                          {/* Card Footer: Metadata */}
+                          <HStack justify="space-between" fontSize="2xs" color="whiteAlpha.700">
+                            <HStack spacing={1.5}>
+                              <FiCheckSquare size={13} color="#a78bfa" />
+                              <Text fontSize="3xs">4 of 5 Tasks Done</Text>
+                            </HStack>
+                            <HStack spacing={1}>
+                              <Box w="5px" h="5px" borderRadius="full" bg="green.400" />
+                              <Text fontSize="3xs" fontFamily="mono" color="green.300">
+                                In Progress
+                              </Text>
+                            </HStack>
+                          </HStack>
+                        </Box>
+                      </VStack>
+                    </>
+                  ) : (
+                    <>
+                      <Box
+                        pos="absolute"
+                        top="0"
+                        left="0"
+                        w="full"
+                        h="full"
+                        overflow="hidden"
+                      >
+                        <style jsx>{`
+                          @keyframes wave1 {
+                            0%, 100% { transform: translateX(0) translateY(0); }
+                            50% { transform: translateX(-25%) translateY(-10%); }
+                          }
+                          @keyframes wave2 {
+                            0%, 100% { transform: translateX(0) translateY(0); }
+                            50% { transform: translateX(25%) translateY(10%); }
+                          }
+                          @keyframes wave3 {
+                            0%, 100% { transform: translateX(0) translateY(0); }
+                            50% { transform: translateX(-15%) translateY(15%); }
+                          }
+                          @keyframes float {
+                            0%, 100% { transform: translateY(0px); }
+                            50% { transform: translateY(-20px); }
+                          }
+                        `}</style>
+
+                        {/* Wave 1 */}
+                        <svg
+                          style={{
+                            position: 'absolute',
+                            top: '10%',
+                            left: '-10%',
+                            width: '120%',
+                            height: '100%',
+                            opacity: 0.15,
+                            animation: 'wave1 20s ease-in-out infinite'
+                          }}
+                          viewBox="0 0 1200 600"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M0,100 Q300,50 600,100 T1200,100 L1200,0 L0,0 Z"
+                            fill="white"
+                          />
+                          <path
+                            d="M0,200 Q300,150 600,200 T1200,200"
+                            stroke="white"
+                            strokeWidth="3"
+                            fill="none"
+                          />
+                        </svg>
+
+                        {/* Wave 2 */}
+                        <svg
+                          style={{
+                            position: 'absolute',
+                            top: '30%',
+                            left: '-5%',
+                            width: '110%',
+                            height: '100%',
+                            opacity: 0.1,
+                            animation: 'wave2 15s ease-in-out infinite'
+                          }}
+                          viewBox="0 0 1200 600"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M0,150 Q400,100 800,150 T1200,150"
+                            stroke="white"
+                            strokeWidth="4"
+                            fill="none"
+                          />
+                          <path
+                            d="M0,250 Q400,200 800,250 T1200,250"
+                            stroke="white"
+                            strokeWidth="2"
+                            fill="none"
+                          />
+                        </svg>
+
+                        {/* Wave 3 */}
+                        <svg
+                          style={{
+                            position: 'absolute',
+                            bottom: '0',
+                            left: '0',
+                            width: '100%',
+                            height: '50%',
+                            opacity: 0.2,
+                            animation: 'wave3 25s ease-in-out infinite'
+                          }}
+                          viewBox="0 0 1200 300"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M0,100 Q300,50 600,100 T1200,100 L1200,300 L0,300 Z"
+                            fill="white"
+                          />
+                        </svg>
+
+                        {/* Floating Circles */}
+                        <Box
+                          pos="absolute"
+                          top="20%"
+                          right="15%"
+                          w="80px"
+                          h="80px"
+                          borderRadius="full"
+                          border="2px solid"
+                          borderColor="whiteAlpha.300"
+                          style={{ animation: 'float 6s ease-in-out infinite' }}
+                        />
+                        <Box
+                          pos="absolute"
+                          bottom="25%"
+                          left="10%"
+                          w="60px"
+                          h="60px"
+                          borderRadius="full"
+                          border="2px solid"
+                          borderColor="whiteAlpha.200"
+                          style={{ animation: 'float 8s ease-in-out infinite 1s' }}
+                        />
+                        <Box
+                          pos="absolute"
+                          top="50%"
+                          right="25%"
+                          w="40px"
+                          h="40px"
+                          borderRadius="full"
+                          bg="whiteAlpha.200"
+                          style={{ animation: 'float 7s ease-in-out infinite 2s' }}
+                        />
+                      </Box>
+
+                      {/* Content Overlay */}
+                      <VStack
+                        spacing={4}
+                        zIndex={2}
+                        color="white"
+                        textAlign="center"
+                        px={8}
+                      >
+                        <Text fontSize="3xl" fontWeight="bold">
+                          Welcome Back
+                        </Text>
+                        <Text fontSize="md" opacity={0.9}>
+                          Sign in to continue to your dashboard
+                        </Text>
+                      </VStack>
+                    </>
+                  )}
                 </Flex>
               </GridItem>
               <GridItem
@@ -316,60 +474,13 @@ const AuthPanelModal = () => {
                 <Flex
                   w={"full"}
                   h={"full"}
-                  direction="column"
+                  alignItems={"center"}
+                  justifyContent={"center"}
+                  p={8}
                   overflowY={"auto"}
                 >
-                  {/* Mode Selector Tabs */}
-                  <HStack
-                    w="full"
-                    px={8}
-                    pt={6}
-                    pb={1}
-                    spacing={4}
-                    borderBottom="1px solid"
-                    borderColor={colorMode === "light" ? "gray.100" : "gray.800"}
-                  >
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      borderBottom="2px solid"
-                      borderColor={authMode === "normal" ? "secondary.500" : "transparent"}
-                      borderRadius={0}
-                      px={1}
-                      pb={2}
-                      onClick={() => setAuthMode("normal")}
-                      fontWeight={authMode === "normal" ? 600 : 400}
-                      color={authMode === "normal" ? (colorMode === "light" ? "secondary.600" : "secondary.300") : "gray.500"}
-                      _hover={{ bg: "transparent" }}
-                    >
-                      Standard
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      borderBottom="2px solid"
-                      borderColor={authMode === "dev" ? "purple.500" : "transparent"}
-                      borderRadius={0}
-                      px={1}
-                      pb={2}
-                      onClick={() => setAuthMode("dev")}
-                      fontWeight={authMode === "dev" ? 600 : 400}
-                      color={authMode === "dev" ? "purple.500" : "gray.500"}
-                      _hover={{ bg: "transparent" }}
-                    >
-                      Developer
-                    </Button>
-                  </HStack>
-
-                  <Flex
-                    w={"full"}
-                    flex={1}
-                    alignItems={"center"}
-                    justifyContent={"center"}
-                    p={8}
-                  >
-                    {authMode === "normal" ? <AuthForm /> : <DevAuthForm />}
-                  </Flex>
+                  <AuthForm isDevMode={isDevMode} setIsDevMode={setIsDevMode} />
+                  {/* <CaptchaGoogleComps /> */}
                 </Flex>
               </GridItem>
             </Grid>
@@ -380,7 +491,12 @@ const AuthPanelModal = () => {
   );
 };
 
-const AuthForm = () => {
+interface AuthFormProps {
+  isDevMode: boolean;
+  setIsDevMode: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+const AuthForm: React.FC<AuthFormProps> = ({ isDevMode, setIsDevMode }) => {
   const showToast = useToastHelper();
   const router = useRouter();
   const [show, setShow] = useState(false);
@@ -513,7 +629,11 @@ const AuthForm = () => {
         console.log("Default password detected, flag set:", localStorage.getItem("redirectToChangePassword"));
       }
       
-      localStorage.removeItem("dev_mode");
+      if (isDevMode) {
+        localStorage.setItem("dev_mode", "true");
+      } else {
+        localStorage.removeItem("dev_mode");
+      }
       await goLogin(getDataUser, authDataToken);
       setIsError(false);
       setIsLoadingProcess(false);
@@ -551,12 +671,22 @@ const AuthForm = () => {
         </Center>
       </Box>
       <Box>
-        <Text fontWeight={600} fontSize={"20px"}>
-          Welcome
-        </Text>
+        <HStack justify="space-between" align="center">
+          <Text fontWeight={600} fontSize={"20px"}>
+            {isDevMode ? "Developer Workspace" : "Welcome"}
+          </Text>
+        </HStack>
       </Box>
       <Box>
-        <Text>Use your User ID and Email/PC Password</Text>
+        <Text
+          color={isDevMode ? (colorMode === "light" ? "purple.600" : "purple.300") : undefined}
+          fontSize="sm"
+          transition="color 0.3s ease"
+        >
+          {isDevMode
+            ? "Use your User ID and Email/PC Password"
+            : "Use your User ID and Email/PC Password"}
+        </Text>
       </Box>
       <Box>
         {/* FORM AUTH */}
@@ -575,6 +705,7 @@ const AuthForm = () => {
                 variant="flushed"
                 onChange={formik.handleChange}
                 value={formik.values.username}
+                focusBorderColor={isDevMode ? "purple.400" : "secondary.500"}
               />
               <FormErrorMessage>{formik.errors.username}</FormErrorMessage>
             </FormControl>
@@ -592,6 +723,7 @@ const AuthForm = () => {
                   onChange={formik.handleChange}
                   value={formik.values.password}
                   type={show ? "text" : "password"}
+                  focusBorderColor={isDevMode ? "purple.400" : "secondary.500"}
                 />
                 <InputRightElement>
                   <Button
@@ -612,7 +744,7 @@ const AuthForm = () => {
                   <Button
                     size={"sm"}
                     variant={"link"}
-                    color={"secondary.600"}
+                    color={isDevMode ? (colorMode === "light" ? "purple.600" : "purple.300") : "secondary.600"}
                   >
                     Change Password
                   </Button>
@@ -629,26 +761,68 @@ const AuthForm = () => {
                 </Link>
               </Flex>
             </Box>
+            <HStack justify="space-between" w="full" py={1}>
+              <HStack spacing={2}>
+                <Switch
+                  id="dev-mode-toggle"
+                  colorScheme="purple"
+                  isChecked={isDevMode}
+                  onChange={(e) => setIsDevMode(e.target.checked)}
+                  size="sm"
+                />
+                <FormLabel
+                  htmlFor="dev-mode-toggle"
+                  mb={0}
+                  fontSize="sm"
+                  cursor="pointer"
+                  userSelect="none"
+                  color={colorMode === "light" ? "gray.700" : "gray.300"}
+                >
+                  Developer Mode
+                </FormLabel>
+              </HStack>
+              {isDevMode && (
+                <Badge
+                  colorScheme="purple"
+                  bgGradient={DEV_THEME.gradients.brand}
+                  color="white"
+                  fontSize="2xs"
+                  px={2}
+                  py={0.5}
+                  rounded="md"
+                >
+                  DEV
+                </Badge>
+              )}
+            </HStack>
             <Button
               rightIcon={<FiLogIn />}
-              colorScheme={"secondary"}
+              colorScheme={isDevMode ? "purple" : "secondary"}
               px={8}
               bgGradient={
-                colorMode === "light"
+                isDevMode
+                  ? DEV_THEME.gradients.brand
+                  : colorMode === "light"
                   ? "linear(to-r, secondary.500, secondary.900)"
                   : "linear(to-r, secondary.800, secondary.500)"
               }
               color="white"
               _hover={{
+                bgGradient: isDevMode
+                  ? DEV_THEME.gradients.brandHover
+                  : undefined,
                 transform: "translateY(-3px)",
-                shadow: "xl",
+                shadow: isDevMode
+                  ? DEV_THEME.glows.purple
+                  : "xl",
               }}
               type={"submit"}
               w={"full"}
               h={"50px"}
               isLoading={IsLoadingProcess}
+              transition="all 0.3s ease"
             >
-              Sign In
+              {isDevMode ? "Sign In as Developer" : "Sign In"}
             </Button>
             <Text
               fontSize={"smaller"}

@@ -116,35 +116,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, [authData, pathname, isPublicRoute, showToast]);
 
   const handleLogin = async (data: object, dataAuth: loginReturn) => {
-    // const DataLogin: loginReturn = data as loginReturn;
     const authData: AuthDataModelInterface = {
       dataLogin: data,
       dataAuth: dataAuth,
       statusLogin: STATUS_LOGIN_ON,
     };
-    
-    // Check if need to redirect to change password BEFORE setTimeout
+
     const shouldRedirectToChangePassword = localStorage.getItem("redirectToChangePassword");
     const isDevMode = localStorage.getItem("dev_mode") === "true";
     console.log("Checking redirect flag:", shouldRedirectToChangePassword, "isDevMode:", isDevMode);
-    
-    setTimeout(() => {
-      localStorage.setItem("authData", JSON.stringify(authData));
-      localStorage.setItem("tokenData", dataAuth.apiKey);
-      setAuthData(authData);
-      
-      if (shouldRedirectToChangePassword === "true") {
-        localStorage.removeItem("redirectToChangePassword");
-        console.log("Redirecting to change-password");
-        redirect("/change-password");
-      } else if (isDevMode) {
-        console.log("Redirecting to developer mode");
-        redirect("/dev");
-      } else {
-        console.log("Redirecting to home");
-        redirect(LINK_MENU_HOME);
-      }
-    }, DELAY_LOW); // 1-second delay
+
+    // Save immediately to avoid race conditions
+    localStorage.setItem("authData", JSON.stringify(authData));
+    localStorage.setItem("tokenData", dataAuth.apiKey);
+    setAuthData(authData);
+
+    if (shouldRedirectToChangePassword === "true") {
+      localStorage.removeItem("redirectToChangePassword");
+      console.log("Redirecting to change-password");
+      window.location.href = "/change-password";
+    } else if (isDevMode) {
+      console.log("Redirecting to developer mode");
+      window.location.href = "/dev";
+    } else {
+      console.log("Redirecting to home");
+      window.location.href = LINK_MENU_HOME;
+    }
   };
 
   const handleLogout = async () => {
@@ -198,7 +195,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       setAuthData(authData);
       setLoading(false);
-      redirect(LINK_MENU_ROOT);
+      window.location.href = LINK_MENU_ROOT;
     }, DELAY_LOW);
   };
 
