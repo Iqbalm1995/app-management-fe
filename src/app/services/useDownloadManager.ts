@@ -12,6 +12,23 @@ import {
 } from "../constants/applicationConstants";
 import { ApiGenericResponse, PaggingListPayloadCustom } from "../types/masterTypes";
 
+export interface DownloadOtpLogItemResponse {
+  id: string;
+  downloadManagerId: string;
+  recipientEmail: string;
+  recipientUserId?: string | null;
+  otpCode?: string | null;
+  otpCodeMasked?: string | null;
+  triggeredBy: string;
+  triggeredByUserId?: string | null;
+  triggeredFromIp?: string | null;
+  dispatchStatus: "SUCCESS" | "FAILED" | "PENDING" | "SKIPPED" | string;
+  errorMessage?: string | null;
+  smtpDurationMs?: number | null;
+  expiredAt?: string | null;
+  createdAt: string;
+}
+
 export interface DownloadManagerItemResponse {
   id: string;
   userId: string;
@@ -32,6 +49,11 @@ export interface DownloadManagerItemResponse {
   downloadUrl?: string | null;
   fileName?: string | null;
   fileSizeKb?: number | null;
+  latestOtpStatus?: string | null;
+  latestOtpRecipient?: string | null;
+  latestOtpSentAt?: string | null;
+  totalOtpSentCount?: number;
+  sysDownloadOtpLogs?: DownloadOtpLogItemResponse[];
 }
 
 export interface ExportRequestPayload {
@@ -258,6 +280,37 @@ const useDownloadManager = () => {
     []
   );
 
+  const GetJobOtpLogs = useCallback(
+    async (
+      jobId: string,
+      token?: string
+    ): Promise<ApiGenericResponse<DownloadOtpLogItemResponse[]>> => {
+      const baseUrl = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+      const url = `${baseUrl}/api/v1/download-manager/otp-logs/${jobId}`;
+
+      try {
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+        const response = await axiosInstance.get<
+          ApiGenericResponse<DownloadOtpLogItemResponse[]>
+        >(url, { headers });
+        return response.data;
+      } catch (err: any) {
+        const parsedError = handleAxiosError(err);
+        return {
+          statusCode: parsedError.statusCode || RES_CODE_SERVER_ERROR,
+          message: parsedError.message,
+          data: [],
+        };
+      }
+    },
+    []
+  );
+
   return {
     RequestExportJob,
     ListDownloadJobs,
@@ -265,6 +318,7 @@ const useDownloadManager = () => {
     DeleteDownloadJob,
     DownloadExportFile,
     ResendOtp,
+    GetJobOtpLogs,
     isLoading,
     error,
   };

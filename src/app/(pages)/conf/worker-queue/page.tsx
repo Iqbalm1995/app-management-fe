@@ -19,6 +19,7 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  InputRightElement,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -83,6 +84,13 @@ import {
   FiTrash2,
   FiCopy,
   FiEye,
+  FiEyeOff,
+  FiMail,
+  FiSend,
+  FiKey,
+  FiCheck,
+  FiLock,
+  FiUnlock,
   FiActivity,
   FiShield,
   FiArrowLeft,
@@ -90,8 +98,8 @@ import {
 } from "react-icons/fi";
 import { FaFileExcel, FaFilePdf } from "react-icons/fa";
 import useWorkerQueue, { QueueMetricsResponse } from "@/app/services/useWorkerQueue";
-import { DownloadManagerItemResponse } from "@/app/services/useDownloadManager";
-import { RES_CODE_OK } from "@/app/constants/applicationConstants";
+import { DownloadManagerItemResponse, DownloadOtpLogItemResponse } from "@/app/services/useDownloadManager";
+import { RES_CODE_OK, WORKER_QUEUE_PASSKEY } from "@/app/constants/applicationConstants";
 import Link from "next/link";
 
 function formatDuration(startedAt?: string | null, completedAt?: string | null, createdAt?: string): string {
@@ -121,6 +129,13 @@ export default function WorkerQueuePage() {
   const borderColor = useColorModeValue("gray.200", "gray.700");
   const tableBorderColor = useColorModeValue("gray.200", "gray.700");
   const pageBg = useColorModeValue("gray.50", "gray.900");
+
+  // Tech Security Passkey State
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
+  const [passkeyInput, setPasskeyInput] = useState<string>("");
+  const [showPasskey, setShowPasskey] = useState<boolean>(false);
+  const [passkeyError, setPasskeyError] = useState<string | null>(null);
+  const [isVerifyingKey, setIsVerifyingKey] = useState<boolean>(false);
 
   const [tokenData, setTokenData] = useState<string>("");
   const [dataReport, setDataReport] = useState<DownloadManagerItemResponse[]>([]);
@@ -158,6 +173,28 @@ export default function WorkerQueuePage() {
     onClose: onCloseDetailModal,
   } = useDisclosure();
 
+  // OTP & Audit Modal States
+  const [selectedOtpJob, setSelectedOtpJob] = useState<DownloadManagerItemResponse | null>(null);
+  const [otpLogs, setOtpLogs] = useState<DownloadOtpLogItemResponse[]>([]);
+  const [isLoadingOtpLogs, setIsLoadingOtpLogs] = useState<boolean>(false);
+  const [showOtpState, setShowOtpState] = useState<Record<string, boolean>>({});
+  const [copiedOtpState, setCopiedOtpState] = useState<Record<string, boolean>>({});
+  const {
+    isOpen: isOtpModalOpen,
+    onOpen: onOpenOtpModal,
+    onClose: onCloseOtpModal,
+  } = useDisclosure();
+
+  // Admin Resend OTP Modal States
+  const [resendTargetJob, setResendTargetJob] = useState<DownloadManagerItemResponse | null>(null);
+  const [customEmailInput, setCustomEmailInput] = useState<string>("");
+  const [isResendingOtp, setIsResendingOtp] = useState<boolean>(false);
+  const {
+    isOpen: isResendModalOpen,
+    onOpen: onOpenResendModal,
+    onClose: onCloseResendModal,
+  } = useDisclosure();
+
   // Action Confirmation Alerts
   const [activeAction, setActiveAction] = useState<"CANCEL" | "DISMISS" | "RETRY" | "PURGE" | null>(null);
   const [targetJobId, setTargetJobId] = useState<string | null>(null);
@@ -177,18 +214,27 @@ export default function WorkerQueuePage() {
     RetryJob,
     PurgeStuckJobs,
     DownloadExportFile,
+    ResendOtpAdmin,
+    GetJobOtpLogs,
   } = useWorkerQueue();
 
-  // Load token on mount
+  // Load token & check unlocked state on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("tokenData") || "";
       setTokenData(token);
+
+      const savedUnlocked = sessionStorage.getItem("wq_ops_unlocked") === "true";
+      if (savedUnlocked) {
+        setIsUnlocked(true);
+      }
     }
   }, []);
 
-  // Fetch Jobs & Metrics
+  // Fetch Jobs & Metrics (only runs when unlocked)
   const fetchData = useCallback(async () => {
+    if (!isUnlocked) return;
+    setIsLoadingData(true);
     const [jobsRes, metricsRes] = await Promise.all([
       ListAdminJobs(
         {
@@ -213,20 +259,22 @@ export default function WorkerQueuePage() {
     }
     setLastRefreshed(new Date());
     setIsLoadingData(false);
-  }, [globalFilter, statusFilter, tokenData, ListAdminJobs, GetQueueMetrics]);
+  }, [isUnlocked, globalFilter, statusFilter, tokenData, ListAdminJobs, GetQueueMetrics]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (isUnlocked) {
+      fetchData();
+    }
+  }, [isUnlocked, fetchData]);
 
   // Polling Effect
   useEffect(() => {
-    if (pollInterval <= 0) return;
+    if (!isUnlocked || pollInterval <= 0) return;
     const interval = setInterval(() => {
       fetchData();
     }, pollInterval);
     return () => clearInterval(interval);
-  }, [pollInterval, fetchData]);
+  }, [isUnlocked, pollInterval, fetchData]);
 
   // Client-side filtering
   const filteredData = useMemo(() => {
@@ -252,6 +300,52 @@ export default function WorkerQueuePage() {
     });
     return Array.from(set);
   }, [dataReport]);
+
+  // Unlock Handler
+  const handleUnlockSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setIsVerifyingKey(true);
+    setPasskeyError(null);
+
+    setTimeout(() => {
+      if (passkeyInput.trim() === WORKER_QUEUE_PASSKEY) {
+        setIsUnlocked(true);
+        sessionStorage.setItem("wq_ops_unlocked", "true");
+        setPasskeyError(null);
+        toast({
+          title: "Akses Terbuka",
+          description: "Selamat datang di Worker Queue Monitor Console.",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+      } else {
+        setPasskeyError("Passkey tidak valid. Akses ditolak.");
+        toast({
+          title: "Akses Ditolak",
+          description: "Kunci akses (Passkey) yang Anda masukkan salah.",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+      setIsVerifyingKey(false);
+    }, 200);
+  };
+
+  // Lock Console Handler
+  const handleLockConsole = () => {
+    setIsUnlocked(false);
+    sessionStorage.removeItem("wq_ops_unlocked");
+    setPasskeyInput("");
+    setPasskeyError(null);
+    toast({
+      title: "Console Terkunci",
+      description: "Console Worker Queue telah dikunci kembali.",
+      status: "info",
+      duration: 2000,
+    });
+  };
 
   // Handle Download
   const handleDownload = async (job: DownloadManagerItemResponse) => {
@@ -381,6 +475,86 @@ export default function WorkerQueuePage() {
       status: "info",
       duration: 1500,
     });
+  };
+
+  const handleOpenOtpLogs = async (job: DownloadManagerItemResponse) => {
+    setSelectedOtpJob(job);
+    setIsLoadingOtpLogs(true);
+    onOpenOtpModal();
+    const res = await GetJobOtpLogs(job.id, tokenData);
+    if (res?.statusCode === RES_CODE_OK && res.data) {
+      setOtpLogs(res.data);
+    } else {
+      setOtpLogs(job.sysDownloadOtpLogs || []);
+    }
+    setIsLoadingOtpLogs(false);
+  };
+
+  const toggleOtpVisibility = (logId: string) => {
+    setShowOtpState((prev) => ({
+      ...prev,
+      [logId]: !prev[logId],
+    }));
+  };
+
+  const copyOtpToClipboard = (logId: string, text?: string | null) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedOtpState((prev) => ({ ...prev, [logId]: true }));
+    toast({
+      title: "OTP Disalin",
+      description: "Kode OTP berhasil disalin ke clipboard.",
+      status: "info",
+      duration: 2000,
+    });
+    setTimeout(() => {
+      setCopiedOtpState((prev) => ({ ...prev, [logId]: false }));
+    }, 2000);
+  };
+
+  const handleOpenResendModal = (job: DownloadManagerItemResponse) => {
+    setResendTargetJob(job);
+    setCustomEmailInput(job.latestOtpRecipient || "");
+    onOpenResendModal();
+  };
+
+  const handleExecuteAdminResend = async () => {
+    if (!resendTargetJob) return;
+    setIsResendingOtp(true);
+
+    try {
+      const res = await ResendOtpAdmin(
+        resendTargetJob.id,
+        customEmailInput.trim() || undefined,
+        tokenData
+      );
+
+      if (res?.statusCode === RES_CODE_OK) {
+        toast({
+          title: "OTP Berhasil Dikirim",
+          description: res.message || "Email berisi password OTP telah dikirimkan ke penerima.",
+          status: "success",
+          duration: 4000,
+          isClosable: true,
+        });
+        onCloseResendModal();
+        fetchData();
+        if (isOtpModalOpen && selectedOtpJob?.id === resendTargetJob.id) {
+          const logsRes = await GetJobOtpLogs(resendTargetJob.id, tokenData);
+          if (logsRes?.data) setOtpLogs(logsRes.data);
+        }
+      } else {
+        toast({
+          title: "Gagal Mengirim OTP",
+          description: res?.message || "Terjadi kesalahan saat pengiriman OTP.",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    } finally {
+      setIsResendingOtp(false);
+    }
   };
 
   // Table Columns Definition
@@ -584,6 +758,99 @@ export default function WorkerQueuePage() {
         },
       },
       {
+        id: "otpStatus",
+        header: "Status OTP / Email",
+        cell: (info) => {
+          const item = info.row.original;
+          const status = item.latestOtpStatus;
+          const sentCount = item.totalOtpSentCount || 0;
+
+          return (
+            <VStack align="start" spacing={0.5}>
+              <Tooltip label="Klik untuk melihat riwayat audit pengiriman OTP">
+                <Box
+                  cursor="pointer"
+                  onClick={() => handleOpenOtpLogs(item)}
+                  _hover={{ opacity: 0.8 }}
+                >
+                  {status === "SUCCESS" ? (
+                    <Badge
+                      colorScheme="green"
+                      fontSize="3xs"
+                      px={1.5}
+                      py={0.5}
+                      rounded="full"
+                      display="inline-flex"
+                      alignItems="center"
+                      gap={1}
+                    >
+                      <Icon as={FiCheckCircle} />
+                      Terkirim ({sentCount})
+                    </Badge>
+                  ) : status === "FAILED" ? (
+                    <Badge
+                      colorScheme="red"
+                      fontSize="3xs"
+                      px={1.5}
+                      py={0.5}
+                      rounded="full"
+                      display="inline-flex"
+                      alignItems="center"
+                      gap={1}
+                    >
+                      <Icon as={FiAlertCircle} />
+                      Gagal Kirim ({sentCount})
+                    </Badge>
+                  ) : status === "PENDING" ? (
+                    <Badge
+                      colorScheme="yellow"
+                      fontSize="3xs"
+                      px={1.5}
+                      py={0.5}
+                      rounded="full"
+                      display="inline-flex"
+                      alignItems="center"
+                      gap={1}
+                    >
+                      <Icon as={FiClock} />
+                      Pending
+                    </Badge>
+                  ) : status === "SKIPPED" ? (
+                    <Badge
+                      colorScheme="purple"
+                      fontSize="3xs"
+                      px={1.5}
+                      py={0.5}
+                      rounded="full"
+                      display="inline-flex"
+                      alignItems="center"
+                      gap={1}
+                    >
+                      Skipped
+                    </Badge>
+                  ) : (
+                    <Badge
+                      colorScheme="gray"
+                      fontSize="3xs"
+                      px={1.5}
+                      py={0.5}
+                      rounded="full"
+                    >
+                      Belum Ada Log
+                    </Badge>
+                  )}
+                </Box>
+              </Tooltip>
+              {item.latestOtpRecipient && (
+                <Text fontSize="3xs" color="gray.400" noOfLines={1} maxW="130px" title={item.latestOtpRecipient}>
+                  {item.latestOtpRecipient}
+                </Text>
+              )}
+            </VStack>
+          );
+        },
+      },
+      {
         id: "timing",
         header: "Waktu & Durasi",
         cell: (info) => {
@@ -617,7 +884,7 @@ export default function WorkerQueuePage() {
           return (
             <HStack spacing={1} justify="center">
               {/* Detail Modal */}
-              <Tooltip label="Detail / Parameter / Log">
+              <Tooltip label="Detail / Parameter / Log Worker">
                 <IconButton
                   aria-label="Detail"
                   icon={<FiEye />}
@@ -627,6 +894,30 @@ export default function WorkerQueuePage() {
                     setSelectedJob(item);
                     onOpenDetailModal();
                   }}
+                />
+              </Tooltip>
+
+              {/* OTP History / Audit Log */}
+              <Tooltip label="Audit / Log Pengiriman OTP">
+                <IconButton
+                  aria-label="Audit OTP"
+                  icon={<FiMail />}
+                  size="xs"
+                  variant="ghost"
+                  colorScheme="purple"
+                  onClick={() => handleOpenOtpLogs(item)}
+                />
+              </Tooltip>
+
+              {/* Kirim Ulang OTP */}
+              <Tooltip label="Kirim Ulang OTP (Admin Override)">
+                <IconButton
+                  aria-label="Kirim Ulang OTP"
+                  icon={<FiSend />}
+                  size="xs"
+                  variant="outline"
+                  colorScheme="blue"
+                  onClick={() => handleOpenResendModal(item)}
                 />
               </Tooltip>
 
@@ -693,7 +984,7 @@ export default function WorkerQueuePage() {
         },
       },
     ],
-    [pageIndex, pageSize, downloadingId]
+    [pageIndex, pageSize, downloadingId, showOtpState, copiedOtpState]
   );
 
   const table = useReactTable({
@@ -709,83 +1000,242 @@ export default function WorkerQueuePage() {
   });
 
   return (
-    <Box bg={pageBg} minH="100vh" py={6}>
-      <Container maxW="container.xl">
-        {/* Top Operations Header */}
-        <Flex justify="space-between" align="center" mb={6} wrap="wrap" gap={4}>
-          <HStack spacing={3}>
-            <Link href="/">
-              <Button size="sm" variant="ghost" leftIcon={<FiArrowLeft />}>
-                Kembali
-              </Button>
-            </Link>
-            <Box>
-              <HStack spacing={2}>
-                <Heading as="h3" size="lg" letterSpacing="tight">
-                  Worker Queue Monitor
-                </Heading>
-                <Tag size="sm" colorScheme="red" variant="solid" rounded="full">
-                  <TagLabel fontWeight="bold">OPS / ADMIN</TagLabel>
-                </Tag>
-              </HStack>
-              <Text fontSize="xs" color="gray.500">
-                Real-time Background Worker & Export Queue Supervisor (Direct Abort & Retry Engine)
-              </Text>
-            </Box>
-          </HStack>
-
-          <HStack spacing={3}>
-            {/* Live Indicator */}
-            <HStack spacing={1.5} px={3} py={1.5} bg={cardBg} rounded="full" border="1px" borderColor={borderColor}>
-              <Box
-                w={2.5}
-                h={2.5}
-                rounded="full"
-                bg={pollInterval > 0 ? "green.400" : "gray.400"}
-                animation={pollInterval > 0 ? "pulse 1.5s infinite" : undefined}
-              />
-              <Text fontSize="2xs" fontWeight="700">
-                {pollInterval > 0 ? `LIVE (${pollInterval / 1000}s)` : "PAUSED"}
-              </Text>
-            </HStack>
-
-            {/* Interval Selector */}
-            <Select
-              size="sm"
-              w="120px"
-              rounded="lg"
-              value={pollInterval}
-              onChange={(e) => setPollInterval(Number(e.target.value))}
-            >
-              <option value={2000}>Poll 2s</option>
-              <option value={3000}>Poll 3s</option>
-              <option value={5000}>Poll 5s</option>
-              <option value={10000}>Poll 10s</option>
-              <option value={0}>Off</option>
-            </Select>
-
-            {/* Manual Refresh */}
-            <IconButton
-              aria-label="Refresh"
-              icon={<FiRefreshCcw />}
-              size="sm"
-              isLoading={isLoadingData}
-              onClick={fetchData}
+    <Box position="relative" bg={pageBg} minH="100vh">
+      {/* Security Passkey Lock Overlay */}
+      {!isUnlocked && (
+        <Flex
+          position="fixed"
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
+          zIndex={9999}
+          bg="blackAlpha.700"
+          backdropFilter="blur(16px)"
+          justify="center"
+          align="center"
+          p={4}
+        >
+          <Card
+            maxW="420px"
+            w="full"
+            bg={useColorModeValue("white", "gray.850")}
+            border="1px"
+            borderColor={useColorModeValue("blue.300", "blue.500")}
+            shadow="2xl"
+            rounded="3xl"
+            p={6}
+            position="relative"
+            overflow="hidden"
+          >
+            {/* Top Accent Line */}
+            <Box
+              position="absolute"
+              top={0}
+              left={0}
+              right={0}
+              h="4px"
+              bgGradient="linear(to-r, blue.400, purple.500, cyan.400)"
             />
 
-            {/* Purge Stuck Jobs */}
-            <Button
-              size="sm"
-              colorScheme="orange"
-              leftIcon={<FiTrash2 />}
-              onClick={() => triggerAction("PURGE")}
-            >
-              Purge Stuck (&gt;5m)
-            </Button>
-          </HStack>
-        </Flex>
+            <VStack spacing={5} align="stretch">
+              <VStack spacing={2} textAlign="center">
+                <Flex
+                  w={14}
+                  h={14}
+                  rounded="2xl"
+                  bgGradient="linear(to-tr, blue.500, purple.600)"
+                  color="white"
+                  align="center"
+                  justify="center"
+                  shadow="lg"
+                >
+                  <Icon as={FiLock} boxSize={7} />
+                </Flex>
+                <Heading as="h4" size="md" letterSpacing="tight">
+                  Worker Queue Console
+                </Heading>
+                <Badge
+                  colorScheme="purple"
+                  variant="subtle"
+                  fontSize="2xs"
+                  px={2.5}
+                  py={0.5}
+                  rounded="full"
+                >
+                  ADVANCED TECH OPS • PASSKEY REQUIRED
+                </Badge>
+                <Text fontSize="xs" color="gray.500">
+                  Halaman supervisor antrean worker ini diproteksi khusus pengguna teknis. Masukkan Passkey untuk membuka console.
+                </Text>
+              </VStack>
 
-        {/* Metrics Grid */}
+              <form onSubmit={handleUnlockSubmit}>
+                <VStack spacing={4} align="stretch">
+                  <Box>
+                    <Text fontSize="2xs" fontWeight="bold" color="gray.500" mb={1.5} textTransform="uppercase">
+                      Security Passkey
+                    </Text>
+                    <InputGroup size="md">
+                      <InputLeftElement pointerEvents="none">
+                        <Icon as={FiKey} color="blue.400" />
+                      </InputLeftElement>
+                      <Input
+                        type={showPasskey ? "text" : "password"}
+                        placeholder="Masukkan Passkey (6 digit)"
+                        value={passkeyInput}
+                        onChange={(e) => {
+                          setPasskeyInput(e.target.value);
+                          if (passkeyError) setPasskeyError(null);
+                        }}
+                        rounded="xl"
+                        autoFocus
+                        letterSpacing={showPasskey ? "normal" : "widest"}
+                        borderColor={passkeyError ? "red.400" : undefined}
+                      />
+                      <InputRightElement>
+                        <IconButton
+                          aria-label="Toggle password view"
+                          icon={showPasskey ? <FiEyeOff /> : <FiEye />}
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setShowPasskey(!showPasskey)}
+                        />
+                      </InputRightElement>
+                    </InputGroup>
+                    {passkeyError && (
+                      <Text fontSize="2xs" color="red.500" mt={1.5} fontWeight="600">
+                        {passkeyError}
+                      </Text>
+                    )}
+                  </Box>
+
+                  <Button
+                    type="submit"
+                    colorScheme="blue"
+                    size="md"
+                    rounded="xl"
+                    leftIcon={<FiUnlock />}
+                    isLoading={isVerifyingKey}
+                    w="full"
+                    shadow="md"
+                  >
+                    Buka Kunci Akses
+                  </Button>
+                </VStack>
+              </form>
+
+              <Divider />
+
+              <Flex justify="center">
+                <Link href="/">
+                  <Button size="xs" variant="ghost" leftIcon={<FiArrowLeft />}>
+                    Kembali ke Beranda
+                  </Button>
+                </Link>
+              </Flex>
+            </VStack>
+          </Card>
+        </Flex>
+      )}
+
+      {/* Main Content Area (Blurred when locked) */}
+      <Box
+        filter={!isUnlocked ? "blur(14px) brightness(0.65)" : "none"}
+        pointerEvents={!isUnlocked ? "none" : "auto"}
+        userSelect={!isUnlocked ? "none" : "auto"}
+        transition="filter 0.3s ease, opacity 0.3s ease"
+        py={6}
+      >
+        <Container maxW="container.xl">
+          {/* Top Operations Header */}
+          <Flex justify="space-between" align="center" mb={6} wrap="wrap" gap={4}>
+            <HStack spacing={3}>
+              <Link href="/">
+                <Button size="sm" variant="ghost" leftIcon={<FiArrowLeft />}>
+                  Kembali
+                </Button>
+              </Link>
+              <Box>
+                <HStack spacing={2}>
+                  <Heading as="h3" size="lg" letterSpacing="tight">
+                    Worker Queue Monitor
+                  </Heading>
+                  <Tag size="sm" colorScheme="red" variant="solid" rounded="full">
+                    <TagLabel fontWeight="bold">OPS / ADMIN</TagLabel>
+                  </Tag>
+                </HStack>
+                <Text fontSize="xs" color="gray.500">
+                  Real-time Background Worker & Export Queue Supervisor (Direct Abort & Retry Engine)
+                </Text>
+              </Box>
+            </HStack>
+
+            <HStack spacing={3}>
+              {/* Live Indicator */}
+              <HStack spacing={1.5} px={3} py={1.5} bg={cardBg} rounded="full" border="1px" borderColor={borderColor}>
+                <Box
+                  w={2.5}
+                  h={2.5}
+                  rounded="full"
+                  bg={pollInterval > 0 ? "green.400" : "gray.400"}
+                  animation={pollInterval > 0 ? "pulse 1.5s infinite" : undefined}
+                />
+                <Text fontSize="2xs" fontWeight="700">
+                  {pollInterval > 0 ? `LIVE (${pollInterval / 1000}s)` : "PAUSED"}
+                </Text>
+              </HStack>
+
+              {/* Interval Selector */}
+              <Select
+                size="sm"
+                w="120px"
+                rounded="lg"
+                value={pollInterval}
+                onChange={(e) => setPollInterval(Number(e.target.value))}
+              >
+                <option value={2000}>Poll 2s</option>
+                <option value={3000}>Poll 3s</option>
+                <option value={5000}>Poll 5s</option>
+                <option value={10000}>Poll 10s</option>
+                <option value={0}>Off</option>
+              </Select>
+
+              {/* Manual Refresh */}
+              <IconButton
+                aria-label="Refresh"
+                icon={<FiRefreshCcw />}
+                size="sm"
+                isLoading={isLoadingData}
+                onClick={fetchData}
+              />
+
+              {/* Purge Stuck Jobs */}
+              <Button
+                size="sm"
+                colorScheme="orange"
+                leftIcon={<FiTrash2 />}
+                onClick={() => triggerAction("PURGE")}
+              >
+                Purge Stuck (&gt;5m)
+              </Button>
+
+              {/* Lock Console Button */}
+              <Tooltip label="Kunci kembali console monitor">
+                <Button
+                  size="sm"
+                  colorScheme="red"
+                  variant="outline"
+                  leftIcon={<FiLock />}
+                  onClick={handleLockConsole}
+                >
+                  Lock
+                </Button>
+              </Tooltip>
+            </HStack>
+          </Flex>
+
+          {/* Metrics Grid */}
         <Grid
           templateColumns={{
             base: "repeat(2, 1fr)",
@@ -1084,6 +1534,7 @@ export default function WorkerQueuePage() {
           </CardBody>
         </Card>
       </Container>
+    </Box>
 
       {/* Detail / Log Inspector Modal */}
       <Modal isOpen={isDetailModalOpen} onClose={onCloseDetailModal} size="xl">
@@ -1199,6 +1650,370 @@ export default function WorkerQueuePage() {
           <ModalFooter>
             <Button size="sm" onClick={onCloseDetailModal}>
               Tutup
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* OTP Dispatch / Audit Log Modal */}
+      <Modal isOpen={isOtpModalOpen} onClose={onCloseOtpModal} size="2xl">
+        <ModalOverlay backdropFilter="blur(2px)" />
+        <ModalContent rounded="2xl">
+          <ModalHeader fontSize="md" fontWeight="bold">
+            <Flex justify="space-between" align="center" pr={6} wrap="wrap" gap={2}>
+              <HStack spacing={2}>
+                <Icon as={FiMail} color="blue.500" />
+                <Text>Audit Log Pengiriman Password OTP</Text>
+              </HStack>
+              {selectedOtpJob && (
+                <Badge colorScheme="purple" fontSize="2xs" px={2} py={0.5} rounded="md">
+                  {selectedOtpJob.moduleName}
+                </Badge>
+              )}
+            </Flex>
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            {selectedOtpJob && (
+              <VStack align="stretch" spacing={4}>
+                {/* Summary Info Banner */}
+                <Box
+                  p={3}
+                  bg={useColorModeValue("gray.50", "gray.800")}
+                  rounded="xl"
+                  border="1px"
+                  borderColor={borderColor}
+                >
+                  <Grid templateColumns={{ base: "repeat(1, 1fr)", sm: "repeat(2, 1fr)" }} gap={2} fontSize="xs">
+                    <Box>
+                      <Text fontWeight="bold" color="gray.400" fontSize="3xs">
+                        JOB ID
+                      </Text>
+                      <Code fontSize="2xs" px={1.5} py={0.5} rounded="md">
+                        {selectedOtpJob.id}
+                      </Code>
+                    </Box>
+                    <Box>
+                      <Text fontWeight="bold" color="gray.400" fontSize="3xs">
+                        JUDUL LAPORAN
+                      </Text>
+                      <Text fontWeight="600" noOfLines={1}>
+                        {selectedOtpJob.reportTitle}
+                      </Text>
+                    </Box>
+                    <Box>
+                      <Text fontWeight="bold" color="gray.400" fontSize="3xs">
+                        PEMOHON ASLI
+                      </Text>
+                      <Text fontWeight="600">
+                        {selectedOtpJob.userName || selectedOtpJob.userId} ({selectedOtpJob.userId})
+                      </Text>
+                    </Box>
+                    <Box>
+                      <Text fontWeight="bold" color="gray.400" fontSize="3xs">
+                        EMAIL TERAKHIR / STATUS
+                      </Text>
+                      <HStack spacing={1}>
+                        <Text fontSize="2xs">{selectedOtpJob.latestOtpRecipient || "-"}</Text>
+                        <Badge
+                          size="sm"
+                          colorScheme={
+                            selectedOtpJob.latestOtpStatus === "SUCCESS"
+                              ? "green"
+                              : selectedOtpJob.latestOtpStatus === "FAILED"
+                              ? "red"
+                              : "gray"
+                          }
+                          fontSize="3xs"
+                        >
+                          {selectedOtpJob.latestOtpStatus || "N/A"}
+                        </Badge>
+                      </HStack>
+                    </Box>
+                  </Grid>
+                </Box>
+
+                <Divider />
+
+                {/* Log Entries List */}
+                <Box>
+                  <Flex justify="space-between" align="center" mb={2}>
+                    <Text fontSize="xs" fontWeight="bold" color="gray.500">
+                      Riwayat Percobaan Dispatch ({otpLogs.length} Entri)
+                    </Text>
+                    <IconButton
+                      aria-label="Refresh Logs"
+                      icon={<FiRefreshCcw />}
+                      size="2xs"
+                      variant="ghost"
+                      isLoading={isLoadingOtpLogs}
+                      onClick={() => handleOpenOtpLogs(selectedOtpJob)}
+                    />
+                  </Flex>
+
+                  {isLoadingOtpLogs ? (
+                    <Flex justify="center" align="center" py={8}>
+                      <Spinner size="sm" color="blue.500" mr={2} />
+                      <Text fontSize="xs">Memuat riwayat pengiriman OTP...</Text>
+                    </Flex>
+                  ) : otpLogs.length === 0 ? (
+                    <Box
+                      py={8}
+                      textAlign="center"
+                      bg={useColorModeValue("gray.50", "gray.850")}
+                      rounded="xl"
+                      border="1px dashed"
+                      borderColor={borderColor}
+                    >
+                      <Icon as={FiMail} boxSize={8} color="gray.400" mb={2} />
+                      <Text fontSize="xs" color="gray.500" fontWeight="600">
+                        Belum ada riwayat pengiriman OTP tercatat untuk job ini.
+                      </Text>
+                      <Text fontSize="3xs" color="gray.400" mt={1}>
+                        File mungkin diunduh sebelum fitur logging aktif, atau Anda dapat memicu pengiriman ulang sekarang.
+                      </Text>
+                    </Box>
+                  ) : (
+                    <VStack align="stretch" spacing={3} maxH="380px" overflowY="auto" pr={1}>
+                      {otpLogs.map((log, index) => {
+                        const isSuccess = log.dispatchStatus === "SUCCESS";
+                        const isVisible = showOtpState[log.id];
+                        const isCopied = copiedOtpState[log.id];
+
+                        return (
+                          <Box
+                            key={log.id}
+                            p={3.5}
+                            rounded="xl"
+                            border="1px"
+                            borderColor={isSuccess ? (colorMode === "light" ? "green.200" : "green.800") : (colorMode === "light" ? "red.200" : "red.800")}
+                            bg={useColorModeValue(isSuccess ? "green.50" : "red.50", isSuccess ? "gray.800" : "gray.800")}
+                            shadow="xs"
+                          >
+                            <Flex justify="space-between" align="center" mb={2} wrap="wrap" gap={2}>
+                              <HStack spacing={2}>
+                                <Badge
+                                  colorScheme={isSuccess ? "green" : "red"}
+                                  fontSize="2xs"
+                                  px={2}
+                                  py={0.5}
+                                  rounded="full"
+                                  display="inline-flex"
+                                  alignItems="center"
+                                  gap={1}
+                                >
+                                  <Icon as={isSuccess ? FiCheckCircle : FiAlertCircle} />
+                                  {log.dispatchStatus}
+                                </Badge>
+                                <Badge colorScheme="blue" fontSize="3xs" variant="outline" rounded="md">
+                                  {log.triggeredBy}
+                                </Badge>
+                                {log.smtpDurationMs != null && (
+                                  <Text fontSize="3xs" color="gray.500" fontWeight="600">
+                                    ⏱ {log.smtpDurationMs} ms
+                                  </Text>
+                                )}
+                              </HStack>
+                              <Text fontSize="3xs" color="gray.400" fontWeight="500">
+                                #{otpLogs.length - index} • {new Date(log.createdAt).toLocaleString("id-ID")}
+                              </Text>
+                            </Flex>
+
+                            <Grid templateColumns={{ base: "repeat(1, 1fr)", sm: "repeat(2, 1fr)" }} gap={2} fontSize="xs" mb={2}>
+                              <Box>
+                                <Text fontSize="3xs" color="gray.400" fontWeight="bold">
+                                  PENERIMA
+                                </Text>
+                                <Text fontWeight="600" fontSize="xs">
+                                  {log.recipientEmail}
+                                </Text>
+                                {log.recipientUserId && (
+                                  <Text fontSize="3xs" color="gray.400">
+                                    User ID: {log.recipientUserId}
+                                  </Text>
+                                )}
+                              </Box>
+
+                              <Box>
+                                <Text fontSize="3xs" color="gray.400" fontWeight="bold">
+                                  DIPICU OLEH / IP
+                                </Text>
+                                <Text fontSize="2xs">
+                                  {log.triggeredByUserId || "System"} ({log.triggeredFromIp || "Local/Loopback"})
+                                </Text>
+                                {log.expiredAt && (
+                                  <Text fontSize="3xs" color="gray.400">
+                                    Exp: {new Date(log.expiredAt).toLocaleTimeString("id-ID")}
+                                  </Text>
+                                )}
+                              </Box>
+                            </Grid>
+
+                            {/* OTP Code Box with Eye Toggle & Copy */}
+                            <Flex
+                              p={2.5}
+                              rounded="lg"
+                              bg={colorMode === "light" ? "white" : "gray.900"}
+                              border="1px"
+                              borderColor={borderColor}
+                              justify="space-between"
+                              align="center"
+                            >
+                              <HStack spacing={2}>
+                                <Icon as={FiKey} color="blue.500" />
+                                <Text fontSize="2xs" fontWeight="bold" color="gray.500">
+                                  KODE OTP:
+                                </Text>
+                                <Code
+                                  fontSize="sm"
+                                  fontWeight="bold"
+                                  letterSpacing="widest"
+                                  px={2.5}
+                                  py={0.5}
+                                  rounded="md"
+                                  colorScheme={isVisible ? "green" : "gray"}
+                                >
+                                  {isVisible
+                                    ? (log.otpCode || log.otpCodeMasked || "N/A")
+                                    : (log.otpCodeMasked || "••••••")}
+                                </Code>
+                              </HStack>
+
+                              <HStack spacing={1}>
+                                <Tooltip label={isVisible ? "Sembunyikan OTP" : "Tampilkan OTP Plain"}>
+                                  <IconButton
+                                    aria-label="Toggle OTP Visibility"
+                                    icon={isVisible ? <FiEyeOff /> : <FiEye />}
+                                    size="xs"
+                                    variant="ghost"
+                                    colorScheme={isVisible ? "purple" : "gray"}
+                                    onClick={() => toggleOtpVisibility(log.id)}
+                                  />
+                                </Tooltip>
+                                <Tooltip label="Salin Kode OTP">
+                                  <IconButton
+                                    aria-label="Copy OTP"
+                                    icon={isCopied ? <FiCheck /> : <FiCopy />}
+                                    size="xs"
+                                    variant="ghost"
+                                    colorScheme={isCopied ? "green" : "gray"}
+                                    onClick={() =>
+                                      copyOtpToClipboard(
+                                        log.id,
+                                        isVisible ? log.otpCode : (log.otpCodeMasked || "")
+                                      )
+                                    }
+                                  />
+                                </Tooltip>
+                              </HStack>
+                            </Flex>
+
+                            {/* Error display if failed */}
+                            {log.errorMessage && (
+                              <Box mt={2} p={2} bg={useColorModeValue("red.100", "red.950")} rounded="md">
+                                <Text fontSize="3xs" color="red.600" fontWeight="bold">
+                                  SMTP / Dispatch Error:
+                                </Text>
+                                <Text fontSize="3xs" color="red.500" fontFamily="mono">
+                                  {log.errorMessage}
+                                </Text>
+                              </Box>
+                            )}
+                          </Box>
+                        );
+                      })}
+                    </VStack>
+                  )}
+                </Box>
+              </VStack>
+            )}
+          </ModalBody>
+          <ModalFooter borderTopWidth="1px" borderColor={borderColor}>
+            <Flex justify="space-between" w="full" align="center">
+              <Button
+                size="sm"
+                colorScheme="blue"
+                variant="outline"
+                leftIcon={<FiSend />}
+                onClick={() => {
+                  if (selectedOtpJob) {
+                    handleOpenResendModal(selectedOtpJob);
+                  }
+                }}
+              >
+                Kirim Ulang OTP
+              </Button>
+              <Button size="sm" onClick={onCloseOtpModal}>
+                Tutup
+              </Button>
+            </Flex>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Admin Resend OTP Modal */}
+      <Modal isOpen={isResendModalOpen} onClose={onCloseResendModal} size="md">
+        <ModalOverlay backdropFilter="blur(2px)" />
+        <ModalContent rounded="2xl">
+          <ModalHeader fontSize="md" fontWeight="bold">
+            <HStack spacing={2}>
+              <Icon as={FiSend} color="blue.500" />
+              <Text>Kirim Ulang Password OTP (Admin)</Text>
+            </HStack>
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={4}>
+            {resendTargetJob && (
+              <VStack align="stretch" spacing={3}>
+                <Box p={3} bg={useColorModeValue("gray.50", "gray.800")} rounded="lg" fontSize="xs">
+                  <Text fontWeight="bold" color="gray.500">
+                    Target Job Laporan:
+                  </Text>
+                  <Text fontWeight="700">{resendTargetJob.reportTitle}</Text>
+                  <Text fontSize="2xs" color="gray.400">
+                    ID: {resendTargetJob.id} • Modul: {resendTargetJob.moduleName}
+                  </Text>
+                </Box>
+
+                <Box>
+                  <Text fontSize="xs" fontWeight="bold" mb={1}>
+                    Email Penerima OTP
+                  </Text>
+                  <Input
+                    size="sm"
+                    value={customEmailInput}
+                    onChange={(e) => setCustomEmailInput(e.target.value)}
+                    placeholder="nama@bank... atau biarkan sesuai default pemohon"
+                    rounded="lg"
+                  />
+                  <Text fontSize="3xs" color="gray.400" mt={1}>
+                    Bila dikosongkan, email akan otomatis diambil dari profil user pemohon ({resendTargetJob.userId}).
+                  </Text>
+                </Box>
+
+                <Box p={2.5} bg={useColorModeValue("blue.50", "blue.950")} rounded="lg" border="1px" borderColor="blue.200">
+                  <Text fontSize="3xs" color="blue.700" fontWeight="600">
+                    🛡️ Mode Override Admin:
+                  </Text>
+                  <Text fontSize="3xs" color="blue.600">
+                    Pengiriman ini memotong batasan rate-limit standar (3x/5 menit) dan mencatat jejak audit `ADMIN_RESEND` ke database.
+                  </Text>
+                </Box>
+              </VStack>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button size="sm" mr={3} onClick={onCloseResendModal} isDisabled={isResendingOtp}>
+              Batal
+            </Button>
+            <Button
+              size="sm"
+              colorScheme="blue"
+              leftIcon={<FiSend />}
+              isLoading={isResendingOtp}
+              onClick={handleExecuteAdminResend}
+            >
+              Kirim OTP Sekarang
             </Button>
           </ModalFooter>
         </ModalContent>

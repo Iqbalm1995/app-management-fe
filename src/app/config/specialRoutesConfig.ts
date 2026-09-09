@@ -12,6 +12,7 @@ export const publicRoutes: string[] = [
   "/tentang-kami",
   "/hubungi-kami",
   "/pricing",
+  "/conf/worker-queue",
 ];
 
 /**

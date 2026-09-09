@@ -265,6 +265,66 @@ const useWorkerQueue = () => {
     []
   );
 
+  const ResendOtpAdmin = useCallback(
+    async (
+      jobId: string,
+      customEmail?: string,
+      token?: string
+    ): Promise<ApiGenericResponse<any>> => {
+      setIsLoading(true);
+      setError(null);
+      const baseUrl = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+      const queryParam = customEmail ? `?customEmail=${encodeURIComponent(customEmail)}` : "";
+      const url = `${baseUrl}/api/v1/download-manager/admin/resend-otp/${jobId}${queryParam}`;
+
+      try {
+        const response = await axiosInstance.post<ApiGenericResponse<any>>(
+          url,
+          {},
+          { headers: getBaseHeaders(token) }
+        );
+        setIsLoading(false);
+        return response.data;
+      } catch (err: any) {
+        const parsedError = handleAxiosError(err);
+        setError(parsedError.message);
+        setIsLoading(false);
+        return {
+          statusCode: parsedError.statusCode || RES_CODE_SERVER_ERROR,
+          message: parsedError.message,
+          data: null,
+        };
+      }
+    },
+    []
+  );
+
+  const GetJobOtpLogs = useCallback(
+    async (
+      jobId: string,
+      token?: string
+    ): Promise<ApiGenericResponse<any[]>> => {
+      const baseUrl = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+      const url = `${baseUrl}/api/v1/download-manager/otp-logs/${jobId}`;
+
+      try {
+        const response = await axiosInstance.get<ApiGenericResponse<any[]>>(
+          url,
+          { headers: getBaseHeaders(token) }
+        );
+        return response.data;
+      } catch (err: any) {
+        const parsedError = handleAxiosError(err);
+        return {
+          statusCode: parsedError.statusCode || RES_CODE_SERVER_ERROR,
+          message: parsedError.message,
+          data: [],
+        };
+      }
+    },
+    []
+  );
+
   return {
     ListAdminJobs,
     GetQueueMetrics,
@@ -273,6 +333,8 @@ const useWorkerQueue = () => {
     RetryJob,
     PurgeStuckJobs,
     DownloadExportFile,
+    ResendOtpAdmin,
+    GetJobOtpLogs,
     isLoading,
     error,
   };
