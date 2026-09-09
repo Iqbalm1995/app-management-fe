@@ -76,12 +76,19 @@ export function InputGroupPanel({
       w={"full"}
       p={5}
       rounded={radiusStyle}
-      border={"1px"}
-      borderColor={colorMode == "light" ? "gray.200" : "gray.700"}
+      border={"1px solid"}
+      borderColor={colorMode === "light" ? "gray.200" : "gray.750"}
+      bg={colorMode === "light" ? "white" : "gray.850"}
+      shadow="xs"
       spacing={5}
     >
-      <Text fontWeight={600}>{headerTitle}</Text>
-      <Divider />
+      <Text
+        fontWeight={600}
+        color={colorMode === "light" ? "gray.800" : "gray.100"}
+      >
+        {headerTitle}
+      </Text>
+      <Divider borderColor={colorMode === "light" ? "gray.200" : "gray.700"} />
       <Flex as={Stack} w={"full"} px={3}>
         {children}
       </Flex>

@@ -12,7 +12,7 @@ import {
 } from "../constants/applicationConstants";
 import { redirect, usePathname } from "next/navigation";
 
-const isTokenExpiredByDate = (expiration: string | null | undefined): boolean => {
+export const isTokenExpiredByDate = (expiration: string | null | undefined): boolean => {
   if (!expiration) return false;
   try {
     const tokenDate = new Date(expiration);
@@ -58,8 +58,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true); // Add loading state
 
   // Public routes that don't require authentication
-  const publicRoutes = ['/tentang-kami', '/hubungi-kami'];
-  const isPublicRoute = publicRoutes.includes(pathname);
+  const publicRoutes = ['/tentang-kami', '/hubungi-kami', '/dev'];
+  const isPublicRoute = publicRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`));
   const isFirstRender = useRef(true);
 
   useEffect(() => {

@@ -40,8 +40,11 @@ const colors = {
     "400": "#a9adb2",
     "500": "#797f88",
     "600": "#4d5560",
+    "650": "#38414e",
     "700": "#2e3744",
+    "750": "#212833",
     "800": "#19202b",
+    "850": "#151b24",
     "900": "#141a23",
   },
   blue: {
@@ -179,11 +182,11 @@ const colors = {
 };
 
 const config: ThemeConfig = {
-  initialColorMode: "light", // Default color mode
-  useSystemColorMode: true, // Disable system preference color mode
+  initialColorMode: "system", // Follow OS (Windows/Mac) theme on first launch
+  useSystemColorMode: true,   // Sync with OS preference when no explicit localStorage choice
 };
 
-const theme = extendTheme({
+export const theme = extendTheme({
   config,
   colors,
   fonts: {

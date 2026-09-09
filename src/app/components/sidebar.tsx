@@ -1280,6 +1280,7 @@ const NavItem = ({
   const { Logout } = useAuthentications();
   const showToast = useToastHelper();
   const router = useRouter();
+  const { colorMode } = useColorMode();
   const [isNavigating, setIsNavigating] = useState(false);
   const isChild = depth > 0;
 
@@ -1399,9 +1400,11 @@ const NavItem = ({
             }
             fontWeight={IsActiveNav ? "bold" : "normal"}
             _hover={{
-              color: "secondary.800",
-              // bg: "secondary.500",
-              bgGradient: "linear(to-r, secondary.200, secondary.200)", // Default gradient
+              color: colorMode === "light" ? "secondary.800" : "white",
+              bgGradient:
+                colorMode === "light"
+                  ? "linear(to-r, secondary.200, secondary.200)"
+                  : "linear(to-r, secondary.900, secondary.800)",
               pl: mode ? "4" : "5",
               boxShadow: "md",
             }}
@@ -1445,7 +1448,7 @@ const NavItem = ({
                   mr={mode ? "0" : data.isPro ? "2" : "4"}
                   fontSize={mode ? "25" : isChild ? "20" : "22"}
                   _groupHover={{
-                    color: "secondary.800",
+                    color: colorMode === "light" ? "secondary.800" : "white",
                   }}
                   color={
                     IsActiveNav

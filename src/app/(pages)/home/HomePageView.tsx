@@ -87,7 +87,7 @@ function HomePageView() {
 
   const accentColor = useColorModeValue("blue.300", "blue.300");
   const textColor = useColorModeValue("gray.800", "white");
-  const cardBg = useColorModeValue("white", "gray.700");
+  const cardBg = useColorModeValue("white", "gray.800");
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");

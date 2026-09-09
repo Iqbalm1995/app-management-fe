@@ -84,7 +84,7 @@ const ModernStatCard = ({
             <Text fontSize="sm" color="gray.500" fontWeight="medium" mb={1}>
               {title}
             </Text>
-            <Text fontSize="2xl" fontWeight="bold" color="gray.900">
+            <Text fontSize="2xl" fontWeight="bold" color={useColorModeValue("gray.900", "white")}>
               {value}
             </Text>
             {change && (
@@ -98,10 +98,10 @@ const ModernStatCard = ({
           </Box>
           <Box 
             p={3} 
-            bg={`${color}.50`} 
+            bg={useColorModeValue(`${color}.50`, `${color}.900`)} 
             borderRadius="lg"
           >
-            <Icon as={icon} w={6} h={6} color={`${color}.500`} />
+            <Icon as={icon} w={6} h={6} color={useColorModeValue(`${color}.500`, `${color}.300`)} />
           </Box>
         </Flex>
       </CardBody>
@@ -113,6 +113,9 @@ const ModernStatCard = ({
 const QuickActionsCard = () => {
   const bg = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.100", "gray.700");
+  const headingColor = useColorModeValue("gray.700", "gray.100");
+  const itemBg = useColorModeValue("gray.50", "whiteAlpha.100");
+  const itemHoverBg = useColorModeValue("blue.50", "whiteAlpha.200");
   
   const actions = [
     { label: "Kanban Board", icon: FiBarChart, href: "/kanban" },
@@ -124,7 +127,7 @@ const QuickActionsCard = () => {
   return (
     <Card bg={bg} border="1px solid" borderColor={borderColor} shadow="sm">
       <CardBody p={6}>
-        <Heading size="md" mb={4} color="gray.700">Quick Actions</Heading>
+        <Heading size="md" mb={4} color={headingColor}>Quick Actions</Heading>
         <VStack spacing={3} align="stretch">
           {actions.map((action, idx) => (
             <Flex 
@@ -133,8 +136,8 @@ const QuickActionsCard = () => {
               href={action.href}
               p={3}
               borderRadius="md"
-              bg="gray.50"
-              _hover={{ bg: "blue.50", cursor: "pointer" }}
+              bg={itemBg}
+              _hover={{ bg: itemHoverBg, cursor: "pointer" }}
               align="center"
               transition="all 0.2s"
             >
@@ -158,11 +161,12 @@ const CardComponentsDashboard = ({
 }) => {
   const bg = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.100", "gray.700");
+  const headingColor = useColorModeValue("gray.700", "gray.100");
   
   return (
     <Card bg={bg} border="1px solid" borderColor={borderColor} shadow="sm">
       <CardBody p={6}>
-        <Heading size="md" mb={4} color="gray.700">{tittleCard}</Heading>
+        <Heading size="md" mb={4} color={headingColor}>{tittleCard}</Heading>
         {children}
       </CardBody>
     </Card>

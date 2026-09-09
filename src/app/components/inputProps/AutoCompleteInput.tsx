@@ -5,6 +5,7 @@ import {
   Text,
   InputProps,
   useOutsideClick,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import { useState, useRef } from "react";
 
@@ -53,6 +54,10 @@ export default function AutoCompleteInput({
     setShowList(false);
   };
 
+  const listBg = useColorModeValue("white", "gray.800");
+  const listBorder = useColorModeValue("gray.200", "gray.700");
+  const itemHoverBg = useColorModeValue("gray.100", "whiteAlpha.100");
+
   return (
     <Box w="full" ref={ref} position="relative">
       <Input
@@ -68,9 +73,9 @@ export default function AutoCompleteInput({
           position="absolute"
           zIndex={10}
           w="full"
-          bg="white"
+          bg={listBg}
           border="1px solid"
-          borderColor="gray.200"
+          borderColor={listBorder}
           borderRadius="md"
           boxShadow="sm"
           align="stretch"
@@ -82,7 +87,7 @@ export default function AutoCompleteInput({
               key={idx}
               px={4}
               py={2}
-              _hover={{ bg: "gray.100", cursor: "pointer" }}
+              _hover={{ bg: itemHoverBg, cursor: "pointer" }}
               onClick={() => handleSelect(item)}
             >
               <Text>{item}</Text>

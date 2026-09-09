@@ -29,11 +29,13 @@ export function HeaderContent({
   const displayTitle = title || titleName || "";
   const displaySubtitle =
     subtitle || (displayTitle ? `Manage and track your ${displayTitle.toLowerCase()} efficiently` : "");
-  const borderColor = useColorModeValue("gray.200", "gray.600");
+  const borderColor = useColorModeValue("gray.200", "gray.700");
   const bgGradient = useColorModeValue(
     "linear(to-r, gray.50, white)",
-    "linear(to-r, gray.800, gray.700)"
+    "linear(to-r, gray.900, gray.800)"
   );
+  const breadcrumbColor = useColorModeValue("gray.600", "gray.400");
+  const subtitleColor = useColorModeValue("gray.500", "gray.400");
 
   return (
     <>
@@ -52,13 +54,13 @@ export function HeaderContent({
               {displayTitle}
             </Heading>
             {displaySubtitle && (
-              <Text fontSize="sm" color="gray.500">
+              <Text fontSize="sm" color={subtitleColor}>
                 {displaySubtitle}
               </Text>
             )}
           </Box>
           {breadCrumb && breadCrumb.length > 0 && (
-            <Breadcrumb fontSize="sm" color="gray.600">
+            <Breadcrumb fontSize="sm" color={breadcrumbColor}>
               {breadCrumb.map((item: string, index: number) => (
                 <BreadcrumbItem key={item} isCurrentPage={index === breadCrumb.length - 1}>
                   <BreadcrumbLink

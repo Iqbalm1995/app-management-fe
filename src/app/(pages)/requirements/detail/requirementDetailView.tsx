@@ -54,7 +54,10 @@ import {
   SummaryStatusReq,
 } from "@/app/helper/MasterHelper";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
-import { downloadWatermarkedPdf } from "@/app/helper/PdfWatermarkHelper";
+import {
+  addWatermarkToPdfBuffer,
+  downloadWatermarkedPdf,
+} from "@/app/helper/PdfWatermarkHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useMediaObject, { MediaObjectResponse } from "@/app/services/useMediaObject";
 import { useDownloadManagerModal } from "@/app/context/DownloadManagerContext";
@@ -126,6 +129,9 @@ import {
   Badge,
   VStack,
   IconButton,
+  Tooltip,
+  Spinner,
+  Icon,
 } from "@chakra-ui/react";
 import {
   ColumnDef,
@@ -153,6 +159,8 @@ import {
   FiInfo,
   FiRefreshCcw,
   FiExternalLink,
+  FiLock,
+  FiShield,
 } from "react-icons/fi";
 
 const HeaderDataContent: HeaderContentProps = {
@@ -315,9 +323,9 @@ const ProjectsRelationSectionDetail: React.FC<
             key={project.id}
             p={4}
             border="1px"
-            borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+            borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
             borderRadius="md"
-            bg={colorMode === "light" ? "gray.50" : "gray.700"}
+            bg={colorMode === "light" ? "gray.50" : "gray.800"}
           >
             <Flex justify="space-between" align="start">
               <VStack align="start" spacing={2} flex={1}>
@@ -1023,7 +1031,9 @@ function RequirementDetailView() {
       {/* Main content area - only render when not loading or when client-side mounted */}
       {!IsLoadingProcess ? (
         <Flex
-          bg={colorMode == "light" ? "white" : "gray.700"}
+          bg={colorMode == "light" ? "white" : "gray.900"}
+          border="1px solid"
+          borderColor={colorMode == "light" ? "transparent" : "gray.750"}
           px={5}
           py={6}
           rounded={radiusStyle}
@@ -1970,7 +1980,9 @@ function RequirementDetailView() {
         </Flex>
       ) : (
         <Flex
-          bg={colorMode == "light" ? "white" : "gray.700"}
+          bg={colorMode == "light" ? "white" : "gray.900"}
+          border="1px solid"
+          borderColor={colorMode == "light" ? "transparent" : "gray.750"}
           px={5}
           py={6}
           rounded={radiusStyle}
@@ -2003,11 +2015,11 @@ function RequirementDetailView() {
           <ModalBody pb={6}>
             <VStack align="stretch" spacing={4}>
               <Box
-                bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                bg={colorMode === "light" ? "gray.50" : "gray.750"}
                 p={4}
                 rounded="md"
                 borderWidth="1px"
-                borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
+                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
               >
                 <Stack spacing={3}>
                   <Box>
@@ -3387,7 +3399,10 @@ const ReqInfoSummaryFileAttachmentsView = ({
                       size={"sm"}
                       colorScheme={"blue"}
                       onClick={() => {
-                        handleOpenPreview(info.row.original.objectFullPath || "");
+                        handleOpenPreview(
+                          info.row.original.objectFullPath || "",
+                          info.row.original.objectRawName || "Dokumen PDF"
+                        );
                       }}
                       leftIcon={<FiEye />}
                     >
@@ -3425,8 +3440,10 @@ const ReqInfoSummaryFileAttachmentsView = ({
   // MODAL PREVIEW
   const ModalPreview = useDisclosure();
   const [UrlFilePDF, setUrlFilePDF] = useState<string>("");
+  const [isLoadingPreview, setIsLoadingPreview] = useState<boolean>(false);
+  const [previewFileName, setPreviewFileName] = useState<string>("");
 
-  const handleOpenPreview = (urlData: string) => {
+  const handleOpenPreview = async (urlData: string, fileName: string = "Dokumen PDF") => {
     if (!urlData || urlData.trim() === "") {
       showToast({
         description: "URL file tidak tersedia untuk pratinjau",
@@ -3435,15 +3452,44 @@ const ReqInfoSummaryFileAttachmentsView = ({
       return;
     }
 
-    // Route through the server-side proxy to bypass mixed-content blocking
-    // (MinIO is HTTP, frontend may be HTTPS — direct fetch would be blocked)
-    const proxiedUrl = `/api/proxy-pdf?url=${encodeURIComponent(urlData)}`;
-    setUrlFilePDF(proxiedUrl);
+    setPreviewFileName(fileName);
+    setIsLoadingPreview(true);
     ModalPreview.onOpen();
+
+    try {
+      // Route through proxy-pdf to bypass mixed-content blocking
+      const proxiedUrl = `/api/proxy-pdf?url=${encodeURIComponent(urlData)}`;
+      const res = await fetch(proxiedUrl);
+      if (!res.ok) {
+        throw new Error("Gagal mengambil file PDF dari storage");
+      }
+
+      const arrayBuffer = await res.arrayBuffer();
+
+      // Apply dynamic confidentiality watermark on every page
+      const watermarkedBytes = await addWatermarkToPdfBuffer(arrayBuffer);
+
+      // Create in-memory Blob URL
+      const blob = new Blob([watermarkedBytes], { type: "application/pdf" });
+      const blobUrl = URL.createObjectURL(blob);
+      setUrlFilePDF(blobUrl);
+    } catch (err: any) {
+      console.error("Preview error:", err);
+      showToast({
+        description: err.message || "Gagal memproses pratinjau file",
+        statusToast: "error",
+      });
+    } finally {
+      setIsLoadingPreview(false);
+    }
   };
 
   const handleClosePreview = () => {
+    if (UrlFilePDF && UrlFilePDF.startsWith("blob:")) {
+      URL.revokeObjectURL(UrlFilePDF);
+    }
     setUrlFilePDF("");
+    setIsLoadingPreview(false);
     ModalPreview.onClose();
   };
 
@@ -3465,24 +3511,64 @@ const ReqInfoSummaryFileAttachmentsView = ({
             m={2}
             bg={colorMode == "light" ? "white" : "gray.900"}
           >
-            <ModalHeader>{`Pratinjau File`}</ModalHeader>
+            <ModalHeader>
+              <HStack justify="space-between" pr={8}>
+                <HStack spacing={2}>
+                  <Icon as={FiFileText} color="red.500" />
+                  <Text fontSize="md" fontWeight="bold">
+                    {previewFileName ? `Pratinjau: ${previewFileName}` : "Pratinjau File"}
+                  </Text>
+                </HStack>
+              </HStack>
+            </ModalHeader>
             <ModalCloseButton />
             <ModalBody w={"full"}>
               <Flex as={Stack} w={"full"}>
-                {UrlFilePDF && UrlFilePDF.trim() !== "" ? (
-                  <iframe
-                    src={UrlFilePDF}
-                    width="100%"
-                    height="600px"
-                    style={{ border: "none", borderRadius: "8px" }}
-                  />
+                {isLoadingPreview ? (
+                  <Flex
+                    w="100%"
+                    h="600px"
+                    direction="column"
+                    alignItems="center"
+                    justifyContent="center"
+                    gap={4}
+                    bg={colorMode === "light" ? "gray.50" : "gray.800"}
+                    rounded="md"
+                  >
+                    <Spinner size="xl" color="blue.500" thickness="4px" />
+                    <VStack spacing={1}>
+                      <Text fontWeight="semibold" fontSize="sm">
+                        Memuat & Menerapkan Watermark Dokumen...
+                      </Text>
+                      <Text fontSize="xs" color="gray.500">
+                        Dokumen sedang diproteksi dengan watermark keamanan resmi
+                      </Text>
+                    </VStack>
+                  </Flex>
+                ) : UrlFilePDF && UrlFilePDF.trim() !== "" ? (
+                  <Box
+                    w="100%"
+                    h="600px"
+                    borderRadius="8px"
+                    overflow="hidden"
+                    border="1px solid"
+                    borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                  >
+                    <iframe
+                      src={`${UrlFilePDF}#toolbar=0&navpanes=0`}
+                      width="100%"
+                      height="100%"
+                      style={{ border: "none" }}
+                      title={previewFileName || "PDF Preview"}
+                    />
+                  </Box>
                 ) : (
                   <Flex
                     w="100%"
                     h="600px"
                     alignItems="center"
                     justifyContent="center"
-                    bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                    bg={colorMode === "light" ? "gray.50" : "gray.750"}
                     rounded="md"
                   >
                     <Text color="gray.500">

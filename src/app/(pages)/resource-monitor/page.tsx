@@ -538,6 +538,8 @@ export default function ResourceMonitorPage() {
                       rounded={radiusStyle}
                       shadow="lg"
                       bg={colorMode === "light" ? "white" : "gray.800"}
+                      border="1px solid"
+                      borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
                     >
                       <CardBody>
                         <HStack spacing={4} flexWrap="wrap">
@@ -551,6 +553,8 @@ export default function ResourceMonitorPage() {
                               size="sm"
                               rounded={radiusStyle}
                               minW="120px"
+                              bg={colorMode === "light" ? "white" : "gray.750"}
+                              borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
                             >
                               <option value="day">Day</option>
                               <option value="week">Week</option>
@@ -568,6 +572,8 @@ export default function ResourceMonitorPage() {
                               size="sm"
                               rounded={radiusStyle}
                               minW="120px"
+                              bg={colorMode === "light" ? "white" : "gray.750"}
+                              borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
                             >
                               <option value="all">All</option>
                               <option value="0">0</option>
@@ -589,9 +595,10 @@ export default function ResourceMonitorPage() {
                             </Text>
                             <Flex
                               borderWidth="1px"
+                              borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
                               borderRadius={radiusStyle}
                               overflow="hidden"
-                              bg={colorMode === "light" ? "white" : "gray.600"}
+                              bg={colorMode === "light" ? "white" : "gray.750"}
                               w="full"
                             >
                               <Input
@@ -616,6 +623,8 @@ export default function ResourceMonitorPage() {
                       rounded={radiusStyle}
                       shadow="lg"
                       bg={colorMode === "light" ? "white" : "gray.800"}
+                      border="1px solid"
+                      borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
                     >
                       <CardHeader>
                         <VStack align="start" spacing={1}>
@@ -627,7 +636,10 @@ export default function ResourceMonitorPage() {
                           >
                             Task Allocation Heatmap
                           </Heading>
-                          <Text fontSize="sm" color="gray.500">
+                          <Text
+                            fontSize="sm"
+                            color={colorMode === "light" ? "gray.500" : "gray.400"}
+                          >
                             Q{selectedQuarter} {selectedYear} - View by{" "}
                             {viewMode}
                           </Text>
@@ -637,28 +649,58 @@ export default function ResourceMonitorPage() {
                         {heatmapLoading ? (
                           <Flex justify="center" align="center" h="400px">
                             <VStack>
-                              <Text>Loading heatmap...</Text>
+                              <Text color={colorMode === "light" ? "gray.600" : "gray.300"}>
+                                Loading heatmap...
+                              </Text>
                             </VStack>
                           </Flex>
                         ) : heatmapData.length > 0 ? (
                           <Box overflowX="auto">
                             <Chart
+                              key={`heatmap-${colorMode}`}
                               options={
                                 {
                                   chart: {
                                     type: "heatmap",
                                     toolbar: { show: true },
+                                    background: "transparent",
+                                  },
+                                  theme: {
+                                    mode: colorMode === "light" ? "light" : "dark",
+                                  },
+                                  stroke: {
+                                    width: 1,
+                                    colors: [colorMode === "light" ? "#ffffff" : "#19202b"],
                                   },
                                   dataLabels: { enabled: false },
                                   colors: ["#008FFB"],
                                   xaxis: {
                                     type: "category",
+                                    labels: {
+                                      style: {
+                                        fontSize: "12px",
+                                        colors: colorMode === "light" ? "#4b5563" : "#cbd5e1",
+                                      },
+                                    },
+                                    axisBorder: {
+                                      color: colorMode === "light" ? "#e5e7eb" : "#374151",
+                                    },
+                                    axisTicks: {
+                                      color: colorMode === "light" ? "#e5e7eb" : "#374151",
+                                    },
                                   },
                                   yaxis: {
                                     labels: {
                                       style: {
                                         fontSize: "12px",
+                                        colors: colorMode === "light" ? "#374151" : "#f1f5f9",
+                                        fontWeight: 500,
                                       },
+                                    },
+                                  },
+                                  legend: {
+                                    labels: {
+                                      colors: colorMode === "light" ? "#4b5563" : "#e2e8f0",
                                     },
                                   },
                                   plotOptions: {
@@ -669,31 +711,31 @@ export default function ResourceMonitorPage() {
                                           {
                                             from: 0,
                                             to: 0,
-                                            color: "#f3f4f6",
+                                            color: colorMode === "light" ? "#f3f4f6" : "#212833",
                                             name: "0",
                                           },
                                           {
                                             from: 1,
                                             to: 2,
-                                            color: "#dbeafe",
+                                            color: colorMode === "light" ? "#dbeafe" : "#1e3a5f",
                                             name: "1-2",
                                           },
                                           {
                                             from: 3,
                                             to: 5,
-                                            color: "#93c5fd",
+                                            color: colorMode === "light" ? "#93c5fd" : "#2563eb",
                                             name: "3-5",
                                           },
                                           {
                                             from: 6,
                                             to: 10,
-                                            color: "#3b82f6",
+                                            color: colorMode === "light" ? "#3b82f6" : "#3b82f6",
                                             name: "6-10",
                                           },
                                           {
                                             from: 11,
                                             to: 999,
-                                            color: "#1e40af",
+                                            color: colorMode === "light" ? "#1e40af" : "#60a5fa",
                                             name: "11+",
                                           },
                                         ],
@@ -701,6 +743,7 @@ export default function ResourceMonitorPage() {
                                     },
                                   },
                                   tooltip: {
+                                    theme: colorMode === "light" ? "light" : "dark",
                                     y: {
                                       formatter: (val: number) =>
                                         `${val} tasks`,
@@ -740,11 +783,13 @@ export default function ResourceMonitorPage() {
                     rounded={radiusStyle}
                     shadow="lg"
                     bg={colorMode === "light" ? "white" : "gray.800"}
+                    border="1px solid"
+                    borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
                   >
                     <CardBody>
                       <HStack
                         spacing={4}
-                        bg={colorMode === "light" ? "gray.50" : "gray.700"}
+                        bg={colorMode === "light" ? "gray.50" : "gray.750"}
                         p={4}
                         rounded={radiusStyle}
                         flexWrap="wrap"
@@ -768,7 +813,8 @@ export default function ResourceMonitorPage() {
                             size="sm"
                             rounded={radiusStyle}
                             minW="100px"
-                            bg={colorMode === "light" ? "white" : "gray.600"}
+                            bg={colorMode === "light" ? "white" : "gray.700"}
+                            borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
                           >
                             {years.map((year) => (
                               <option key={year} value={year}>
@@ -797,7 +843,8 @@ export default function ResourceMonitorPage() {
                             size="sm"
                             rounded={radiusStyle}
                             minW="100px"
-                            bg={colorMode === "light" ? "white" : "gray.600"}
+                            bg={colorMode === "light" ? "white" : "gray.700"}
+                            borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
                           >
                             <option value={1}>Q1</option>
                             <option value={2}>Q2</option>
@@ -825,7 +872,8 @@ export default function ResourceMonitorPage() {
                             size="sm"
                             rounded={radiusStyle}
                             minW="150px"
-                            bg={colorMode === "light" ? "white" : "gray.600"}
+                            bg={colorMode === "light" ? "white" : "gray.700"}
+                            borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
                             placeholder="All Teams"
                           >
                             {teams.map((team) => (
@@ -848,9 +896,10 @@ export default function ResourceMonitorPage() {
                           </Text>
                           <Flex
                             borderWidth="1px"
+                            borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
                             borderRadius={radiusStyle}
                             overflow="hidden"
-                            bg={colorMode === "light" ? "white" : "gray.600"}
+                            bg={colorMode === "light" ? "white" : "gray.700"}
                             minW="250px"
                           >
                             <Input
@@ -889,7 +938,8 @@ export default function ResourceMonitorPage() {
                             size="sm"
                             rounded={radiusStyle}
                             minW="150px"
-                            bg={colorMode === "light" ? "white" : "gray.600"}
+                            bg={colorMode === "light" ? "white" : "gray.700"}
+                            borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
                           >
                             <option value="nama">Name</option>
                             <option value="activeProjectCount">Projects</option>
@@ -916,7 +966,8 @@ export default function ResourceMonitorPage() {
                             size="sm"
                             rounded={radiusStyle}
                             minW="100px"
-                            bg={colorMode === "light" ? "white" : "gray.600"}
+                            bg={colorMode === "light" ? "white" : "gray.700"}
+                            borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
                           >
                             <option value="asc">ASC</option>
                             <option value="desc">DESC</option>

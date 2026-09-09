@@ -16,6 +16,7 @@ import {
   Flex,
   Image,
   useColorMode,
+  useColorModeValue,
   Card,
   CardBody,
   CardHeader,
@@ -182,10 +183,35 @@ export default function ChangePasswordPage() {
     }
   };
 
+  const pageBgGradient = useColorModeValue(
+    "linear(to-br, #1e3a8a, #3b82f6, #06b6d4)",
+    "linear(to-br, #0a0f1d, #141f36, #0a0f1d)"
+  );
+  const cardBg = useColorModeValue("white", "gray.850");
+  const cardBorder = useColorModeValue("gray.200", "gray.750");
+  const headingColor = useColorModeValue("gray.800", "white");
+  const subtextColor = useColorModeValue("gray.600", "gray.400");
+  const labelColor = useColorModeValue("gray.700", "gray.300");
+  const inputBg = useColorModeValue("gray.50", "gray.800");
+  const inputBorder = useColorModeValue("gray.200", "gray.700");
+  const inputHoverBg = useColorModeValue("white", "gray.750");
+  const inputFocusBg = useColorModeValue("white", "gray.750");
+  const inputReadOnlyBg = useColorModeValue("gray.100", "gray.900");
+  const backBtnColor = useColorModeValue("gray.600", "gray.400");
+  const backBtnHoverBg = useColorModeValue("gray.100", "whiteAlpha.100");
+  const backBtnHoverColor = useColorModeValue("gray.800", "white");
+  const alertWarningBg = useColorModeValue("orange.50", "rgba(251, 146, 60, 0.15)");
+  const alertWarningBorder = useColorModeValue("orange.200", "orange.700");
+  const alertWarningTitle = useColorModeValue("orange.800", "orange.200");
+  const alertWarningText = useColorModeValue("orange.700", "orange.300");
+  const alertInfoBg = useColorModeValue("blue.50", "rgba(59, 130, 246, 0.15)");
+  const alertInfoBorder = useColorModeValue("blue.100", "blue.800");
+  const alertInfoText = useColorModeValue("blue.700", "blue.200");
+
   return (
     <Box
       minH="100vh"
-      bgGradient="linear(to-br, #1e3a8a, #3b82f6, #06b6d4)"
+      bgGradient={pageBgGradient}
       py={8}
       position="relative"
       overflow="hidden"
@@ -287,7 +313,9 @@ export default function ChangePasswordPage() {
           <Box
             w="full"
             maxW="800px"
-            bg="white"
+            bg={cardBg}
+            border="1px solid"
+            borderColor={cardBorder}
             borderRadius="3xl"
             boxShadow="0 20px 60px rgba(0,0,0,0.3)"
             p={10}
@@ -299,7 +327,10 @@ export default function ChangePasswordPage() {
               left: "-2px",
               right: "-2px",
               bottom: "-2px",
-              background: "linear-gradient(135deg, rgba(255,255,255,0.5), rgba(255,255,255,0.1))",
+              background: useColorModeValue(
+                "linear-gradient(135deg, rgba(255,255,255,0.5), rgba(255,255,255,0.1))",
+                "linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02))"
+              ),
               borderRadius: "3xl",
               zIndex: -1,
             }}
@@ -311,10 +342,10 @@ export default function ChangePasswordPage() {
                   <Image src={"/img/logo-bjb.png"} alt="Bank bjb" />
                 </Flex>
               </Center>
-              <Heading size="lg" mb={2} color="gray.800">
+              <Heading size="lg" mb={2} color={headingColor}>
                 Ganti Password
               </Heading>
-              <Text color="gray.600" fontWeight="500">
+              <Text color={subtextColor} fontWeight="500">
                 Masukkan User ID dan password lama untuk mengubah password
               </Text>
             </Box>
@@ -324,17 +355,17 @@ export default function ChangePasswordPage() {
                 status="warning" 
                 mb={6} 
                 borderRadius="2xl" 
-                bg="orange.50"
+                bg={alertWarningBg}
                 border="2px solid"
-                borderColor="orange.200"
+                borderColor={alertWarningBorder}
                 py={4}
               >
                 <AlertIcon color="orange.500" boxSize={5} />
                 <Box>
-                  <Text fontSize="sm" fontWeight="600" color="orange.800" mb={1}>
+                  <Text fontSize="sm" fontWeight="600" color={alertWarningTitle} mb={1}>
                     Password Default Terdeteksi
                   </Text>
-                  <Text fontSize="xs" color="orange.700">
+                  <Text fontSize="xs" color={alertWarningText}>
                     Silakan ganti password untuk keamanan akun Anda.
                   </Text>
                 </Box>
@@ -347,7 +378,7 @@ export default function ChangePasswordPage() {
                   isInvalid={!!formik.errors.userId}
                   isRequired
                 >
-                  <FormLabel fontWeight="700" fontSize="sm" color="gray.700" mb={2}>
+                  <FormLabel fontWeight="700" fontSize="sm" color={labelColor} mb={2}>
                     User ID
                   </FormLabel>
                   <Input
@@ -360,18 +391,18 @@ export default function ChangePasswordPage() {
                     size="lg"
                     h="56px"
                     borderRadius="xl"
-                    bg="gray.50"
+                    bg={inputBg}
                     border="2px solid"
-                    borderColor="gray.200"
+                    borderColor={inputBorder}
                     fontSize="md"
                     fontWeight="500"
-                    _hover={{ borderColor: "secondary.300", bg: "white" }}
+                    _hover={{ borderColor: "secondary.300", bg: inputHoverBg }}
                     _focus={{ 
                       borderColor: "secondary.500", 
-                      bg: "white",
+                      bg: inputFocusBg,
                       boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" 
                     }}
-                    _readOnly={{ bg: "gray.100", cursor: "not-allowed" }}
+                    _readOnly={{ bg: inputReadOnlyBg, cursor: "not-allowed" }}
                     transition="all 0.2s"
                   />
                   <FormErrorMessage fontSize="xs" mt={2}>{formik.errors.userId}</FormErrorMessage>
@@ -381,7 +412,7 @@ export default function ChangePasswordPage() {
                   isInvalid={!!formik.errors.oldPassword}
                   isRequired
                 >
-                  <FormLabel fontWeight="700" fontSize="sm" color="gray.700" mb={2}>
+                  <FormLabel fontWeight="700" fontSize="sm" color={labelColor} mb={2}>
                     Password Lama
                   </FormLabel>
                   <InputGroup size="lg">
@@ -393,15 +424,15 @@ export default function ChangePasswordPage() {
                       value={formik.values.oldPassword}
                       h="56px"
                       borderRadius="xl"
-                      bg="gray.50"
+                      bg={inputBg}
                       border="2px solid"
-                      borderColor="gray.200"
+                      borderColor={inputBorder}
                       fontSize="md"
                       fontWeight="500"
-                      _hover={{ borderColor: "secondary.300", bg: "white" }}
+                      _hover={{ borderColor: "secondary.300", bg: inputHoverBg }}
                       _focus={{ 
                         borderColor: "secondary.500", 
-                        bg: "white",
+                        bg: inputFocusBg,
                         boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" 
                       }}
                       transition="all 0.2s"
@@ -425,7 +456,7 @@ export default function ChangePasswordPage() {
                   isInvalid={!!formik.errors.newPassword}
                   isRequired
                 >
-                  <FormLabel fontWeight="700" fontSize="sm" color="gray.700" mb={2}>
+                  <FormLabel fontWeight="700" fontSize="sm" color={labelColor} mb={2}>
                     Password Baru
                   </FormLabel>
                   <InputGroup size="lg">
@@ -437,15 +468,15 @@ export default function ChangePasswordPage() {
                       value={formik.values.newPassword}
                       h="56px"
                       borderRadius="xl"
-                      bg="gray.50"
+                      bg={inputBg}
                       border="2px solid"
-                      borderColor="gray.200"
+                      borderColor={inputBorder}
                       fontSize="md"
                       fontWeight="500"
-                      _hover={{ borderColor: "secondary.300", bg: "white" }}
+                      _hover={{ borderColor: "secondary.300", bg: inputHoverBg }}
                       _focus={{ 
                         borderColor: "secondary.500", 
-                        bg: "white",
+                        bg: inputFocusBg,
                         boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" 
                       }}
                       transition="all 0.2s"
@@ -469,7 +500,7 @@ export default function ChangePasswordPage() {
                   isInvalid={!!formik.errors.confirmPassword}
                   isRequired
                 >
-                  <FormLabel fontWeight="700" fontSize="sm" color="gray.700" mb={2}>
+                  <FormLabel fontWeight="700" fontSize="sm" color={labelColor} mb={2}>
                     Konfirmasi Password Baru
                   </FormLabel>
                   <InputGroup size="lg">
@@ -481,15 +512,15 @@ export default function ChangePasswordPage() {
                       value={formik.values.confirmPassword}
                       h="56px"
                       borderRadius="xl"
-                      bg="gray.50"
+                      bg={inputBg}
                       border="2px solid"
-                      borderColor="gray.200"
+                      borderColor={inputBorder}
                       fontSize="md"
                       fontWeight="500"
-                      _hover={{ borderColor: "secondary.300", bg: "white" }}
+                      _hover={{ borderColor: "secondary.300", bg: inputHoverBg }}
                       _focus={{ 
                         borderColor: "secondary.500", 
-                        bg: "white",
+                        bg: inputFocusBg,
                         boxShadow: "0 0 0 3px rgba(59, 130, 246, 0.1)" 
                       }}
                       transition="all 0.2s"
@@ -512,13 +543,13 @@ export default function ChangePasswordPage() {
                 <Alert 
                   status="info" 
                   borderRadius="xl" 
-                  bg="blue.50"
+                  bg={alertInfoBg}
                   border="1px solid"
-                  borderColor="blue.100"
+                  borderColor={alertInfoBorder}
                   py={3}
                 >
                   <AlertIcon color="blue.500" boxSize={4} />
-                  <Text fontSize="xs" color="blue.700" fontWeight="500">
+                  <Text fontSize="xs" color={alertInfoText} fontWeight="500">
                     Password minimal 6 karakter dan berbeda dari password lama
                   </Text>
                 </Alert>
@@ -559,11 +590,11 @@ export default function ChangePasswordPage() {
                       h="60px"
                       leftIcon={<FiArrowLeft />}
                       borderRadius="xl"
-                      color="gray.600"
+                      color={backBtnColor}
                       fontWeight="600"
                       _hover={{
-                        bg: "gray.100",
-                        color: "gray.800",
+                        bg: backBtnHoverBg,
+                        color: backBtnHoverColor,
                       }}
                       transition="all 0.2s"
                     >

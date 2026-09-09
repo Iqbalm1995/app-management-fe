@@ -2693,7 +2693,7 @@ function DraggableTaskCard({
               {task.taskDesc && (
                 <Text
                   fontSize="sm"
-                  color="gray.600"
+                  color={colorMode === "light" ? "gray.600" : "gray.400"}
                   lineHeight="1.4"
                   noOfLines={2}
                 >
@@ -2708,14 +2708,18 @@ function DraggableTaskCard({
                     <Text fontSize="xs" color="gray.500" fontWeight="medium">
                       Progress
                     </Text>
-                    <Text fontSize="xs" color="gray.600" fontWeight="bold">
+                    <Text
+                      fontSize="xs"
+                      color={colorMode === "light" ? "gray.600" : "gray.300"}
+                      fontWeight="bold"
+                    >
                       {task.percentageStatus}%
                     </Text>
                   </HStack>
                   <Box
                     w="full"
                     h="6px"
-                    bg="gray.100"
+                    bg={colorMode === "light" ? "gray.100" : "whiteAlpha.200"}
                     borderRadius="full"
                     overflow="hidden"
                   >
@@ -2741,7 +2745,11 @@ function DraggableTaskCard({
                   {task.countCommnetTask > 0 && (
                     <HStack spacing={1}>
                       <Icon as={FiMessageSquare} color="gray.500" boxSize={3} />
-                      <Text fontSize="xs" color="gray.600" fontWeight="medium">
+                      <Text
+                        fontSize="xs"
+                        color={colorMode === "light" ? "gray.600" : "gray.400"}
+                        fontWeight="medium"
+                      >
                         {task.countCommnetTask}
                       </Text>
                     </HStack>
@@ -2750,7 +2758,11 @@ function DraggableTaskCard({
                   {task.countTaskItem > 0 && (
                     <HStack spacing={1}>
                       <Icon as={FiCheckSquare} color="gray.500" boxSize={3} />
-                      <Text fontSize="xs" color="gray.600" fontWeight="medium">
+                      <Text
+                        fontSize="xs"
+                        color={colorMode === "light" ? "gray.600" : "gray.400"}
+                        fontWeight="medium"
+                      >
                         {task.countTaskItemDone}/{task.countTaskItem}
                       </Text>
                     </HStack>
@@ -2759,7 +2771,11 @@ function DraggableTaskCard({
                   {task.countRelatedTask > 0 && (
                     <HStack spacing={1}>
                       <Icon as={FiLink} color="gray.500" boxSize={3} />
-                      <Text fontSize="xs" color="gray.600" fontWeight="medium">
+                      <Text
+                        fontSize="xs"
+                        color={colorMode === "light" ? "gray.600" : "gray.400"}
+                        fontWeight="medium"
+                      >
                         {task.countRelatedTask}
                       </Text>
                     </HStack>
@@ -2792,7 +2808,7 @@ function DraggableTaskCard({
                           key={user.id}
                           name={user.nama}
                           src={user.profilePict || undefined}
-                          border="2px solid white"
+                          border={`2px solid ${colorMode === "light" ? "#ffffff" : "#1A202C"}`}
                         />
                       ))}
                     </AvatarGroup>
@@ -3680,7 +3696,7 @@ function DraggableTaskCard({
                       justifyContent="start"
                       as={HStack}
                       spacing={2}
-                      color={"gray.700"}
+                      color={colorMode === "light" ? "gray.700" : "gray.200"}
                     >
                       <FaCog size={16} />
                       <Text fontWeight={600} fontSize={18}>
@@ -3700,7 +3716,11 @@ function DraggableTaskCard({
                             <WrapItem key={user.id}>
                               <HStack
                                 p={2}
-                                bg="gray.50"
+                                bg={
+                                  colorMode === "light"
+                                    ? "gray.50"
+                                    : "whiteAlpha.100"
+                                }
                                 borderRadius="full"
                                 spacing={2}
                               >
@@ -3729,15 +3749,27 @@ function DraggableTaskCard({
                       {detailedTask?.backlogId && DataBacklog ? (
                         <Box
                           p={3}
-                          bg="secondary.50"
+                          bg={
+                            colorMode === "light"
+                              ? "secondary.50"
+                              : "whiteAlpha.100"
+                          }
                           border="1px solid"
-                          borderColor="secondary.200"
+                          borderColor={
+                            colorMode === "light"
+                              ? "secondary.200"
+                              : "secondary.700"
+                          }
                           rounded={radiusStyle}
                         >
                           <Text
                             fontSize="sm"
                             fontWeight="bold"
-                            color="secondary.700"
+                            color={
+                              colorMode === "light"
+                                ? "secondary.700"
+                                : "secondary.200"
+                            }
                           >
                             {DataBacklog.backlogName || "Unknown Backlog"}
                           </Text>

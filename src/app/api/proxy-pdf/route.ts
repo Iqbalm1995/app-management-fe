@@ -27,13 +27,17 @@ export async function GET(req: NextRequest) {
     const urlPath = pdfUrl.split("?")[0];
     const fileName = urlPath.split("/").pop() ?? "preview.pdf";
 
+    const isDownload = req.nextUrl.searchParams.get("download") === "true";
+    const contentDisposition = isDownload
+      ? `attachment; filename="${fileName}"`
+      : "inline";
+
     // Always force application/pdf regardless of what MinIO returns.
-    // MinIO commonly returns application/octet-stream which causes browsers
-    // to force-download the file even when Content-Disposition is "inline".
+    // Set Content-Disposition: inline to ensure preview in iframes does NOT trigger download.
     return new NextResponse(Buffer.from(buffer), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="${fileName}"`,
+        "Content-Disposition": contentDisposition,
         "Cache-Control": "no-cache",
       },
     });

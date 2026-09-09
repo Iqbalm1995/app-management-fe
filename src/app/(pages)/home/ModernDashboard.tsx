@@ -23,7 +23,7 @@ import {
   Avatar,
   Divider,
 } from "@chakra-ui/react";
-import { FiUsers, FiCheckCircle, FiClock, FiTrendingUp, FiBarChart } from "react-icons/fi";
+import { FiUsers, FiCheckCircle, FiClock, FiTrendingUp, FiBarChart, FiFolder } from "react-icons/fi";
 import { MdAssignment } from "react-icons/md";
 
 // Modern Stat Card Component
@@ -58,7 +58,7 @@ const ModernStatCard = ({
             <Text fontSize="sm" color="gray.500" fontWeight="medium" mb={1}>
               {title}
             </Text>
-            <Text fontSize="2xl" fontWeight="bold" color="gray.900">
+            <Text fontSize="2xl" fontWeight="bold" color={useColorModeValue("gray.900", "white")}>
               {value}
             </Text>
             {change && (
@@ -72,10 +72,10 @@ const ModernStatCard = ({
           </Box>
           <Box 
             p={3} 
-            bg={`${color}.50`} 
+            bg={useColorModeValue(`${color}.50`, `${color}.900`)} 
             borderRadius="lg"
           >
-            <Icon as={icon} w={6} h={6} color={`${color}.500`} />
+            <Icon as={icon} w={6} h={6} color={useColorModeValue(`${color}.500`, `${color}.300`)} />
           </Box>
         </Flex>
       </CardBody>
@@ -87,18 +87,21 @@ const ModernStatCard = ({
 const QuickActionsCard = () => {
   const bg = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.100", "gray.700");
-  
+  const headingColor = useColorModeValue("gray.700", "gray.100");
+  const itemBg = useColorModeValue("gray.50", "whiteAlpha.100");
+  const itemHoverBg = useColorModeValue("blue.50", "whiteAlpha.200");
+
   const actions = [
-    { label: "Kanban Board", icon: FiBarChart, href: "/kanban" },
-    { label: "Projects", icon: MdAssignment, href: "/projects-manager" },
-    { label: "Teams", icon: FiUsers, href: "/teams" },
+    { label: "New Project", icon: FiFolder, href: "/projects/new" },
+    { label: "Assign Task", icon: FiCheckCircle, href: "/tasks/assign" },
+    { label: "Team Members", icon: FiUsers, href: "/teams" },
     { label: "Calendar", icon: FiClock, href: "/calendar" },
   ];
 
   return (
     <Card bg={bg} border="1px solid" borderColor={borderColor} shadow="sm">
       <CardBody p={6}>
-        <Heading size="md" mb={4} color="gray.700">Quick Actions</Heading>
+        <Heading size="md" mb={4} color={headingColor}>Quick Actions</Heading>
         <VStack spacing={3} align="stretch">
           {actions.map((action, idx) => (
             <Flex 
@@ -107,8 +110,8 @@ const QuickActionsCard = () => {
               href={action.href}
               p={3}
               borderRadius="md"
-              bg="gray.50"
-              _hover={{ bg: "blue.50", cursor: "pointer" }}
+              bg={itemBg}
+              _hover={{ bg: itemHoverBg, cursor: "pointer" }}
               align="center"
               transition="all 0.2s"
             >
@@ -126,6 +129,7 @@ const QuickActionsCard = () => {
 const RecentActivityCard = () => {
   const bg = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.100", "gray.700");
+  const headingColor = useColorModeValue("gray.700", "gray.100");
   
   const activities = [
     { user: "John Doe", action: "completed task", project: "Project Alpha", time: "2 hours ago" },
@@ -136,7 +140,7 @@ const RecentActivityCard = () => {
   return (
     <Card bg={bg} border="1px solid" borderColor={borderColor} shadow="sm">
       <CardBody p={6}>
-        <Heading size="md" mb={4} color="gray.700">Recent Activity</Heading>
+        <Heading size="md" mb={4} color={headingColor}>Recent Activity</Heading>
         <VStack spacing={4} align="stretch">
           {activities.map((activity, idx) => (
             <Flex key={idx} align="center">

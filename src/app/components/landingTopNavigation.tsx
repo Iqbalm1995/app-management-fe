@@ -17,6 +17,7 @@ import {
   StackDivider,
   Container,
   Image,
+  Portal,
   Tooltip,
   Avatar,
   VStack,
@@ -39,6 +40,7 @@ import {
 } from "@chakra-ui/icons";
 import { useContext, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { NAV_ITEMS_LANDING, NavItem } from "../constants/navigationData";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -51,7 +53,8 @@ import { FiChevronDown } from "react-icons/fi";
 import { truncateToTwoWords } from "../helper/MasterHelper";
 import { RiHomeLine } from "react-icons/ri";
 import { MdPassword } from "react-icons/md";
-import { FaPowerOff } from "react-icons/fa6";
+import { FaPowerOff, FaTerminal } from "react-icons/fa6";
+import { LoadingOverlay } from "./loadingOverlay";
 import AuthPanelModal from "../(pages)/landing/authForm";
 import { AuthDataResponse } from "../services/useAuthentications";
 
@@ -250,6 +253,20 @@ export default function TopNavigationLanding() {
                       </VStack>
                     </MenuItem>
                     <MenuDivider />
+                    <Link href={"/dev"}>
+                      <MenuItem
+                        icon={<FaTerminal />}
+                        color={colorMode == "light" ? "purple.600" : "purple.300"}
+                        bg={colorMode == "light" ? "white" : "gray.900"}
+                        _hover={{
+                          bg: colorMode == "light" ? "purple.50" : "purple.950",
+                          color: colorMode == "light" ? "purple.800" : "purple.200",
+                        }}
+                        rounded={radiusStyle}
+                      >
+                        Developer Mode
+                      </MenuItem>
+                    </Link>
                     <Link href={LINK_MENU_HOME}>
                       <MenuItem
                         icon={<RiHomeLine />}
@@ -313,14 +330,81 @@ export default function TopNavigationLanding() {
 
 const DesktopNav = () => {
   const { colorMode } = useColorMode();
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
+  const [isEnteringDev, setIsEnteringDev] = useState(false);
+
+  const handleEnterDev = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsEnteringDev(true);
+    setTimeout(() => {
+      router.push("/dev");
+    }, 400);
+  };
+
   return (
-    <Stack direction={"row"} spacing={4}>
-      {NAV_ITEMS_LANDING.map((navItem) => (
+    <>
+      {isEnteringDev && (
+        <Portal>
+          <LoadingOverlay isLoading={true} />
+        </Portal>
+      )}
+      <Stack direction={"row"} spacing={4} align="center">
+        {isAuthenticated && (
+          <Link href={"/dev"} onClick={handleEnterDev}>
+            <Button
+              leftIcon={<FaTerminal />}
+              size="sm"
+              variant="outline"
+              bg="whiteAlpha"
+              borderWidth="0"
+              borderColor="purple.500"
+              color={colorMode === "light" ? "purple.600" : "purple.300"}
+              position="relative"
+              rounded="full"
+              px={3.5}
+              py={1.5}
+              fontSize="xs"
+              fontWeight="700"
+              overflow="hidden"
+              transition="all 0.3s ease"
+              isLoading={isEnteringDev}
+              isDisabled={isEnteringDev}
+              _hover={{
+                _before: { opacity: 1 },
+                borderWidth: "0",
+                borderColor: "gray.300",
+              }}
+              _before={{
+                content: '""',
+                position: "absolute",
+                inset: "-6px",
+                background:
+                  "radial-gradient(circle at 50% 50%, #7c3aed, #a855f7, #d946ef)",
+                borderRadius: "full",
+                opacity: 0,
+                transition: "opacity 0.3s ease",
+                zIndex: -2,
+              }}
+              _after={{
+                content: '""',
+                position: "absolute",
+                inset: "2px",
+                bg: colorMode === "light" ? "white" : "gray.900",
+                borderRadius: "full",
+                zIndex: -1,
+              }}
+            >
+              Developer Mode
+            </Button>
+          </Link>
+        )}
+        {NAV_ITEMS_LANDING.map((navItem) => (
         <Box key={navItem.label}>
           <Popover trigger={"hover"} placement={"bottom-start"}>
             <PopoverTrigger>
               <Box
-                as="a"
+                as={Link}
                 p={2}
                 href={navItem.href ?? "#"}
                 fontSize={"md"}
@@ -355,6 +439,7 @@ const DesktopNav = () => {
         </Box>
       ))}
     </Stack>
+    </>
   );
 };
 
@@ -407,18 +492,58 @@ const DesktopSubNav = ({ label, href, subLabel }: NavItem) => {
 };
 
 const MobileNav = () => {
+  const { isAuthenticated } = useAuth();
+  const { colorMode } = useColorMode();
+  const router = useRouter();
+  const [isEnteringDev, setIsEnteringDev] = useState(false);
+
+  const handleEnterDev = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsEnteringDev(true);
+    setTimeout(() => {
+      router.push("/dev");
+    }, 400);
+  };
+
   return (
-    <Stack
-      p={4}
-      display={{ md: "none" }}
-      mb={"60px"}
-      bg={"white"}
-      rounded={"xl"}
-    >
-      {NAV_ITEMS_LANDING.map((navItem, idx) => (
-        <MobileNavItem key={idx} {...navItem} />
-      ))}
-    </Stack>
+    <>
+      {isEnteringDev && (
+        <Portal>
+          <LoadingOverlay isLoading={true} />
+        </Portal>
+      )}
+      <Stack
+        p={4}
+        display={{ md: "none" }}
+        mb={"60px"}
+        bg={colorMode === "light" ? "white" : "gray.800"}
+        rounded={"xl"}
+      >
+        {isAuthenticated && (
+          <Box py={2}>
+            <Button
+              leftIcon={<FaTerminal />}
+              size="sm"
+              w="full"
+              variant="outline"
+              bg="whiteAlpha"
+              borderColor="purple.500"
+              color={colorMode === "light" ? "purple.600" : "purple.300"}
+              rounded="full"
+              fontWeight="700"
+              fontSize="xs"
+              onClick={handleEnterDev}
+              isLoading={isEnteringDev}
+            >
+              Developer Mode
+            </Button>
+          </Box>
+        )}
+        {NAV_ITEMS_LANDING.map((navItem, idx) => (
+          <MobileNavItem key={idx} {...navItem} />
+        ))}
+      </Stack>
+    </>
   );
 };
 
@@ -429,7 +554,7 @@ const MobileNavItem = ({ label, children, href }: NavItem) => {
     <Stack spacing={4} onClick={children && onToggle}>
       <Box
         py={2}
-        as="a"
+        as={Link}
         href={href ?? "#"}
         justifyContent="space-between"
         alignItems="center"

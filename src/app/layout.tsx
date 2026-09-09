@@ -1,7 +1,7 @@
-// app/layout.tsx
 import { Providers } from "./providers";
 import { defaultMetadata } from "./metadata";
 import type { Metadata } from 'next'
+import { ColorModeScript } from "@chakra-ui/react";
 
 export const metadata: Metadata = {
   ...defaultMetadata,
@@ -17,8 +17,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body>
+        <ColorModeScript initialColorMode="system" />
         <Providers>{children}</Providers>
       </body>
     </html>
