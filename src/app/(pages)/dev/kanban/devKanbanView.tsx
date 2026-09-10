@@ -837,6 +837,20 @@ export default function DevKanbanView() {
   // Bulk JSON Import — creates tasks (+ checklist items + team assignment) from raw JSON,
   // reusing the exact same CreateTask / CreateTaskItem / AssignUsersTask calls as the
   // regular task form so bulk-imported cards behave identically to manually created ones.
+  type BulkImportSubtaskItem =
+    | string
+    | {
+        taskItemName?: string;
+        name?: string;
+        title?: string;
+        text?: string;
+        isChecked?: boolean | string;
+        isDone?: string | boolean;
+        checked?: boolean;
+        done?: boolean;
+        completed?: boolean;
+      };
+
   interface BulkImportTaskEntry {
     boardName: string;
     taskName: string;
@@ -846,8 +860,12 @@ export default function DevKanbanView() {
     taskPriority?: string;
     startDate?: string;
     endDate?: string;
-    taskItems?: string[];
+    taskItems?: BulkImportSubtaskItem[];
+    subtasks?: BulkImportSubtaskItem[];
+    checklist?: BulkImportSubtaskItem[];
+    assignedTask?: string[];
     team?: string[];
+    assignees?: string[];
   }
 
   const handleImportJsonTasks = async () => {
@@ -932,6 +950,12 @@ export default function DevKanbanView() {
           }
         }
 
+        const normalizeDateTime = (val?: string) => {
+          if (!val?.trim()) return undefined;
+          const trimmed = val.trim();
+          return trimmed.includes("T") ? trimmed : `${trimmed}T00:00:00`;
+        };
+
         const taskCode = `TASK-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         const payload: TaskCreatePayload = {
           taskName: entry.taskName.trim(),
@@ -941,8 +965,8 @@ export default function DevKanbanView() {
           backlogId: taskBacklogId,
           taskDesc: entry.taskDesc?.trim() || undefined,
           taskPriority: entry.taskPriority || "MEDIUM",
-          startDate: entry.startDate || undefined,
-          endDate: entry.endDate || undefined,
+          startDate: normalizeDateTime(entry.startDate),
+          endDate: normalizeDateTime(entry.endDate),
         };
 
         const res = await CreateTask(payload, tokenData);
@@ -953,14 +977,64 @@ export default function DevKanbanView() {
 
         const newTaskId = res.data as string;
 
-        // Checklist items ("task inside it")
-        if (Array.isArray(entry.taskItems)) {
-          for (const itemName of entry.taskItems) {
-            if (!itemName?.trim()) continue;
-            await CreateTaskItem(
-              { taskId: newTaskId, taskItemName: itemName.trim() },
+        // Checklist items / subtasks ("task inside it") — supports strings, objects with isChecked/isDone, and markdown checkboxes
+        const rawSubtasks =
+          entry.taskItems ||
+          entry.subtasks ||
+          entry.checklist;
+
+        if (Array.isArray(rawSubtasks)) {
+          for (const rawItem of rawSubtasks) {
+            let itemName = "";
+            let isItemChecked = false;
+
+            if (typeof rawItem === "string") {
+              const trimmed = rawItem.trim();
+              const mdCheckedMatch = trimmed.match(/^(?:-\s*)?\[([xX ])\]\s*(.*)$/);
+              if (mdCheckedMatch) {
+                isItemChecked = mdCheckedMatch[1].toLowerCase() === "x";
+                itemName = mdCheckedMatch[2].trim();
+              } else {
+                itemName = trimmed;
+                isItemChecked = false;
+              }
+            } else if (rawItem && typeof rawItem === "object") {
+              itemName = (
+                rawItem.taskItemName ||
+                rawItem.name ||
+                rawItem.title ||
+                rawItem.text ||
+                ""
+              ).trim();
+
+              isItemChecked =
+                rawItem.isChecked === true ||
+                rawItem.isChecked === "true" ||
+                rawItem.isChecked === "Y" ||
+                rawItem.isDone === "Y" ||
+                rawItem.isDone === true ||
+                rawItem.checked === true ||
+                rawItem.done === true ||
+                rawItem.completed === true;
+            }
+
+            if (!itemName) continue;
+
+            const itemRes = await CreateTaskItem(
+              { taskId: newTaskId, taskItemName: itemName },
               tokenData
             );
+
+            // If subtask was marked as completed (isChecked: true / isDone: "Y"), update completion status
+            if (isItemChecked) {
+              const createdItemId = itemRes?.data;
+              if (createdItemId && typeof createdItemId === "string") {
+                await UpdateTaskItem(
+                  { id: createdItemId, taskItemName: itemName, isDone: "Y" },
+                  tokenData
+                );
+              }
+            }
           }
         }
 
@@ -1054,14 +1128,14 @@ export default function DevKanbanView() {
           taskName: "Implement login page validation",
           taskDesc: "Add client-side and server-side validation for the login form",
           taskPriority: "HIGH",
-          startDate: "2024-01-15",
-          endDate: "2024-01-20",
+          startDate: "2024-01-15T09:00:00",
+          endDate: "2024-01-20T18:00:00",
           taskItems: [
-            "Add email format validation",
-            "Add password strength check",
-            "Write unit tests",
+            { taskItemName: "Add email format validation", isChecked: true },
+            { taskItemName: "Add password strength check", isChecked: false },
+            { taskItemName: "Write unit tests", isChecked: false },
           ],
-          team: [exampleMember],
+          assignedTask:[exampleMember],
         },
         {
           boardName: boards[1]?.boardName || exampleBoardName,
@@ -1069,10 +1143,13 @@ export default function DevKanbanView() {
           taskName: "Fix responsive layout on mobile",
           taskDesc: "Audit breakpoints and optimize layout on smaller viewport",
           taskPriority: "MEDIUM",
-          startDate: "2024-01-21",
-          endDate: "2024-01-25",
-          taskItems: ["Test on iOS Safari", "Test on Android Chrome"],
-          team: [],
+          startDate: "2024-01-21T09:00:00",
+          endDate: "2024-01-25T18:00:00",
+          taskItems: [
+            { taskItemName: "Test on iOS Safari", isChecked: true },
+            { taskItemName: "Test on Android Chrome", isChecked: false },
+          ],
+          assignedTask:[],
         },
       ],
     };
@@ -1094,14 +1171,14 @@ export default function DevKanbanView() {
         taskName: "Implement login page validation",
         taskDesc: "Add client-side and server-side validation for the login form",
         taskPriority: "HIGH",
-        startDate: "2024-01-15",
-        endDate: "2024-01-20",
+        startDate: "2024-01-15T09:00:00",
+        endDate: "2024-01-20T18:00:00",
         taskItems: [
-          "Add email format validation",
-          "Add password strength check",
-          "Write unit tests",
+          { taskItemName: "Add email format validation", isChecked: true },
+          { taskItemName: "Add password strength check", isChecked: false },
+          { taskItemName: "Write unit tests", isChecked: false },
         ],
-        team: [exampleMember],
+        assignedTask: [exampleMember],
       },
       {
         boardName: boards[1]?.boardName || exampleBoardName,
@@ -1109,10 +1186,13 @@ export default function DevKanbanView() {
         taskName: "Fix responsive layout on mobile",
         taskDesc: "Audit breakpoints and optimize layout on smaller viewport",
         taskPriority: "MEDIUM",
-        startDate: "2024-01-21",
-        endDate: "2024-01-25",
-        taskItems: ["Test on iOS Safari", "Test on Android Chrome"],
-        team: [],
+        startDate: "2024-01-21T09:00:00",
+        endDate: "2024-01-25T18:00:00",
+        taskItems: [
+          { taskItemName: "Test on iOS Safari", isChecked: true },
+          { taskItemName: "Test on Android Chrome", isChecked: false },
+        ],
+        assignedTask:[],
       },
     ];
 
@@ -3770,8 +3850,8 @@ export default function DevKanbanView() {
                 <Text fontSize="xs" color={isDark ? "gray.400" : "gray.600"}>
                   Paste a JSON payload below containing a <strong>tasks</strong> array or an array of tasks. Each task needs a <strong>boardName</strong> matching
                   an existing board on this backlog and a <strong>taskName</strong>. Optional{" "}
-                  <strong>taskItems</strong> creates checklist items inside the task, and{" "}
-                  <strong>team</strong> assigns members by name or email.
+                  <strong>taskItems</strong> creates checklist items (accepts strings or objects with <code>&quot;isChecked&quot;: true/false</code>), and{" "}
+                  <strong>assignedTask</strong> / <strong>team</strong> assigns members by name or email.
                 </Text>
 
                 {/* Read-Only Target Context Card: Project & Backlog Header */}

@@ -264,7 +264,7 @@ export default function TopNavigationLanding() {
                         }}
                         rounded={radiusStyle}
                       >
-                        Developer Mode
+                        Focus Mode
                       </MenuItem>
                     </Link>
                     <Link href={LINK_MENU_HOME}>
@@ -395,7 +395,7 @@ const DesktopNav = () => {
                 zIndex: -1,
               }}
             >
-              Developer Mode
+              Focus Mode
             </Button>
           </Link>
         )}
@@ -535,7 +535,7 @@ const MobileNav = () => {
               onClick={handleEnterDev}
               isLoading={isEnteringDev}
             >
-              Developer Mode
+              Focus Mode
             </Button>
           </Box>
         )}

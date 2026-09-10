@@ -209,7 +209,7 @@ const AuthPanelModal = () => {
                             Developer Workspace
                           </Badge>
                           <Text fontSize="2xl" fontWeight="bold" letterSpacing="-0.02em">
-                            Developer Mode
+                            Focus Mode
                           </Text>
                           <Text fontSize="xs" opacity={0.85} maxW="280px">
                             Sign in to access project boards, backlog & sprint kanban
