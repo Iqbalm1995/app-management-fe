@@ -61,6 +61,13 @@ import {
   Wrap,
   WrapItem,
   SimpleGrid,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverHeader,
+  PopoverBody,
+  PopoverArrow,
+  PopoverCloseButton,
 } from "@chakra-ui/react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -81,6 +88,7 @@ import {
   FiLoader,
   FiEye,
   FiCheckCircle,
+  FiCircle,
   FiList,
   FiInbox,
   FiX,
@@ -91,6 +99,11 @@ import {
   FiRotateCcw,
   FiChevronDown,
   FiLock,
+  FiCalendar,
+  FiUsers,
+  FiExternalLink,
+  FiAlertTriangle,
+  FiAlertCircle,
 } from "react-icons/fi";
 import { keyframes } from "@emotion/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -106,12 +119,14 @@ import useTasks, {
   TaskCommentResponse,
   GenerateTaskBoardPayload,
   TaskUpdatePayload,
+  AssignUsersTaskPayload,
 } from "@/app/services/useTasks";
 import { DateTimeRangeInput } from "@/app/components/DateTimeRangeInput";
 import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
 import useRequirements, {
   BacklogDataResponse,
 } from "@/app/services/useRequirements";
+import { UsersResponse } from "@/app/services/useUsers";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import {
   RES_CODE_OK,
@@ -242,14 +257,41 @@ export default function DevKanbanView() {
 
   const currentAuthUser = useMemo(() => {
     try {
+      const userData =
+        sessionStorage.getItem("userData") || localStorage.getItem("userData");
+      if (userData) return JSON.parse(userData);
       const stored = localStorage.getItem("authData");
       if (stored) {
         const parsed = JSON.parse(stored);
         return parsed?.dataLogin || null;
       }
-    } catch { }
+    } catch {}
     return null;
   }, []);
+
+  // Multi-step workspace loading state matching /workspace/project?projectId=
+  const [loadingStep, setLoadingStep] = useState<
+    "init" | "project" | "boards" | "backlogs" | "tasks" | "ready" | null
+  >(null);
+
+  // Date picker states inside task detail modal
+  const [tempStartDate, setTempStartDate] = useState<string | null>(null);
+  const [tempEndDate, setTempEndDate] = useState<string | null>(null);
+  const [isSavingTaskDates, setIsSavingTaskDates] = useState<boolean>(false);
+
+  // Assign member modal states matching /workspace/project?projectId=
+  const {
+    isOpen: isAssignModalOpen,
+    onOpen: onAssignModalOpen,
+    onClose: onAssignModalClose,
+  } = useDisclosure();
+  const [searchUserAssign, setSearchUserAssign] = useState<string>("");
+  const [dataUsers, setDataUsers] = useState<UsersResponse[]>([]);
+  const [choosedMemberProjects, setChoosedMemberProjects] = useState<
+    UsersResponse[]
+  >([]);
+  const [isSavingAssignments, setIsSavingAssignments] =
+    useState<boolean>(false);
 
   // Comprehensive Task Create/Edit Modal states matching /workspace/project?projectId=
   const {
@@ -339,19 +381,15 @@ export default function DevKanbanView() {
         const projRes = await GetProjectDetail(urlProjectId, token);
         if (projRes?.statusCode === RES_CODE_OK && projRes.data) {
           const proj = projRes.data;
-          const backlogId = proj.requirementData?.id || proj.reqParentId || null;
           const payload: SelectedProjectStorage = {
             id: proj.id,
             projectNo: proj.projectNo,
             projectName: proj.projectName,
             projectStatus: proj.projectStatus,
-            backlogId,
+            backlogId: null,
           };
           setSelectedProject(payload);
           setProjectData(proj);
-          if (backlogId) {
-            setCurrentBacklogId(backlogId);
-          }
           localStorage.setItem("dev_selected_project", JSON.stringify(payload));
         }
       } catch (e) {
@@ -399,19 +437,15 @@ export default function DevKanbanView() {
   }, [selectedProject?.id, tokenData, GetAssignedProjects]);
 
   const handleSelectInitProject = (proj: ProjectDataResponse) => {
-    const backlogId = proj.requirementData?.id || proj.reqParentId || null;
     const payload: SelectedProjectStorage = {
       id: proj.id,
       projectNo: proj.projectNo,
       projectName: proj.projectName,
       projectStatus: proj.projectStatus,
-      backlogId,
+      backlogId: null,
     };
     setSelectedProject(payload);
     setProjectData(proj);
-    if (backlogId) {
-      setCurrentBacklogId(backlogId);
-    }
     localStorage.setItem("dev_selected_project", JSON.stringify(payload));
     window.dispatchEvent(
       new CustomEvent("dev_project_switched", { detail: payload })
@@ -464,12 +498,10 @@ export default function DevKanbanView() {
 
         if (backlogRes?.statusCode === RES_CODE_OK && Array.isArray(backlogRes.data)) {
           setBacklogs(backlogRes.data);
-          if (!currentBacklogId && backlogRes.data.length > 0) {
-            const firstBacklogId = backlogRes.data[0].id;
-            setCurrentBacklogId(firstBacklogId);
-
-            // Update localStorage
-            const updated = { ...selectedProject, backlogId: firstBacklogId };
+          // If currentBacklogId is set to an invalid ID (e.g. legacy requirementData id), reset to "" (All Backlogs)
+          if (currentBacklogId && !backlogRes.data.some((b) => b.id === currentBacklogId)) {
+            setCurrentBacklogId("");
+            const updated = { ...selectedProject, backlogId: null };
             setSelectedProject(updated);
             localStorage.setItem(
               "dev_selected_project",
@@ -506,7 +538,9 @@ export default function DevKanbanView() {
     }
 
     setIsLoadingBoards(true);
+    setLoadingStep("init");
     try {
+      setLoadingStep("boards");
       // 1. Fetch Board Columns — once, from the project's primary backlog
       const boardRes = await ListTasksBoard(boardSourceBacklogId, tokenData);
       if (boardRes?.statusCode === RES_CODE_OK && Array.isArray(boardRes.data)) {
@@ -515,6 +549,7 @@ export default function DevKanbanView() {
         setBoards([]);
       }
 
+      setLoadingStep("tasks");
       // 2. Fetch ALL tasks for the project (mixed backlogs supported), not just one backlog.
       // The backlog dropdown filters this list client-side afterwards.
       const taskRes = await ListTasksPaged(
@@ -546,10 +581,12 @@ export default function DevKanbanView() {
         setTasks([]);
       }
       setLastUpdated(new Date());
+      setLoadingStep("ready");
     } catch (err) {
       console.error("Failed to load kanban data:", err);
     } finally {
       setIsLoadingBoards(false);
+      setLoadingStep(null);
     }
   }, [selectedProject?.id, backlogs, tokenData]);
 
@@ -799,11 +836,12 @@ export default function DevKanbanView() {
     boardId: string,
     taskName: string
   ): Promise<boolean> => {
-    if (!selectedProject?.id || !currentBacklogId || !tokenData) return false;
+    const effectiveBacklogId = currentBacklogId || backlogs[0]?.id;
+    if (!selectedProject?.id || !effectiveBacklogId || !tokenData) return false;
 
     try {
       const payload: CreateSimpleTaskPayload = {
-        backlogId: currentBacklogId,
+        backlogId: effectiveBacklogId,
         projectId: selectedProject.id,
         boardId,
         taskName,
@@ -872,8 +910,9 @@ export default function DevKanbanView() {
     setJsonImportError("");
     setJsonImportResult(null);
 
-    if (!selectedProject?.id || !currentBacklogId || !tokenData) {
-      setJsonImportError("No project or backlog selected.");
+    const effectiveBacklogId = currentBacklogId || backlogs[0]?.id;
+    if (!selectedProject?.id || !effectiveBacklogId || !tokenData) {
+      setJsonImportError("No project or backlog available.");
       return;
     }
 
@@ -939,8 +978,8 @@ export default function DevKanbanView() {
           continue;
         }
 
-        // Determine destination backlog: use entry.backlogId directly if provided, or resolve from backlogName, or fallback to currentBacklogId
-        let taskBacklogId = entry.backlogId?.trim() || currentBacklogId;
+        // Determine destination backlog: use entry.backlogId directly if provided, or resolve from backlogName, or fallback to effectiveBacklogId
+        let taskBacklogId = entry.backlogId?.trim() || effectiveBacklogId;
         if (!entry.backlogId && entry.backlogName) {
           const matched = backlogs.find(
             (b) => b.backlogName.toLowerCase() === entry.backlogName?.toLowerCase()
@@ -1245,6 +1284,8 @@ export default function DevKanbanView() {
     setActiveTask(task);
     setEditedTaskName(task.taskName);
     setEditedTaskDesc(task.taskDesc || "");
+    setTempStartDate(task.startDate ?? null);
+    setTempEndDate(task.endDate ?? null);
     setIsEditingTaskName(false);
     setIsEditingTaskDesc(false);
     setEditingCommentId(null);
@@ -1263,6 +1304,8 @@ export default function DevKanbanView() {
         setActiveTask(detailRes.data);
         setEditedTaskName(detailRes.data.taskName);
         setEditedTaskDesc(detailRes.data.taskDesc || "");
+        setTempStartDate(detailRes.data.startDate ?? null);
+        setTempEndDate(detailRes.data.endDate ?? null);
       }
 
       if (itemsRes?.statusCode === RES_CODE_OK && Array.isArray(itemsRes.data)) {
@@ -1394,6 +1437,213 @@ export default function DevKanbanView() {
       console.error("Failed to update task description:", err);
     } finally {
       setIsSavingTaskInline(false);
+    }
+  };
+
+  // Handle updating task dates matching /workspace/project?projectId=
+  const updateTaskDates = async (
+    startDate: string | null,
+    endDate: string | null
+  ) => {
+    if (!activeTask) return;
+    setIsSavingTaskDates(true);
+    try {
+      const updatePayload: TaskUpdatePayload = {
+        id: activeTask.id,
+        boardId: activeTask.boardId,
+        taskName: activeTask.taskName,
+        taskDesc: activeTask.taskDesc || "",
+        taskPriority: activeTask.taskPriority,
+        indexTask: activeTask.indexTask,
+        taskPoint: activeTask.taskPoint,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+      };
+
+      const res = await UpdateTask(updatePayload, tokenData);
+      if (res?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: "Task schedule updated successfully",
+          statusToast: "success",
+        });
+        setActiveTask({
+          ...activeTask,
+          startDate: startDate || undefined,
+          endDate: endDate || undefined,
+        });
+        setTasks((prev) =>
+          prev.map((t) =>
+            t.id === activeTask.id
+              ? {
+                  ...t,
+                  startDate: startDate || undefined,
+                  endDate: endDate || undefined,
+                }
+              : t
+          )
+        );
+      } else {
+        showToast({
+          description: res?.message || "Failed to update task dates",
+          statusToast: "error",
+        });
+      }
+    } catch (e) {
+      console.error("Failed to update task schedule:", e);
+      showToast({
+        description: "An error occurred while updating task schedule",
+        statusToast: "error",
+      });
+    } finally {
+      setIsSavingTaskDates(false);
+    }
+  };
+
+  // Member assignment handlers matching /workspace/project?projectId=
+  const handleSearchUserAssign = (textSearch: string) => {
+    setSearchUserAssign(textSearch);
+    const projectMembers: UsersResponse[] =
+      (projectData?.userAssignment || [])
+        .map((assignment: any) => assignment.userData)
+        .filter(Boolean);
+
+    if (textSearch.trim() !== "") {
+      const lower = textSearch.toLowerCase();
+      const filtered = projectMembers.filter(
+        (user) =>
+          user.nama?.toLowerCase().includes(lower) ||
+          user.nip?.toLowerCase().includes(lower) ||
+          user.email?.toLowerCase().includes(lower)
+      );
+      setDataUsers(filtered);
+    } else {
+      setDataUsers(projectMembers);
+    }
+  };
+
+  const handleAddUserAssign = (data: UsersResponse) => {
+    const isAlreadyAssigned = choosedMemberProjects.some(
+      (user) => user.id === data.id || user.userId === data.userId
+    );
+    if (!isAlreadyAssigned) {
+      setChoosedMemberProjects((prev) => [...prev, data]);
+    }
+  };
+
+  const handleRemoveUserAssign = (idOrUserId: string) => {
+    setChoosedMemberProjects((prev) =>
+      prev.filter(
+        (user) => user.id !== idOrUserId && user.userId !== idOrUserId
+      )
+    );
+  };
+
+  const handleAssignMe = () => {
+    if (!currentAuthUser) return;
+    const isAlreadyAssigned = choosedMemberProjects.some(
+      (user) =>
+        user.id === currentAuthUser.id || user.userId === currentAuthUser.userId
+    );
+    if (isAlreadyAssigned) return;
+
+    const meAsUser: UsersResponse = {
+      id: currentAuthUser.id || currentAuthUser.userId,
+      nrp: currentAuthUser.nrp || "",
+      nama: currentAuthUser.nama || "Current User",
+      nip: currentAuthUser.nip || "",
+      userId: currentAuthUser.userId || currentAuthUser.id,
+      kodeCabang: currentAuthUser.kodeCabang,
+      namaCabang: currentAuthUser.namaCabang,
+      kodeInduk: currentAuthUser.kodeInduk,
+      namaInduk: currentAuthUser.namaInduk,
+      kodeKanwil: currentAuthUser.kodeKanwil,
+      namaKanwil: currentAuthUser.namaKanwil,
+      jabatan: currentAuthUser.jabatan || "",
+      email: currentAuthUser.email || "",
+      idFungsi: currentAuthUser.idFungsi,
+      namaFungsi: currentAuthUser.namaFungsi,
+      kodePenempatan: currentAuthUser.kodePenempatan,
+      namaPenempatan: currentAuthUser.namaPenempatan,
+      idUim: currentAuthUser.idUim,
+      costCentre: currentAuthUser.costCentre,
+      isApproval: currentAuthUser.isApproval,
+      kodeUnitKerja: currentAuthUser.kodeUnitKerja,
+      namaUnitKerja: currentAuthUser.namaUnitKerja,
+      kodeJabatan: currentAuthUser.kodeJabatan,
+      phoneNumber:
+        currentAuthUser.phoneNumber || currentAuthUser.userPhoneNumber,
+      userStatus: currentAuthUser.userStatus || currentAuthUser.isActive,
+      profilePict: currentAuthUser.profilePict,
+      kodeGroupKerja: null,
+      namaGroupKerja: null,
+      lastSync: null,
+      createdAt: new Date().toISOString(),
+      createdBy: currentAuthUser.userId || "",
+      updatedAt: null,
+      updatedBy: null,
+      team: null,
+      teamRole: null,
+    };
+
+    setChoosedMemberProjects((prev) => [...prev, meAsUser]);
+  };
+
+  const handleSaveAssignedUsers = async () => {
+    if (!activeTask) return;
+    setIsSavingAssignments(true);
+    try {
+      const assignPayload: AssignUsersTaskPayload = {
+        taskId: activeTask.id,
+        usersData: choosedMemberProjects.map((user) => ({
+          userId: user.userId,
+        })),
+      };
+
+      const response = await AssignUsersTask(assignPayload, tokenData);
+      if (response?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: "Users assigned successfully",
+          statusToast: "success",
+        });
+
+        const updatedAssignUsers = choosedMemberProjects.map((user) => ({
+          id: user.id,
+          nama: user.nama,
+          nip: user.nip,
+          userId: user.userId,
+          jabatan: user.jabatan || undefined,
+          email: user.email,
+          profilePict: user.profilePict,
+        }));
+
+        setActiveTask({
+          ...activeTask,
+          assignUsers: updatedAssignUsers,
+        });
+
+        setTasks((prev) =>
+          prev.map((t) =>
+            t.id === activeTask.id
+              ? { ...t, assignUsers: updatedAssignUsers }
+              : t
+          )
+        );
+
+        onAssignModalClose();
+      } else {
+        showToast({
+          description: response?.message || "Failed to assign users",
+          statusToast: "error",
+        });
+      }
+    } catch (err) {
+      console.error("Error assigning users:", err);
+      showToast({
+        description: "An error occurred while assigning users",
+        statusToast: "error",
+      });
+    } finally {
+      setIsSavingAssignments(false);
     }
   };
 
@@ -2454,8 +2704,8 @@ export default function DevKanbanView() {
                 {/* Backlog Filter */}
                 {backlogs.length > 0 && (
                   <Select
-                    placeholder="Backlog"
-                    value={currentBacklogId}
+                    placeholder="All Backlogs"
+                    value={currentBacklogId || ""}
                     onChange={(e) => handleBacklogChange(e.target.value)}
                     size="sm"
                     maxW="200px"
@@ -2560,6 +2810,29 @@ export default function DevKanbanView() {
               </HStack>
 
               <HStack spacing={2}>
+                {selectedProject?.id && (
+                  <Link
+                    href={`/workspace/project?projectId=${selectedProject.id}`}
+                    passHref
+                  >
+                    <Button
+                      as="a"
+                      leftIcon={<FiExternalLink />}
+                      size="sm"
+                      variant="outline"
+                      borderRadius={radiusStyle}
+                      fontSize="xs"
+                      color={isDark ? "blue.300" : "blue.600"}
+                      borderColor={isDark ? "blue.400" : "blue.300"}
+                      _hover={{
+                        bg: isDark ? "rgba(59, 130, 246, 0.12)" : "blue.50",
+                      }}
+                    >
+                      Workspace
+                    </Button>
+                  </Link>
+                )}
+
                 <Button
                   leftIcon={<FiCode />}
                   size="sm"
@@ -2595,11 +2868,198 @@ export default function DevKanbanView() {
 
           {/* 3. Kanban Board Container matching /workspace/project?projectId= */}
           {isLoadingBoards ? (
-            <Flex justify="center" align="center" minH="400px" direction="column" gap={3}>
-              <Spinner size="lg" color="purple.500" thickness="3px" />
-              <Text fontSize="sm" color="gray.500">
-                Loading Kanban board...
-              </Text>
+            <Flex
+              justify="center"
+              align="center"
+              minH="420px"
+              w="full"
+              py={10}
+            >
+              <Box
+                maxW="420px"
+                w="full"
+                p={6}
+                borderRadius={radiusStyle}
+                border="1px solid"
+                borderColor={isDark ? "rgba(255, 255, 255, 0.08)" : "gray.200"}
+                bg={isDark ? "rgba(15, 23, 42, 0.75)" : "white"}
+                backdropFilter="blur(20px)"
+                boxShadow={
+                  isDark
+                    ? "0 8px 32px 0 rgba(0, 0, 0, 0.37)"
+                    : "0 4px 20px -2px rgba(0, 0, 0, 0.05)"
+                }
+              >
+                <VStack spacing={6} align="stretch">
+                  <HStack spacing={3} justify="center">
+                    <Spinner size="sm" color="blue.500" thickness="2.5px" />
+                    <Heading size="sm" color={isDark ? "gray.200" : "gray.800"}>
+                      Preparing Your Workspace
+                    </Heading>
+                  </HStack>
+
+                  {/* Loading Steps matching /workspace/project */}
+                  <VStack spacing={2.5} align="stretch" px={2}>
+                    {/* Step 1: Initializing */}
+                    <HStack spacing={3}>
+                      {loadingStep === "init" || !loadingStep ? (
+                        <Spinner size="xs" color="blue.500" />
+                      ) : (
+                        <Icon as={FiCheckCircle} color="green.400" boxSize={4} />
+                      )}
+                      <Text
+                        fontSize="xs"
+                        fontWeight={loadingStep === "init" ? 600 : 400}
+                        color={loadingStep === "init" ? "blue.400" : isDark ? "gray.400" : "gray.600"}
+                      >
+                        Initializing workspace
+                      </Text>
+                    </HStack>
+
+                    {/* Step 2: Project */}
+                    <HStack spacing={3}>
+                      {loadingStep === "project" ? (
+                        <Spinner size="xs" color="blue.500" />
+                      ) : ["init"].includes(loadingStep || "") ? (
+                        <Icon as={FiCircle} color={isDark ? "gray.600" : "gray.300"} boxSize={4} />
+                      ) : (
+                        <Icon as={FiCheckCircle} color="green.400" boxSize={4} />
+                      )}
+                      <Text
+                        fontSize="xs"
+                        fontWeight={loadingStep === "project" ? 600 : 400}
+                        color={
+                          loadingStep === "project"
+                            ? "blue.400"
+                            : ["init"].includes(loadingStep || "")
+                            ? isDark ? "gray.600" : "gray.400"
+                            : isDark ? "gray.400" : "gray.600"
+                        }
+                      >
+                        Loading project details
+                      </Text>
+                    </HStack>
+
+                    {/* Step 3: Boards */}
+                    <HStack spacing={3}>
+                      {loadingStep === "boards" ? (
+                        <Spinner size="xs" color="blue.500" />
+                      ) : ["init", "project"].includes(loadingStep || "") ? (
+                        <Icon as={FiCircle} color={isDark ? "gray.600" : "gray.300"} boxSize={4} />
+                      ) : (
+                        <Icon as={FiCheckCircle} color="green.400" boxSize={4} />
+                      )}
+                      <Text
+                        fontSize="xs"
+                        fontWeight={loadingStep === "boards" ? 600 : 400}
+                        color={
+                          loadingStep === "boards"
+                            ? "blue.400"
+                            : ["init", "project"].includes(loadingStep || "")
+                            ? isDark ? "gray.600" : "gray.400"
+                            : isDark ? "gray.400" : "gray.600"
+                        }
+                      >
+                        Loading board configuration
+                      </Text>
+                    </HStack>
+
+                    {/* Step 4: Backlogs */}
+                    <HStack spacing={3}>
+                      {loadingStep === "backlogs" ? (
+                        <Spinner size="xs" color="blue.500" />
+                      ) : ["init", "project", "boards"].includes(loadingStep || "") ? (
+                        <Icon as={FiCircle} color={isDark ? "gray.600" : "gray.300"} boxSize={4} />
+                      ) : (
+                        <Icon as={FiCheckCircle} color="green.400" boxSize={4} />
+                      )}
+                      <Text
+                        fontSize="xs"
+                        fontWeight={loadingStep === "backlogs" ? 600 : 400}
+                        color={
+                          loadingStep === "backlogs"
+                            ? "blue.400"
+                            : ["init", "project", "boards"].includes(loadingStep || "")
+                            ? isDark ? "gray.600" : "gray.400"
+                            : isDark ? "gray.400" : "gray.600"
+                        }
+                      >
+                        Loading backlogs
+                      </Text>
+                    </HStack>
+
+                    {/* Step 5: Tasks */}
+                    <HStack spacing={3}>
+                      {loadingStep === "tasks" ? (
+                        <Spinner size="xs" color="blue.500" />
+                      ) : ["init", "project", "boards", "backlogs"].includes(loadingStep || "") ? (
+                        <Icon as={FiCircle} color={isDark ? "gray.600" : "gray.300"} boxSize={4} />
+                      ) : (
+                        <Icon as={FiCheckCircle} color="green.400" boxSize={4} />
+                      )}
+                      <Text
+                        fontSize="xs"
+                        fontWeight={loadingStep === "tasks" ? 600 : 400}
+                        color={
+                          loadingStep === "tasks"
+                            ? "blue.400"
+                            : ["init", "project", "boards", "backlogs"].includes(loadingStep || "")
+                            ? isDark ? "gray.600" : "gray.400"
+                            : isDark ? "gray.400" : "gray.600"
+                        }
+                      >
+                        Loading tasks
+                      </Text>
+                    </HStack>
+
+                    {/* Step 6: Ready */}
+                    <HStack spacing={3}>
+                      {loadingStep === "ready" ? (
+                        <Spinner size="xs" color="blue.500" />
+                      ) : (
+                        <Icon as={FiCircle} color={isDark ? "gray.600" : "gray.300"} boxSize={4} />
+                      )}
+                      <Text
+                        fontSize="xs"
+                        fontWeight={loadingStep === "ready" ? 600 : 400}
+                        color={loadingStep === "ready" ? "blue.400" : isDark ? "gray.600" : "gray.400"}
+                      >
+                        Preparing kanban board
+                      </Text>
+                    </HStack>
+                  </VStack>
+
+                  {/* Progress Bar */}
+                  <Box w="full">
+                    <Box
+                      h="5px"
+                      bg={isDark ? "rgba(255, 255, 255, 0.08)" : "gray.100"}
+                      rounded="full"
+                      overflow="hidden"
+                    >
+                      <Box
+                        h="100%"
+                        w={
+                          loadingStep === "init"
+                            ? "15%"
+                            : loadingStep === "project"
+                            ? "35%"
+                            : loadingStep === "boards"
+                            ? "55%"
+                            : loadingStep === "backlogs"
+                            ? "75%"
+                            : loadingStep === "tasks"
+                            ? "90%"
+                            : "100%"
+                        }
+                        bgGradient="linear(to-r, #3b82f6, #60a5fa)"
+                        rounded="full"
+                        transition="width 0.3s ease"
+                      />
+                    </Box>
+                  </Box>
+                </VStack>
+              </Box>
             </Flex>
           ) : boards.length === 0 ? (
             <Flex
@@ -2684,7 +3144,10 @@ export default function DevKanbanView() {
               >
                 {boards.map((board) => {
                   const boardTasks = filteredTasks.filter(
-                    (t) => t.boardId === board.id
+                    (t) =>
+                      t.boardId === board.id ||
+                      (t.boardCodeStage && board.boardCodeStage && t.boardCodeStage.toUpperCase() === board.boardCodeStage.toUpperCase()) ||
+                      (t.boardName && board.boardName && t.boardName.trim().toUpperCase() === board.boardName.trim().toUpperCase())
                   );
 
                   return (
@@ -2730,21 +3193,29 @@ export default function DevKanbanView() {
             <Flex
               w="full"
               minH="56px"
-              bgGradient={
+              bg={
                 isDark
-                  ? "linear(to-r, purple.800, pink.800)"
-                  : "linear(to-r, purple.500, pink.500)"
+                  ? "rgba(15, 23, 42, 0.65)"
+                  : "rgba(255, 255, 255, 0.85)"
+              }
+              backdropFilter="blur(20px)"
+              borderBottom="1px solid"
+              borderColor={
+                isDark ? "rgba(255, 255, 255, 0.08)" : "gray.200"
               }
               px={6}
               py={3}
               justifyContent="space-between"
               alignItems="center"
-              color="white"
             >
               <HStack spacing={3} minW={0} flex={1}>
                 <Badge
-                  bg="whiteAlpha.300"
-                  color="white"
+                  bg={isDark ? "rgba(59, 130, 246, 0.15)" : "blue.50"}
+                  color={isDark ? "blue.300" : "blue.600"}
+                  border="1px solid"
+                  borderColor={
+                    isDark ? "rgba(59, 130, 246, 0.3)" : "blue.200"
+                  }
                   px={2.5}
                   py={0.5}
                   borderRadius="md"
@@ -2753,12 +3224,21 @@ export default function DevKanbanView() {
                 >
                   {activeTask?.taskCode || "TASK"}
                 </Badge>
-                <Heading as="h4" size="sm" noOfLines={1} color="white">
+                <Heading
+                  as="h4"
+                  size="sm"
+                  noOfLines={1}
+                  color={isDark ? "white" : "gray.800"}
+                >
                   {activeTask?.taskName || "Task Details"}
                 </Heading>
               </HStack>
             </Flex>
-            <ModalCloseButton color="white" top={3} right={4} />
+            <ModalCloseButton
+              color={isDark ? "gray.400" : "gray.600"}
+              top={3}
+              right={4}
+            />
 
             <ModalBody p={{ base: 4, md: 6 }}>
               {isLoadingTaskDetails ? (
@@ -2903,139 +3383,315 @@ export default function DevKanbanView() {
                   {/* LEFT COLUMN: colSpan 8 (Alerts, Task Title, Description, Checklist, Comments) */}
                   <GridItem colSpan={{ base: 12, md: 8 }}>
                     <VStack spacing={5} align="stretch">
-                      {/* Alert: Done stage with incomplete checklist */}
-                      {activeTask.percentageStatus < 100 &&
-                        (activeTask.boardCodeStage === "DONE" ||
-                          activeTask.boardName?.toUpperCase() === "DONE") && (
-                          <Alert
-                            status="warning"
-                            variant="subtle"
+                      {/* Compact Task Notices & Status Badges */}
+                      <Wrap spacing={2} mb={1}>
+                        {activeTask.percentageStatus < 100 &&
+                          (activeTask.boardCodeStage === "DONE" ||
+                            activeTask.boardName?.toUpperCase() === "DONE") && (
+                            <WrapItem>
+                              <HStack
+                                spacing={1.5}
+                                px={2.5}
+                                py={0.5}
+                                borderRadius="full"
+                                bg={isDark ? "rgba(245, 158, 11, 0.12)" : "orange.50"}
+                                border="1px solid"
+                                borderColor={isDark ? "rgba(245, 158, 11, 0.25)" : "orange.200"}
+                                color={isDark ? "orange.300" : "orange.700"}
+                                fontSize="2xs"
+                                fontWeight={600}
+                              >
+                                <Icon as={FiAlertTriangle} boxSize={3} />
+                                <Text>Checklist belum selesai</Text>
+                              </HStack>
+                            </WrapItem>
+                          )}
+
+                        {(!activeTask.assignUsers || activeTask.assignUsers.length === 0) && (
+                          <WrapItem>
+                            <HStack
+                              spacing={1.5}
+                              px={2.5}
+                              py={0.5}
+                              borderRadius="full"
+                              bg={isDark ? "rgba(59, 130, 246, 0.12)" : "blue.50"}
+                              border="1px solid"
+                              borderColor={isDark ? "rgba(59, 130, 246, 0.25)" : "blue.200"}
+                              color={isDark ? "blue.300" : "blue.700"}
+                              fontSize="2xs"
+                              fontWeight={600}
+                            >
+                              <Icon as={FiUsers} boxSize={3} />
+                              <Text>Belum ada user ditugaskan</Text>
+                            </HStack>
+                          </WrapItem>
+                        )}
+
+                        {!activeTask.endDate && (
+                          <WrapItem>
+                            <HStack
+                              spacing={1.5}
+                              px={2.5}
+                              py={0.5}
+                              borderRadius="full"
+                              bg={isDark ? "rgba(245, 158, 11, 0.12)" : "amber.50"}
+                              border="1px solid"
+                              borderColor={isDark ? "rgba(245, 158, 11, 0.25)" : "amber.200"}
+                              color={isDark ? "amber.300" : "amber.700"}
+                              fontSize="2xs"
+                              fontWeight={600}
+                            >
+                              <Icon as={FiClock} boxSize={3} />
+                              <Text>Belum ada deadline</Text>
+                            </HStack>
+                          </WrapItem>
+                        )}
+
+                        {activeTask.endDate &&
+                          activeTask.boardCodeStage !== "DONE" &&
+                          (() => {
+                            const now = new Date();
+                            now.setHours(0, 0, 0, 0);
+                            const end = new Date(activeTask.endDate);
+                            end.setHours(0, 0, 0, 0);
+                            const diffTime = end.getTime() - now.getTime();
+                            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                            if (diffDays < 0) {
+                              return (
+                                <WrapItem>
+                                  <HStack
+                                    spacing={1.5}
+                                    px={2.5}
+                                    py={0.5}
+                                    borderRadius="full"
+                                    bg={isDark ? "rgba(239, 68, 68, 0.12)" : "red.50"}
+                                    border="1px solid"
+                                    borderColor={isDark ? "rgba(239, 68, 68, 0.25)" : "red.200"}
+                                    color={isDark ? "red.300" : "red.700"}
+                                    fontSize="2xs"
+                                    fontWeight={600}
+                                  >
+                                    <Icon as={FiAlertCircle} boxSize={3} />
+                                    <Text>Lewat deadline {Math.abs(diffDays)} hari</Text>
+                                  </HStack>
+                                </WrapItem>
+                              );
+                            } else if (diffDays <= 3) {
+                              return (
+                                <WrapItem>
+                                  <HStack
+                                    spacing={1.5}
+                                    px={2.5}
+                                    py={0.5}
+                                    borderRadius="full"
+                                    bg={isDark ? "rgba(245, 158, 11, 0.12)" : "amber.50"}
+                                    border="1px solid"
+                                    borderColor={isDark ? "rgba(245, 158, 11, 0.25)" : "amber.200"}
+                                    color={isDark ? "amber.300" : "amber.700"}
+                                    fontSize="2xs"
+                                    fontWeight={600}
+                                  >
+                                    <Icon as={FiClock} boxSize={3} />
+                                    <Text>Jatuh tempo {diffDays} hari lagi</Text>
+                                  </HStack>
+                                </WrapItem>
+                              );
+                            }
+                            return (
+                              <WrapItem>
+                                <HStack
+                                  spacing={1.5}
+                                  px={2.5}
+                                  py={0.5}
+                                  borderRadius="full"
+                                  bg={isDark ? "rgba(255, 255, 255, 0.05)" : "gray.100"}
+                                  border="1px solid"
+                                  borderColor={isDark ? "whiteAlpha.200" : "gray.200"}
+                                  color={isDark ? "gray.300" : "gray.600"}
+                                  fontSize="2xs"
+                                  fontWeight={600}
+                                >
+                                  <Icon as={FiClock} boxSize={3} />
+                                  <Text>Deadline: {formatDateDDMMYYYY(activeTask.endDate)}</Text>
+                                </HStack>
+                              </WrapItem>
+                            );
+                          })()}
+                      </Wrap>
+
+                      {/* Task Title & Action Controls (Tightly grouped) */}
+                      <VStack spacing={2.5} align="stretch">
+                        <Box>
+                          <Text fontSize="xs" color="gray.500" fontWeight="bold" textTransform="uppercase" mb={1}>
+                            Task Title
+                          </Text>
+                          {isEditingTaskName ? (
+                            <HStack spacing={2}>
+                              <Input
+                                size="sm"
+                                value={editedTaskName}
+                                onChange={(e) => setEditedTaskName(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") handleSaveTaskName();
+                                  if (e.key === "Escape") setIsEditingTaskName(false);
+                                }}
+                                autoFocus
+                                borderRadius="md"
+                                bg={isDark ? "gray.800" : "white"}
+                              />
+                              <Button size="sm" colorScheme="blue" onClick={handleSaveTaskName} isLoading={isSavingTaskInline}>
+                                Save
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => setIsEditingTaskName(false)}>
+                                Cancel
+                              </Button>
+                            </HStack>
+                          ) : (
+                            <HStack
+                              spacing={2}
+                              cursor="pointer"
+                              onClick={() => {
+                                setEditedTaskName(activeTask.taskName);
+                                setIsEditingTaskName(true);
+                              }}
+                              py={1}
+                              px={2}
+                              borderRadius="md"
+                              _hover={{ bg: isDark ? "rgba(255, 255, 255, 0.05)" : "gray.50" }}
+                            >
+                              <Text fontSize="md" fontWeight="bold" color={isDark ? "white" : "gray.800"}>
+                                {activeTask.taskName}
+                              </Text>
+                              <FiEdit2 size={13} color="#a78bfa" />
+                            </HStack>
+                          )}
+                        </Box>
+
+                        {/* Schedule Dates & Assign Member Controls matching /workspace/project */}
+                        <HStack spacing={2} wrap="wrap">
+                          <Popover placement="bottom-start" closeOnBlur={false}>
+                            <PopoverTrigger>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                leftIcon={<FiCalendar />}
+                                rightIcon={<FiChevronDown />}
+                                borderRadius={radiusStyle}
+                                fontSize="xs"
+                                fontWeight={500}
+                                borderColor={isDark ? "whiteAlpha.300" : "gray.300"}
+                                _hover={{
+                                  bg: isDark ? "rgba(255, 255, 255, 0.06)" : "gray.50",
+                                  borderColor: "blue.400",
+                                }}
+                              >
+                                {activeTask.startDate && activeTask.endDate
+                                  ? `${formatDateDDMMYYYY(activeTask.startDate)} - ${formatDateDDMMYYYY(activeTask.endDate)}`
+                                  : activeTask.startDate
+                                  ? `Starts: ${formatDateDDMMYYYY(activeTask.startDate)}`
+                                  : activeTask.endDate
+                                  ? `Due: ${formatDateDDMMYYYY(activeTask.endDate)}`
+                                  : "Set dates"}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              p={4}
+                              width="320px"
+                              rounded={radiusStyle}
+                              bg={isDark ? "gray.800" : "white"}
+                              borderColor={isDark ? "whiteAlpha.200" : "gray.200"}
+                              boxShadow="2xl"
+                              zIndex={1400}
+                            >
+                              <PopoverArrow bg={isDark ? "gray.800" : "white"} />
+                              <PopoverCloseButton />
+                              <PopoverHeader
+                                fontWeight="semibold"
+                                fontSize="sm"
+                                borderBottomWidth="1px"
+                                borderColor={isDark ? "whiteAlpha.100" : "gray.100"}
+                              >
+                                Set Task Dates
+                              </PopoverHeader>
+                              <PopoverBody pt={3}>
+                                <VStack spacing={3} align="stretch">
+                                  <DateTimeRangeInput
+                                    startValue={tempStartDate}
+                                    endValue={tempEndDate}
+                                    onStartChange={(val) =>
+                                      setTempStartDate(val ?? null)
+                                    }
+                                    onEndChange={(val) =>
+                                      setTempEndDate(val ?? null)
+                                    }
+                                    placeholder="Select task schedule"
+                                    size="sm"
+                                  />
+                                  <Button
+                                    size="sm"
+                                    colorScheme="blue"
+                                    w="full"
+                                    isLoading={isSavingTaskDates}
+                                    onClick={async (e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      await updateTaskDates(
+                                        tempStartDate,
+                                        tempEndDate
+                                      );
+                                      // Close popover
+                                      document.body.click();
+                                    }}
+                                  >
+                                    Save Dates
+                                  </Button>
+                                </VStack>
+                              </PopoverBody>
+                            </PopoverContent>
+                          </Popover>
+
+                          {/* Assign Task Button */}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            leftIcon={<FiUsers />}
                             borderRadius={radiusStyle}
                             fontSize="xs"
-                          >
-                            <AlertIcon />
-                            <AlertDescription>
-                              Task tidak dianggap berhasil jika seluruh checklist belum
-                              terselesaikan, meskipun telah berada di stage 'DONE'.
-                            </AlertDescription>
-                          </Alert>
-                        )}
-
-                      {/* Alert: No assigned users */}
-                      {(!activeTask.assignUsers || activeTask.assignUsers.length === 0) && (
-                        <Alert
-                          status="warning"
-                          variant="left-accent"
-                          borderRadius={radiusStyle}
-                          fontSize="xs"
-                        >
-                          <AlertIcon />
-                          <AlertDescription>
-                            Task belum memiliki user yang ditugaskan. Silakan assign user untuk task ini.
-                          </AlertDescription>
-                        </Alert>
-                      )}
-
-                      {/* Alert: No due date */}
-                      {!activeTask.endDate && (
-                        <Alert
-                          status="warning"
-                          variant="left-accent"
-                          borderRadius={radiusStyle}
-                          fontSize="xs"
-                        >
-                          <AlertIcon />
-                          <AlertDescription>
-                            Task belum memiliki due date. Silakan set tanggal deadline untuk task ini.
-                          </AlertDescription>
-                        </Alert>
-                      )}
-
-                      {/* Alert: Deadline status */}
-                      {activeTask.endDate &&
-                        activeTask.boardCodeStage !== "DONE" &&
-                        (() => {
-                          const now = new Date();
-                          now.setHours(0, 0, 0, 0);
-                          const end = new Date(activeTask.endDate);
-                          end.setHours(0, 0, 0, 0);
-                          const diffTime = end.getTime() - now.getTime();
-                          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-                          if (diffDays < 0) {
-                            return (
-                              <Alert status="error" variant="left-accent" borderRadius={radiusStyle} fontSize="xs">
-                                <AlertIcon />
-                                <AlertDescription>
-                                  Task sudah melewati deadline {Math.abs(diffDays)} hari yang lalu!
-                                </AlertDescription>
-                              </Alert>
-                            );
-                          } else if (diffDays <= 3) {
-                            return (
-                              <Alert status="warning" variant="left-accent" borderRadius={radiusStyle} fontSize="xs">
-                                <AlertIcon />
-                                <AlertDescription>
-                                  Task akan jatuh tempo dalam {diffDays} hari!
-                                </AlertDescription>
-                              </Alert>
-                            );
-                          } else {
-                            return (
-                              <Alert status="info" variant="left-accent" borderRadius={radiusStyle} fontSize="xs">
-                                <AlertIcon />
-                                <AlertDescription>
-                                  Task memiliki deadline pada {formatDateDDMMYYYY(activeTask.endDate)}.
-                                </AlertDescription>
-                              </Alert>
-                            );
-                          }
-                        })()}
-
-                      {/* Task Title (Inline editable) */}
-                      <Box>
-                        <Text fontSize="xs" color="gray.500" fontWeight="bold" textTransform="uppercase" mb={1}>
-                          Task Title
-                        </Text>
-                        {isEditingTaskName ? (
-                          <HStack spacing={2}>
-                            <Input
-                              size="sm"
-                              value={editedTaskName}
-                              onChange={(e) => setEditedTaskName(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") handleSaveTaskName();
-                                if (e.key === "Escape") setIsEditingTaskName(false);
-                              }}
-                              autoFocus
-                              borderRadius="md"
-                              bg={isDark ? "gray.800" : "white"}
-                            />
-                            <Button size="sm" colorScheme="blue" onClick={handleSaveTaskName} isLoading={isSavingTaskInline}>
-                              Save
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => setIsEditingTaskName(false)}>
-                              Cancel
-                            </Button>
-                          </HStack>
-                        ) : (
-                          <HStack
-                            spacing={2}
-                            cursor="pointer"
-                            onClick={() => {
-                              setEditedTaskName(activeTask.taskName);
-                              setIsEditingTaskName(true);
+                            fontWeight={500}
+                            borderColor={isDark ? "whiteAlpha.300" : "gray.300"}
+                            _hover={{
+                              bg: isDark ? "rgba(255, 255, 255, 0.06)" : "gray.50",
+                              borderColor: "blue.400",
                             }}
-                            p={2}
-                            borderRadius="md"
-                            _hover={{ bg: isDark ? "rgba(255, 255, 255, 0.05)" : "gray.50" }}
+                            onClick={() => {
+                              setSearchUserAssign("");
+                              const members: UsersResponse[] = (
+                                projectData?.userAssignment || []
+                              )
+                                .map((a: any) => a.userData)
+                                .filter(Boolean);
+                              setDataUsers(members);
+                              setChoosedMemberProjects(
+                                (activeTask.assignUsers || []).map((u) => ({
+                                  id: u.id,
+                                  nama: u.nama,
+                                  nip: u.nip,
+                                  userId: u.userId,
+                                  jabatan: u.jabatan,
+                                  email: u.email,
+                                  profilePict: u.profilePict,
+                                } as any))
+                              );
+                              onAssignModalOpen();
+                            }}
                           >
-                            <Text fontSize="md" fontWeight="bold" color={isDark ? "white" : "gray.800"}>
-                              {activeTask.taskName}
-                            </Text>
-                            <FiEdit2 size={13} color="#a78bfa" />
-                          </HStack>
-                        )}
-                      </Box>
+                            Assign Task
+                            {activeTask.assignUsers &&
+                              activeTask.assignUsers.length > 0 &&
+                              ` (${activeTask.assignUsers.length})`}
+                          </Button>
+                        </HStack>
+                      </VStack>
 
                       {/* Task Description (Inline editable) */}
                       <Box>
@@ -3420,9 +4076,41 @@ export default function DevKanbanView() {
 
                       {/* Assigned To */}
                       <Box>
-                        <Text fontSize="xs" color="gray.500" fontWeight="bold" textTransform="uppercase" mb={2}>
-                          Assigned To
-                        </Text>
+                        <HStack justify="space-between" mb={2}>
+                          <Text fontSize="xs" color="gray.500" fontWeight="bold" textTransform="uppercase">
+                            Assigned To
+                          </Text>
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            colorScheme="blue"
+                            leftIcon={<FiPlus size={12} />}
+                            borderRadius={radiusStyle}
+                            onClick={() => {
+                              setSearchUserAssign("");
+                              const members: UsersResponse[] = (
+                                projectData?.userAssignment || []
+                              )
+                                .map((a: any) => a.userData)
+                                .filter(Boolean);
+                              setDataUsers(members);
+                              setChoosedMemberProjects(
+                                (activeTask.assignUsers || []).map((u) => ({
+                                  id: u.id,
+                                  nama: u.nama,
+                                  nip: u.nip,
+                                  userId: u.userId,
+                                  jabatan: u.jabatan,
+                                  email: u.email,
+                                  profilePict: u.profilePict,
+                                } as any))
+                              );
+                              onAssignModalOpen();
+                            }}
+                          >
+                            Manage
+                          </Button>
+                        </HStack>
                         {activeTask.assignUsers && activeTask.assignUsers.length > 0 ? (
                           <Wrap spacing={2}>
                             {activeTask.assignUsers.map((u) => (
@@ -3510,15 +4198,15 @@ export default function DevKanbanView() {
                           <Text fontSize="xs" color="gray.500" fontWeight="bold" textTransform="uppercase">
                             Progress
                           </Text>
-                          <Text fontSize="xs" fontWeight="bold">
+                          <Text fontSize="xs" fontWeight="bold" color={isDark ? "blue.300" : "blue.600"}>
                             {activeTask.percentageStatus || 0}%
                           </Text>
                         </HStack>
-                        <Box w="full" h="8px" bg={isDark ? "gray.700" : "gray.200"} borderRadius="full">
+                        <Box w="full" h="8px" bg={isDark ? "rgba(255, 255, 255, 0.08)" : "gray.100"} borderRadius="full">
                           <Box
                             h="100%"
                             w={`${activeTask.percentageStatus || 0}%`}
-                            bgGradient="linear(to-r, purple.400, pink.400)"
+                            bgGradient="linear(to-r, #3b82f6, #60a5fa)"
                             borderRadius="full"
                             transition="width 0.3s ease"
                           />
@@ -4411,6 +5099,274 @@ export default function DevKanbanView() {
                 </Box>
               </VStack>
             </ModalBody>
+          </ModalContent>
+        </Modal>
+
+        {/* Assign Task Modal matching /workspace/project?projectId= */}
+        <Modal
+          isOpen={isAssignModalOpen}
+          onClose={onAssignModalClose}
+          size="4xl"
+          isCentered
+          closeOnOverlayClick={false}
+        >
+          <ModalOverlay
+            backdropFilter="blur(10px)"
+            bg={isDark ? "rgba(0, 0, 0, 0.65)" : "rgba(0, 0, 0, 0.4)"}
+          />
+          <ModalContent
+            rounded={radiusStyle}
+            bg={isDark ? "gray.900" : "white"}
+            border="1px solid"
+            borderColor={isDark ? "whiteAlpha.200" : "gray.200"}
+            boxShadow="2xl"
+          >
+            <ModalHeader
+              borderBottom="1px solid"
+              borderColor={isDark ? "whiteAlpha.100" : "gray.100"}
+              py={4}
+              pr={12}
+            >
+              <HStack spacing={2.5} align="center">
+                <Icon as={FiUsers} color="blue.400" />
+                <Text fontSize="md" fontWeight={700}>
+                  Assign Task
+                </Text>
+                <Badge
+                  colorScheme="blue"
+                  fontSize="xs"
+                  px={2.5}
+                  py={0.5}
+                  rounded="full"
+                >
+                  {choosedMemberProjects.length} Selected
+                </Badge>
+              </HStack>
+            </ModalHeader>
+            <ModalCloseButton top={3.5} right={4} />
+            <ModalBody py={5} overflow="visible">
+              <Grid templateColumns="repeat(12, 1fr)" gap={5} w="full">
+                {/* Left Column: Project Members */}
+                <GridItem colSpan={{ base: 12, md: 6 }} w="full">
+                  <VStack spacing={4} align="stretch">
+                    <Box>
+                      <Text
+                        fontWeight="semibold"
+                        fontSize="xs"
+                        color="gray.500"
+                        textTransform="uppercase"
+                        mb={2}
+                      >
+                        Project Members
+                      </Text>
+                      <Input
+                        placeholder="Search by name, NIP, or email..."
+                        value={searchUserAssign}
+                        onChange={(e) =>
+                          handleSearchUserAssign(e.target.value)
+                        }
+                        size="sm"
+                        borderRadius="md"
+                        bg={isDark ? "gray.800" : "gray.50"}
+                      />
+                    </Box>
+
+                    {/* Search Results */}
+                    <Box h="360px" overflowY="auto" overflowX="hidden" pr={1}>
+                      {dataUsers.length > 0 ? (
+                        <VStack spacing={2} w="full" align="stretch" pb={2}>
+                          {dataUsers.map((user) => {
+                            const isAlreadyAssigned =
+                              choosedMemberProjects.some(
+                                (assignedUser) =>
+                                  assignedUser.id === user.id ||
+                                  assignedUser.userId === user.userId
+                              );
+                            return (
+                              <HStack
+                                key={user.id || user.userId}
+                                p={2.5}
+                                border="1px solid"
+                                borderColor={
+                                  isDark ? "whiteAlpha.100" : "gray.200"
+                                }
+                                borderRadius="md"
+                                justify="space-between"
+                                bg={
+                                  isAlreadyAssigned
+                                    ? isDark
+                                      ? "rgba(59, 130, 246, 0.08)"
+                                      : "blue.50"
+                                    : isDark
+                                    ? "gray.800"
+                                    : "white"
+                                }
+                              >
+                                <HStack spacing={3}>
+                                  <Avatar
+                                    size="sm"
+                                    name={user.nama}
+                                    src={user.profilePict || undefined}
+                                  />
+                                  <VStack align="start" spacing={0}>
+                                    <Text fontWeight="medium" fontSize="sm">
+                                      {user.nama}
+                                    </Text>
+                                    <Text fontSize="xs" color="gray.500">
+                                      {user.jabatan || user.nip || user.email}
+                                    </Text>
+                                  </VStack>
+                                </HStack>
+                                <IconButton
+                                  isRound
+                                  variant="ghost"
+                                  colorScheme="blue"
+                                  aria-label="Add"
+                                  icon={<FiPlus />}
+                                  size="xs"
+                                  isDisabled={isAlreadyAssigned}
+                                  onClick={() => handleAddUserAssign(user)}
+                                />
+                              </HStack>
+                            );
+                          })}
+                        </VStack>
+                      ) : (
+                        <Flex justify="center" align="center" h="full">
+                          <Text
+                            color="gray.500"
+                            fontSize="sm"
+                            textAlign="center"
+                          >
+                            No members found
+                          </Text>
+                        </Flex>
+                      )}
+                    </Box>
+                  </VStack>
+                </GridItem>
+
+                {/* Right Column: Selected Users */}
+                <GridItem colSpan={{ base: 12, md: 6 }} w="full">
+                  <VStack spacing={4} align="stretch">
+                    <Box>
+                      <HStack justify="space-between" mb={2}>
+                        <Text
+                          fontWeight="semibold"
+                          fontSize="xs"
+                          color="gray.500"
+                          textTransform="uppercase"
+                        >
+                          Selected Users ({choosedMemberProjects.length})
+                        </Text>
+                        <Button
+                          size="xs"
+                          colorScheme="blue"
+                          variant="outline"
+                          leftIcon={<FiUsers size={12} />}
+                          onClick={handleAssignMe}
+                          isDisabled={
+                            !currentAuthUser ||
+                            choosedMemberProjects.some(
+                              (user) =>
+                                user.id === currentAuthUser?.id ||
+                                user.userId === currentAuthUser?.userId
+                            )
+                          }
+                        >
+                          Assign Me
+                        </Button>
+                      </HStack>
+
+                      <Box
+                        h="360px"
+                        overflowY="auto"
+                        overflowX="hidden"
+                        pr={1}
+                      >
+                        {choosedMemberProjects.length > 0 ? (
+                          <VStack spacing={2} align="stretch">
+                            {choosedMemberProjects.map((user) => (
+                              <HStack
+                                key={user.id || user.userId}
+                                p={2.5}
+                                border="1px solid"
+                                borderColor={isDark ? "blue.700" : "blue.200"}
+                                borderRadius="md"
+                                justify="space-between"
+                                bg={
+                                  isDark
+                                    ? "rgba(59, 130, 246, 0.12)"
+                                    : "blue.50"
+                                }
+                              >
+                                <HStack spacing={3}>
+                                  <Avatar
+                                    size="sm"
+                                    name={user.nama}
+                                    src={user.profilePict || undefined}
+                                  />
+                                  <VStack align="start" spacing={0}>
+                                    <Text fontWeight="medium" fontSize="sm">
+                                      {user.nama}
+                                    </Text>
+                                    <Text fontSize="xs" color="gray.500">
+                                      {user.jabatan || user.nip || user.email}
+                                    </Text>
+                                  </VStack>
+                                </HStack>
+                                <IconButton
+                                  isRound
+                                  variant="ghost"
+                                  colorScheme="red"
+                                  aria-label="Remove"
+                                  icon={<FiX />}
+                                  size="xs"
+                                  onClick={() =>
+                                    handleRemoveUserAssign(
+                                      user.id || user.userId
+                                    )
+                                  }
+                                />
+                              </HStack>
+                            ))}
+                          </VStack>
+                        ) : (
+                          <Flex justify="center" align="center" h="full">
+                            <Text
+                              color="gray.500"
+                              fontSize="sm"
+                              textAlign="center"
+                            >
+                              No users selected yet
+                            </Text>
+                          </Flex>
+                        )}
+                      </Box>
+                    </Box>
+                  </VStack>
+                </GridItem>
+              </Grid>
+            </ModalBody>
+            <ModalFooter
+              borderTop="1px solid"
+              borderColor={isDark ? "whiteAlpha.100" : "gray.100"}
+              py={3}
+            >
+              <HStack spacing={2}>
+                <Button size="sm" variant="ghost" onClick={onAssignModalClose}>
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  colorScheme="blue"
+                  onClick={handleSaveAssignedUsers}
+                  isLoading={isSavingAssignments}
+                >
+                  Save Assignments
+                </Button>
+              </HStack>
+            </ModalFooter>
           </ModalContent>
         </Modal>
       </Box>
