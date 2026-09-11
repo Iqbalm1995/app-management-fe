@@ -916,7 +916,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                       zIndex: -1,
                     }}
                   >
-                    Developer Mode
+                    Focus Mode
                   </Button>
                 </Link>
               </Flex>

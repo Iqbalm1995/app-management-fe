@@ -15,6 +15,7 @@ import {
   Badge,
   Flex,
   Button,
+  useColorMode,
 } from "@chakra-ui/react";
 import { FiSearch, FiRefreshCw, FiLayers } from "react-icons/fi";
 import { useRouter } from "next/navigation";
@@ -25,7 +26,8 @@ import { radiusStyle } from "@/app/constants/applicationConstants";
 
 export default function DevProjectPickerPage() {
   const router = useRouter();
-  // Dev Mode is a developer hub — always dark, regardless of the app-wide color mode.
+  const { colorMode } = useColorMode();
+  const isDark = colorMode === "dark";
 
   const { GetAssignedProjects, isLoading } = useProjects();
   const [projects, setProjects] = useState<ProjectDataResponse[]>([]);
@@ -123,24 +125,178 @@ export default function DevProjectPickerPage() {
     <Box
       minH="100vh"
       position="relative"
-      bg="#090514"
-      color="gray.100"
+      bg={isDark ? "#090514" : "#f8fafc"}
+      color={isDark ? "gray.100" : "gray.800"}
       overflow="hidden"
       display="flex"
       flexDirection="column"
     >
-      {/* Subtle ambient aura/glow in background */}
+      {/* 1. Multi-tier Ambient Glows (Top Aurora + Bottom Side Glows) */}
       <Box
         position="absolute"
-        top="-120px"
-        left="50%"
-        transform="translateX(-50%)"
-        w={{ base: "360px", md: "720px" }}
-        h={{ base: "300px", md: "460px" }}
-        bg="radial-gradient(ellipse at center, rgba(139, 92, 246, 0.18) 0%, rgba(236, 72, 153, 0.06) 45%, transparent 75%)"
-        filter="blur(70px)"
+        inset={0}
         pointerEvents="none"
         zIndex={0}
+        overflow="hidden"
+      >
+        {/* Top-Center Aurora Glow */}
+        <Box
+          position="absolute"
+          top="-140px"
+          left="50%"
+          transform="translateX(-50%)"
+          w={{ base: "480px", md: "860px" }}
+          h={{ base: "360px", md: "520px" }}
+          bg={
+            isDark
+              ? "radial-gradient(ellipse at center, rgba(139, 92, 246, 0.25) 0%, rgba(236, 72, 153, 0.10) 40%, transparent 72%)"
+              : "radial-gradient(ellipse at center, rgba(139, 92, 246, 0.18) 0%, rgba(236, 72, 153, 0.08) 42%, transparent 72%)"
+          }
+          filter="blur(65px)"
+        />
+
+        {/* Bottom-Left Indigo Glow */}
+        <Box
+          position="absolute"
+          bottom="-120px"
+          left="-80px"
+          w={{ base: "300px", md: "520px" }}
+          h={{ base: "300px", md: "520px" }}
+          bg={
+            isDark
+              ? "radial-gradient(circle at center, rgba(99, 102, 241, 0.14) 0%, transparent 70%)"
+              : "radial-gradient(circle at center, rgba(99, 102, 241, 0.10) 0%, transparent 70%)"
+          }
+          filter="blur(75px)"
+        />
+
+        {/* Bottom-Right Fuchsia Glow */}
+        <Box
+          position="absolute"
+          bottom="-100px"
+          right="-80px"
+          w={{ base: "280px", md: "460px" }}
+          h={{ base: "280px", md: "460px" }}
+          bg={
+            isDark
+              ? "radial-gradient(circle at center, rgba(236, 72, 153, 0.12) 0%, transparent 70%)"
+              : "radial-gradient(circle at center, rgba(236, 72, 153, 0.08) 0%, transparent 70%)"
+          }
+          filter="blur(70px)"
+        />
+      </Box>
+
+      {/* 2. Concentric Architectural Radar Rings (Centered behind Hero) */}
+      <Box
+        position="absolute"
+        top="180px"
+        left="50%"
+        transform="translate(-50%, -50%)"
+        pointerEvents="none"
+        zIndex={0}
+        opacity={isDark ? 0.5 : 0.75}
+      >
+        {/* Outer Ring */}
+        <Box
+          position="absolute"
+          top="50%"
+          left="50%"
+          transform="translate(-50%, -50%)"
+          w={{ base: "640px", md: "960px" }}
+          h={{ base: "640px", md: "960px" }}
+          borderRadius="full"
+          border="1px dashed"
+          borderColor={isDark ? "rgba(139, 92, 246, 0.08)" : "rgba(139, 92, 246, 0.14)"}
+        />
+        {/* Mid Ring */}
+        <Box
+          position="absolute"
+          top="50%"
+          left="50%"
+          transform="translate(-50%, -50%)"
+          w={{ base: "440px", md: "680px" }}
+          h={{ base: "440px", md: "680px" }}
+          borderRadius="full"
+          border="1px solid"
+          borderColor={isDark ? "rgba(139, 92, 246, 0.12)" : "rgba(139, 92, 246, 0.18)"}
+        />
+        {/* Inner Ring */}
+        <Box
+          position="absolute"
+          top="50%"
+          left="50%"
+          transform="translate(-50%, -50%)"
+          w={{ base: "260px", md: "400px" }}
+          h={{ base: "260px", md: "400px" }}
+          borderRadius="full"
+          border="1px dashed"
+          borderColor={isDark ? "rgba(139, 92, 246, 0.16)" : "rgba(139, 92, 246, 0.22)"}
+        />
+      </Box>
+
+      {/* 3. Modern Dual SaaS Grid (Orthogonal Grid Lines + Dot Matrix Intersections) */}
+      <Box
+        position="absolute"
+        inset={0}
+        pointerEvents="none"
+        zIndex={0}
+        opacity={isDark ? 0.45 : 0.7}
+        sx={{
+          maskImage:
+            "radial-gradient(ellipse 95% 85% at 50% 35%, black 30%, transparent 95%)",
+          WebkitMaskImage:
+            "radial-gradient(ellipse 95% 85% at 50% 35%, black 30%, transparent 95%)",
+        }}
+        backgroundImage={
+          isDark
+            ? `linear-gradient(to right, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+               linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+               radial-gradient(circle, rgba(139, 92, 246, 0.3) 1.2px, transparent 1.2px)`
+            : `linear-gradient(to right, rgba(139, 92, 246, 0.08) 1px, transparent 1px),
+               linear-gradient(to bottom, rgba(139, 92, 246, 0.08) 1px, transparent 1px),
+               radial-gradient(circle, rgba(139, 92, 246, 0.28) 1.3px, transparent 1.3px)`
+        }
+        backgroundSize="48px 48px, 48px 48px, 24px 24px"
+      />
+
+      {/* 4. Diagonal Tech Stripe Corner Accents */}
+      <Box
+        position="absolute"
+        top={0}
+        right={0}
+        w="280px"
+        h="280px"
+        pointerEvents="none"
+        zIndex={0}
+        opacity={isDark ? 0.25 : 0.4}
+        backgroundImage={
+          isDark
+            ? "repeating-linear-gradient(45deg, transparent, transparent 12px, rgba(139, 92, 246, 0.12) 12px, rgba(139, 92, 246, 0.12) 13px)"
+            : "repeating-linear-gradient(45deg, transparent, transparent 12px, rgba(139, 92, 246, 0.16) 12px, rgba(139, 92, 246, 0.16) 13px)"
+        }
+        sx={{
+          maskImage: "radial-gradient(circle at 100% 0%, black 20%, transparent 75%)",
+          WebkitMaskImage: "radial-gradient(circle at 100% 0%, black 20%, transparent 75%)",
+        }}
+      />
+      <Box
+        position="absolute"
+        bottom={0}
+        left={0}
+        w="280px"
+        h="280px"
+        pointerEvents="none"
+        zIndex={0}
+        opacity={isDark ? 0.2 : 0.35}
+        backgroundImage={
+          isDark
+            ? "repeating-linear-gradient(45deg, transparent, transparent 12px, rgba(139, 92, 246, 0.10) 12px, rgba(139, 92, 246, 0.10) 13px)"
+            : "repeating-linear-gradient(45deg, transparent, transparent 12px, rgba(139, 92, 246, 0.14) 12px, rgba(139, 92, 246, 0.14) 13px)"
+        }
+        sx={{
+          maskImage: "radial-gradient(circle at 0% 100%, black 20%, transparent 75%)",
+          WebkitMaskImage: "radial-gradient(circle at 0% 100%, black 20%, transparent 75%)",
+        }}
       />
 
       {/* Minimal Navbar */}
@@ -167,13 +323,13 @@ export default function DevProjectPickerPage() {
               fontSize={{ base: "2xl", sm: "3xl", md: "4xl" }}
               fontWeight={800}
               letterSpacing="-0.03em"
-              color="white"
+              color={isDark ? "white" : "gray.900"}
             >
               Select Your Project
             </Text>
             <Text
               fontSize={{ base: "xs", sm: "sm" }}
-              color="gray.400"
+              color={isDark ? "gray.400" : "gray.600"}
               maxW="540px"
               lineHeight="tall"
             >
@@ -184,27 +340,34 @@ export default function DevProjectPickerPage() {
           {/* Glass Search Bar */}
           <Box maxW="640px" w="full" mx="auto">
             <InputGroup size="lg">
-              <InputLeftElement pointerEvents="none" color="gray.500" pl={4}>
+              <InputLeftElement
+                pointerEvents="none"
+                color={isDark ? "gray.500" : "purple.400"}
+                pl={4}
+              >
                 <FiSearch size={18} />
               </InputLeftElement>
               <Input
                 placeholder="Search project name, code (#FE-2024), or team..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                bg="rgba(255, 255, 255, 0.03)"
+                bg={isDark ? "rgba(255, 255, 255, 0.03)" : "white"}
                 border="1px solid"
-                borderColor="rgba(255, 255, 255, 0.08)"
+                borderColor={isDark ? "rgba(255, 255, 255, 0.08)" : "purple.100"}
+                boxShadow={isDark ? "none" : "0 2px 10px rgba(139, 92, 246, 0.06)"}
                 borderRadius={radiusStyle}
-                color="white"
+                color={isDark ? "white" : "gray.900"}
                 pl="48px"
                 fontSize="sm"
-                _placeholder={{ color: "gray.500" }}
-                backdropFilter="blur(16px)"
+                _placeholder={{ color: isDark ? "gray.500" : "gray.400" }}
+                backdropFilter={isDark ? "blur(16px)" : undefined}
                 transition="all 0.2s ease"
                 _focus={{
                   borderColor: "purple.500",
-                  boxShadow: "0 0 0 1px #8b5cf6, 0 0 20px rgba(139, 92, 246, 0.25)",
-                  bg: "rgba(255, 255, 255, 0.05)",
+                  boxShadow: isDark
+                    ? "0 0 0 1px #8b5cf6, 0 0 20px rgba(139, 92, 246, 0.25)"
+                    : "0 0 0 1px #8b5cf6, 0 0 15px rgba(139, 92, 246, 0.15)",
+                  bg: isDark ? "rgba(255, 255, 255, 0.05)" : "white",
                 }}
               />
             </InputGroup>
@@ -220,7 +383,7 @@ export default function DevProjectPickerPage() {
               gap={3}
             >
               <Spinner size="lg" color="purple.400" thickness="2.5px" />
-              <Text fontSize="xs" color="gray.400">
+              <Text fontSize="xs" color={isDark ? "gray.400" : "gray.600"}>
                 Fetching assigned projects...
               </Text>
             </Flex>
@@ -232,9 +395,10 @@ export default function DevProjectPickerPage() {
               p={10}
               borderRadius="2xl"
               border="1px solid"
-              borderColor="rgba(255, 255, 255, 0.06)"
-              bg="rgba(255, 255, 255, 0.02)"
-              backdropFilter="blur(16px)"
+              borderColor={isDark ? "rgba(255, 255, 255, 0.06)" : "purple.100"}
+              bg={isDark ? "rgba(255, 255, 255, 0.02)" : "white"}
+              boxShadow={isDark ? "none" : "0 4px 20px rgba(0, 0, 0, 0.04)"}
+              backdropFilter={isDark ? "blur(16px)" : undefined}
               minH="260px"
               textAlign="center"
               maxW="560px"
@@ -245,20 +409,20 @@ export default function DevProjectPickerPage() {
                 w="52px"
                 h="52px"
                 borderRadius="xl"
-                bg="rgba(139, 92, 246, 0.12)"
+                bg={isDark ? "rgba(139, 92, 246, 0.12)" : "purple.50"}
                 border="1px solid"
-                borderColor="rgba(139, 92, 246, 0.25)"
+                borderColor={isDark ? "rgba(139, 92, 246, 0.25)" : "purple.200"}
                 align="center"
                 justify="center"
-                color="purple.300"
+                color={isDark ? "purple.300" : "purple.600"}
                 mb={3}
               >
                 <FiLayers size={24} />
               </Flex>
-              <Text fontWeight={700} fontSize="md" color="white" mb={1}>
+              <Text fontWeight={700} fontSize="md" color={isDark ? "white" : "gray.900"} mb={1}>
                 {searchTerm ? "No matching projects found" : "No projects assigned yet"}
               </Text>
-              <Text fontSize="xs" color="gray.400" maxW="400px" mb={4}>
+              <Text fontSize="xs" color={isDark ? "gray.400" : "gray.600"} maxW="400px" mb={4}>
                 {searchTerm
                   ? `No project matches "${searchTerm}". Try adjusting your keywords.`
                   : "You have not been added to any workspace projects yet. Contact your administrator or project lead."}
@@ -290,11 +454,11 @@ export default function DevProjectPickerPage() {
 
           {/* Secondary helper link at bottom */}
           <Flex justify="center" pt={4}>
-            <Text fontSize="xs" color="gray.500">
+            <Text fontSize="xs" color={isDark ? "gray.500" : "gray.600"}>
               Don&apos;t see your project?{" "}
               <Button
                 variant="link"
-                color="purple.400"
+                color={isDark ? "purple.400" : "purple.600"}
                 fontSize="xs"
                 fontWeight={500}
                 onClick={fetchProjects}

@@ -136,7 +136,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("Redirecting to change-password");
       window.location.href = "/change-password";
     } else if (isDevMode) {
-      console.log("Redirecting to developer mode");
+      console.log("Redirecting to Focus Mode");
       window.location.href = "/dev";
     } else {
       console.log("Redirecting to home");
