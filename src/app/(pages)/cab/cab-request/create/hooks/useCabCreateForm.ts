@@ -327,7 +327,7 @@ const useCabCreateForm = () => {
   };
 
   // ─── Submit ─────────────────────────────────────────────────────────────
-  const handleSubmit = async (isDraft: boolean) => {
+  const handleSubmit = async (isDraft = false) => {
     const token = localStorage.getItem("tokenData") || "";
 
     let formData: CabFormData;

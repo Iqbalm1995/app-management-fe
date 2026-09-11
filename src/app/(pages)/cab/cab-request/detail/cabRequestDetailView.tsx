@@ -108,6 +108,7 @@ import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useCabRequest from "@/app/services/useCabRequest";
+import useCabAuthorization from "@/app/services/useCabAuthorization";
 import { useDownloadManagerModal } from "@/app/context/DownloadManagerContext";
 import useUsers, { UsersResponse } from "@/app/services/useUsers";
 import useApps, { ApplicationMasterResponse } from "@/app/services/useApps";
@@ -486,15 +487,15 @@ const CabRequestDetailView = () => {
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
 
-  // Role switcher
-  const [mockRole, setMockRole] = useState<MockRole>("scheduler");
-  const canMake = mockRole === "maker";
-  const canSchedule = mockRole === "scheduler";
-  const canApprove = mockRole === "approver";
-
   // Data
   const [Data, setData] = useState<CabRequestDetail | null>(null);
   const [IsLoading, setIsLoading] = useState(true);
+
+  // Centralized CAB Role Authorization (Aggregated from login profile & CAB context)
+  const permissions = useCabAuthorization(DataAuth, Data);
+  const canMake = permissions.isMaker;
+  const canReview = permissions.isReviewer;
+  const canApprove = permissions.isApprover;
 
   // 2-Stepper navigation state (1 = Formulir Permohonan, 2 = Detail & Aksi Tahapan)
   const [activeDetailStep, setActiveDetailStep] = useState<1 | 2>(1);
@@ -1411,24 +1412,6 @@ const CabRequestDetailView = () => {
   return (
     <LayoutAdmin>
       <HeaderContent titleName="CAB Request Detail" breadCrumb={["CAB", "CAB Request", "Detail"]} />
-
-      {/* Role Switcher */}
-      <Box mx={{ base: 4, md: 6 }} mt={3} mb={2}>
-        <Card rounded="lg" shadow="sm" border="1px" borderColor="purple.200" bg={colorMode === "light" ? "purple.50" : "gray.800"} p={3}>
-          <Flex justify="space-between" align="center" wrap="wrap" gap={2}>
-            <HStack spacing={2}>
-              <Icon as={FiShield} color="purple.500" />
-              <Text fontSize="xs" fontWeight="bold" color="purple.700">MOCK ROLE SWITCHER</Text>
-              <Badge colorScheme="gray" fontSize="2xs">Status: {Data.status}</Badge>
-            </HStack>
-            <ButtonGroup size="sm" isAttached variant="outline">
-              <Button leftIcon={<FiUser />} colorScheme={mockRole === "maker" ? "blue" : "gray"} variant={mockRole === "maker" ? "solid" : "outline"} onClick={() => setMockRole("maker")}>Maker</Button>
-              <Button leftIcon={<FiUsers />} colorScheme={mockRole === "scheduler" ? "green" : "gray"} variant={mockRole === "scheduler" ? "solid" : "outline"} onClick={() => setMockRole("scheduler")}>Scheduler</Button>
-              <Button leftIcon={<FiCheckCircle />} colorScheme={mockRole === "approver" ? "orange" : "gray"} variant={mockRole === "approver" ? "solid" : "outline"} onClick={() => setMockRole("approver")}>Approver</Button>
-            </ButtonGroup>
-          </Flex>
-        </Card>
-      </Box>
 
       {/* Header Banner */}
       <Box
@@ -3577,7 +3560,7 @@ const CabRequestDetailView = () => {
 
                   {/* ─── STAGE 2: Penjadwalan Rapat CAB (Status: REQUEST / PENGAJUAN) ─── */}
                   {(Data.status === "PENGAJUAN" || Data.status === "REQUEST") && (
-                    canSchedule ? (
+                    canMake ? (
                       (() => {
                         const isDateDifferent = Boolean(
                           Data.requestedCabDate &&
@@ -4008,7 +3991,7 @@ const CabRequestDetailView = () => {
                                 </Badge>
                               </Flex>
 
-                              {canSchedule ? (
+                              {canMake ? (
                                 <VStack spacing={3.5} align="stretch">
                                   <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3.5}>
                                     {/* Keputusan Migrasi (Ya / Tidak) */}
@@ -4118,7 +4101,7 @@ const CabRequestDetailView = () => {
                             </VStack>
                           </Box>
 
-                          {canSchedule ? (
+                          {canMake ? (
                             <Flex justify="end" pt={2} gap={3} wrap="wrap">
                               <Button
                                 colorScheme="teal"
@@ -4336,7 +4319,7 @@ const CabRequestDetailView = () => {
                               </Text>
                             </Box>
 
-                            {canSchedule ? (
+                            {canMake ? (
                               <VStack spacing={3.5} align="stretch">
                                 <FormControl isRequired>
                                   <FormLabel fontSize="sm" fontWeight="semibold">Hasil Evaluasi / Catatan Sidang Meeting</FormLabel>
@@ -4566,7 +4549,7 @@ const CabRequestDetailView = () => {
                       </Card>
 
                       {/* Selesaikan Permohonan CAB Action Card */}
-                      {canSchedule && (
+                      {canMake && (
                         <Card rounded={radiusStyle} shadow="sm" border="2px solid" borderColor="green.300" bg={colorMode === "light" ? "green.50" : "gray.800"}>
                           <CardHeader py={3} px={5} borderBottom="1px" borderColor={colorMode === "light" ? "green.100" : "gray.700"}>
                             <Flex justify="space-between" align="center" w="full">

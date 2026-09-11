@@ -109,6 +109,7 @@ import { useDocumentTitle } from "@/app/hooks/useDocumentTitle";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useCabRequest from "@/app/services/useCabRequest";
+import useCabAuthorization from "@/app/services/useCabAuthorization";
 import { useDownloadManagerModal } from "@/app/context/DownloadManagerContext";
 import { BulkScheduleCabItemPayload, CabRequestItem } from "@/app/types/cabTypes";
 import {
@@ -746,11 +747,11 @@ const CabRequestView = () => {
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
 
-  // Role switcher
-  const [mockRole, setMockRole] = useState<MockRole>("scheduler");
-  const canMake = mockRole === "maker";
-  const canSchedule = mockRole === "scheduler";
-  const canApprove = mockRole === "approver";
+  // Centralized CAB Role Authorization
+  const permissions = useCabAuthorization(DataAuth);
+  const canMake = permissions.isMaker;
+  const canReview = permissions.isReviewer;
+  const canApprove = permissions.isApprover;
 
   // Data
   const [DataList, setDataList] = useState<CabRequestItem[]>([]);
@@ -1046,7 +1047,7 @@ const CabRequestView = () => {
   };
 
   const handleCalendarDateClick = (dateStr: string) => {
-    if (!canSchedule) return;
+    if (!canMake) return;
     const eligible = DataList.filter(
       (r) => r.status === "PENGAJUAN" || r.status === "REQUEST" || r.status === "IN_REVIEW" || !r.scheduledDate
     );
@@ -1112,9 +1113,9 @@ const CabRequestView = () => {
     );
   }, [combinedCalendarData]);
 
-  // Items for sidebar section in Schedule Calendar (Need Approve for Approver, Requested for Scheduler & Maker)
+  // Items for sidebar section in Schedule Calendar (Need Approve for Approver, Requested for Maker)
   const requestedList = useMemo(() => {
-    if (canApprove) {
+    if (permissions.isApprover) {
       return DataList.filter((item) => {
         const s = String(item.status).toUpperCase();
         return (
@@ -1133,37 +1134,20 @@ const CabRequestView = () => {
       return s === "PENGAJUAN" || s === "REQUEST";
     });
 
-    if (canMake) {
-      const currentName = String(DataAuth?.nama || DataAuth?.username || "Iqbal Maulana").toLowerCase().trim();
-      return allRequested.filter((item) => {
-        const reqName = String(item.requesterName || "").toLowerCase().trim();
-        return (
-          reqName === currentName ||
-          reqName.includes(currentName) ||
-          currentName.includes(reqName) ||
-          reqName === "iqbal maulana"
-        );
-      });
+    if (permissions.isMaker) {
+      return allRequested.filter((item) => permissions.isOwner(item.requesterName));
     }
 
     return allRequested;
-  }, [DataList, canApprove, canMake, DataAuth]);
+  }, [DataList, permissions]);
 
   const unscheduledCount = useMemo(() => {
-    const baseList = canMake
-      ? DataList.filter((item) => {
-          const currentName = String(DataAuth?.nama || DataAuth?.username || "Iqbal Maulana").toLowerCase().trim();
-          const reqName = String(item.requesterName || "").toLowerCase().trim();
-          return (
-            reqName === currentName ||
-            reqName.includes(currentName) ||
-            currentName.includes(reqName) ||
-            reqName === "iqbal maulana"
-          );
-        })
-      : DataList;
+    const baseList =
+      permissions.isMaker
+        ? DataList.filter((item) => permissions.isOwner(item.requesterName))
+        : DataList;
     return baseList.filter((r) => r.status === "PENGAJUAN" || r.status === "REQUEST" || r.scheduledDate === null).length;
-  }, [DataList, canMake, DataAuth]);
+  }, [DataList, permissions]);
 
   const handleViewChange = (view: "dayGridMonth" | "timeGridWeek" | "timeGridDay") => {
     setCalendarViewMode(view);
@@ -2101,25 +2085,8 @@ const CabRequestView = () => {
     <LayoutAdmin>
       <HeaderContent titleName="Change Advisory Board Request" breadCrumb={["CAB", "CAB Request"]} />
 
-      {/* ─── Role Switcher ─── */}
-      <Box mx={{ base: 4, sm: 5, md: 6 }} mt={3} mb={2}>
-        <Card rounded="lg" shadow="sm" border="1px" borderColor="purple.200" bg={colorMode === "light" ? "purple.50" : "gray.800"} p={3}>
-          <Flex justify="space-between" align="center" wrap="wrap" gap={2}>
-            <HStack spacing={2}>
-              <Icon as={FiShield} color="purple.500" />
-              <Text fontSize="xs" fontWeight="bold" color="purple.700">MOCK ROLE SWITCHER</Text>
-            </HStack>
-            <ButtonGroup size="sm" isAttached variant="outline">
-              <Button leftIcon={<FiUser />} colorScheme={mockRole === "maker" ? "blue" : "gray"} variant={mockRole === "maker" ? "solid" : "outline"} onClick={() => setMockRole("maker")}>Maker</Button>
-              <Button leftIcon={<FiUsers />} colorScheme={mockRole === "scheduler" ? "green" : "gray"} variant={mockRole === "scheduler" ? "solid" : "outline"} onClick={() => setMockRole("scheduler")}>Scheduler</Button>
-              <Button leftIcon={<FiCheckCircle />} colorScheme={mockRole === "approver" ? "orange" : "gray"} variant={mockRole === "approver" ? "solid" : "outline"} onClick={() => setMockRole("approver")}>Approver</Button>
-            </ButtonGroup>
-          </Flex>
-        </Card>
-      </Box>
-
       {/* ─── Main Content ─── */}
-      <Box px={{ base: 4, sm: 5, md: 6 }} w="full">
+      <Box px={{ base: 4, sm: 5, md: 6 }} w="full" mt={3}>
         <Card
           rounded={radiusStyle}
           shadow="lg"
@@ -2172,7 +2139,7 @@ const CabRequestView = () => {
               <Tabs variant="unstyled" w="full" size="sm" isLazy>
                 <AppTabList mb={2}>
                   <AppTabItem icon={FiList} label="CAB List" />
-                  {canSchedule && (
+                  {(canMake || canApprove) && (
                     <AppTabItem
                       icon={FiClock}
                       label="CAB Request"
@@ -2181,7 +2148,7 @@ const CabRequestView = () => {
                     />
                   )}
                   <AppTabItem icon={FiCalendar} label="Schedule Calendar" />
-                  {(canSchedule || canApprove) && (
+                  {(canMake || canApprove) && (
                     <AppTabItem
                       icon={FiFileText}
                       label="CAB Reports"
@@ -2328,8 +2295,8 @@ const CabRequestView = () => {
                     )}
                   </TabPanel>
 
-                  {/* ─── Tab 2: Scheduler Workspace (Status REQUEST & CONFIRM) ─── */}
-                  {canSchedule && (
+                  {/* ─── Tab 2: CAB Request Workspace (Status REQUEST & CONFIRM) ─── */}
+                  {(canMake || canApprove) && (
                     <TabPanel px={0} pt={4}>
                       {/* Sub-Header: Filter Status Cepat + Search Controls */}
                       <Flex
@@ -2595,7 +2562,7 @@ const CabRequestView = () => {
                               </Text>
                             </HStack> */}
 
-                            {canSchedule && (
+                            {canMake && (
                               <Button
                                 size="xs"
                                 colorScheme="blue"
@@ -2992,8 +2959,8 @@ const CabRequestView = () => {
                     )}
                   </TabPanel>
 
-                  {/* ─── Tab 3: CAB Reports (Scheduler & Approver only) ─── */}
-                  {(canSchedule || canApprove) && (
+                  {/* ─── Tab 3: CAB Reports ─── */}
+                  {(canMake || canApprove) && (
                     <TabPanel px={0} pt={4}>
                       <CabReportsTab items={DataList} onRefresh={RefreshAction} />
                     </TabPanel>

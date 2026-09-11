@@ -60,7 +60,6 @@ const CreateView = () => {
 
   const [tokenData, setTokenData] = useState<string>("");
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [isDraftAction, setIsDraftAction] = useState(false);
   const cancelConfirmRef = useRef<any>(null);
 
   useEffect(() => {
@@ -81,14 +80,13 @@ const CreateView = () => {
   const bgCard = colorMode === "light" ? "white" : "gray.800";
   const borderCol = colorMode === "light" ? "gray.200" : "gray.700";
 
-  const handleOpenConfirm = (isDraft: boolean) => {
-    setIsDraftAction(isDraft);
+  const handleOpenConfirm = () => {
     setIsConfirmOpen(true);
   };
 
   const handleExecuteSubmit = async () => {
     setIsConfirmOpen(false);
-    await form.handleSubmit(isDraftAction);
+    await form.handleSubmit(false);
   };
 
   // If no category yet (fallback — shouldn't happen if modal is used), redirect back
@@ -125,19 +123,9 @@ const CreateView = () => {
         <GridItem colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }} w="full">
           <Flex as={Wrap} w="full" justifyContent="end" alignItems="center" gap={3}>
             <Button
-              colorScheme="blue"
-              leftIcon={<FiSave />}
-              onClick={() => handleOpenConfirm(true)}
-              isLoading={form.loading}
-              px={8}
-              size="lg"
-            >
-              Save Draft
-            </Button>
-            <Button
               colorScheme="green"
               leftIcon={<FiSend />}
-              onClick={() => handleOpenConfirm(false)}
+              onClick={handleOpenConfirm}
               isLoading={form.loading}
               isDisabled={!form.isLastStep}
               px={8}
@@ -315,14 +303,12 @@ const CreateView = () => {
             <AlertDialogHeader fontSize="md" fontWeight="bold" pb={2}>
               <HStack spacing={2}>
                 <Icon
-                  as={isDraftAction ? FiSave : FiCheckCircle}
-                  color={isDraftAction ? "blue.500" : "green.500"}
+                  as={FiCheckCircle}
+                  color="green.500"
                   boxSize={5}
                 />
                 <Text>
-                  {isDraftAction
-                    ? "Konfirmasi Simpan Draft CAB"
-                    : "Konfirmasi Submit Pengajuan CAB"}
+                  Konfirmasi Submit Pengajuan CAB
                 </Text>
               </HStack>
             </AlertDialogHeader>
@@ -330,9 +316,7 @@ const CreateView = () => {
             <AlertDialogBody py={4} fontSize="sm">
               <VStack align="stretch" spacing={3}>
                 <Text color={colorMode === "light" ? "gray.600" : "gray.300"}>
-                  {isDraftAction
-                    ? "Apakah Anda yakin ingin menyimpan permohonan ini sebagai Draft? Anda dapat melanjutkan pengisian form kapan saja sebelum disubmit."
-                    : "Apakah Anda yakin seluruh data permohonan CAB sudah benar dan siap diajukan untuk proses approval dan penjadwalan sidang?"}
+                  Apakah Anda yakin seluruh data permohonan CAB sudah benar dan siap diajukan untuk proses approval dan penjadwalan sidang?
                 </Text>
 
                 {/* Summary Card */}
@@ -426,14 +410,14 @@ const CreateView = () => {
                 Batal
               </Button>
               <Button
-                colorScheme={isDraftAction ? "blue" : "green"}
-                leftIcon={isDraftAction ? <FiSave /> : <FiSend />}
+                colorScheme="green"
+                leftIcon={<FiSend />}
                 onClick={handleExecuteSubmit}
                 isLoading={form.loading}
                 size="md"
                 px={6}
               >
-                {isDraftAction ? "Ya, Simpan Draft" : "Ya, Kirim Pengajuan"}
+                Ya, Kirim Pengajuan
               </Button>
             </AlertDialogFooter>
           </AlertDialogContent>

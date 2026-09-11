@@ -41,6 +41,7 @@ import { useDocumentTitle } from "@/app/hooks/useDocumentTitle";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useCabRequest from "@/app/services/useCabRequest";
+import useCabAuthorization from "@/app/services/useCabAuthorization";
 import { CabRequestItem } from "@/app/types/cabTypes";
 
 const CabApproveView = () => {
@@ -52,6 +53,9 @@ const CabApproveView = () => {
   // Auth
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
+
+  // Centralized CAB Role Authorization
+  const permissions = useCabAuthorization(DataAuth);
 
   // Data
   const [DataList, setDataList] = useState<CabRequestItem[]>([]);
