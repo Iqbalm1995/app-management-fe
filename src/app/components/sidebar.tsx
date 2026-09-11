@@ -872,7 +872,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                     My Workspace
                   </Button>
                 </Link>
-                <Link href={"/dev"} onClick={handleEnterDev}>
+                <Link href={"/dev"} onClick={handleEnterDev} style={{ display: "none" }}>
                   <Button
                     leftIcon={<FaTerminal />}
                     mx={2}

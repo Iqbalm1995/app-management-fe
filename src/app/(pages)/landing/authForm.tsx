@@ -761,7 +761,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ isDevMode, setIsDevMode }) => {
                 </Link>
               </Flex>
             </Box>
-            <HStack justify="space-between" w="full" py={1}>
+            <HStack justify="space-between" w="full" py={1} display="none">
               <HStack spacing={2}>
                 <Switch
                   id="dev-mode-toggle"

@@ -253,7 +253,7 @@ export default function TopNavigationLanding() {
                       </VStack>
                     </MenuItem>
                     <MenuDivider />
-                    <Link href={"/dev"}>
+                    <Link href={"/dev"} style={{ display: "none" }}>
                       <MenuItem
                         icon={<FaTerminal />}
                         color={colorMode == "light" ? "purple.600" : "purple.300"}
@@ -351,7 +351,7 @@ const DesktopNav = () => {
       )}
       <Stack direction={"row"} spacing={4} align="center">
         {isAuthenticated && (
-          <Link href={"/dev"} onClick={handleEnterDev}>
+          <Link href={"/dev"} onClick={handleEnterDev} style={{ display: "none" }}>
             <Button
               leftIcon={<FaTerminal />}
               size="sm"
@@ -520,7 +520,7 @@ const MobileNav = () => {
         rounded={"xl"}
       >
         {isAuthenticated && (
-          <Box py={2}>
+          <Box py={2} display="none">
             <Button
               leftIcon={<FaTerminal />}
               size="sm"
