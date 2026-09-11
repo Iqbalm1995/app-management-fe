@@ -178,13 +178,12 @@ export const DevFloatingTopbar: React.FC<DevFloatingTopbarProps> = ({
   }, [projectsList, projectSearch]);
 
   const handleSelectProject = (project: ProjectDataResponse) => {
-    const backlogId = project.requirementData?.id || project.reqParentId || null;
     const selectedPayload = {
       id: project.id,
       projectNo: project.projectNo,
       projectName: project.projectName,
       projectStatus: project.projectStatus,
-      backlogId,
+      backlogId: null,
     };
 
     localStorage.setItem("dev_selected_project", JSON.stringify(selectedPayload));
