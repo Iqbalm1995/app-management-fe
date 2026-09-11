@@ -761,7 +761,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ isDevMode, setIsDevMode }) => {
                 </Link>
               </Flex>
             </Box>
-            <HStack justify="space-between" w="full" py={1}>
+            {/* <HStack justify="space-between" w="full" py={1}>
               <HStack spacing={2}>
                 <Switch
                   id="dev-mode-toggle"
@@ -794,7 +794,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ isDevMode, setIsDevMode }) => {
                   DEV
                 </Badge>
               )}
-            </HStack>
+            </HStack> */}
             <Button
               rightIcon={<FiLogIn />}
               colorScheme={isDevMode ? "purple" : "secondary"}
