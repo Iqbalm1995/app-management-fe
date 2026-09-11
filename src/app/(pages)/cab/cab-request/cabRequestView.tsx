@@ -25,6 +25,10 @@ import {
   InputGroup,
   InputLeftElement,
   InputRightElement,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -61,6 +65,7 @@ import {
   FiCheckSquare,
   FiClock,
   FiCpu,
+  FiDownload,
   FiEye,
   FiFileText,
   FiFilter,
@@ -104,6 +109,7 @@ import { useDocumentTitle } from "@/app/hooks/useDocumentTitle";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useCabRequest from "@/app/services/useCabRequest";
+import { useDownloadManagerModal } from "@/app/context/DownloadManagerContext";
 import { BulkScheduleCabItemPayload, CabRequestItem } from "@/app/types/cabTypes";
 import {
   ColumnMetaCustom,
@@ -725,6 +731,16 @@ const CabRequestView = () => {
     BulkSendToApproval,
     loading,
   } = useCabRequest();
+  const { requestExport } = useDownloadManagerModal();
+
+  const handleExportList = async (format: "XLSX" | "PDF") => {
+    await requestExport({
+      moduleName: "CAB_REQUEST_LIST",
+      reportTitle: `Laporan Daftar Permohonan CAB (${format})`,
+      exportType: format,
+      filterParams: ParamFilter,
+    });
+  };
 
   // Auth
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
@@ -1057,25 +1073,44 @@ const CabRequestView = () => {
   const [calendarDateFrom, setCalendarDateFrom] = useState<string>("");
   const [calendarDateTo, setCalendarDateTo] = useState<string>("");
   const [activeQuickFilter, setActiveQuickFilter] = useState<string>("This Month");
-  const [calendarViewMode, setCalendarViewMode] = useState<"dayGridMonth" | "timeGridWeek">("dayGridMonth");
+  const [calendarViewMode, setCalendarViewMode] = useState<"dayGridMonth" | "timeGridWeek" | "timeGridDay">("dayGridMonth");
 
-  // Filter calendar data: exclude REQUEST/PENGAJUAN and DRAFT, and for Maker role filter by requesterName
-  const visibleCalendarData = useMemo(() => {
-    const nonRequestData = DataCalendar.filter(
-      (item) => item.status !== "PENGAJUAN" && item.status !== "REQUEST" && item.status !== "DRAFT"
-    );
-    if (!canMake) return nonRequestData;
-    const currentName = String(DataAuth?.nama || DataAuth?.username || "Iqbal Maulana").toLowerCase().trim();
-    return nonRequestData.filter((item) => {
-      const reqName = String(item.requesterName || "").toLowerCase().trim();
-      return (
-        reqName === currentName ||
-        reqName.includes(currentName) ||
-        currentName.includes(reqName) ||
-        reqName === "iqbal maulana"
-      );
+  // Combine calendar items from GetCabCalendar and DataList fallback
+  const combinedCalendarData = useMemo<CabRequestItem[]>(() => {
+    const map = new Map<string, CabRequestItem>();
+
+    // 1. Add items from DataCalendar (live /v1/Cab/calendar)
+    (DataCalendar || []).forEach((item) => {
+      const key = item.requestNo || item.id;
+      if (key && (item.scheduledDate || item.requestedCabDate || item.targetDate)) {
+        map.set(key, item);
+      }
     });
-  }, [DataCalendar, canMake, DataAuth]);
+
+    // 2. Add / augment with items from DataList (live /v1/Cab/list) that have dates
+    (DataList || []).forEach((item) => {
+      const key = item.requestNo || item.id;
+      const effectiveDate = item.scheduledDate || item.requestedCabDate || item.targetDate;
+      if (key && effectiveDate) {
+        const existing = map.get(key);
+        map.set(key, {
+          ...(existing || {}),
+          ...item,
+          scheduledDate: item.scheduledDate || existing?.scheduledDate || item.requestedCabDate || item.targetDate,
+          scheduledEndDate: item.scheduledEndDate || existing?.scheduledEndDate || item.scheduledDate || item.requestedCabDate || item.targetDate,
+        });
+      }
+    });
+
+    return Array.from(map.values());
+  }, [DataCalendar, DataList]);
+
+  // Filter calendar data: include all valid scheduled, pelaksanaan, waiting approval, completed, and pengajuan with date
+  const visibleCalendarData = useMemo(() => {
+    return combinedCalendarData.filter(
+      (item) => item.status !== "DRAFT" && (item.scheduledDate || item.requestedCabDate || item.targetDate)
+    );
+  }, [combinedCalendarData]);
 
   // Items for sidebar section in Schedule Calendar (Need Approve for Approver, Requested for Scheduler & Maker)
   const requestedList = useMemo(() => {
@@ -1130,7 +1165,7 @@ const CabRequestView = () => {
     return baseList.filter((r) => r.status === "PENGAJUAN" || r.status === "REQUEST" || r.scheduledDate === null).length;
   }, [DataList, canMake, DataAuth]);
 
-  const handleViewChange = (view: "dayGridMonth" | "timeGridWeek") => {
+  const handleViewChange = (view: "dayGridMonth" | "timeGridWeek" | "timeGridDay") => {
     setCalendarViewMode(view);
     const api = calendarRef.current?.getApi();
     if (api) {
@@ -1147,7 +1182,7 @@ const CabRequestView = () => {
     const now = new Date();
     switch (preset) {
       case "Today":
-        setCalendarViewMode("timeGridWeek");
+        setCalendarViewMode("timeGridDay");
         api.changeView("timeGridDay", now);
         break;
       case "This Week":
@@ -1217,6 +1252,47 @@ const CabRequestView = () => {
     setIsLoadingProcess(false);
   };
 
+  const normalizeIsoDate = (d?: string | null): string | null => {
+    if (!d) return null;
+    const str = String(d).trim().replace(" ", "T");
+    const dt = new Date(str);
+    if (isNaN(dt.getTime())) return null;
+    return str;
+  };
+
+  const targetInitialDate = useMemo(() => {
+    const dates = combinedCalendarData
+      .map((item) => item.scheduledDate || item.requestedCabDate || item.targetDate)
+      .filter(Boolean)
+      .map((d) => String(d).slice(0, 10))
+      .sort();
+
+    if (dates.length === 0) return undefined;
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const futureOrToday = dates.find((d) => d >= todayStr);
+    return futureOrToday || dates[dates.length - 1];
+  }, [combinedCalendarData]);
+
+  const handleDatesSet = async (dateInfo: { startStr: string; endStr: string }) => {
+    if (!tokenData) return;
+    try {
+      const start = dateInfo.startStr.slice(0, 10);
+      const end = dateInfo.endStr.slice(0, 10);
+      const calRes = await GetCabCalendar(tokenData, { startDate: start, endDate: end });
+      if (calRes && Array.isArray(calRes.data) && calRes.data.length > 0) {
+        setDataCalendar((prev) => {
+          const map = new Map<string, CabRequestItem>();
+          prev.forEach((i) => map.set(i.id || i.requestNo, i));
+          calRes.data.forEach((i) => map.set(i.id || i.requestNo, i));
+          return Array.from(map.values());
+        });
+      }
+    } catch (e) {
+      console.error("Failed fetching calendar events for current view range", e);
+    }
+  };
+
   const RefreshAction = useCallback(() => {
     setDataList([]);
     setDataCalendar([]);
@@ -1231,23 +1307,41 @@ const CabRequestView = () => {
     let filtered = visibleCalendarData;
     if (calendarDateFrom && calendarDateTo) {
       filtered = filtered.filter((item) => {
-        if (!item.scheduledDate) return false;
-        const itemDate = item.scheduledDate.slice(0, 10);
+        const rawDate = item.scheduledDate || item.requestedCabDate || item.targetDate;
+        if (!rawDate) return false;
+        const itemDate = rawDate.slice(0, 10);
         return itemDate >= calendarDateFrom && itemDate <= calendarDateTo;
       });
     } else if (calendarDateFrom) {
       filtered = filtered.filter((item) => {
-        if (!item.scheduledDate) return false;
-        return item.scheduledDate.slice(0, 10) >= calendarDateFrom;
+        const rawDate = item.scheduledDate || item.requestedCabDate || item.targetDate;
+        if (!rawDate) return false;
+        return rawDate.slice(0, 10) >= calendarDateFrom;
       });
     }
     return filtered.map((item) => {
       const style = getStatusCalendarStyle(item.status, isDark);
+      const rawStart = item.scheduledDate || item.requestedCabDate || item.targetDate!;
+      const rawEnd = item.scheduledEndDate;
+
+      const normStart = normalizeIsoDate(rawStart) || rawStart;
+      let normEnd = normalizeIsoDate(rawEnd);
+
+      if (!normEnd || normEnd === normStart) {
+        try {
+          const s = new Date(normStart);
+          s.setHours(s.getHours() + 2);
+          normEnd = s.toISOString().slice(0, 19);
+        } catch {
+          normEnd = normStart;
+        }
+      }
+
       return {
         id: item.id,
         title: `${item.requestNo} — ${item.requestTitle}`,
-        start: item.scheduledDate!,
-        end: item.scheduledEndDate || item.scheduledDate!,
+        start: normStart,
+        end: normEnd,
         backgroundColor: style.bg,
         borderColor: style.borderColor,
         textColor: style.textColor,
@@ -1265,44 +1359,57 @@ const CabRequestView = () => {
     const now = new Date();
     const todayStr = now.toISOString().slice(0, 10);
 
-    // End of this week (Sunday)
-    const currentDayOfWeek = now.getDay();
-    const daysUntilSunday = currentDayOfWeek === 0 ? 0 : 7 - currentDayOfWeek;
-    const endOfWeek = new Date(now);
-    endOfWeek.setDate(now.getDate() + daysUntilSunday);
+    // Calculate current week (Monday through Sunday)
+    const currentDayOfWeek = now.getDay(); // 0 is Sunday, 1 is Monday...
+    const distanceToMonday = currentDayOfWeek === 0 ? -6 : 1 - currentDayOfWeek;
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() + distanceToMonday);
+    const startOfWeekStr = startOfWeek.toISOString().slice(0, 10);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
     const endOfWeekStr = endOfWeek.toISOString().slice(0, 10);
 
-    // 14 days from now
+    // 14 days from today
     const fourteenDaysLater = new Date(now);
     fourteenDaysLater.setDate(now.getDate() + 14);
     const fourteenDaysStr = fourteenDaysLater.toISOString().slice(0, 10);
 
-    // Filter events occurring within the next 14 days
-    const validScheduled = visibleCalendarData.filter((item) => {
-      if (!item.scheduledDate) return false;
-      const itemDate = item.scheduledDate.slice(0, 10);
-      return itemDate >= todayStr && itemDate <= fourteenDaysStr;
-    }).sort((a, b) => (a.scheduledDate || "").localeCompare(b.scheduledDate || ""));
+    // Sort valid scheduled items chronologically
+    const validScheduled = visibleCalendarData
+      .filter((item) => Boolean(item.scheduledDate || item.requestedCabDate || item.targetDate))
+      .sort((a, b) => {
+        const da = a.scheduledDate || a.requestedCabDate || a.targetDate || "";
+        const db = b.scheduledDate || b.requestedCabDate || b.targetDate || "";
+        return da.localeCompare(db);
+      });
 
     const today: CabRequestItem[] = [];
     const thisWeek: CabRequestItem[] = [];
     const next14Days: CabRequestItem[] = [];
 
     validScheduled.forEach((item) => {
-      const itemDate = item.scheduledDate!.slice(0, 10);
+      const itemDate = (item.scheduledDate || item.requestedCabDate || item.targetDate)!.slice(0, 10);
       if (itemDate === todayStr) {
         today.push(item);
-      } else if (itemDate <= endOfWeekStr) {
+      }
+      if (itemDate >= startOfWeekStr && itemDate <= endOfWeekStr) {
         thisWeek.push(item);
-      } else {
+      }
+      if (itemDate >= todayStr && itemDate <= fourteenDaysStr) {
         next14Days.push(item);
       }
+    });
+
+    const upcomingItems = validScheduled.filter((item) => {
+      const itemDate = (item.scheduledDate || item.requestedCabDate || item.targetDate)!.slice(0, 10);
+      return itemDate >= todayStr;
     });
 
     return {
       today,
       thisWeek,
-      next14Days,
+      next14Days: next14Days.length > 0 ? next14Days : (upcomingItems.length > 0 ? upcomingItems.slice(0, 10) : validScheduled.slice(0, 10)),
       totalCount: validScheduled.length,
     };
   }, [visibleCalendarData]);
@@ -2038,6 +2145,19 @@ const CabRequestView = () => {
                 </HStack>
                 <HStack spacing={2}>
                   <Button size="sm" leftIcon={<FiRefreshCcw />} onClick={RefreshAction} isLoading={IsLoadingProcess}>Refresh</Button>
+                  <Menu>
+                    <MenuButton as={Button} size="sm" variant="outline" leftIcon={<FiDownload />}>
+                      Export
+                    </MenuButton>
+                    <MenuList zIndex={10}>
+                      <MenuItem icon={<FiFileText />} onClick={() => handleExportList("XLSX")}>
+                        Export Excel (.xlsx)
+                      </MenuItem>
+                      <MenuItem icon={<FiFileText />} onClick={() => handleExportList("PDF")}>
+                        Export PDF (.pdf)
+                      </MenuItem>
+                    </MenuList>
+                  </Menu>
                   {canMake && (
                     <Button size="sm" colorScheme="secondary" leftIcon={<FiPlusSquare />} onClick={categoryModal.onOpen}>
                       Request
@@ -2518,6 +2638,13 @@ const CabRequestView = () => {
                               >
                                 Week
                               </Button>
+                              <Button
+                                variant={calendarViewMode === "timeGridDay" ? "solid" : "outline"}
+                                colorScheme={calendarViewMode === "timeGridDay" ? "blue" : "gray"}
+                                onClick={() => handleViewChange("timeGridDay")}
+                              >
+                                Day
+                              </Button>
                             </ButtonGroup>
 
                             <HStack spacing={1.5} wrap="wrap">
@@ -2533,6 +2660,26 @@ const CabRequestView = () => {
                                   {preset}
                                 </Button>
                               ))}
+
+                              {targetInitialDate && (
+                                <Tooltip label={`Buka kalender pada bulan jadwal terdekat (${targetInitialDate})`} hasArrow placement="top">
+                                  <Button
+                                    size="xs"
+                                    rounded="full"
+                                    variant="outline"
+                                    colorScheme="purple"
+                                    leftIcon={<FiCalendar />}
+                                    onClick={() => {
+                                      const api = calendarRef.current?.getApi();
+                                      if (api && targetInitialDate) {
+                                        api.gotoDate(targetInitialDate);
+                                      }
+                                    }}
+                                  >
+                                    Jadwal Terdekat ({targetInitialDate.slice(0, 7)})
+                                  </Button>
+                                </Tooltip>
+                              )}
                             </HStack>
 
                             {canMake && (
@@ -2784,6 +2931,7 @@ const CabRequestView = () => {
                                 ref={calendarRef}
                                 plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                                 initialView="dayGridMonth"
+                                initialDate={targetInitialDate}
                                 headerToolbar={{
                                   left: "prev,next today",
                                   center: "title",
@@ -2800,12 +2948,19 @@ const CabRequestView = () => {
                                   minute: "2-digit",
                                   hour12: false,
                                 }}
+                                slotMinTime="07:00:00"
+                                slotMaxTime="23:00:00"
+                                scrollTime="08:00:00"
+                                nowIndicator={true}
+                                allDaySlot={true}
+                                allDayText="All Day"
                                 events={calendarEvents}
+                                datesSet={handleDatesSet}
                                 eventClick={handleEventClick}
                                 dateClick={(info) => handleCalendarDateClick(info.dateStr)}
                                 eventContent={renderEventContent}
                                 height="auto"
-                                contentHeight={560}
+                                contentHeight={580}
                                 dayMaxEvents={3}
                               />
                             </Box>

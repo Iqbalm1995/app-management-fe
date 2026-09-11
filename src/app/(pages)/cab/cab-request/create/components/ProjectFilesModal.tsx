@@ -37,8 +37,9 @@ import {
   FiInfo,
   FiSearch,
 } from "react-icons/fi";
-import { radiusStyle } from "@/app/constants/applicationConstants";
+import { radiusStyle, RES_CODE_OK } from "@/app/constants/applicationConstants";
 import { MOCK_PROJECT_FILES, ProjectFileItem } from "@/app/json/cabRequestMock";
+import useProjects, { ProjectWorkflowValueResponse } from "@/app/services/useProjects";
 
 export interface ProjectFilesModalProps {
   isOpen: boolean;
@@ -51,6 +52,7 @@ export interface ProjectFilesModalProps {
   categoryFilter?: string;
   fieldTitle?: string;
   projectUrl?: string;
+  tokenData?: string;
 }
 
 const CATEGORIES = [
@@ -82,14 +84,71 @@ export const ProjectFilesModal = ({
   categoryFilter: initialCategory,
   fieldTitle,
   projectUrl,
+  tokenData,
 }: ProjectFilesModalProps) => {
   const { colorMode } = useColorMode();
   const isDark = colorMode === "dark";
+  const { ListProjectWorkflow } = useProjects();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>(
     initialCategory || "Semua"
   );
+  const [liveProjectFiles, setLiveProjectFiles] = useState<ProjectFileItem[]>([]);
+  const [loadingFiles, setLoadingFiles] = useState(false);
+
+  // Fetch real project documents if projectId is provided
+  useEffect(() => {
+    const fetchDocs = async () => {
+      const token = tokenData || (typeof window !== "undefined" ? localStorage.getItem("tokenData") || "" : "");
+      if (!isOpen || !projectId || !token) return;
+
+      setLoadingFiles(true);
+      try {
+        const res = await ListProjectWorkflow(projectId, token);
+
+        if (res?.statusCode === RES_CODE_OK && res.data) {
+          const mapped: ProjectFileItem[] = [];
+          res.data.forEach((wf) => {
+            if (wf.workflowValues && wf.workflowValues.length > 0) {
+              wf.workflowValues.forEach((val) => {
+                if (val.mediaObjectId || val.documentName) {
+                  let cat = "BRD & RFC";
+                  const dt = (val.documentType || "").toUpperCase();
+                  if (dt.includes("ARSI") || dt.includes("ARCH") || dt.includes("FSD") || dt.includes("TSD")) cat = "Arsitektur";
+                  else if (dt.includes("SAST") || dt.includes("SEC") || dt.includes("PEN_TEST")) cat = "Security & SAST";
+                  else if (dt.includes("UAT") || dt.includes("QA") || dt.includes("TEST")) cat = "UAT & QA";
+                  else if (dt.includes("SOP") || dt.includes("MANUAL") || dt.includes("RUNDOWN") || dt.includes("RUNBOOK")) cat = "Manual & Runbook";
+
+                  mapped.push({
+                    id: val.id,
+                    fileName: val.documentName || "Dokumen Proyek",
+                    fileSize: "Dokumen Proyek",
+                    fileType: val.documentName?.endsWith(".pdf") ? "pdf" : "doc",
+                    uploadedBy: val.createdBy || "Project Team",
+                    uploadedDate: val.documentDate ? new Date(val.documentDate).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+                    category: cat,
+                    description: `Versi: ${val.documentVersion || "v1.0"} | No: ${val.documentNumber || "-"}`,
+                    sourceUrl: val.linkAttachment,
+                    mediaObjectId: val.mediaObjectId,
+                  } as any);
+                }
+              });
+            }
+          });
+          if (mapped.length > 0) {
+            setLiveProjectFiles(mapped);
+          }
+        }
+      } catch {
+        // Fallback to mock
+      } finally {
+        setLoadingFiles(false);
+      }
+    };
+
+    fetchDocs();
+  }, [isOpen, projectId, tokenData]);
 
   // Sync category filter when modal opens with a new initialCategory
   useEffect(() => {
@@ -106,8 +165,12 @@ export const ProjectFilesModal = ({
     );
   }, [projectUrl, projectId, projectCode, projectContext]);
 
+  const allAvailableFiles = useMemo(() => {
+    return liveProjectFiles.length > 0 ? liveProjectFiles : MOCK_PROJECT_FILES;
+  }, [liveProjectFiles]);
+
   const filteredFiles = useMemo(() => {
-    return MOCK_PROJECT_FILES.filter((file) => {
+    return allAvailableFiles.filter((file) => {
       const matchCategory =
         activeCategory === "Semua" || file.category === activeCategory;
       const matchSearch =
@@ -117,7 +180,7 @@ export const ProjectFilesModal = ({
         file.uploadedBy.toLowerCase().includes(searchTerm.toLowerCase());
       return matchCategory && matchSearch;
     });
-  }, [activeCategory, searchTerm]);
+  }, [allAvailableFiles, activeCategory, searchTerm]);
 
   const getFileIcon = (type: string) => {
     switch (type) {

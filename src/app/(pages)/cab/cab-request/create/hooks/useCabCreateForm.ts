@@ -160,7 +160,7 @@ const useCabCreateForm = () => {
   const { List: ListUsers } = useUsers();
   const { List: ListApps } = useApps();
   const { List: ListRequirements } = useRequirements();
-  const { List: ListProjects } = useProjects();
+  const { List: ListProjects, ListByApp: ListProjectsByApp } = useProjects();
 
   // ─── Core State ─────────────────────────────────────────────────────────
   const [category, setCategory] = useState<CabCategory | null>(null);
@@ -208,7 +208,7 @@ const useCabCreateForm = () => {
     setCurrentStep(0);
   };
 
-  // ─── Data Fetchers (Real API) ───────────────────────────────────────────
+  // ─── Data Fetchers (Real API - Standard POST Patterns) ─────────────────────
   const fetchUsers = async (search: string, token: string): Promise<UsersResponse[]> => {
     const payload: PaggingListPayload = {
       search,
@@ -228,7 +228,7 @@ const useCabCreateForm = () => {
   const fetchApplications = async (search: string, token: string): Promise<ApplicationMasterResponse[]> => {
     const payload: PaggingListPayload = {
       search,
-      limit: MAX_SIZE_TABLE,
+      limit: 100,
       page: 0,
       filterWhere: [{ field: "appsStatus", operator: "=", value: "ACTIVE" }],
       fieldOrder: ["appName"],
@@ -241,12 +241,61 @@ const useCabCreateForm = () => {
     return [];
   };
 
+  const fetchProjectsByApp = async (
+    appId: string,
+    search: string,
+    token: string
+  ): Promise<ProjectDataResponse[]> => {
+    if (!appId) return [];
+    const payload: PaggingListPayload = {
+      search,
+      limit: 50,
+      page: 0,
+      filterWhere: [],
+      fieldOrder: ["projectCode"],
+      orderDir: "desc",
+    };
+    const res = await ListProjectsByApp(appId, payload, token);
+    if (res?.statusCode === RES_CODE_OK && res.data) {
+      return res.data as ProjectDataResponse[];
+    }
+    return [];
+  };
+
+  const fetchRequirementsByApp = async (
+    appInitialCode: string,
+    search: string,
+    token: string,
+    reqType?: string
+  ): Promise<RequirementsResponse[]> => {
+    if (!appInitialCode) return [];
+    const filterWhere: PaggingListPayload["filterWhere"] = [
+      { field: "appInitialCode", operator: "=", value: appInitialCode },
+    ];
+    if (reqType) {
+      filterWhere.push({ field: "requirementType", operator: "=", value: reqType });
+    }
+    const payload: PaggingListPayload = {
+      search,
+      limit: 50,
+      page: 0,
+      filterWhere,
+      fieldOrder: ["reqNumber"],
+      orderDir: "desc",
+    };
+    const res = await ListRequirements(payload, token);
+    if (res?.statusCode === RES_CODE_OK && res.data) {
+      return res.data as RequirementsResponse[];
+    }
+    return [];
+  };
+
   const fetchRequirements = async (search: string, token: string, reqType?: string): Promise<RequirementsResponse[]> => {
     const filterWhere: PaggingListPayload["filterWhere"] = [];
     if (reqType) filterWhere.push({ field: "requirementType", operator: "=", value: reqType });
     const payload: PaggingListPayload = {
       search,
-      limit: MAX_SIZE_TABLE,
+      limit: 50,
       page: 0,
       filterWhere,
       fieldOrder: ["reqNumber"],
@@ -264,7 +313,7 @@ const useCabCreateForm = () => {
     if (reqParentId) filterWhere.push({ field: "reqParentId", operator: "=", value: reqParentId });
     const payload: PaggingListPayload = {
       search,
-      limit: MAX_SIZE_TABLE,
+      limit: 50,
       page: 0,
       filterWhere,
       fieldOrder: ["projectCode"],
@@ -332,6 +381,8 @@ const useCabCreateForm = () => {
     fetchApplications,
     fetchRequirements,
     fetchProjects,
+    fetchProjectsByApp,
+    fetchRequirementsByApp,
   };
 };
 

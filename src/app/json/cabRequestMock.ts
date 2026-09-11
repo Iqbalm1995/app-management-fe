@@ -182,7 +182,8 @@ export const getDynamicCabActivities = (
   const existingMap = new Map<string, { isDone: boolean; doneAt?: string | null; doneBy?: string | null }>();
   if (existingActivities && existingActivities.length > 0) {
     existingActivities.forEach((act) => {
-      existingMap.set(act.id, { isDone: act.isDone, doneAt: act.doneAt, doneBy: act.doneBy });
+      if (act.id) existingMap.set(act.id, { isDone: act.isDone, doneAt: act.doneAt, doneBy: act.doneBy });
+      if (act.activityKey) existingMap.set(act.activityKey, { isDone: act.isDone, doneAt: act.doneAt, doneBy: act.doneBy });
     });
   }
 

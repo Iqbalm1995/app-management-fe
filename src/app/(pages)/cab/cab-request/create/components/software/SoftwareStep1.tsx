@@ -38,8 +38,10 @@ interface SoftwareStep1Props {
   data: CabSoftwareStep1;
   onChange: (data: CabSoftwareStep1) => void;
   fetchApplications: (search: string, token: string) => Promise<ApplicationMasterResponse[]>;
-  fetchRequirements: (search: string, token: string, reqType?: string) => Promise<RequirementsResponse[]>;
-  fetchProjects: (search: string, token: string, reqParentId?: string) => Promise<ProjectDataResponse[]>;
+  fetchRequirements?: (search: string, token: string, reqType?: string) => Promise<RequirementsResponse[]>;
+  fetchProjects?: (search: string, token: string, reqParentId?: string) => Promise<ProjectDataResponse[]>;
+  fetchProjectsByApp: (appId: string, search: string, token: string) => Promise<ProjectDataResponse[]>;
+  fetchRequirementsByApp: (appInitialCode: string, search: string, token: string, reqType?: string) => Promise<RequirementsResponse[]>;
   tokenData: string;
 }
 
@@ -54,8 +56,8 @@ const SoftwareStep1 = ({
   data,
   onChange,
   fetchApplications,
-  fetchRequirements,
-  fetchProjects,
+  fetchProjectsByApp,
+  fetchRequirementsByApp,
   tokenData,
 }: SoftwareStep1Props) => {
   const { colorMode } = useColorMode();
@@ -65,65 +67,64 @@ const SoftwareStep1 = ({
   const [appList, setAppList] = useState<ApplicationMasterResponse[]>([]);
   const [appLoading, setAppLoading] = useState(false);
 
-  // Global Project/RFC/BRD options pool
-  const [globalProjectOptions, setGlobalProjectOptions] = useState<ProjectOption[]>([]);
-  const [projectLoading, setProjectLoading] = useState(false);
-
   // Map of per-app specific project options
   const [appProjectMap, setAppProjectMap] = useState<Record<string, ProjectOption[]>>({});
+  const [appProjectLoading, setAppProjectLoading] = useState<Record<string, boolean>>({});
 
-  // Load apps & global projects on mount
+  // Load apps on mount (fast lightweight POST)
   useEffect(() => {
     if (tokenData) {
-      loadAppsAndProjects();
+      loadAppsOnly();
     }
   }, [tokenData]);
 
-  const loadAppsAndProjects = async () => {
+  const loadAppsOnly = async () => {
     setAppLoading(true);
-    setProjectLoading(true);
     try {
-      const [apps, brdReqs, rfcReqs, projects] = await Promise.all([
-        fetchApplications("", tokenData),
-        fetchRequirements("", tokenData, "BRD"),
-        fetchRequirements("", tokenData, "RFC"),
-        fetchProjects("", tokenData),
-      ]);
-
+      const apps = await fetchApplications("", tokenData);
       setAppList(apps || []);
 
-      const pOptions: ProjectOption[] = [];
-      (brdReqs || []).forEach((r) =>
-        pOptions.push({
-          label: `[BRD] ${r.reqNumber} — ${r.reqNarative || r.appInitialName || "BRD Document"}`,
-          value: r.reqNumber,
-          projectId: r.id || r.reqNumber,
-          type: "BRD",
-        })
-      );
-      (rfcReqs || []).forEach((r) =>
-        pOptions.push({
-          label: `[RFC] ${r.reqNumber} — ${r.reqNarative || r.appInitialName || "RFC Change Request"}`,
-          value: r.reqNumber,
-          projectId: r.id || r.reqNumber,
-          type: "RFC",
-        })
-      );
-      (projects || []).forEach((p) =>
-        pOptions.push({
-          label: `[PROJECT] ${p.projectCode} — ${p.projectName}`,
-          value: p.projectCode,
-          projectId: p.id,
-          type: "PROJECT",
-        })
-      );
+      // If initial data has applications selected, fetch their projects on demand
+      const initialAppIds = (data.applications || [])
+        .map((a) => a.applicationId)
+        .filter(Boolean);
+      if (data.applicationId && !initialAppIds.includes(data.applicationId)) {
+        initialAppIds.push(data.applicationId);
+      }
 
-      setGlobalProjectOptions(pOptions);
+      for (const appId of initialAppIds) {
+        loadProjectsForApp(appId);
+      }
     } catch (err) {
-      console.error("Failed loading apps or project requirements", err);
+      console.error("Failed loading apps", err);
     } finally {
       setAppLoading(false);
-      setProjectLoading(false);
+    }
+  };
+
+  const loadProjectsForApp = async (appId: string) => {
+    if (!appId || appProjectMap[appId]?.length > 0) return;
+
+    setAppProjectLoading((prev) => ({ ...prev, [appId]: true }));
+    try {
+      const projects = await fetchProjectsByApp(appId, "", tokenData);
+      const pOptions: ProjectOption[] = [];
+
+      (projects || []).forEach((p) => {
+        const projectNum = p.projectNo || p.projectCode || p.id;
+        pOptions.push({
+          label: `${projectNum} — ${p.projectName}`,
+          value: projectNum,
+          projectId: p.id,
+          type: "PROJECT",
+        });
+      });
+
+      setAppProjectMap((prev) => ({ ...prev, [appId]: pOptions }));
+    } catch (err) {
+      console.error(`Failed loading projects for app ${appId}`, err);
+    } finally {
+      setAppProjectLoading((prev) => ({ ...prev, [appId]: false }));
     }
   };
 
@@ -142,14 +143,12 @@ const SoftwareStep1 = ({
     const label = (candidate.label || "").toLowerCase();
     const shortName = (app?.appShortName || "").toLowerCase();
     const appName = (app?.appName || "").toLowerCase();
-    const appInitial = (app?.appInitialName || "").toLowerCase();
     const appTypes = (app?.appTypes || "").toLowerCase();
     const appCode = (app?.appCode || "").toLowerCase();
     return (
       label.includes(search) ||
       shortName.includes(search) ||
       appName.includes(search) ||
-      appInitial.includes(search) ||
       appTypes.includes(search) ||
       appCode.includes(search)
     );
@@ -274,36 +273,18 @@ const SoftwareStep1 = ({
       applicationName: appName,
       aplikasiKategori: category,
       rfcKodeProject: "",
+      projectId: "",
     };
     updateApplications(newList);
 
-    // If app has specific reqParentId, fetch its specific project options
-    if (app?.reqParentId && !appProjectMap[app.id]) {
-      try {
-        const specificProjects = await fetchProjects("", tokenData, app.reqParentId);
-        const mappedSpecific: ProjectOption[] = specificProjects.map((p) => ({
-          label: `[PROJECT] ${p.projectCode} — ${p.projectName}`,
-          value: p.projectCode,
-          projectId: p.id,
-          type: "PROJECT",
-        }));
-        setAppProjectMap((prev) => ({ ...prev, [app.id]: mappedSpecific }));
-      } catch (e) {
-        console.error("Failed fetching app-specific projects", e);
-      }
-    }
+    // On-demand fetch projects specifically for this selected application
+    loadProjectsForApp(selectedOpt.value);
   };
 
   // Get project options for a specific application row
   const getProjectOptionsForRow = (appId: string): ProjectOption[] => {
-    if (!appId) return globalProjectOptions;
-    const specific = appProjectMap[appId];
-    if (specific && specific.length > 0) {
-      const specificValues = new Set(specific.map((s) => s.value));
-      const rest = globalProjectOptions.filter((g) => !specificValues.has(g.value));
-      return [...specific, ...rest];
-    }
-    return globalProjectOptions;
+    if (!appId) return [];
+    return appProjectMap[appId] || [];
   };
 
   // Styles for chakra-react-select
@@ -428,9 +409,26 @@ const SoftwareStep1 = ({
                         </Text>
                       )}
                       {appCategory && (
-                        <Badge colorScheme="blue" variant="subtle" rounded="full" px={2} py={0.5} fontSize="3xs" fontWeight="semibold">
-                          {appCategory}
-                        </Badge>
+                        <HStack spacing={1}>
+                          {String(appCategory)
+                            .split(/[,/]+/)
+                            .map((c: string) => c.trim())
+                            .filter(Boolean)
+                            .map((cat: string, idx: number) => (
+                              <Badge
+                                key={idx}
+                                colorScheme="blue"
+                                variant="subtle"
+                                rounded="full"
+                                px={2}
+                                py={0.5}
+                                fontSize="3xs"
+                                fontWeight="semibold"
+                              >
+                                {cat}
+                              </Badge>
+                            ))}
+                        </HStack>
                       )}
                     </HStack>
 
@@ -514,19 +512,24 @@ const SoftwareStep1 = ({
                       />
                     </FormControl>
 
-                    {/* 2. Related Project / RFC / BRD */}
+                    {/* 2. Related Project */}
                     <FormControl isRequired={isMainApp}>
                       <FormLabel fontSize="xs" fontWeight="medium" color={isDark ? "gray.300" : "gray.600"} mb={1}>
-                        {isMainApp ? "Project / RFC / BRD*" : "Project / RFC / BRD"}
+                        {isMainApp ? "Project*" : "Project"}
                       </FormLabel>
                       <ChakraSelect
                         placeholder={
-                          appItem.applicationId
-                            ? "Pilih project terkait..."
-                            : "Pilih aplikasi terlebih dahulu..."
+                          !appItem.applicationId
+                            ? "Pilih aplikasi terlebih dahulu..."
+                            : appProjectLoading[appItem.applicationId]
+                              ? "Memuat project..."
+                              : currentProjectOptions.length === 0
+                                ? "Tidak ada project terkait"
+                                : "Pilih project terkait..."
                         }
                         options={currentProjectOptions}
-                        isLoading={projectLoading}
+                        isLoading={Boolean(appProjectLoading[appItem.applicationId])}
+                        isDisabled={!appItem.applicationId}
                         value={selectedProjectOpt}
                         onChange={(opt: any) => {
                           const newList = [...rawApplications];
@@ -544,21 +547,15 @@ const SoftwareStep1 = ({
                         formatOptionLabel={(opt: any) => (
                           <HStack spacing={2}>
                             <Badge
-                              colorScheme={
-                                opt.type === "BRD"
-                                  ? "blue"
-                                  : opt.type === "RFC"
-                                    ? "orange"
-                                    : "green"
-                              }
+                              colorScheme="blue"
                               fontSize="3xs"
                               rounded="sm"
                               px={1}
                             >
-                              {opt.type || "RFC"}
+                              PROJECT
                             </Badge>
                             <Text fontSize="xs">
-                              {String(opt.label || "").replace(/^\[(BRD|RFC|PROJECT)\]\s*/, "")}
+                              {String(opt.label || "").replace(/^\[PROJECT\]\s*/, "")}
                             </Text>
                           </HStack>
                         )}

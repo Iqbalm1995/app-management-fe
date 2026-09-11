@@ -131,13 +131,13 @@ export const BASE_PORT_MAIN: string = "5555";
 // export const BASE_PORT_MAIN: string = "8998";
 
 // Base Url Endpoint API
-export const ENDPOINT_API_BASEURL: string = "http://192.168.239.117";
-// export const ENDPOINT_API_BASEURL: string = "https://localhost";
+// export const ENDPOINT_API_BASEURL: string = "http://192.168.239.117";
+export const ENDPOINT_API_BASEURL: string = "https://localhost";
 export const ENDPOINT_PORT_BASIC: string = "2332";
 
 // Base Url Endpoint API
-export const ENDPOINT_API_BASEURL_OBJECT: string = "http://192.168.239.117";
-// export const ENDPOINT_API_BASEURL_OBJECT: string = "https://localhost";
+// export const ENDPOINT_API_BASEURL_OBJECT: string = "http://192.168.239.117";
+export const ENDPOINT_API_BASEURL_OBJECT: string = "https://localhost";
 export const ENDPOINT_PORT_BASIC_OBJECT: string = "2332";
 
 // http://192.168.239.117:5000
