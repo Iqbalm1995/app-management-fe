@@ -1608,6 +1608,7 @@ export default function DevKanbanView() {
 
         const updatedAssignUsers = choosedMemberProjects.map((user) => ({
           id: user.id,
+          nrp: user.nrp || user.nip || "",
           nama: user.nama,
           nip: user.nip,
           userId: user.userId,

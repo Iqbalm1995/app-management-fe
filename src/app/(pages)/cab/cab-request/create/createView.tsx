@@ -1,7 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
+  Badge,
   Box,
   Button,
   Card,
@@ -14,15 +21,15 @@ import {
   Heading,
   HStack,
   Icon,
+  SimpleGrid,
   Text,
   useColorMode,
   VStack,
   Wrap,
-  Badge,
 } from "@chakra-ui/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { FiArrowLeft, FiArrowRight, FiSave, FiSend } from "react-icons/fi";
+import { FiAlertCircle, FiArrowLeft, FiArrowRight, FiCheckCircle, FiSave, FiSend } from "react-icons/fi";
 
 import { HeaderContent } from "@/app/components/headerContent";
 import LayoutAdmin from "@/app/components/layoutAdmin";
@@ -52,6 +59,8 @@ const CreateView = () => {
   const searchParams = useSearchParams();
 
   const [tokenData, setTokenData] = useState<string>("");
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const cancelConfirmRef = useRef<any>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("tokenData") as string;
@@ -70,6 +79,15 @@ const CreateView = () => {
 
   const bgCard = colorMode === "light" ? "white" : "gray.800";
   const borderCol = colorMode === "light" ? "gray.200" : "gray.700";
+
+  const handleOpenConfirm = () => {
+    setIsConfirmOpen(true);
+  };
+
+  const handleExecuteSubmit = async () => {
+    setIsConfirmOpen(false);
+    await form.handleSubmit(false);
+  };
 
   // If no category yet (fallback — shouldn't happen if modal is used), redirect back
   if (!form.category) {
@@ -105,19 +123,9 @@ const CreateView = () => {
         <GridItem colSpan={{ base: 12, sm: 12, md: 4, lg: 4 }} w="full">
           <Flex as={Wrap} w="full" justifyContent="end" alignItems="center" gap={3}>
             <Button
-              colorScheme="blue"
-              leftIcon={<FiSave />}
-              onClick={() => form.handleSubmit(true)}
-              isLoading={form.loading}
-              px={8}
-              size="lg"
-            >
-              Save Draft
-            </Button>
-            <Button
               colorScheme="green"
               leftIcon={<FiSend />}
-              onClick={() => form.handleSubmit(false)}
+              onClick={handleOpenConfirm}
               isLoading={form.loading}
               isDisabled={!form.isLastStep}
               px={8}
@@ -151,6 +159,8 @@ const CreateView = () => {
                           data={form.swStep1}
                           onChange={form.setSwStep1}
                           fetchApplications={form.fetchApplications}
+                          fetchProjectsByApp={form.fetchProjectsByApp}
+                          fetchRequirementsByApp={form.fetchRequirementsByApp}
                           fetchRequirements={form.fetchRequirements}
                           fetchProjects={form.fetchProjects}
                           tokenData={tokenData}
@@ -280,6 +290,139 @@ const CreateView = () => {
           </Card>
         </GridItem>
       </Grid>
+
+      {/* Confirmation Modal */}
+      <AlertDialog
+        isOpen={isConfirmOpen}
+        leastDestructiveRef={cancelConfirmRef}
+        onClose={() => setIsConfirmOpen(false)}
+        isCentered
+      >
+        <AlertDialogOverlay bg="blackAlpha.500" backdropFilter="blur(3px)">
+          <AlertDialogContent rounded="xl" bg={bgCard} border="1px" borderColor={borderCol} mx={4}>
+            <AlertDialogHeader fontSize="md" fontWeight="bold" pb={2}>
+              <HStack spacing={2}>
+                <Icon
+                  as={FiCheckCircle}
+                  color="green.500"
+                  boxSize={5}
+                />
+                <Text>
+                  Konfirmasi Submit Pengajuan CAB
+                </Text>
+              </HStack>
+            </AlertDialogHeader>
+            <Divider />
+            <AlertDialogBody py={4} fontSize="sm">
+              <VStack align="stretch" spacing={3}>
+                <Text color={colorMode === "light" ? "gray.600" : "gray.300"}>
+                  Apakah Anda yakin seluruh data permohonan CAB sudah benar dan siap diajukan untuk proses approval dan penjadwalan sidang?
+                </Text>
+
+                {/* Summary Card */}
+                <Box
+                  p={3}
+                  rounded="lg"
+                  bg={colorMode === "light" ? "gray.50" : "gray.900"}
+                  border="1px"
+                  borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                >
+                  <VStack align="stretch" spacing={2} fontSize="xs">
+                    <Flex justify="space-between">
+                      <Text color="gray.500">Kategori & Jenis:</Text>
+                      <HStack spacing={1}>
+                        <Badge colorScheme="purple">{form.category}</Badge>
+                        <Badge
+                          colorScheme={
+                            (isSoftware ? form.swStep1.jenisCab : form.hwStep1.jenisCab) ===
+                            "EMERGENCY"
+                              ? "red"
+                              : "green"
+                          }
+                        >
+                          {isSoftware
+                            ? form.swStep1.jenisCab || "NORMAL"
+                            : form.hwStep1.jenisCab || "NORMAL"}
+                        </Badge>
+                      </HStack>
+                    </Flex>
+
+                    <Flex justify="space-between">
+                      <Text color="gray.500">
+                        {isSoftware ? "Aplikasi Utama:" : "Nama Hardware:"}
+                      </Text>
+                      <Text fontWeight="semibold" textAlign="right" maxW="60%" isTruncated>
+                        {isSoftware
+                          ? form.swStep1.applications?.[0]?.applicationName ||
+                            form.swStep1.applicationName ||
+                            "-"
+                          : form.hwStep1.namaHardware || "-"}
+                      </Text>
+                    </Flex>
+
+                    {isSoftware && (
+                      <Flex justify="space-between">
+                        <Text color="gray.500">Project:</Text>
+                        <Text fontWeight="semibold" textAlign="right" maxW="60%" isTruncated>
+                          {form.swStep1.applications?.[0]?.rfcKodeProject ||
+                            form.swStep1.rfcKodeProject ||
+                            "-"}
+                        </Text>
+                      </Flex>
+                    )}
+
+                    <Flex justify="space-between">
+                      <Text color="gray.500">Target / Tgl CAB:</Text>
+                      <Text fontWeight="semibold">
+                        {isSoftware
+                          ? form.swStep1.requestedCabDate ||
+                            form.swStep2.tanggalPermohonanMigrasi ||
+                            form.swStep1.dayDate ||
+                            "-"
+                          : form.hwStep1.requestedCabDate ||
+                            form.hwStep2.tanggalPermohonanImplementasi ||
+                            form.hwStep1.dayDate ||
+                            "-"}
+                      </Text>
+                    </Flex>
+
+                    <Flex justify="space-between">
+                      <Text color="gray.500">PIC & Komite:</Text>
+                      <Text fontWeight="semibold">
+                        {isSoftware
+                          ? `${form.swStep5.picMigrasi?.length || 0} PIC, ${form.swStep5.committeeCab?.length || 0} Komite`
+                          : `${form.hwStep4.picMigrasi?.length || 0} PIC, ${form.hwStep4.committeeCab?.length || 0} Komite`}
+                      </Text>
+                    </Flex>
+                  </VStack>
+                </Box>
+              </VStack>
+            </AlertDialogBody>
+            <Divider />
+            <AlertDialogFooter py={3}>
+              <Button
+                ref={cancelConfirmRef}
+                onClick={() => setIsConfirmOpen(false)}
+                size="md"
+                variant="ghost"
+                mr={3}
+              >
+                Batal
+              </Button>
+              <Button
+                colorScheme="green"
+                leftIcon={<FiSend />}
+                onClick={handleExecuteSubmit}
+                isLoading={form.loading}
+                size="md"
+                px={6}
+              >
+                Ya, Kirim Pengajuan
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </LayoutAdmin>
   );
 };

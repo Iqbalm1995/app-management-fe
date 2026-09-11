@@ -37,7 +37,21 @@ export const DownloadManagerProvider = ({
   // Stable token getter without triggering React state re-render
   const getStoredToken = useCallback((): string => {
     if (typeof window === "undefined") return "";
-    return localStorage.getItem("tokenData") || "";
+    const token = localStorage.getItem("tokenData");
+    if (token && token !== "null" && token !== "undefined" && token.trim() !== "") {
+      return token.trim();
+    }
+    const authDataStr = localStorage.getItem("authData");
+    if (authDataStr) {
+      try {
+        const authData = JSON.parse(authDataStr);
+        if (authData?.apiKey) return authData.apiKey;
+        if (authData?.token) return authData.token;
+      } catch {
+        // ignore
+      }
+    }
+    return "";
   }, []);
 
   // Check active jobs without heavy overhead (fetch top 5 jobs only)

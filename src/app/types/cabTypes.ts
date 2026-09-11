@@ -39,6 +39,7 @@ export type CabPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 // ─── Activity Item (Checklist sebelum dikirim ke approval) ────────────────────
 export interface CabActivityItem {
   id: string;
+  activityKey?: string;
   label: string;
   shortLabel?: string;
   description?: string;
@@ -175,6 +176,10 @@ export interface CabRequestDetail extends CabRequestItem {
   // PIC & Committee
   picMigrasi?: CabPicInternalIT[] | CabPic | null;
   committeeCab?: CabCommitteeMember[];
+
+  // Multi-schedule and history snapshot
+  schedules?: CabScheduleItem[];
+  scheduleHistories?: CabScheduleHistoryItem[];
 }
 
 // ─── Approval Step ────────────────────────────────────────────────────────────
@@ -215,6 +220,54 @@ export interface ScheduleCabPayload {
   scheduledDate: string;
   scheduledEndDate: string;
   cabLocation?: string;
+  note?: string;
+}
+
+export interface CabScheduleItem {
+  id: string;
+  cabRequestId: string;
+  scheduleOrder: number;
+  scheduleType: string;
+  scheduleTitle: string;
+  startDate: string;
+  endDate: string;
+  location?: string;
+  status: string;
+  note?: string;
+  createdAt?: string;
+  createdBy?: string;
+}
+
+export interface CabScheduleHistoryItem {
+  id: string;
+  cabScheduleParentId?: string;
+  cabRequestId: string;
+  cabRequestHistoryId?: string;
+  scheduleOrder: number;
+  scheduleType: string;
+  scheduleTitle: string;
+  startDate: string;
+  endDate: string;
+  location?: string;
+  status: string;
+  note?: string;
+  revisionReason?: string;
+  createdAt: string;
+  createdBy: string;
+}
+
+export interface RescheduleCabRequestPayload {
+  cabRequestId: string;
+  revisionReason: string;
+  schedules: {
+    scheduleOrder?: number;
+    scheduleType?: string;
+    scheduleTitle?: string;
+    startDate: string;
+    endDate: string;
+    location?: string;
+    note?: string;
+  }[];
 }
 
 export interface BulkScheduleCabItemPayload {

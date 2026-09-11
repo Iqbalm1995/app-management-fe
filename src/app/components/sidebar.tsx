@@ -872,7 +872,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                     My Workspace
                   </Button>
                 </Link>
-                <Link href={"/dev"} onClick={handleEnterDev} style={{ display: "none" }}>
+                {/* <Link href={"/dev"} onClick={handleEnterDev}>
                   <Button
                     leftIcon={<FaTerminal />}
                     mx={2}
@@ -918,7 +918,7 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                   >
                     Focus Mode
                   </Button>
-                </Link>
+                </Link> */}
               </Flex>
 
 

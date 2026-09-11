@@ -176,14 +176,31 @@ const SoftwareReview = ({ step1, step2, step3, step4, step5 }: SoftwareReviewPro
                       </Text>
                     </HStack>
                     {app.aplikasiKategori && (
-                      <Badge colorScheme="blue" variant="subtle" rounded="full" px={2} py={0.5} fontSize="3xs" fontWeight="semibold">
-                        {app.aplikasiKategori}
-                      </Badge>
+                      <HStack spacing={1}>
+                        {String(app.aplikasiKategori)
+                          .split(/[,/]+/)
+                          .map((c: string) => c.trim())
+                          .filter(Boolean)
+                          .map((cat: string, idx: number) => (
+                            <Badge
+                              key={idx}
+                              colorScheme="blue"
+                              variant="subtle"
+                              rounded="full"
+                              px={2}
+                              py={0.5}
+                              fontSize="3xs"
+                              fontWeight="semibold"
+                            >
+                              {cat}
+                            </Badge>
+                          ))}
+                      </HStack>
                     )}
                   </Flex>
                   <SimpleGrid columns={{ base: 1, md: 2 }} spacing={2} fontSize="xs">
                     <HStack>
-                      <Text color="gray.500">Project / RFC / BRD:</Text>
+                      <Text color="gray.500">Project:</Text>
                       <Text fontWeight="medium">{app.rfcKodeProject || "-"}</Text>
                     </HStack>
                     {app.itspKode && (
