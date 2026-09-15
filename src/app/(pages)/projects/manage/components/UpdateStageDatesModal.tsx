@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   Modal,
   ModalOverlay,
@@ -26,6 +26,8 @@ import {
   Box,
   Spinner,
   Heading,
+  SimpleGrid,
+  Tooltip,
 } from "@chakra-ui/react";
 import { radiusStyle, RES_CODE_OK } from "@/app/constants/applicationConstants";
 import { ProjectSdlcStageResponse, ProjectSdlcStageReportResponse } from "@/app/services/useProjects";
@@ -33,7 +35,20 @@ import useProjects from "@/app/services/useProjects";
 import useSdlcFlowStage from "@/app/services/useSdlcFlowStage";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { formatDateWithLabels } from "@/app/helper/MasterHelper";
-import { FiPlus, FiEdit2, FiTrash2, FiFileText, FiCheckCircle, FiAlertTriangle, FiInfo, FiX, FiCheck } from "react-icons/fi";
+import {
+  FiPlus,
+  FiEdit2,
+  FiTrash2,
+  FiFileText,
+  FiCheckCircle,
+  FiAlertTriangle,
+  FiInfo,
+  FiX,
+  FiCheck,
+  FiCalendar,
+  FiClock,
+  FiArrowRight,
+} from "react-icons/fi";
 import StageReportFormModal from "./StageReportFormModal";
 
 interface UpdateStageDatesModalProps {
@@ -51,17 +66,18 @@ const UpdateStageDatesModal = ({
 }: UpdateStageDatesModalProps) => {
   const { colorMode } = useColorMode();
   const showToast = useToastHelper();
-  const { UpdateProjectSdlcStageDates, ListProjectSdlcStageReports, DeleteProjectSdlcStageReport } = useProjects();
+  const {
+    UpdateProjectSdlcStageDates,
+    UpdateStatusProject,
+    ListProjectSdlcStageReports,
+    DeleteProjectSdlcStageReport,
+  } = useProjects();
   const { ListByFlowId: GetMasterStagesByFlowId } = useSdlcFlowStage();
 
   const [tokenData, setTokenData] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [openConfirmEndStage, setOpenConfirmEndStage] = useState(false);
-  const [openConfirmClearEndDate, setOpenConfirmClearEndDate] = useState(false);
-  const [isEndDateUnlocked, setIsEndDateUnlocked] = useState(false);
-  const [countdown, setCountdown] = useState(5);
 
   const [reports, setReports] = useState<ProjectSdlcStageReportResponse[]>([]);
   const [isLoadingReports, setIsLoadingReports] = useState(false);
@@ -72,9 +88,6 @@ const UpdateStageDatesModal = ({
 
   const [masterStageData, setMasterStageData] = useState<any>(null);
   const [isLoadingMasterStage, setIsLoadingMasterStage] = useState(false);
-
-  // Track if user manually unlocked end date (via "End Stage" button)
-  const hasManuallyUnlocked = useRef(false);
 
   useEffect(() => {
     const token = localStorage.getItem("tokenData") as string;
@@ -87,12 +100,6 @@ const UpdateStageDatesModal = ({
     if (isOpen && stage && tokenData) {
       setStartDate(stage.startDate ? stage.startDate.split("T")[0] : "");
       setEndDate(stage.endDate ? stage.endDate.split("T")[0] : "");
-
-      // Only reset isEndDateUnlocked if not manually unlocked by user
-      if (!hasManuallyUnlocked.current) {
-        setIsEndDateUnlocked(!!stage.endDate);
-      }
-
       setPage(1);
       loadReports(1);
       loadMasterStageData();
@@ -101,14 +108,14 @@ const UpdateStageDatesModal = ({
 
   const loadMasterStageData = async () => {
     if (!tokenData || !stage.sdlcFlowId) return;
-    
+
     setIsLoadingMasterStage(true);
     try {
-      // Get all master stages for this SDLC flow
       const response = await GetMasterStagesByFlowId(stage.sdlcFlowId, tokenData);
       if (response && response.statusCode === RES_CODE_OK && response.data) {
-        // Find the matching stage by stage name or code
-        const masterStage = response.data.find((s: any) => s.stageName === stage.stageName || s.stageCode === stage.stageCode);
+        const masterStage = response.data.find(
+          (s: any) => s.stageName === stage.stageName || s.stageCode === stage.stageCode
+        );
         setMasterStageData(masterStage);
       }
     } catch (error) {
@@ -117,59 +124,36 @@ const UpdateStageDatesModal = ({
     setIsLoadingMasterStage(false);
   };
 
-  // Auto-clear end date if start date is changed to be after end date
-  useEffect(() => {
-    // Only validate when both dates are complete (YYYY-MM-DD = 10 chars)
-    if (startDate.length === 10 && endDate.length === 10) {
-      if (new Date(startDate) > new Date(endDate)) {
-        setEndDate("");
-        if (!hasManuallyUnlocked.current) {
-          setIsEndDateUnlocked(false);
-        }
-      }
-    }
-  }, [startDate, endDate]);
-
-  // Countdown timer for confirmation modals
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (openConfirmEndStage || openConfirmClearEndDate) {
-      setCountdown(5);
-      timer = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(timer);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, [openConfirmEndStage, openConfirmClearEndDate]);
-
   const loadReports = async (pageNum: number = page) => {
     if (!tokenData || !stage) return;
 
     setIsLoadingReports(true);
-    const response = await ListProjectSdlcStageReports(stage.id, pageNum, pageSize, tokenData);
-    if (response && response.statusCode === RES_CODE_OK && response.data) {
-      if (pageNum === 1) {
-        setReports(response.data);
-      } else {
-        setReports([...reports, ...response.data]);
+    try {
+      const response = await ListProjectSdlcStageReports(stage.id, pageNum, pageSize, tokenData);
+      if (response && response.statusCode === RES_CODE_OK && Array.isArray(response.data)) {
+        if (pageNum === 1) {
+          setReports(response.data);
+        } else {
+          setReports((prev) => [...prev, ...(response.data || [])]);
+        }
       }
+    } catch (err) {
+      console.error("Error loading reports:", err);
     }
     setIsLoadingReports(false);
   };
 
-  const handleSetCurrentDate = (field: "start" | "end") => {
+  const handleSetToday = (field: "start" | "end") => {
     const today = new Date().toISOString().split("T")[0];
     if (field === "start") {
       setStartDate(today);
+      if (endDate && endDate < today) {
+        setEndDate("");
+      }
     } else {
+      if (!startDate) {
+        setStartDate(today);
+      }
       setEndDate(today);
     }
   };
@@ -178,58 +162,73 @@ const UpdateStageDatesModal = ({
     if (field === "start") {
       setStartDate("");
       setEndDate("");
-      setIsEndDateUnlocked(false);
     } else {
-      handleOpenClearEndDateConfirm();
+      setEndDate("");
     }
   };
 
-  const handleOpenEndStageConfirm = () => {
+  const handleStartDateChange = (val: string) => {
+    setStartDate(val);
+    if (endDate && val && val > endDate) {
+      setEndDate("");
+    }
+  };
+
+  // Helper calculating stage metrics
+  const calculateStageMetrics = () => {
     if (!startDate) {
-      showToast({
-        description: "Start date must be set first",
-        statusToast: "warning",
-      });
-      return;
+      return {
+        status: "NOT_STARTED",
+        label: "Belum Dimulai",
+        colorScheme: "gray",
+        days: 0,
+      };
     }
-    setOpenConfirmEndStage(true);
+
+    if (startDate && !endDate) {
+      const start = new Date(startDate);
+      const today = new Date();
+      start.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      const diffTime = today.getTime() - start.getTime();
+      const diffDays = Math.max(1, Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1);
+      return {
+        status: "IN_PROGRESS",
+        label: "Sedang Berjalan",
+        colorScheme: "blue",
+        days: diffDays,
+      };
+    }
+
+    // Both start and end date exist
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+    const diffTime = end.getTime() - start.getTime();
+    const diffDays = Math.max(1, Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1);
+    return {
+      status: "COMPLETED",
+      label: "Selesai (Completed)",
+      colorScheme: "green",
+      days: diffDays,
+    };
   };
 
-  const handleConfirmEndStage = () => {
-    hasManuallyUnlocked.current = true;
-    setIsEndDateUnlocked(true);
-    const today = new Date().toISOString().split("T")[0];
-    setEndDate(today);
-    showToast({
-      description: "You can now set the end date for this stage",
-      statusToast: "info",
-    });
-  };
-
-  const handleOpenClearEndDateConfirm = () => {
-    setOpenConfirmClearEndDate(true);
-  };
-
-  const handleConfirmClearEndDate = () => {
-    hasManuallyUnlocked.current = false;
-    setEndDate("");
-    setIsEndDateUnlocked(false);
-  };
+  const stageMetrics = calculateStageMetrics();
 
   const handleSave = async () => {
-    // Validation: End date requires start date
     if (endDate && !startDate) {
       showToast({
-        description: "Start date is required when setting end date",
+        description: "Tanggal mulai wajib diisi terlebih dahulu jika tanggal selesai ditentukan",
         statusToast: "warning",
       });
       return;
     }
 
-    // Validation: End date cannot be before start date
-    if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
+    if (startDate && endDate && startDate > endDate) {
       showToast({
-        description: "End date cannot be earlier than start date",
+        description: "Tanggal selesai tidak boleh lebih awal dari tanggal mulai",
         statusToast: "warning",
       });
       return;
@@ -247,25 +246,46 @@ const UpdateStageDatesModal = ({
 
       if (response && response.statusCode === RES_CODE_OK) {
         showToast({
-          description: "Stage dates updated successfully",
+          description: "Periode tanggal stage berhasil disimpan",
           statusToast: "success",
         });
 
-        // Auto-update project status if endDate is set and trigger is enabled
-        if (endDate && masterStageData?.stageTriggerStatus === "Y" && masterStageData?.stageStatusAfterTriggerChange) {
-          await handleUpdateProjectStatus(masterStageData.stageStatusAfterTriggerChange);
-        } else {
-          onSuccess();
+        // Trigger auto update project status if stage is completed and trigger is enabled
+        if (
+          endDate &&
+          masterStageData?.stageTriggerStatus === "Y" &&
+          masterStageData?.stageStatusAfterTriggerChange
+        ) {
+          try {
+            const statusRes = await UpdateStatusProject(
+              {
+                projectId: stage.projectId,
+                projectStatus: masterStageData.stageStatusAfterTriggerChange,
+              },
+              tokenData
+            );
+            if (statusRes && statusRes.statusCode === RES_CODE_OK) {
+              showToast({
+                description: `Status project otomatis diperbarui menjadi ${masterStageData.stageStatusAfterTriggerChange}`,
+                statusToast: "info",
+              });
+            }
+          } catch (statusErr) {
+            console.error("Failed to auto-update project status:", statusErr);
+          }
         }
+
+        onSuccess();
+        onClose();
       } else {
         showToast({
-          description: response?.message || "Failed to update dates",
+          description: response?.message || "Gagal memperbarui periode tanggal stage",
           statusToast: "error",
         });
       }
     } catch (error) {
       showToast({
-        description: "An error occurred while updating dates",
+        description: "Terjadi kesalahan saat menyimpan tanggal stage",
         statusToast: "error",
       });
     } finally {
@@ -273,63 +293,20 @@ const UpdateStageDatesModal = ({
     }
   };
 
-  const handleUpdateProjectStatus = async (newStatus: string) => {
-    if (!newStatus) return;
-
-    try {
-      const response = await fetch(
-        `https://localhost:2332/v1/Projects/update/status`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${tokenData}`,
-          },
-          body: JSON.stringify({
-            projectId: stage.projectId,
-            projectStatus: newStatus,
-          }),
-        }
-      );
-
-      const data = await response.json();
-      if (response.ok) {
-        showToast({
-          description: `Project status updated to ${newStatus}`,
-          statusToast: "success",
-        });
-        onSuccess();
-        return true;
-      } else {
-        showToast({
-          description: data?.message || "Failed to update project status",
-          statusToast: "error",
-        });
-        return false;
-      }
-    } catch (error) {
-      showToast({
-        description: "An error occurred while updating project status",
-        statusToast: "error",
-      });
-      return false;
-    }
-  };
-
   const handleDeleteReport = async (reportId: string) => {
-    if (!confirm("Are you sure you want to delete this report?")) return;
+    if (!confirm("Apakah Anda yakin ingin menghapus catatan report ini?")) return;
 
     const response = await DeleteProjectSdlcStageReport(reportId, tokenData);
     if (response && response.statusCode === RES_CODE_OK) {
       showToast({
-        description: "Report deleted successfully",
+        description: "Report berhasil dihapus",
         statusToast: "success",
       });
       setPage(1);
       loadReports(1);
     } else {
       showToast({
-        description: response?.message || "Failed to delete report",
+        description: response?.message || "Gagal menghapus report",
         statusToast: "error",
       });
     }
@@ -358,7 +335,8 @@ const UpdateStageDatesModal = ({
     loadReports(nextPage);
   };
 
-  const formatDate = (dateStr: string) => {
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return "-";
     const date = new Date(dateStr);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
@@ -366,14 +344,18 @@ const UpdateStageDatesModal = ({
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 60) return `${diffMins} minutes ago`;
-    if (diffHours < 24) return `${diffHours} hours ago`;
-    if (diffDays < 7) return `${diffDays} days ago`;
-    return date.toLocaleDateString();
+    if (diffMins < 60) return `${diffMins} menit yang lalu`;
+    if (diffHours < 24) return `${diffHours} jam yang lalu`;
+    if (diffDays < 7) return `${diffDays} hari yang lalu`;
+    return date.toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
   };
 
   const getStatusColor = (status: string) => {
-    const statusLower = status.toLowerCase();
+    const statusLower = (status || "").toLowerCase();
     if (statusLower.includes("progress") || statusLower.includes("ongoing")) return "blue";
     if (statusLower.includes("complete") || statusLower.includes("done")) return "green";
     if (statusLower.includes("block") || statusLower.includes("issue")) return "red";
@@ -381,187 +363,274 @@ const UpdateStageDatesModal = ({
     return "gray";
   };
 
-  const handleClose = () => {
-    hasManuallyUnlocked.current = false;
-    onClose();
-  };
-
   return (
     <>
-      <Modal isOpen={isOpen} onClose={handleClose} size="4xl" scrollBehavior="inside">
-        <ModalOverlay />
+      <Modal isOpen={isOpen} onClose={onClose} size="4xl" scrollBehavior="inside">
+        <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(4px)" />
         <ModalContent rounded={radiusStyle}>
-          <ModalHeader>Manage Stage - {stage.stageName}</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <VStack spacing={6} align="stretch">
-              {/* Date Management Section */}
-              <Box
+          <ModalHeader borderBottomWidth="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"} py={4}>
+            <HStack justify="space-between" pr={6}>
+              <HStack spacing={3}>
+                <Box
+                  p={2}
+                  bg={colorMode === "light" ? "blue.50" : "blue.900"}
+                  color="blue.500"
+                  rounded={radiusStyle}
+                >
+                  <Icon as={FiCalendar} boxSize={5} />
+                </Box>
+                <Box>
+                  <Heading size="sm">Manage Stage: {stage.stageName}</Heading>
+                  <Text fontSize="xs" color="gray.500" mt={0.5}>
+                    Urutan Posisi #{stage.stagePosOrder} {stage.stageCode ? `• Kode: ${stage.stageCode}` : ""}
+                  </Text>
+                </Box>
+              </HStack>
+              <Badge colorScheme={stageMetrics.colorScheme} px={3} py={1} rounded="full" fontSize="xs">
+                {stageMetrics.label}
+              </Badge>
+            </HStack>
+          </ModalHeader>
+          <ModalCloseButton mt={2} />
+
+          <ModalBody py={5}>
+            <VStack spacing={5} align="stretch">
+              {/* Overview Status Card */}
+              <Card
+                variant="outline"
+                rounded={radiusStyle}
                 bg={colorMode === "light" ? "gray.50" : "gray.800"}
-                p={5}
+                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+              >
+                <CardBody py={3} px={4}>
+                  <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} alignItems="center">
+                    <HStack spacing={3}>
+                      <Icon as={FiClock} color="blue.500" boxSize={4} />
+                      <Box>
+                        <Text fontSize="2xs" color="gray.500" textTransform="uppercase" fontWeight="bold">
+                          Status Tahapan
+                        </Text>
+                        <Text fontSize="sm" fontWeight="bold">
+                          {stageMetrics.label}
+                        </Text>
+                      </Box>
+                    </HStack>
+
+                    <HStack spacing={3}>
+                      <Icon as={FiCalendar} color="green.500" boxSize={4} />
+                      <Box>
+                        <Text fontSize="2xs" color="gray.500" textTransform="uppercase" fontWeight="bold">
+                          Durasi Pengerjaan
+                        </Text>
+                        <Text fontSize="sm" fontWeight="bold">
+                          {stageMetrics.days > 0 ? `${stageMetrics.days} Hari` : "Belum Berjalan"}
+                        </Text>
+                      </Box>
+                    </HStack>
+
+                    <HStack spacing={3}>
+                      <Icon as={FiCheckCircle} color="purple.500" boxSize={4} />
+                      <Box>
+                        <Text fontSize="2xs" color="gray.500" textTransform="uppercase" fontWeight="bold">
+                          Aktivitas Report
+                        </Text>
+                        <Text fontSize="sm" fontWeight="bold">
+                          {reports.length} Catatan
+                        </Text>
+                      </Box>
+                    </HStack>
+                  </SimpleGrid>
+                </CardBody>
+              </Card>
+
+              {/* Date Inputs Section */}
+              <Box
+                bg={colorMode === "light" ? "white" : "gray.750"}
+                p={4}
                 rounded={radiusStyle}
                 borderWidth="1px"
                 borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
               >
-                <HStack mb={4}>
-                  <Icon as={FiCheckCircle} boxSize={5} color="blue.500" />
-                  <Heading size="sm">Stage Dates</Heading>
-                </HStack>
-                <VStack spacing={4} align="stretch">
+                <Heading size="xs" textTransform="uppercase" color="gray.500" mb={3} letterSpacing="wider">
+                  Periode Jadwal Stage
+                </Heading>
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={5}>
+                  {/* Start Date */}
                   <FormControl>
-                    <FormLabel>Start Date</FormLabel>
-                    <HStack>
-                      <Input
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => setStartDate(e.target.value)}
-                      />
-                      {startDate && (
-                        <IconButton
-                          aria-label="Clear start date"
-                          icon={<FiX />}
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleClear("start")}
+                    <FormLabel fontSize="sm" fontWeight="semibold">
+                      Tanggal Mulai (Start Date)
+                    </FormLabel>
+                    <VStack align="stretch" spacing={2}>
+                      <HStack>
+                        <Input
+                          type="date"
+                          value={startDate}
+                          onChange={(e) => handleStartDateChange(e.target.value)}
+                          rounded={radiusStyle}
                         />
-                      )}
-                    </HStack>
+                        {startDate && (
+                          <Tooltip label="Kosongkan tanggal mulai" hasArrow>
+                            <IconButton
+                              aria-label="Clear start date"
+                              icon={<FiX />}
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => handleClear("start")}
+                            />
+                          </Tooltip>
+                        )}
+                      </HStack>
+                      <HStack spacing={2}>
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          colorScheme="blue"
+                          onClick={() => handleSetToday("start")}
+                          rounded={radiusStyle}
+                        >
+                          Set Hari Ini
+                        </Button>
+                        {startDate && (
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            colorScheme="gray"
+                            onClick={() => handleClear("start")}
+                            rounded={radiusStyle}
+                          >
+                            Reset
+                          </Button>
+                        )}
+                      </HStack>
+                    </VStack>
                   </FormControl>
 
+                  {/* End Date */}
                   <FormControl>
-                    <FormLabel>End Date</FormLabel>
-                    <VStack spacing={2} align="stretch">
+                    <FormLabel fontSize="sm" fontWeight="semibold">
+                      Tanggal Selesai (End Date)
+                    </FormLabel>
+                    <VStack align="stretch" spacing={2}>
                       <HStack>
                         <Input
                           type="date"
                           value={endDate}
                           onChange={(e) => setEndDate(e.target.value)}
                           min={startDate || undefined}
-                          isDisabled={!startDate || !isEndDateUnlocked}
+                          isDisabled={!startDate}
+                          placeholder="Pilih tanggal selesai..."
+                          rounded={radiusStyle}
                         />
-                        {startDate && !isEndDateUnlocked && (
+                        {endDate && (
+                          <Tooltip label="Kosongkan tanggal selesai (Jadikan Ongoing)" hasArrow>
+                            <IconButton
+                              aria-label="Clear end date"
+                              icon={<FiX />}
+                              size="sm"
+                              variant="ghost"
+                              colorScheme="red"
+                              onClick={() => handleClear("end")}
+                            />
+                          </Tooltip>
+                        )}
+                      </HStack>
+                      <HStack spacing={2}>
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          colorScheme="green"
+                          isDisabled={!startDate}
+                          onClick={() => handleSetToday("end")}
+                          rounded={radiusStyle}
+                        >
+                          Selesai Hari Ini
+                        </Button>
+                        {endDate && (
                           <Button
-                            leftIcon={<Icon as={FiCheckCircle} />}
-                            colorScheme="green"
-                            size="sm"
-                            onClick={handleOpenEndStageConfirm}
-                            flexShrink={0}
+                            size="xs"
+                            variant="ghost"
+                            colorScheme="orange"
+                            onClick={() => handleClear("end")}
+                            rounded={radiusStyle}
                           >
-                            End Stage
+                            Jadikan Ongoing
                           </Button>
                         )}
-                        {isEndDateUnlocked && endDate && (
-                          <IconButton
-                            aria-label="Clear end date"
-                            icon={<FiX />}
-                            size="sm"
-                            variant="ghost"
-                            colorScheme="red"
-                            onClick={() => handleClear("end")}
-                          />
-                        )}
                       </HStack>
-
-                      {/* Helper Text */}
-                      {!startDate && (
-                        <HStack spacing={1} fontSize="xs" color="orange.500">
-                          <Icon as={FiAlertTriangle} boxSize={3} />
-                          <Text>Start date must be set first</Text>
-                        </HStack>
-                      )}
-                      {startDate && !isEndDateUnlocked && (
-                        <HStack spacing={1} fontSize="xs" color="blue.500">
-                          <Icon as={FiInfo} boxSize={3} />
-                          <Text>Click "End Stage" to mark this stage as complete</Text>
-                        </HStack>
-                      )}
                     </VStack>
                   </FormControl>
+                </SimpleGrid>
 
-                  <Button
-                    colorScheme="blue"
-                    onClick={handleSave}
-                    isLoading={isSubmitting}
-                    size="md"
-                  >
-                    Save Changes
-                  </Button>
-                </VStack>
+                {/* Inline Helper / Warnings */}
+                {!startDate && (
+                  <HStack spacing={2} fontSize="xs" color="orange.500" mt={3} bg="orange.50" _dark={{ bg: "orange.950" }} p={2} rounded={radiusStyle}>
+                    <Icon as={FiAlertTriangle} boxSize={3.5} />
+                    <Text>Isi Tanggal Mulai terlebih dahulu untuk menjalankan tahapan ini.</Text>
+                  </HStack>
+                )}
+
+                {startDate && !endDate && (
+                  <HStack spacing={2} fontSize="xs" color="blue.500" mt={3} bg="blue.50" _dark={{ bg: "blue.950" }} p={2} rounded={radiusStyle}>
+                    <Icon as={FiInfo} boxSize={3.5} />
+                    <Text>Stage berstatus <b>Ongoing / Sedang Berjalan</b>. Isi Tanggal Selesai jika tahapan ini telah rampung.</Text>
+                  </HStack>
+                )}
+
+                {startDate && endDate && (
+                  <HStack spacing={2} fontSize="xs" color="green.600" mt={3} bg="green.50" _dark={{ bg: "green.950" }} p={2} rounded={radiusStyle}>
+                    <Icon as={FiCheckCircle} boxSize={3.5} />
+                    <Text>Stage ditandai <b>Selesai (Completed)</b> dengan durasi {stageMetrics.days} hari.</Text>
+                  </HStack>
+                )}
               </Box>
 
-              <Divider />
-
-              {/* Trigger Status Section */}
-              <Box
-                bg={colorMode === "light" ? "gray.50" : "gray.800"}
-                p={5}
-                rounded={radiusStyle}
-                borderWidth="1px"
-                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-              >
-                <HStack mb={4}>
-                  <Icon as={FiCheckCircle} boxSize={5} color={masterStageData?.stageTriggerStatus === "Y" ? "blue.500" : "gray.400"} />
-                  <Heading size="sm">SDLC Trigger Status</Heading>
-                  {isLoadingMasterStage && <Spinner size="sm" />}
-                </HStack>
-                <VStack spacing={3} align="stretch">
-                  <HStack justify="space-between">
-                    <Text fontSize="sm" color="gray.600">Trigger Status:</Text>
-                    <Badge colorScheme={masterStageData?.stageTriggerStatus === "Y" ? "blue" : "gray"} fontSize="sm">
-                      {masterStageData?.stageTriggerStatus === "Y" ? "ENABLED" : "DISABLED"}
+              {/* Trigger Automation Preview Card */}
+              {masterStageData?.stageTriggerStatus === "Y" && (
+                <Box
+                  bg={colorMode === "light" ? "purple.50" : "purple.950"}
+                  p={4}
+                  rounded={radiusStyle}
+                  borderWidth="1px"
+                  borderColor={colorMode === "light" ? "purple.200" : "purple.800"}
+                >
+                  <HStack mb={2} justify="space-between">
+                    <HStack>
+                      <Icon as={FiCheckCircle} color="purple.500" boxSize={4} />
+                      <Heading size="xs" color={colorMode === "light" ? "purple.800" : "purple.200"}>
+                        Otomatisasi Status SDLC (Project Status Trigger)
+                      </Heading>
+                    </HStack>
+                    <Badge colorScheme="purple" fontSize="2xs">
+                      TRIGGER AKTIF
                     </Badge>
                   </HStack>
-
-                  {masterStageData?.stageTriggerStatus === "Y" && (
-                    <>
-                      <HStack justify="space-between" align="start">
-                        <Text fontSize="sm" color="gray.600">Status Before Trigger:</Text>
-                        <Badge colorScheme="gray" fontSize="sm">
-                          {masterStageData?.stageStatusBeforeTiggerChange || "Not Set"}
-                        </Badge>
-                      </HStack>
-
-                      <HStack justify="space-between" align="start">
-                        <Text fontSize="sm" color="gray.600">Status After Trigger:</Text>
-                        <Badge colorScheme="green" fontSize="sm">
-                          {masterStageData?.stageStatusAfterTriggerChange || "Not Set"}
-                        </Badge>
-                      </HStack>
-
-                      {masterStageData?.stageStatusAfterTriggerChange && (
-                        <Box
-                          bg={colorMode === "light" ? "blue.50" : "blue.900"}
-                          p={3}
-                          rounded="md"
-                          borderLeft="4px"
-                          borderColor="blue.500"
-                        >
-                          <Text fontSize="xs" color={colorMode === "light" ? "blue.700" : "blue.200"}>
-                            When this stage ends, project status will automatically change to: <Text as="span" fontWeight="bold">{masterStageData?.stageStatusAfterTriggerChange}</Text>
-                          </Text>
-                        </Box>
-                      )}
-                    </>
-                  )}
-                </VStack>
-              </Box>
+                  <Text fontSize="xs" color={colorMode === "light" ? "purple.700" : "purple.300"} mb={2}>
+                    Menyelesaikan tahapan ini (mengisi Tanggal Selesai) akan secara otomatis memicu pembaruan status project:
+                  </Text>
+                  <HStack spacing={2} bg={colorMode === "light" ? "white" : "purple.900"} p={2.5} rounded={radiusStyle} borderWidth="1px" borderColor={colorMode === "light" ? "purple.100" : "purple.700"}>
+                    <Badge colorScheme="gray" fontSize="xs" px={2} py={0.5}>
+                      {masterStageData?.stageStatusBeforeTiggerChange || "STATUS SAAT INI"}
+                    </Badge>
+                    <Icon as={FiArrowRight} color="purple.500" />
+                    <Badge colorScheme="green" fontSize="xs" px={2} py={0.5}>
+                      {masterStageData?.stageStatusAfterTriggerChange || "STATUS BARU"}
+                    </Badge>
+                  </HStack>
+                </Box>
+              )}
 
               <Divider />
 
               {/* Reports Section */}
-              <Box
-                bg={colorMode === "light" ? "gray.50" : "gray.800"}
-                p={5}
-                rounded={radiusStyle}
-                borderWidth="1px"
-                borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
-              >
-                <HStack justify="space-between" mb={4}>
-                  <HStack>
-                    <Icon as={FiFileText} boxSize={5} color="blue.500" />
-                    <Heading size="sm">Stage Reports</Heading>
+              <Box>
+                <HStack justify="space-between" mb={3}>
+                  <HStack spacing={2}>
+                    <Icon as={FiFileText} boxSize={4} color="blue.500" />
+                    <Heading size="xs" textTransform="uppercase" color="gray.500" letterSpacing="wider">
+                      Stage Activity Reports & Notes
+                    </Heading>
                     {reports.length > 0 && (
-                      <Badge colorScheme="blue" fontSize="xs">
+                      <Badge colorScheme="blue" fontSize="2xs" rounded="full">
                         {reports.length}
                       </Badge>
                     )}
@@ -569,100 +638,112 @@ const UpdateStageDatesModal = ({
                   <Button
                     leftIcon={<FiPlus />}
                     colorScheme="blue"
-                    size="sm"
+                    size="xs"
                     onClick={openAddReportModal}
+                    rounded={radiusStyle}
                   >
-                    Add Report
+                    Tambah Catatan
                   </Button>
                 </HStack>
 
                 {isLoadingReports && page === 1 ? (
-                  <HStack justify="center" py={8}>
-                    <Spinner size="sm" />
-                    <Text fontSize="sm">Loading reports...</Text>
+                  <HStack justify="center" py={6}>
+                    <Spinner size="sm" color="blue.500" />
+                    <Text fontSize="xs" color="gray.500">Memuat catatan stage...</Text>
                   </HStack>
                 ) : reports.length === 0 ? (
-                  <Box textAlign="center" py={8}>
-                    <Icon as={FiFileText} boxSize={10} color="gray.400" mb={3} />
-                    <Text color="gray.500" fontSize="sm" mb={2}>No reports yet</Text>
-                    <Text color="gray.400" fontSize="xs" mb={4}>
-                      Track progress, blockers, and milestones
+                  <Box
+                    textAlign="center"
+                    py={6}
+                    borderWidth="1px"
+                    borderStyle="dashed"
+                    borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                    rounded={radiusStyle}
+                  >
+                    <Icon as={FiFileText} boxSize={8} color="gray.400" mb={2} />
+                    <Text color="gray.500" fontSize="xs" mb={2}>
+                      Belum ada catatan aktivitas atau blocker untuk tahapan ini.
                     </Text>
                     <Button
                       leftIcon={<FiPlus />}
                       colorScheme="blue"
                       variant="outline"
-                      size="sm"
+                      size="xs"
                       onClick={openAddReportModal}
+                      rounded={radiusStyle}
                     >
-                      Add First Report
+                      Buat Catatan Pertama
                     </Button>
                   </Box>
                 ) : (
                   <VStack spacing={3} align="stretch">
                     {reports.map((report) => (
-                      <Card key={report.id} variant="outline" size="sm" rounded={radiusStyle}>
-                        <CardBody py={3}>
+                      <Card
+                        key={report.id}
+                        variant="outline"
+                        size="sm"
+                        rounded={radiusStyle}
+                        borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+                      >
+                        <CardBody py={3} px={4}>
                           <VStack align="stretch" spacing={2}>
                             <HStack justify="space-between" align="start">
-                              <Badge colorScheme={getStatusColor(report.statusLabel)} fontSize="xs">
-                                {report.statusLabel}
-                              </Badge>
+                              <HStack spacing={2}>
+                                <Badge colorScheme={getStatusColor(report.statusLabel)} fontSize="xs" rounded="sm">
+                                  {report.statusLabel}
+                                </Badge>
+                                {(report.reportStartDate || report.reportEndDate) && (
+                                  <HStack spacing={1} fontSize="2xs" color="gray.500">
+                                    <Icon as={FiCalendar} />
+                                    <Text>
+                                      {report.reportStartDate && report.reportEndDate
+                                        ? `${formatDate(report.reportStartDate)} - ${formatDate(report.reportEndDate)}`
+                                        : report.reportStartDate
+                                        ? `Mulai: ${formatDate(report.reportStartDate)}`
+                                        : `Target: ${formatDate(report.reportEndDate)}`}
+                                    </Text>
+                                  </HStack>
+                                )}
+                              </HStack>
                               <HStack spacing={1}>
-                                <IconButton
-                                  aria-label="Edit"
-                                  icon={<FiEdit2 />}
-                                  size="xs"
-                                  variant="ghost"
-                                  onClick={() => openEditReportModal(report.id)}
-                                />
-                                <IconButton
-                                  aria-label="Delete"
-                                  icon={<FiTrash2 />}
-                                  size="xs"
-                                  variant="ghost"
-                                  colorScheme="red"
-                                  onClick={() => handleDeleteReport(report.id)}
-                                />
+                                <Tooltip label="Edit Catatan" hasArrow>
+                                  <IconButton
+                                    aria-label="Edit"
+                                    icon={<FiEdit2 />}
+                                    size="xs"
+                                    variant="ghost"
+                                    onClick={() => openEditReportModal(report.id)}
+                                  />
+                                </Tooltip>
+                                <Tooltip label="Hapus Catatan" hasArrow>
+                                  <IconButton
+                                    aria-label="Delete"
+                                    icon={<FiTrash2 />}
+                                    size="xs"
+                                    variant="ghost"
+                                    colorScheme="red"
+                                    onClick={() => handleDeleteReport(report.id)}
+                                  />
+                                </Tooltip>
                               </HStack>
                             </HStack>
 
-                            <Text fontSize="sm" whiteSpace="pre-wrap" noOfLines={2}>
+                            <Text fontSize="xs" whiteSpace="pre-wrap" color={colorMode === "light" ? "gray.700" : "gray.300"}>
                               {report.reportNote}
                             </Text>
 
-                            {(report.reportStartDate || report.reportEndDate) && (
-                              <HStack spacing={2} fontSize="xs" color="gray.600" flexWrap="wrap">
-                                <Icon as={FiCheckCircle} boxSize={3} />
-                                {report.reportStartDate && report.reportEndDate ? (
-                                  <Text>
-                                    {new Date(report.reportStartDate).toLocaleDateString()} - {new Date(report.reportEndDate).toLocaleDateString()}
-                                  </Text>
-                                ) : report.reportStartDate ? (
-                                  <Text>Started: {new Date(report.reportStartDate).toLocaleDateString()}</Text>
-                                ) : report.reportEndDate ? (
-                                  <Text>Due: {new Date(report.reportEndDate).toLocaleDateString()}</Text>
-                                ) : null}
-                              </HStack>
-                            )}
-
                             {report.tagsReport && (
                               <HStack spacing={1} flexWrap="wrap">
-                                {report.tagsReport.split(",").slice(0, 3).map((tag, i) => (
-                                  <Badge key={i} variant="subtle" colorScheme="gray" fontSize="2xs">
-                                    {tag.trim()}
+                                {report.tagsReport.split(",").map((tag, i) => (
+                                  <Badge key={i} variant="subtle" colorScheme="gray" fontSize="2xs" rounded="sm">
+                                    #{tag.trim()}
                                   </Badge>
                                 ))}
-                                {report.tagsReport.split(",").length > 3 && (
-                                  <Badge variant="subtle" colorScheme="gray" fontSize="2xs">
-                                    +{report.tagsReport.split(",").length - 3}
-                                  </Badge>
-                                )}
                               </HStack>
                             )}
 
-                            <HStack justify="space-between" fontSize="xs" color="gray.500">
-                              <Text>{report.createdByName}</Text>
+                            <HStack justify="space-between" fontSize="2xs" color="gray.400" pt={1} borderTopWidth="1px" borderColor={colorMode === "light" ? "gray.100" : "gray.750"}>
+                              <Text>Oleh: {report.createdByName || "System"}</Text>
                               <Text>{formatDate(report.createdAt)}</Text>
                             </HStack>
                           </VStack>
@@ -672,12 +753,13 @@ const UpdateStageDatesModal = ({
 
                     {reports.length >= pageSize && (
                       <Button
-                        variant="outline"
-                        size="sm"
+                        variant="ghost"
+                        size="xs"
                         onClick={handleLoadMore}
                         isLoading={isLoadingReports}
+                        rounded={radiusStyle}
                       >
-                        Load More
+                        Muat Lebih Banyak Catatan...
                       </Button>
                     )}
                   </VStack>
@@ -686,10 +768,22 @@ const UpdateStageDatesModal = ({
             </VStack>
           </ModalBody>
 
-          <ModalFooter>
-            <Button variant="ghost" onClick={onClose}>
-              Close
-            </Button>
+          <ModalFooter borderTopWidth="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"} py={3}>
+            <HStack spacing={3} justify="flex-end" w="full">
+              <Button variant="ghost" size="sm" onClick={onClose} rounded={radiusStyle}>
+                Batal
+              </Button>
+              <Button
+                colorScheme="blue"
+                size="sm"
+                onClick={handleSave}
+                isLoading={isSubmitting}
+                leftIcon={<FiCheck />}
+                rounded={radiusStyle}
+              >
+                Simpan Perubahan Stage
+              </Button>
+            </HStack>
           </ModalFooter>
         </ModalContent>
       </Modal>
@@ -705,157 +799,6 @@ const UpdateStageDatesModal = ({
         reportId={editingReportId}
         onSuccess={handleReportFormSuccess}
       />
-
-      {/* End Stage Confirmation Modal */}
-      <Modal isOpen={openConfirmEndStage} onClose={() => setOpenConfirmEndStage(false)} isCentered>
-        <ModalOverlay bg="blackAlpha.500" backdropFilter="blur(8px)" />
-        <ModalContent rounded={radiusStyle}>
-          <ModalHeader bg="orange.500" color="white" roundedTop={radiusStyle}>
-            <HStack>
-              <Icon as={FiAlertTriangle} boxSize={5} />
-              <Text>End Stage - {stage.stageName}</Text>
-            </HStack>
-          </ModalHeader>
-          <ModalCloseButton color="white" />
-          <ModalBody py={6}>
-            <VStack spacing={4} align="stretch">
-              <HStack spacing={2} align="flex-start">
-                <Icon as={FiAlertTriangle} color="orange.500" boxSize={5} mt={0.5} />
-                <Box>
-                  <Text fontWeight="bold" color="orange.500">WARNING: End Stage Action</Text>
-                  <Text mt={2}>Are you sure you want to end this stage?</Text>
-                </Box>
-              </HStack>
-
-              <Card bg={colorMode === "light" ? "orange.50" : "orange.900"} borderColor="orange.200" borderWidth="1px">
-                <CardBody>
-                  <HStack spacing={2} align="flex-start">
-                    <Icon as={FiAlertTriangle} color="orange.500" boxSize={4} mt={0.5} />
-                    <Box>
-                      <Text fontWeight="bold" fontSize="sm">IMPORTANT:</Text>
-                      <Text fontSize="sm" mt={1}>
-                        Setting the end date will mark this stage as COMPLETE and will affect the SDLC progression tracking.
-                      </Text>
-                    </Box>
-                  </HStack>
-                </CardBody>
-              </Card>
-
-              <Box>
-                <HStack spacing={2} mb={2}>
-                  <Icon as={FiInfo} color="blue.500" />
-                  <Text fontWeight="bold" fontSize="sm">Stage Information:</Text>
-                </HStack>
-                <VStack align="stretch" spacing={1} pl={6}>
-                  <Text fontSize="sm">• Current Stage: {stage.stageName}</Text>
-                  <Text fontSize="sm">• Start Date: {startDate ? new Date(startDate).toLocaleDateString() : 'Not set'}</Text>
-                  <Text fontSize="sm">• End Date: Will be set to current date</Text>
-                </VStack>
-              </Box>
-
-              <HStack spacing={2} align="flex-start">
-                <Icon as={FiCheckCircle} color="green.500" boxSize={4} mt={0.5} />
-                <Text fontSize="sm">
-                  This action indicates that all work for this stage is finished and the stage is ready to be marked as complete.
-                </Text>
-              </HStack>
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <HStack spacing={3}>
-              <Button leftIcon={<FiX />} onClick={() => setOpenConfirmEndStage(false)}>
-                Close
-              </Button>
-              <Button
-                leftIcon={<FiCheck />}
-                colorScheme="orange"
-                onClick={() => {
-                  setOpenConfirmEndStage(false);
-                  handleConfirmEndStage();
-                }}
-                isDisabled={countdown > 0}
-              >
-                {countdown > 0 ? `Wait ${countdown}s` : `Yes, End Stage`}
-              </Button>
-            </HStack>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
-      {/* Clear End Date Confirmation Modal */}
-      <Modal isOpen={openConfirmClearEndDate} onClose={() => setOpenConfirmClearEndDate(false)} isCentered>
-        <ModalOverlay bg="blackAlpha.500" backdropFilter="blur(8px)" />
-        <ModalContent rounded={radiusStyle}>
-          <ModalHeader bg="orange.500" color="white" roundedTop={radiusStyle}>
-            <HStack>
-              <Icon as={FiAlertTriangle} boxSize={5} />
-              <Text>Clear End Date - {stage.stageName}</Text>
-            </HStack>
-          </ModalHeader>
-          <ModalCloseButton color="white" />
-          <ModalBody py={6}>
-            <VStack spacing={4} align="stretch">
-              <HStack spacing={2} align="flex-start">
-                <Icon as={FiAlertTriangle} color="orange.500" boxSize={5} mt={0.5} />
-                <Box>
-                  <Text fontWeight="bold" color="orange.500">WARNING: Clear End Date Action</Text>
-                  <Text mt={2}>Are you sure you want to clear the end date?</Text>
-                </Box>
-              </HStack>
-
-              <Card bg={colorMode === "light" ? "orange.50" : "orange.900"} borderColor="orange.200" borderWidth="1px">
-                <CardBody>
-                  <HStack spacing={2} align="flex-start">
-                    <Icon as={FiAlertTriangle} color="orange.500" boxSize={4} mt={0.5} />
-                    <Box>
-                      <Text fontWeight="bold" fontSize="sm">IMPORTANT:</Text>
-                      <Text fontSize="sm" mt={1}>
-                        Clearing the end date will mark this stage as INCOMPLETE and will update the SDLC progression tracking.
-                      </Text>
-                    </Box>
-                  </HStack>
-                </CardBody>
-              </Card>
-
-              <Box>
-                <HStack spacing={2} mb={2}>
-                  <Icon as={FiInfo} color="blue.500" />
-                  <Text fontWeight="bold" fontSize="sm">Stage Information:</Text>
-                </HStack>
-                <VStack align="stretch" spacing={1} pl={6}>
-                  <Text fontSize="sm">• Current Stage: {stage.stageName}</Text>
-                  <Text fontSize="sm">• Current End Date: {endDate ? new Date(endDate).toLocaleDateString() : 'Not set'}</Text>
-                </VStack>
-              </Box>
-
-              <HStack spacing={2} align="flex-start">
-                <Icon as={FiAlertTriangle} color="orange.500" boxSize={4} mt={0.5} />
-                <Text fontSize="sm">
-                  This action indicates that work for this stage is not yet finished and will revert the completion status.
-                </Text>
-              </HStack>
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <HStack spacing={3}>
-              <Button leftIcon={<FiX />} onClick={() => setOpenConfirmClearEndDate(false)}>
-                Close
-              </Button>
-              <Button
-                leftIcon={<FiCheck />}
-                colorScheme="orange"
-                onClick={() => {
-                  setOpenConfirmClearEndDate(false);
-                  handleConfirmClearEndDate();
-                }}
-                isDisabled={countdown > 0}
-              >
-                {countdown > 0 ? `Wait ${countdown}s` : `Yes, Clear End Date`}
-              </Button>
-            </HStack>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
     </>
   );
 };

@@ -1204,6 +1204,14 @@ interface useProjectsServices {
     token: string
   ) => Promise<ApiGenericResponse<ProjectSdlcStageResponse[] | null> | null>;
 
+  UpdateStatusProject: (
+    data: {
+      projectId: string;
+      projectStatus: string;
+    },
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+
   UpdateProjectSdlcStageDates: (
     stageId: string,
     startDate: string | null,
@@ -4578,6 +4586,43 @@ const useProjects = (): useProjectsServices => {
     }
   };
 
+  const UpdateStatusProject = async (
+    data: {
+      projectId: string;
+      projectStatus: string;
+    },
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+    const PathEndpoint = "/v1/Projects/update/status";
+
+    try {
+      const response = await axiosInstance.post<ApiGenericResponse<string>>(
+        `${UrlEndpoint}${PathEndpoint}`,
+        data,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "Error updating project status");
+        return errorResponse;
+      }
+      setError("Unknown error occurred");
+      return {
+        statusCode: RES_CODE_SERVER_ERROR,
+        data: null,
+        message: "Error connect to api",
+        error: null,
+      };
+    }
+  };
+
   const UpdateProjectSdlcStageDates = async (
     stageId: string,
     startDate: string | null,
@@ -4908,6 +4953,7 @@ const useProjects = (): useProjectsServices => {
 
     SetupProjectSdlc,
     GetProjectSdlcStages,
+    UpdateStatusProject,
     UpdateProjectSdlcStageDates,
     ListProjectSdlcStageReports,
     GetProjectSdlcStagesWithReports,

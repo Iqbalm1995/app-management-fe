@@ -20,12 +20,17 @@ import {
   HStack,
   Input,
   Badge,
+  SimpleGrid,
+  Box,
+  Heading,
+  Icon,
 } from "@chakra-ui/react";
 import { radiusStyle, RES_CODE_OK } from "@/app/constants/applicationConstants";
 import useProjects from "@/app/services/useProjects";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import InputTagsArea from "@/app/components/inputProps/InputMultiTagsArea";
 import { formatDateWithLabels } from "@/app/helper/MasterHelper";
+import { FiCheck, FiFileText } from "react-icons/fi";
 
 interface StageReportFormModalProps {
   isOpen: boolean;
@@ -87,15 +92,14 @@ const StageReportFormModal = ({
       setReportNote(response.data.reportNote);
       setTagsReport(response.data.tagsReport || "");
       setStatusLabel(response.data.statusLabel);
-      
-      // Convert ISO datetime to YYYY-MM-DD format for date input
+
       if (response.data.reportStartDate) {
         const startDate = new Date(response.data.reportStartDate);
-        setReportStartDate(startDate.toISOString().split('T')[0]);
+        setReportStartDate(startDate.toISOString().split("T")[0]);
       }
       if (response.data.reportEndDate) {
         const endDate = new Date(response.data.reportEndDate);
-        setReportEndDate(endDate.toISOString().split('T')[0]);
+        setReportEndDate(endDate.toISOString().split("T")[0]);
       }
     }
     setIsLoading(false);
@@ -112,7 +116,15 @@ const StageReportFormModal = ({
   const handleSubmit = async () => {
     if (!reportNote.trim()) {
       showToast({
-        description: "Report note is required",
+        description: "Catatan report wajib diisi",
+        statusToast: "warning",
+      });
+      return;
+    }
+
+    if (reportStartDate && reportEndDate && reportStartDate > reportEndDate) {
+      showToast({
+        description: "Tanggal selesai report tidak boleh lebih awal dari tanggal mulai",
         statusToast: "warning",
       });
       return;
@@ -151,19 +163,19 @@ const StageReportFormModal = ({
 
       if (response && response.statusCode === RES_CODE_OK) {
         showToast({
-          description: `Report ${isEditMode ? "updated" : "created"} successfully`,
+          description: `Catatan report berhasil ${isEditMode ? "diperbarui" : "dibuat"}`,
           statusToast: "success",
         });
         onSuccess();
       } else {
         showToast({
-          description: response?.message || `Failed to ${isEditMode ? "update" : "create"} report`,
+          description: response?.message || `Gagal ${isEditMode ? "memperbarui" : "membuat"} report`,
           statusToast: "error",
         });
       }
     } catch (error) {
       showToast({
-        description: "An error occurred",
+        description: "Terjadi kesalahan saat menyimpan catatan report",
         statusToast: "error",
       });
     } finally {
@@ -173,98 +185,120 @@ const StageReportFormModal = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="xl">
-      <ModalOverlay />
+      <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(4px)" />
       <ModalContent rounded={radiusStyle}>
-        <ModalHeader>{isEditMode ? "Edit" : "Add"} Stage Report</ModalHeader>
-        <ModalCloseButton />
-        <ModalBody>
+        <ModalHeader borderBottomWidth="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"} py={4}>
+          <HStack spacing={3}>
+            <Box
+              p={2}
+              bg={colorMode === "light" ? "blue.50" : "blue.900"}
+              color="blue.500"
+              rounded={radiusStyle}
+            >
+              <Icon as={FiFileText} boxSize={5} />
+            </Box>
+            <Box>
+              <Heading size="sm">{isEditMode ? "Edit" : "Tambah"} Catatan Stage Report</Heading>
+            </Box>
+          </HStack>
+        </ModalHeader>
+        <ModalCloseButton mt={2} />
+
+        <ModalBody py={5}>
           {isLoading ? (
             <HStack justify="center" py={8}>
-              <Spinner />
+              <Spinner color="blue.500" />
             </HStack>
           ) : (
             <VStack spacing={4} align="stretch">
               <FormControl isRequired>
-                <FormLabel>Report Note</FormLabel>
+                <FormLabel fontSize="sm" fontWeight="semibold">
+                  Catatan Aktivitas / Kendala / Progress
+                </FormLabel>
                 <Textarea
                   value={reportNote}
                   onChange={(e) => setReportNote(e.target.value)}
-                  placeholder="Enter report details..."
-                  rows={6}
+                  placeholder="Tuliskan catatan detail progres atau kendala pada tahapan ini..."
+                  rows={4}
+                  rounded={radiusStyle}
                 />
               </FormControl>
 
               <FormControl isRequired>
-                <FormLabel>Status</FormLabel>
+                <FormLabel fontSize="sm" fontWeight="semibold">Status Aktivitas</FormLabel>
                 <Select
                   value={statusLabel}
                   onChange={(e) => setStatusLabel(e.target.value)}
+                  rounded={radiusStyle}
                 >
-                  <option value="In Progress">In Progress</option>
-                  <option value="Completed">Completed</option>
-                  <option value="Blocked">Blocked</option>
-                  <option value="Under Review">Under Review</option>
-                  <option value="On Hold">On Hold</option>
+                  <option value="In Progress">In Progress (Sedang Dikerjakan)</option>
+                  <option value="Completed">Completed (Selesai)</option>
+                  <option value="Blocked">Blocked (Terkendala / Menunggu)</option>
+                  <option value="Under Review">Under Review (Sedang Direview)</option>
+                  <option value="On Hold">On Hold (Ditunda)</option>
                 </Select>
               </FormControl>
 
-              <FormControl>
-                <FormLabel>Report Start Date</FormLabel>
-                <VStack spacing={2} align="stretch">
-                  <Input
-                    type="date"
-                    value={reportStartDate}
-                    onChange={(e) => setReportStartDate(e.target.value)}
-                  />
-                  {reportStartDate && (
-                    <HStack spacing={2} fontSize="sm">
-                      <Badge colorScheme="blue">
-                        W{formatDateWithLabels(reportStartDate).week}
-                      </Badge>
-                      <Badge colorScheme="purple">
-                        Q{formatDateWithLabels(reportStartDate).quarter}
-                      </Badge>
-                      <Badge colorScheme="gray">
-                        {formatDateWithLabels(reportStartDate).year}
-                      </Badge>
-                    </HStack>
-                  )}
-                </VStack>
-              </FormControl>
+              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                <FormControl>
+                  <FormLabel fontSize="sm" fontWeight="semibold">Tanggal Mulai (Opsional)</FormLabel>
+                  <VStack spacing={2} align="stretch">
+                    <Input
+                      type="date"
+                      value={reportStartDate}
+                      onChange={(e) => setReportStartDate(e.target.value)}
+                      rounded={radiusStyle}
+                    />
+                    {reportStartDate && (
+                      <HStack spacing={1} fontSize="xs">
+                        <Badge colorScheme="blue" fontSize="2xs">
+                          W{formatDateWithLabels(reportStartDate).week}
+                        </Badge>
+                        <Badge colorScheme="purple" fontSize="2xs">
+                          Q{formatDateWithLabels(reportStartDate).quarter}
+                        </Badge>
+                        <Badge colorScheme="gray" fontSize="2xs">
+                          {formatDateWithLabels(reportStartDate).year}
+                        </Badge>
+                      </HStack>
+                    )}
+                  </VStack>
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel fontSize="sm" fontWeight="semibold">Tanggal Target / Selesai (Opsional)</FormLabel>
+                  <VStack spacing={2} align="stretch">
+                    <Input
+                      type="date"
+                      value={reportEndDate}
+                      onChange={(e) => setReportEndDate(e.target.value)}
+                      min={reportStartDate || undefined}
+                      rounded={radiusStyle}
+                    />
+                    {reportEndDate && (
+                      <HStack spacing={1} fontSize="xs">
+                        <Badge colorScheme="blue" fontSize="2xs">
+                          W{formatDateWithLabels(reportEndDate).week}
+                        </Badge>
+                        <Badge colorScheme="purple" fontSize="2xs">
+                          Q{formatDateWithLabels(reportEndDate).quarter}
+                        </Badge>
+                        <Badge colorScheme="gray" fontSize="2xs">
+                          {formatDateWithLabels(reportEndDate).year}
+                        </Badge>
+                      </HStack>
+                    )}
+                  </VStack>
+                </FormControl>
+              </SimpleGrid>
 
               <FormControl>
-                <FormLabel>Report End Date</FormLabel>
-                <VStack spacing={2} align="stretch">
-                  <Input
-                    type="date"
-                    value={reportEndDate}
-                    onChange={(e) => setReportEndDate(e.target.value)}
-                    min={reportStartDate || undefined}
-                    isDisabled={!reportStartDate}
-                  />
-                  {reportEndDate && (
-                    <HStack spacing={2} fontSize="sm">
-                      <Badge colorScheme="blue">
-                        W{formatDateWithLabels(reportEndDate).week}
-                      </Badge>
-                      <Badge colorScheme="purple">
-                        Q{formatDateWithLabels(reportEndDate).quarter}
-                      </Badge>
-                      <Badge colorScheme="gray">
-                        {formatDateWithLabels(reportEndDate).year}
-                      </Badge>
-                    </HStack>
-                  )}
-                </VStack>
-              </FormControl>
-
-              <FormControl>
-                <FormLabel>Tags</FormLabel>
+                <FormLabel fontSize="sm" fontWeight="semibold">Tags / Label</FormLabel>
                 <InputTagsArea
                   name="tagsReport"
                   value={tagsReport}
                   onChange={(val) => setTagsReport(val)}
-                  placeholder="Type and press Enter or comma to add tags"
+                  placeholder="Ketik lalu tekan Enter atau koma untuk menambahkan tag"
                   isDisabled={isLoading}
                 />
               </FormControl>
@@ -272,18 +306,23 @@ const StageReportFormModal = ({
           )}
         </ModalBody>
 
-        <ModalFooter>
-          <Button variant="ghost" mr={3} onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            colorScheme="blue"
-            onClick={handleSubmit}
-            isLoading={isSubmitting}
-            isDisabled={isLoading}
-          >
-            {isEditMode ? "Update" : "Create"}
-          </Button>
+        <ModalFooter borderTopWidth="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"} py={3}>
+          <HStack spacing={3} justify="flex-end" w="full">
+            <Button variant="ghost" size="sm" onClick={onClose} rounded={radiusStyle}>
+              Batal
+            </Button>
+            <Button
+              colorScheme="blue"
+              size="sm"
+              onClick={handleSubmit}
+              isLoading={isSubmitting}
+              isDisabled={isLoading}
+              leftIcon={<FiCheck />}
+              rounded={radiusStyle}
+            >
+              {isEditMode ? "Perbarui Catatan" : "Simpan Catatan"}
+            </Button>
+          </HStack>
         </ModalFooter>
       </ModalContent>
     </Modal>

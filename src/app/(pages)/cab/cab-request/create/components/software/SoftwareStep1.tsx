@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
+  Avatar,
   Badge,
   Box,
   Button,
@@ -23,8 +24,8 @@ import {
   useColorMode,
   VStack,
 } from "@chakra-ui/react";
-import { Select as ChakraSelect } from "chakra-react-select";
-import { FiLayers, FiPlus, FiTrash2 } from "react-icons/fi";
+import { FiBriefcase, FiEdit2, FiGrid, FiLayers, FiPlus, FiSearch, FiTrash2, FiX } from "react-icons/fi";
+import { HiOutlineDesktopComputer } from "react-icons/hi";
 
 import { InputGroupPanel } from "@/app/components/customPanels";
 import { InputLayout } from "@/app/components/layoutContentBody";
@@ -32,6 +33,8 @@ import { ApplicationMasterResponse } from "@/app/services/useApps";
 import { RequirementsResponse } from "@/app/services/useRequirements";
 import { ProjectDataResponse } from "@/app/services/useProjects";
 import { CabSoftwareApplicationItem, CabSoftwareStep1 } from "@/app/types/cabTypes";
+import ApplicationPickerModal from "@/app/components/ApplicationPickerModal";
+import ProjectPickerModal from "@/app/components/ProjectPickerModal";
 import RadioGroupField from "../RadioGroupField";
 
 interface SoftwareStep1Props {
@@ -67,9 +70,50 @@ const SoftwareStep1 = ({
   const [appList, setAppList] = useState<ApplicationMasterResponse[]>([]);
   const [appLoading, setAppLoading] = useState(false);
 
+  // Application Picker Modal State
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [activePickingIndex, setActivePickingIndex] = useState<number>(0);
+
+  // Project Picker Modal State
+  const [isProjectPickerOpen, setIsProjectPickerOpen] = useState(false);
+  const [activeProjectPickingIndex, setActiveProjectPickingIndex] = useState<number>(0);
+
   // Map of per-app specific project options
   const [appProjectMap, setAppProjectMap] = useState<Record<string, ProjectOption[]>>({});
   const [appProjectLoading, setAppProjectLoading] = useState<Record<string, boolean>>({});
+
+  const handleProjectSelectedFromModal = (
+    index: number,
+    project: ProjectDataResponse
+  ) => {
+    const projectNum = project.projectNo || project.projectCode || project.id;
+    const newList = [...rawApplications];
+    newList[index] = {
+      ...newList[index],
+      rfcKodeProject: projectNum,
+      projectId: project.id || projectNum,
+    };
+    updateApplications(newList);
+  };
+
+  const handleAppSelectedFromModal = (index: number, app: ApplicationMasterResponse) => {
+    const newList = [...rawApplications];
+    const appName = app.appName || app.appShortName || "";
+    const category = app.appTypes || app.appTypeCustom || "";
+
+    newList[index] = {
+      ...newList[index],
+      applicationId: app.id,
+      applicationName: appName,
+      aplikasiKategori: category,
+      rfcKodeProject: "",
+      projectId: "",
+    };
+    updateApplications(newList);
+
+    // On-demand fetch projects specifically for this selected application
+    loadProjectsForApp(app.id);
+  };
 
   // Load apps on mount (fast lightweight POST)
   useEffect(() => {
@@ -126,32 +170,6 @@ const SoftwareStep1 = ({
     } finally {
       setAppProjectLoading((prev) => ({ ...prev, [appId]: false }));
     }
-  };
-
-  // Map apps to chakra-react-select options
-  const appOptions = appList.map((a) => ({
-    label: `${a.appShortName} — ${a.appName}`,
-    value: a.id,
-    data: a,
-  }));
-
-  // Multi-field smart filter for application dropdown to handle large list of apps
-  const filterAppOption = (candidate: any, input: string) => {
-    if (!input) return true;
-    const search = input.toLowerCase().trim();
-    const app = candidate.data?.data;
-    const label = (candidate.label || "").toLowerCase();
-    const shortName = (app?.appShortName || "").toLowerCase();
-    const appName = (app?.appName || "").toLowerCase();
-    const appTypes = (app?.appTypes || "").toLowerCase();
-    const appCode = (app?.appCode || "").toLowerCase();
-    return (
-      label.includes(search) ||
-      shortName.includes(search) ||
-      appName.includes(search) ||
-      appTypes.includes(search) ||
-      appCode.includes(search)
-    );
   };
 
   // Applications list from state or initialized with 1 item
@@ -248,58 +266,10 @@ const SoftwareStep1 = ({
     updateApplications(newList);
   };
 
-  // When application select changes for an item
-  const handleSelectApp = async (index: number, selectedOpt: any) => {
-    const newList = [...rawApplications];
-    if (!selectedOpt) {
-      newList[index] = {
-        ...newList[index],
-        applicationId: "",
-        applicationName: "",
-        aplikasiKategori: "",
-        rfcKodeProject: "",
-      };
-      updateApplications(newList);
-      return;
-    }
-
-    const app = appList.find((a) => a.id === selectedOpt.value);
-    const appName = app?.appName || selectedOpt.label;
-    const category = app?.appTypes || "";
-
-    newList[index] = {
-      ...newList[index],
-      applicationId: selectedOpt.value,
-      applicationName: appName,
-      aplikasiKategori: category,
-      rfcKodeProject: "",
-      projectId: "",
-    };
-    updateApplications(newList);
-
-    // On-demand fetch projects specifically for this selected application
-    loadProjectsForApp(selectedOpt.value);
-  };
-
   // Get project options for a specific application row
   const getProjectOptionsForRow = (appId: string): ProjectOption[] => {
     if (!appId) return [];
     return appProjectMap[appId] || [];
-  };
-
-  // Styles for chakra-react-select
-  const selectStyles = {
-    control: (provided: any) => ({
-      ...provided,
-      bg: isDark ? "gray.700" : "white",
-      borderColor: isDark ? "gray.600" : "gray.200",
-      rounded: "md",
-    }),
-    menu: (provided: any) => ({
-      ...provided,
-      bg: isDark ? "gray.700" : "white",
-      zIndex: 9999,
-    }),
   };
 
   const selectedAppsCount = rawApplications.filter((a) => a.applicationId).length;
@@ -356,12 +326,6 @@ const SoftwareStep1 = ({
             {rawApplications.map((appItem, index) => {
               const isMainApp = index === 0;
               const currentProjectOptions = getProjectOptionsForRow(appItem.applicationId);
-              const selectedAppOpt = appItem.applicationId
-                ? appOptions.find((o) => o.value === appItem.applicationId) || {
-                  label: appItem.applicationName,
-                  value: appItem.applicationId,
-                }
-                : null;
               const selectedProjectOpt = appItem.rfcKodeProject
                 ? currentProjectOptions.find((o) => o.value === appItem.rfcKodeProject) || {
                   label: appItem.rfcKodeProject,
@@ -453,113 +417,258 @@ const SoftwareStep1 = ({
                       <FormLabel fontSize="xs" fontWeight="medium" color={isDark ? "gray.300" : "gray.600"} mb={1}>
                         {isMainApp ? "Aplikasi Utama*" : "Aplikasi Terkait"}
                       </FormLabel>
-                      <ChakraSelect
-                        placeholder={
-                          appLoading
-                            ? "Memuat data aplikasi..."
-                            : isMainApp
-                              ? `Cari & pilih aplikasi utama (${appList.length} tersedia)...`
-                              : `Cari & pilih aplikasi terkait (${appList.length} tersedia)...`
-                        }
-                        options={appOptions}
-                        isLoading={appLoading}
-                        value={selectedAppOpt}
-                        onChange={(opt) => handleSelectApp(index, opt)}
-                        isClearable={!isMainApp}
-                        isSearchable
-                        filterOption={filterAppOption}
-                        chakraStyles={selectStyles}
-                        menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
-                        noOptionsMessage={({ inputValue }) =>
-                          inputValue
-                            ? `Aplikasi "${inputValue}" tidak ditemukan`
-                            : "Tidak ada data aplikasi"
-                        }
-                        formatOptionLabel={(opt: any) => {
-                          const app = opt.data;
-                          return (
-                            <Flex justify="space-between" align="center" w="full" py={0.5}>
-                              <VStack align="start" spacing={0} maxW="80%">
-                                <HStack spacing={2}>
-                                  <Text fontSize="xs" fontWeight="bold">
-                                    {app?.appShortName || opt.label}
-                                  </Text>
-                                  {app?.appTypes && (
+
+                      {appItem.applicationId ? (
+                        <Card
+                          p={2.5}
+                          bg={isDark ? "gray.800" : "white"}
+                          border="1px solid"
+                          borderColor={isDark ? "blue.600" : "blue.200"}
+                          borderRadius="md"
+                          shadow="xs"
+                        >
+                          <Flex justify="space-between" align="center" gap={2}>
+                            <HStack spacing={2.5} flex={1} minW={0}>
+                              <Avatar
+                                size="sm"
+                                name={appItem.applicationName || "APP"}
+                                bg="secondary.600"
+                                color="white"
+                                icon={<HiOutlineDesktopComputer fontSize="1rem" />}
+                                borderRadius="md"
+                              />
+                              <VStack align="start" spacing={0} flex={1} minW={0}>
+                                <Text
+                                  fontSize="xs"
+                                  fontWeight="bold"
+                                  noOfLines={1}
+                                  title={appItem.applicationName}
+                                  color={isDark ? "white" : "gray.800"}
+                                >
+                                  {appItem.applicationName}
+                                </Text>
+                                <HStack spacing={1.5}>
+                                  <Badge
+                                    fontSize="3xs"
+                                    colorScheme="blue"
+                                    variant="subtle"
+                                    px={1.5}
+                                    borderRadius="sm"
+                                  >
+                                    {appList.find((a) => a.id === appItem.applicationId)?.appCode ||
+                                      appList.find((a) => a.id === appItem.applicationId)?.appShortName ||
+                                      "CONNECTED"}
+                                  </Badge>
+                                  {appCategory && (
                                     <Badge
-                                      colorScheme="blue"
+                                      colorScheme="teal"
                                       variant="subtle"
                                       fontSize="3xs"
                                       rounded="full"
                                       px={1.5}
                                     >
-                                      {app.appTypes}
+                                      {appCategory}
                                     </Badge>
                                   )}
                                 </HStack>
-                                {app?.appName && app?.appName !== app?.appShortName && (
-                                  <Text
-                                    fontSize="2xs"
-                                    color={isDark ? "gray.400" : "gray.600"}
-                                    noOfLines={1}
-                                  >
-                                    {app.appName}
-                                  </Text>
-                                )}
                               </VStack>
-                            </Flex>
-                          );
-                        }}
-                      />
+                            </HStack>
+
+                            <HStack spacing={1}>
+                              <Button
+                                size="xs"
+                                variant="outline"
+                                colorScheme="blue"
+                                leftIcon={<FiEdit2 />}
+                                onClick={() => {
+                                  setActivePickingIndex(index);
+                                  setIsPickerOpen(true);
+                                }}
+                              >
+                                Ganti
+                              </Button>
+                              {!isMainApp && (
+                                <IconButton
+                                  size="xs"
+                                  aria-label="Clear"
+                                  icon={<FiX />}
+                                  variant="ghost"
+                                  colorScheme="gray"
+                                  onClick={() => {
+                                    const newList = [...rawApplications];
+                                    newList[index] = {
+                                      ...newList[index],
+                                      applicationId: "",
+                                      applicationName: "",
+                                      aplikasiKategori: "",
+                                      rfcKodeProject: "",
+                                      projectId: "",
+                                    };
+                                    updateApplications(newList);
+                                  }}
+                                />
+                              )}
+                            </HStack>
+                          </Flex>
+                        </Card>
+                      ) : (
+                        <Button
+                          size="md"
+                          w="full"
+                          h="42px"
+                          colorScheme="blue"
+                          variant="outline"
+                          leftIcon={<FiGrid />}
+                          onClick={() => {
+                            setActivePickingIndex(index);
+                            setIsPickerOpen(true);
+                          }}
+                          justifyContent="space-between"
+                          px={3.5}
+                          borderStyle="dashed"
+                          borderWidth="1.5px"
+                          bg={isDark ? "whiteAlpha.50" : "blue.50"}
+                          _hover={{
+                            bg: isDark ? "whiteAlpha.100" : "blue.100",
+                            borderColor: "blue.400",
+                          }}
+                        >
+                          <HStack spacing={2}>
+                            <Icon as={HiOutlineDesktopComputer} />
+                            <Text fontSize="xs" fontWeight="medium">
+                              {isMainApp ? "Cari & Pilih dari Katalog Aplikasi..." : "Cari & Pilih Aplikasi Terkait..."}
+                            </Text>
+                          </HStack>
+                          <Badge colorScheme="blue" variant="solid" fontSize="3xs" px={2} py={0.5} rounded="md">
+                            Buka Katalog
+                          </Badge>
+                        </Button>
+                      )}
                     </FormControl>
 
                     {/* 2. Related Project */}
                     <FormControl isRequired={isMainApp}>
                       <FormLabel fontSize="xs" fontWeight="medium" color={isDark ? "gray.300" : "gray.600"} mb={1}>
-                        {isMainApp ? "Project*" : "Project"}
+                        {isMainApp ? "Project Terkait*" : "Project Terkait"}
                       </FormLabel>
-                      <ChakraSelect
-                        placeholder={
-                          !appItem.applicationId
-                            ? "Pilih aplikasi terlebih dahulu..."
-                            : appProjectLoading[appItem.applicationId]
-                              ? "Memuat project..."
-                              : currentProjectOptions.length === 0
-                                ? "Tidak ada project terkait"
-                                : "Pilih project terkait..."
-                        }
-                        options={currentProjectOptions}
-                        isLoading={Boolean(appProjectLoading[appItem.applicationId])}
-                        isDisabled={!appItem.applicationId}
-                        value={selectedProjectOpt}
-                        onChange={(opt: any) => {
-                          const newList = [...rawApplications];
-                          newList[index] = {
-                            ...newList[index],
-                            rfcKodeProject: opt?.value || "",
-                            projectId: opt?.projectId || opt?.value || "",
-                          };
-                          updateApplications(newList);
-                        }}
-                        isClearable
-                        isSearchable
-                        chakraStyles={selectStyles}
-                        menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
-                        formatOptionLabel={(opt: any) => (
+
+                      {appItem.rfcKodeProject ? (
+                        <Card
+                          p={2.5}
+                          bg={isDark ? "gray.800" : "white"}
+                          border="1px solid"
+                          borderColor={isDark ? "purple.600" : "purple.200"}
+                          borderRadius="md"
+                          shadow="xs"
+                        >
+                          <Flex justify="space-between" align="center" gap={2}>
+                            <HStack spacing={2.5} flex={1} minW={0}>
+                              <Box
+                                p={1.5}
+                                bg={isDark ? "purple.900" : "purple.50"}
+                                color="purple.500"
+                                borderRadius="md"
+                              >
+                                <Icon as={FiBriefcase} boxSize={4} />
+                              </Box>
+                              <VStack align="start" spacing={0} flex={1} minW={0}>
+                                <HStack spacing={1.5} maxW="full">
+                                  <Badge
+                                    colorScheme="purple"
+                                    fontSize="2xs"
+                                    px={1.5}
+                                    borderRadius="sm"
+                                    fontFamily="mono"
+                                  >
+                                    {appItem.rfcKodeProject}
+                                  </Badge>
+                                </HStack>
+                                {selectedProjectOpt?.label && (
+                                  <Text
+                                    fontSize="xs"
+                                    fontWeight="medium"
+                                    noOfLines={1}
+                                    title={selectedProjectOpt.label}
+                                    color={isDark ? "white" : "gray.800"}
+                                  >
+                                    {String(selectedProjectOpt.label).replace(/^\[PROJECT\]\s*/, "")}
+                                  </Text>
+                                )}
+                              </VStack>
+                            </HStack>
+
+                            <HStack spacing={1}>
+                              <Button
+                                size="xs"
+                                variant="outline"
+                                colorScheme="purple"
+                                leftIcon={<FiEdit2 />}
+                                onClick={() => {
+                                  setActiveProjectPickingIndex(index);
+                                  setIsProjectPickerOpen(true);
+                                }}
+                              >
+                                Ganti
+                              </Button>
+                              <IconButton
+                                size="xs"
+                                aria-label="Clear project"
+                                icon={<FiX />}
+                                variant="ghost"
+                                colorScheme="gray"
+                                onClick={() => {
+                                  const newList = [...rawApplications];
+                                  newList[index] = {
+                                    ...newList[index],
+                                    rfcKodeProject: "",
+                                    projectId: "",
+                                  };
+                                  updateApplications(newList);
+                                }}
+                              />
+                            </HStack>
+                          </Flex>
+                        </Card>
+                      ) : (
+                        <Button
+                          size="md"
+                          w="full"
+                          h="42px"
+                          colorScheme="purple"
+                          variant="outline"
+                          leftIcon={<FiBriefcase />}
+                          isDisabled={!appItem.applicationId}
+                          onClick={() => {
+                            setActiveProjectPickingIndex(index);
+                            setIsProjectPickerOpen(true);
+                          }}
+                          justifyContent="space-between"
+                          px={3.5}
+                          borderStyle="dashed"
+                          borderWidth="1.5px"
+                          bg={isDark ? "whiteAlpha.50" : "purple.50"}
+                          _hover={{
+                            bg: isDark ? "whiteAlpha.100" : "purple.100",
+                            borderColor: "purple.400",
+                          }}
+                        >
                           <HStack spacing={2}>
-                            <Badge
-                              colorScheme="blue"
-                              fontSize="3xs"
-                              rounded="sm"
-                              px={1}
-                            >
-                              PROJECT
-                            </Badge>
-                            <Text fontSize="xs">
-                              {String(opt.label || "").replace(/^\[PROJECT\]\s*/, "")}
+                            <Icon as={FiBriefcase} />
+                            <Text fontSize="xs" fontWeight="medium">
+                              {!appItem.applicationId
+                                ? "Pilih aplikasi terlebih dahulu..."
+                                : isMainApp
+                                ? "Cari & Pilih Project Terkait..."
+                                : "Cari & Pilih Project..."}
                             </Text>
                           </HStack>
-                        )}
-                      />
+                          {appItem.applicationId && (
+                            <Badge colorScheme="purple" variant="solid" fontSize="3xs" px={2} py={0.5} rounded="md">
+                              Buka Project
+                            </Badge>
+                          )}
+                        </Button>
+                      )}
                     </FormControl>
                   </SimpleGrid>
                 </Box>
@@ -715,6 +824,55 @@ const SoftwareStep1 = ({
           </FormControl>
         </RadioGroupField>
       </InputGroupPanel>
+
+      {/* Application Picker Modal (Full Server-side search & pagination) */}
+      <ApplicationPickerModal
+        isOpen={isPickerOpen}
+        onClose={() => setIsPickerOpen(false)}
+        selectedApp={
+          rawApplications[activePickingIndex]?.applicationId
+            ? ({
+                id: rawApplications[activePickingIndex].applicationId,
+                appName: rawApplications[activePickingIndex].applicationName,
+                appTypes: rawApplications[activePickingIndex].aplikasiKategori,
+              } as ApplicationMasterResponse)
+            : null
+        }
+        onAppSelect={(app) => {
+          if (app) {
+            handleAppSelectedFromModal(activePickingIndex, app);
+          }
+        }}
+        tokenData={tokenData}
+        title={
+          activePickingIndex === 0
+            ? "Pilih Aplikasi Utama"
+            : `Pilih Aplikasi Terkait #${activePickingIndex}`
+        }
+        allowOtherCategory={true}
+      />
+
+      {/* Project Picker Modal (Scoped by application ID) */}
+      <ProjectPickerModal
+        isOpen={isProjectPickerOpen}
+        onClose={() => setIsProjectPickerOpen(false)}
+        onSelectProject={(proj) => {
+          handleProjectSelectedFromModal(activeProjectPickingIndex, proj);
+        }}
+        tokenData={tokenData}
+        appId={rawApplications[activeProjectPickingIndex]?.applicationId || null}
+        appName={rawApplications[activeProjectPickingIndex]?.applicationName || null}
+        selectedProjectId={
+          rawApplications[activeProjectPickingIndex]?.projectId ||
+          rawApplications[activeProjectPickingIndex]?.rfcKodeProject ||
+          null
+        }
+        title={
+          activeProjectPickingIndex === 0
+            ? "Pilih Project Terkait Aplikasi Utama"
+            : `Pilih Project Terkait Aplikasi #${activeProjectPickingIndex}`
+        }
+      />
     </VStack>
   );
 };
