@@ -253,7 +253,7 @@ export default function TopNavigationLanding() {
                       </VStack>
                     </MenuItem>
                     <MenuDivider />
-                    <Link href={"/dev"}>
+                    {/* <Link href={"/dev"}>
                       <MenuItem
                         icon={<FaTerminal />}
                         color={colorMode == "light" ? "purple.600" : "purple.300"}
@@ -266,7 +266,7 @@ export default function TopNavigationLanding() {
                       >
                         Focus Mode
                       </MenuItem>
-                    </Link>
+                    </Link> */}
                     <Link href={LINK_MENU_HOME}>
                       <MenuItem
                         icon={<RiHomeLine />}
@@ -350,7 +350,7 @@ const DesktopNav = () => {
         </Portal>
       )}
       <Stack direction={"row"} spacing={4} align="center">
-        {isAuthenticated && (
+        {/* {isAuthenticated && (
           <Link href={"/dev"} onClick={handleEnterDev}>
             <Button
               leftIcon={<FaTerminal />}
@@ -398,7 +398,7 @@ const DesktopNav = () => {
               Focus Mode
             </Button>
           </Link>
-        )}
+        )} */}
         {NAV_ITEMS_LANDING.map((navItem) => (
         <Box key={navItem.label}>
           <Popover trigger={"hover"} placement={"bottom-start"}>
@@ -519,7 +519,7 @@ const MobileNav = () => {
         bg={colorMode === "light" ? "white" : "gray.800"}
         rounded={"xl"}
       >
-        {isAuthenticated && (
+        {/* {isAuthenticated && (
           <Box py={2}>
             <Button
               leftIcon={<FaTerminal />}
@@ -538,7 +538,7 @@ const MobileNav = () => {
               Focus Mode
             </Button>
           </Box>
-        )}
+        )} */}
         {NAV_ITEMS_LANDING.map((navItem, idx) => (
           <MobileNavItem key={idx} {...navItem} />
         ))}
