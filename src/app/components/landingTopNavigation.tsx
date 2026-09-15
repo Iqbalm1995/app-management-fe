@@ -253,11 +253,7 @@ export default function TopNavigationLanding() {
                       </VStack>
                     </MenuItem>
                     <MenuDivider />
-<<<<<<< HEAD
                     <Link href={"/dev"} style={{ display: "none" }}>
-=======
-                    {/* <Link href={"/dev"}>
->>>>>>> refan-staging-prod/191125-merge
                       <MenuItem
                         icon={<FaTerminal />}
                         color={colorMode == "light" ? "purple.600" : "purple.300"}
@@ -270,7 +266,7 @@ export default function TopNavigationLanding() {
                       >
                         Focus Mode
                       </MenuItem>
-                    </Link> */}
+                    </Link>
                     <Link href={LINK_MENU_HOME}>
                       <MenuItem
                         icon={<RiHomeLine />}
@@ -354,13 +350,8 @@ const DesktopNav = () => {
         </Portal>
       )}
       <Stack direction={"row"} spacing={4} align="center">
-<<<<<<< HEAD
         {isAuthenticated && (
           <Link href={"/dev"} onClick={handleEnterDev} style={{ display: "none" }}>
-=======
-        {/* {isAuthenticated && (
-          <Link href={"/dev"} onClick={handleEnterDev}>
->>>>>>> refan-staging-prod/191125-merge
             <Button
               leftIcon={<FaTerminal />}
               size="sm"
@@ -407,7 +398,7 @@ const DesktopNav = () => {
               Focus Mode
             </Button>
           </Link>
-        )} */}
+        )}
         {NAV_ITEMS_LANDING.map((navItem) => (
         <Box key={navItem.label}>
           <Popover trigger={"hover"} placement={"bottom-start"}>
