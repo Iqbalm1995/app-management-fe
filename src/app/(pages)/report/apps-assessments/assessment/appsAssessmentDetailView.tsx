@@ -72,7 +72,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { FaArrowLeft } from "react-icons/fa6";
-import { FiActivity, FiAlertTriangle, FiCheck, FiInfo, FiLock, FiSave } from "react-icons/fi";
+import { FiActivity, FiAlertTriangle, FiCheck, FiInfo, FiLock, FiRotateCcw, FiSave } from "react-icons/fi";
 
 // --- helpers ---
 const evalOperator = (
@@ -259,14 +259,13 @@ export default function AppsAssessmentDetailView() {
     : false;
 
   // RTO/RPO completeness check for submit:
-  // RTO Suggestion: operator required + minutes > 0
-  // RTO IT: operator required + minutes > 0
-  // RPO: operator and value optional (can be null/0)
-  const isRtoRpoComplete =
-    !!rtoRpo.appsRtoSuggestionOperator &&
-    (rtoRpo.appsRtoSuggestionMinutes ?? 0) > 0 &&
+  // RTO IT: operator required + minutes > 0 (committed by app owner)
+  // RTO Suggestion & RPO: optional for PIC submission (reviewed by IAG)
+  const isRtoItFilled =
     !!rtoRpo.appsRtoItOperator &&
     (rtoRpo.appsRtoItMinutes ?? 0) > 0;
+
+  const isRtoRpoComplete = isRtoItFilled;
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -417,7 +416,7 @@ export default function AppsAssessmentDetailView() {
   // Eligible to fill RTO / RPO fields check
   const canEditAnyRtoRpo =
     (isEditable && (canEditRtoSuggestion || rpoUserOwnsAssessment)) ||
-    (isEditable && canEditRtoIt && (isRtoSuggestionFilled || rpoUserOwnsAssessment)) ||
+    (isEditable && canEditRtoIt) ||
     ((isEditable && canEditRpo) || canEditRpoWA2);
   const trueCount = Object.values(flags).filter((v) => v === "TRUE").length;
   const weight = weightMap[trueCount] ?? 0.2;
@@ -649,7 +648,7 @@ export default function AppsAssessmentDetailView() {
                             !isScoreComplete
                               ? "Assessment scores (CRT Score, Average, Weight, Final) must all be > 0"
                               : !isRtoRpoComplete
-                              ? "RTO Suggestion and RTO IT must have operator and value > 0"
+                              ? "RTO IT must have operator and value > 0"
                               : ""
                           }
                           onClick={() => setIsSubmitConfirmOpen(true)}
@@ -670,7 +669,7 @@ export default function AppsAssessmentDetailView() {
                             !isScoreComplete
                               ? "Assessment scores (CRT Score, Average, Weight, Final) must all be > 0"
                               : !isRtoRpoComplete
-                              ? "RTO Suggestion and RTO IT must have operator and value > 0"
+                              ? "RTO IT must have operator and value > 0"
                               : ""
                           }
                           onClick={async () => {
@@ -714,29 +713,50 @@ export default function AppsAssessmentDetailView() {
                     </Button>
                   )}
 
-                  {/* WA2: ALL_ACCESS — Revision (send batch back to DRAFT) */}
-                  {canOverrideWA2 && sourceParam !== "pending" && (
-                    <Button
-                      size="sm"
-                      bg="yellow.500"
-                      color="white"
-                      _hover={{ bg: "yellow.400" }}
-                      isLoading={revising}
-                      onClick={async () => {
-                        if (!data?.batchCode) return;
-                        setRevising(true);
-                        const res = await ReviseBatch(data.batchCode, tokenData);
-                        setRevising(false);
-                        if (res?.statusCode === RES_CODE_OK) {
-                          showToast({ description: "Batch revised back to DRAFT", statusToast: "success" });
-                          loadData();
-                        } else {
-                          showToast({ description: res?.message || "Revision failed", statusToast: "error" });
-                        }
-                      }}
+                  {/* Revision button (for Whitelisted / Admin / IAG) — only active when status is DECLINE */}
+                  {isWhitelisted && sourceParam !== "pending" && (
+                    <Tooltip
+                      label={
+                        !isDeclined
+                          ? `Revisi hanya dapat diproses saat status asesmen adalah DECLINE (Status saat ini: ${data?.statusReport || "-"})`
+                          : "Kembalikan batch asesmen ke proses revisi (reset status ke WAITING APPROVAL 1)"
+                      }
+                      fontSize="xs"
+                      hasArrow
+                      placement="top"
                     >
-                      Revision
-                    </Button>
+                      <Box display="inline-block">
+                        <Button
+                          size="sm"
+                          bg="yellow.500"
+                          color="white"
+                          _hover={{ bg: "yellow.400" }}
+                          leftIcon={<FiRotateCcw />}
+                          isLoading={revising}
+                          isDisabled={!isDeclined}
+                          onClick={async () => {
+                            if (!data?.batchCode) return;
+                            setRevising(true);
+                            const res = await ReviseBatch(data.batchCode, tokenData);
+                            setRevising(false);
+                            if (res?.statusCode === RES_CODE_OK) {
+                              showToast({
+                                description: "Batch reset to revision — all assessments back to WAITING APPROVAL 1",
+                                statusToast: "success",
+                              });
+                              loadData();
+                            } else {
+                              showToast({
+                                description: res?.message || "Revision failed",
+                                statusToast: "error",
+                              });
+                            }
+                          }}
+                        >
+                          Revision
+                        </Button>
+                      </Box>
+                    </Tooltip>
                   )}
 
                   {/* Approve/Decline — only for assigned approvers from pending page */}
@@ -1742,17 +1762,15 @@ export default function AppsAssessmentDetailView() {
                           ? "Only RTO Suggestion group can edit this field"
                           : undefined,
                         isFilled: !!rtoRpo.appsRtoSuggestionOperator && (rtoRpo.appsRtoSuggestionMinutes ?? 0) > 0,
-                        isRequired: true,
+                        isRequired: false,
                       },
                       {
                         label: "RTO IT",
                         opKey: "appsRtoItOperator",
                         minKey: "appsRtoItMinutes",
-                        canEdit: isEditable && canEditRtoIt && (isRtoSuggestionFilled || rpoUserOwnsAssessment),
+                        canEdit: isEditable && canEditRtoIt,
                         lockReason: !canEditRtoIt
                           ? "RPO group cannot edit RTO IT on apps they don't manage"
-                          : (!isRtoSuggestionFilled && !rpoUserOwnsAssessment)
-                          ? "Fill RTO Suggestion first before editing RTO IT"
                           : undefined,
                         isFilled: !!rtoRpo.appsRtoItOperator && (rtoRpo.appsRtoItMinutes ?? 0) > 0,
                         isRequired: true,

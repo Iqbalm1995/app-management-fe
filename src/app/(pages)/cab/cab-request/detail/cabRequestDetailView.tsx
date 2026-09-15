@@ -68,6 +68,7 @@ import {
   FiAlertTriangle,
   FiArrowLeft,
   FiArrowRight,
+  FiBriefcase,
   FiCalendar,
   FiCheck,
   FiCheckCircle,
@@ -77,6 +78,7 @@ import {
   FiEdit2,
   FiEye,
   FiFileText,
+  FiGrid,
   FiImage,
   FiInfo,
   FiLayers,
@@ -95,6 +97,7 @@ import {
   FiX,
   FiXCircle,
 } from "react-icons/fi";
+import { HiOutlineDesktopComputer } from "react-icons/hi";
 import { CreatableSelect, Select as ChakraReactSelect } from "chakra-react-select";
 
 import { HeaderContent } from "@/app/components/headerContent";
@@ -129,6 +132,8 @@ import {
 import { getDynamicCabActivities } from "@/app/json/cabRequestMock";
 import PicMigrasiField from "../create/components/PicMigrasiField";
 import CommitteeCabField from "../create/components/CommitteeCabField";
+import ApplicationPickerModal from "@/app/components/ApplicationPickerModal";
+import ProjectPickerModal from "@/app/components/ProjectPickerModal";
 
 interface ProjectOption {
   label: string;
@@ -273,6 +278,72 @@ const CabRequestDetailView = () => {
   const [appLoading, setAppLoading] = useState(false);
   const [appProjectMap, setAppProjectMap] = useState<Record<string, ProjectOption[]>>({});
   const [appProjectLoading, setAppProjectLoading] = useState<Record<string, boolean>>({});
+
+  // Application & Project Picker Modal State for Edit Mode
+  const [isAppPickerOpen, setIsAppPickerOpen] = useState(false);
+  const [activePickingAppIndex, setActivePickingAppIndex] = useState<number>(0);
+  const [isProjectPickerOpen, setIsProjectPickerOpen] = useState(false);
+  const [activePickingProjectIndex, setActivePickingProjectIndex] = useState<number>(0);
+
+  const handleAppSelectedFromModal = (index: number, app: ApplicationMasterResponse) => {
+    const currentApps = requestEditForm.applications && requestEditForm.applications.length > 0
+      ? requestEditForm.applications
+      : [
+          {
+            id: "app-main-0",
+            applicationId: requestEditForm.applicationId || "app-001",
+            applicationName: requestEditForm.applicationName || requestEditForm.projectName || "",
+            aplikasiKategori: requestEditForm.aplikasiKategori || "Transaksional",
+            rfcKodeProject: requestEditForm.rfcKodeProject || "",
+            itspKode: requestEditForm.itspKode || "",
+          },
+        ];
+    const updated = [...currentApps];
+    const appName = app.appName || app.appShortName || "";
+    const category = app.appTypes || app.appTypeCustom || updated[index]?.aplikasiKategori || "Transaksional";
+
+    updated[index] = {
+      ...updated[index],
+      applicationId: app.id,
+      applicationName: appName,
+      aplikasiKategori: category,
+      rfcKodeProject: "",
+      projectId: "",
+    };
+
+    setRequestEditForm({
+      ...requestEditForm,
+      applications: updated,
+    });
+
+    loadProjectsForApp(app.id, app.appShortName || app.appCode, app.reqParentId);
+  };
+
+  const handleProjectSelectedFromModal = (index: number, project: ProjectDataResponse) => {
+    const currentApps = requestEditForm.applications && requestEditForm.applications.length > 0
+      ? requestEditForm.applications
+      : [
+          {
+            id: "app-main-0",
+            applicationId: requestEditForm.applicationId || "app-001",
+            applicationName: requestEditForm.applicationName || requestEditForm.projectName || "",
+            aplikasiKategori: requestEditForm.aplikasiKategori || "Transaksional",
+            rfcKodeProject: requestEditForm.rfcKodeProject || "",
+            itspKode: requestEditForm.itspKode || "",
+          },
+        ];
+    const updated = [...currentApps];
+    const projectNum = project.projectNo || project.projectCode || project.id;
+    updated[index] = {
+      ...updated[index],
+      rfcKodeProject: projectNum,
+      projectId: project.id || projectNum,
+    };
+    setRequestEditForm({
+      ...requestEditForm,
+      applications: updated,
+    });
+  };
 
   const loadAppsOnly = async (token: string) => {
     if (!token) return;
@@ -2105,48 +2176,257 @@ const CabRequestDetailView = () => {
                                                 <FormLabel fontSize="xs" fontWeight="semibold" color="gray.500" mb={1}>
                                                   Pilih Aplikasi Terkait
                                                 </FormLabel>
-                                                <ChakraReactSelect
-                                                  isClearable
-                                                  isLoading={appLoading}
-                                                  placeholder="Cari atau pilih aplikasi terkait..."
-                                                  options={appOptions}
-                                                  value={
-                                                    app.applicationId
-                                                      ? appOptions.find((opt) => opt.value === app.applicationId) || {
-                                                        label: app.applicationName || "Aplikasi",
-                                                        value: app.applicationId,
-                                                        data: { appName: app.applicationName } as any,
-                                                      }
-                                                      : null
-                                                  }
-                                                  onChange={(opt: any) => handleSelectApp(actualIndex, opt)}
-                                                  filterOption={filterAppOption}
-                                                  chakraStyles={selectStyles}
-                                                />
+                                                {app.applicationId ? (
+                                                  <Card
+                                                    p={2.5}
+                                                    bg={colorMode === "light" ? "white" : "gray.800"}
+                                                    border="1px solid"
+                                                    borderColor={colorMode === "light" ? "blue.200" : "blue.600"}
+                                                    borderRadius="md"
+                                                    shadow="xs"
+                                                  >
+                                                    <Flex justify="space-between" align="center" gap={2}>
+                                                      <HStack spacing={2.5} flex={1} minW={0}>
+                                                        <Avatar
+                                                          size="sm"
+                                                          name={app.applicationName || "APP"}
+                                                          bg="secondary.600"
+                                                          color="white"
+                                                          icon={<HiOutlineDesktopComputer fontSize="1rem" />}
+                                                          borderRadius="md"
+                                                        />
+                                                        <VStack align="start" spacing={0} flex={1} minW={0}>
+                                                          <Text
+                                                            fontSize="xs"
+                                                            fontWeight="bold"
+                                                            noOfLines={1}
+                                                            title={app.applicationName}
+                                                            color={colorMode === "light" ? "gray.800" : "white"}
+                                                          >
+                                                            {app.applicationName}
+                                                          </Text>
+                                                          <HStack spacing={1.5}>
+                                                            <Badge
+                                                              fontSize="3xs"
+                                                              colorScheme="blue"
+                                                              variant="subtle"
+                                                              px={1.5}
+                                                              borderRadius="sm"
+                                                            >
+                                                              {appList.find((a) => a.id === app.applicationId)?.appCode ||
+                                                                appList.find((a) => a.id === app.applicationId)?.appShortName ||
+                                                                "CONNECTED"}
+                                                            </Badge>
+                                                            {app.aplikasiKategori && (
+                                                              <Badge
+                                                                colorScheme="teal"
+                                                                variant="subtle"
+                                                                fontSize="3xs"
+                                                                rounded="full"
+                                                                px={1.5}
+                                                              >
+                                                                {app.aplikasiKategori}
+                                                              </Badge>
+                                                            )}
+                                                          </HStack>
+                                                        </VStack>
+                                                      </HStack>
+
+                                                      <HStack spacing={1}>
+                                                        <Button
+                                                          size="xs"
+                                                          variant="outline"
+                                                          colorScheme="blue"
+                                                          leftIcon={<FiEdit2 />}
+                                                          onClick={() => {
+                                                            setActivePickingAppIndex(actualIndex);
+                                                            setIsAppPickerOpen(true);
+                                                          }}
+                                                        >
+                                                          Ganti
+                                                        </Button>
+                                                        <IconButton
+                                                          size="xs"
+                                                          aria-label="Clear"
+                                                          icon={<FiX />}
+                                                          variant="ghost"
+                                                          colorScheme="gray"
+                                                          onClick={() => {
+                                                            const updated = [...apps];
+                                                            updated[actualIndex] = {
+                                                              ...updated[actualIndex],
+                                                              applicationId: "",
+                                                              applicationName: "",
+                                                              aplikasiKategori: "",
+                                                              rfcKodeProject: "",
+                                                              projectId: "",
+                                                            };
+                                                            setRequestEditForm({
+                                                              ...requestEditForm,
+                                                              applications: updated,
+                                                            });
+                                                          }}
+                                                        />
+                                                      </HStack>
+                                                    </Flex>
+                                                  </Card>
+                                                ) : (
+                                                  <Button
+                                                    size="md"
+                                                    w="full"
+                                                    h="42px"
+                                                    colorScheme="blue"
+                                                    variant="outline"
+                                                    leftIcon={<FiGrid />}
+                                                    onClick={() => {
+                                                      setActivePickingAppIndex(actualIndex);
+                                                      setIsAppPickerOpen(true);
+                                                    }}
+                                                    justifyContent="space-between"
+                                                    px={3.5}
+                                                    borderStyle="dashed"
+                                                    borderWidth="1.5px"
+                                                    bg={colorMode === "light" ? "blue.50" : "whiteAlpha.50"}
+                                                    _hover={{
+                                                      bg: colorMode === "light" ? "blue.100" : "whiteAlpha.100",
+                                                      borderColor: "blue.400",
+                                                    }}
+                                                  >
+                                                    <HStack spacing={2}>
+                                                      <Icon as={HiOutlineDesktopComputer} />
+                                                      <Text fontSize="xs" fontWeight="medium">
+                                                        Cari & Pilih Aplikasi Terkait...
+                                                      </Text>
+                                                    </HStack>
+                                                    <Badge colorScheme="blue" variant="solid" fontSize="3xs" px={2} py={0.5} rounded="md">
+                                                      Buka Katalog
+                                                    </Badge>
+                                                  </Button>
+                                                )}
                                               </FormControl>
 
                                               <FormControl>
                                                 <FormLabel fontSize="xs" fontWeight="semibold" color="gray.500" mb={1}>
                                                   RFC / Nomor Project Terkait
                                                 </FormLabel>
-                                                <CreatableSelect
-                                                  isClearable
-                                                  isLoading={Boolean(app.applicationId && appProjectLoading[app.applicationId])}
-                                                  isDisabled={!app.applicationId}
-                                                  placeholder={app.applicationId ? "Pilih atau ketik RFC/Nomor Project..." : "Pilih aplikasi terlebih dahulu..."}
-                                                  options={getProjectOptionsForRow(app.applicationId)}
-                                                  value={
-                                                    app.rfcKodeProject
-                                                      ? {
-                                                        label: app.rfcKodeProject,
-                                                        value: app.rfcKodeProject,
-                                                      }
-                                                      : null
-                                                  }
-                                                  onChange={(opt: any) => handleSelectProject(actualIndex, opt)}
-                                                  onCreateOption={(val: string) => handleSelectProject(actualIndex, val)}
-                                                  chakraStyles={selectStyles}
-                                                />
+                                                {app.rfcKodeProject ? (
+                                                  <Card
+                                                    p={2.5}
+                                                    bg={colorMode === "light" ? "white" : "gray.800"}
+                                                    border="1px solid"
+                                                    borderColor={colorMode === "light" ? "purple.200" : "purple.600"}
+                                                    borderRadius="md"
+                                                    shadow="xs"
+                                                  >
+                                                    <Flex justify="space-between" align="center" gap={2}>
+                                                      <HStack spacing={2.5} flex={1} minW={0}>
+                                                        <Box
+                                                          p={1.5}
+                                                          bg={colorMode === "light" ? "purple.50" : "purple.900"}
+                                                          color="purple.500"
+                                                          borderRadius="md"
+                                                        >
+                                                          <Icon as={FiBriefcase} boxSize={4} />
+                                                        </Box>
+                                                        <VStack align="start" spacing={0} flex={1} minW={0}>
+                                                          <HStack spacing={1.5} maxW="full">
+                                                            <Badge
+                                                              colorScheme="purple"
+                                                              fontSize="2xs"
+                                                              px={1.5}
+                                                              borderRadius="sm"
+                                                              fontFamily="mono"
+                                                            >
+                                                              {app.rfcKodeProject}
+                                                            </Badge>
+                                                          </HStack>
+                                                          {getProjectOptionsForRow(app.applicationId).find((o) => o.value === app.rfcKodeProject)?.label && (
+                                                            <Text
+                                                              fontSize="xs"
+                                                              fontWeight="medium"
+                                                              noOfLines={1}
+                                                              title={getProjectOptionsForRow(app.applicationId).find((o) => o.value === app.rfcKodeProject)?.label}
+                                                              color={colorMode === "light" ? "gray.800" : "white"}
+                                                            >
+                                                              {String(getProjectOptionsForRow(app.applicationId).find((o) => o.value === app.rfcKodeProject)?.label).replace(/^\[PROJECT\]\s*/, "")}
+                                                            </Text>
+                                                          )}
+                                                        </VStack>
+                                                      </HStack>
+
+                                                      <HStack spacing={1}>
+                                                        <Button
+                                                          size="xs"
+                                                          variant="outline"
+                                                          colorScheme="purple"
+                                                          leftIcon={<FiEdit2 />}
+                                                          onClick={() => {
+                                                            setActivePickingProjectIndex(actualIndex);
+                                                            setIsProjectPickerOpen(true);
+                                                          }}
+                                                        >
+                                                          Ganti
+                                                        </Button>
+                                                        <IconButton
+                                                          size="xs"
+                                                          aria-label="Clear project"
+                                                          icon={<FiX />}
+                                                          variant="ghost"
+                                                          colorScheme="gray"
+                                                          onClick={() => {
+                                                            const updated = [...apps];
+                                                            updated[actualIndex] = {
+                                                              ...updated[actualIndex],
+                                                              rfcKodeProject: "",
+                                                              projectId: "",
+                                                            };
+                                                            setRequestEditForm({
+                                                              ...requestEditForm,
+                                                              applications: updated,
+                                                            });
+                                                          }}
+                                                        />
+                                                      </HStack>
+                                                    </Flex>
+                                                  </Card>
+                                                ) : (
+                                                  <Button
+                                                    size="md"
+                                                    w="full"
+                                                    h="42px"
+                                                    colorScheme="purple"
+                                                    variant="outline"
+                                                    leftIcon={<FiBriefcase />}
+                                                    isDisabled={!app.applicationId}
+                                                    onClick={() => {
+                                                      setActivePickingProjectIndex(actualIndex);
+                                                      setIsProjectPickerOpen(true);
+                                                    }}
+                                                    justifyContent="space-between"
+                                                    px={3.5}
+                                                    borderStyle="dashed"
+                                                    borderWidth="1.5px"
+                                                    bg={colorMode === "light" ? "purple.50" : "whiteAlpha.50"}
+                                                    _hover={{
+                                                      bg: colorMode === "light" ? "purple.100" : "whiteAlpha.100",
+                                                      borderColor: "purple.400",
+                                                    }}
+                                                  >
+                                                    <HStack spacing={2}>
+                                                      <Icon as={FiBriefcase} />
+                                                      <Text fontSize="xs" fontWeight="medium">
+                                                        {!app.applicationId
+                                                          ? "Pilih aplikasi terlebih dahulu..."
+                                                          : "Cari & Pilih Project..."}
+                                                      </Text>
+                                                    </HStack>
+                                                    {app.applicationId && (
+                                                      <Badge colorScheme="purple" variant="solid" fontSize="3xs" px={2} py={0.5} rounded="md">
+                                                        Buka Project
+                                                      </Badge>
+                                                    )}
+                                                  </Button>
+                                                )}
                                               </FormControl>
 
                                               <FormControl>
@@ -4935,6 +5215,55 @@ const CabRequestDetailView = () => {
           </AlertDialogContent>
         </AlertDialogOverlay>
       </AlertDialog>
+
+      {/* Application Picker Modal for Edit Mode */}
+      <ApplicationPickerModal
+        isOpen={isAppPickerOpen}
+        onClose={() => setIsAppPickerOpen(false)}
+        selectedApp={
+          requestEditForm.applications?.[activePickingAppIndex]?.applicationId
+            ? ({
+                id: requestEditForm.applications[activePickingAppIndex].applicationId,
+                appName: requestEditForm.applications[activePickingAppIndex].applicationName,
+                appTypes: requestEditForm.applications[activePickingAppIndex].aplikasiKategori,
+              } as ApplicationMasterResponse)
+            : null
+        }
+        onAppSelect={(app) => {
+          if (app) {
+            handleAppSelectedFromModal(activePickingAppIndex, app);
+          }
+        }}
+        tokenData={tokenData}
+        title={
+          activePickingAppIndex === 0
+            ? "Pilih Aplikasi Utama"
+            : `Pilih Aplikasi Terkait #${activePickingAppIndex}`
+        }
+        allowOtherCategory={true}
+      />
+
+      {/* Project Picker Modal for Edit Mode */}
+      <ProjectPickerModal
+        isOpen={isProjectPickerOpen}
+        onClose={() => setIsProjectPickerOpen(false)}
+        onSelectProject={(project) => {
+          handleProjectSelectedFromModal(activePickingProjectIndex, project);
+        }}
+        tokenData={tokenData}
+        appId={requestEditForm.applications?.[activePickingProjectIndex]?.applicationId || null}
+        appName={requestEditForm.applications?.[activePickingProjectIndex]?.applicationName || null}
+        selectedProjectId={
+          requestEditForm.applications?.[activePickingProjectIndex]?.projectId ||
+          requestEditForm.applications?.[activePickingProjectIndex]?.rfcKodeProject ||
+          null
+        }
+        title={
+          activePickingProjectIndex === 0
+            ? "Pilih Project Terkait Aplikasi Utama"
+            : `Pilih Project Terkait Aplikasi #${activePickingProjectIndex}`
+        }
+      />
     </LayoutAdmin>
   );
 };

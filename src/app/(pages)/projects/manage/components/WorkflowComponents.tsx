@@ -1434,9 +1434,56 @@ export const DynamicWorkflowBox = ({
   const isLeafNode = !hasChildren;
 
   if (isLeafNode) {
-    // Render as table row for leaf nodes (any level can be leaf)
-    return <WorkflowTableRow workflow={workflow} onRefresh={onRefresh} />;
+    // Standalone leaf document node at root level (or outside a table)
+    return (
+      <Card
+        shadow="md"
+        rounded={radiusStyle}
+        bgColor={colorMode === "light" ? "white" : "gray.800"}
+        ml={level > 1 ? 4 : 0}
+      >
+        <CardBody p={3}>
+          <Flex
+            overflowX={"auto"}
+            w={"full"}
+            border={"1px solid"}
+            borderRadius={radiusStyle}
+            borderColor={colorMode === "light" ? "gray.100" : "gray.600"}
+            boxShadow={"sm"}
+          >
+            <Table size="sm" variant="unstyled">
+              <Thead>
+                <Tr
+                  bg={colorMode === "light" ? "secondary.50" : "gray.900"}
+                  color={
+                    colorMode === "light" ? "secondary.800" : "secondary.500"
+                  }
+                >
+                  <Th py={3}>Jenis Dokumen</Th>
+                  <Th py={3}>Nama Dokumen</Th>
+                  <Th py={3}>Nomor Dokumen</Th>
+                  <Th py={3}>Tanggal Dokumen</Th>
+                  <Th py={3}>Versi</Th>
+                  <Th py={3}>Status</Th>
+                  <Th width="200px">Actions</Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                <WorkflowTableRow workflow={workflow} onRefresh={onRefresh} />
+              </Tbody>
+            </Table>
+          </Flex>
+        </CardBody>
+      </Card>
+    );
   }
+
+  const leafChildren = (workflow.workflowChild || []).filter(
+    (child) => !child.workflowChild || child.workflowChild.length === 0
+  );
+  const containerChildren = (workflow.workflowChild || []).filter(
+    (child) => child.workflowChild && child.workflowChild.length > 0
+  );
 
   // Render as container for parent nodes
   return (
@@ -1467,62 +1514,58 @@ export const DynamicWorkflowBox = ({
       </CardHeader>
       <Collapse in={isOpen}>
         <CardBody pt={0}>
-          {/* Check if children are leaf nodes to render table */}
-          {workflow.workflowChild.some(
-            (child) => !child.workflowChild || child.workflowChild.length === 0
-          ) ? (
-            // Render table if children are leaf nodes
-            <Flex
-              mt={2}
-              overflowX={"auto"}
-              w={"full"}
-              border={"1px solid"}
-              borderRadius={radiusStyle}
-              borderColor={colorMode == "light" ? "gray.100" : "gray.600"}
-              boxShadow={"md"}
-            >
-              <Table size="sm" variant="unstyled">
-                <Thead>
-                  <Tr
-                    bg={colorMode == "light" ? "secondary.50" : "gray.900"}
-                    color={
-                      colorMode == "light" ? "secondary.800" : "secondary.500"
-                    }
-                  >
-                    <Th py={3}>Jenis Dokumen</Th>
-                    <Th py={3}>Nama Dokumen</Th>
-                    <Th py={3}>Nomor Dokumen</Th>
-                    <Th py={3}>Tanggal Dokumen</Th>
-                    <Th py={3}>Versi</Th>
-                    <Th py={3}>Status</Th>
-                    <Th width="200px">Actions</Th>
-                  </Tr>
-                </Thead>
-                <Tbody>
-                  {workflow.workflowChild?.map((child) => (
-                    <DynamicWorkflowBox
-                      key={child.id}
-                      workflow={child}
-                      onRefresh={onRefresh}
-                      level={level + 1}
-                    />
-                  ))}
-                </Tbody>
-              </Table>
-            </Flex>
-          ) : (
-            // Render nested containers if children have their own children
-            <VStack spacing={3} align="stretch">
-              {workflow.workflowChild?.map((child) => (
-                <DynamicWorkflowBox
-                  key={child.id}
-                  workflow={child}
-                  onRefresh={onRefresh}
-                  level={level + 1}
-                />
-              ))}
-            </VStack>
-          )}
+          <VStack spacing={3} align="stretch">
+            {/* 1. If there are leaf document children, render them inside a Table */}
+            {leafChildren.length > 0 && (
+              <Flex
+                mt={2}
+                overflowX={"auto"}
+                w={"full"}
+                border={"1px solid"}
+                borderRadius={radiusStyle}
+                borderColor={colorMode === "light" ? "gray.100" : "gray.600"}
+                boxShadow={"md"}
+              >
+                <Table size="sm" variant="unstyled">
+                  <Thead>
+                    <Tr
+                      bg={colorMode === "light" ? "secondary.50" : "gray.900"}
+                      color={
+                        colorMode === "light" ? "secondary.800" : "secondary.500"
+                      }
+                    >
+                      <Th py={3}>Jenis Dokumen</Th>
+                      <Th py={3}>Nama Dokumen</Th>
+                      <Th py={3}>Nomor Dokumen</Th>
+                      <Th py={3}>Tanggal Dokumen</Th>
+                      <Th py={3}>Versi</Th>
+                      <Th py={3}>Status</Th>
+                      <Th width="200px">Actions</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {leafChildren.map((child) => (
+                      <WorkflowTableRow
+                        key={child.id}
+                        workflow={child}
+                        onRefresh={onRefresh}
+                      />
+                    ))}
+                  </Tbody>
+                </Table>
+              </Flex>
+            )}
+
+            {/* 2. If there are container children (sub-categories), render them recursively */}
+            {containerChildren.map((child) => (
+              <DynamicWorkflowBox
+                key={child.id}
+                workflow={child}
+                onRefresh={onRefresh}
+                level={level + 1}
+              />
+            ))}
+          </VStack>
         </CardBody>
       </Collapse>
     </Card>
@@ -1535,7 +1578,7 @@ interface WorkflowTableRowProps {
   onRefresh?: () => void;
 }
 
-const WorkflowTableRow = ({ workflow, onRefresh }: WorkflowTableRowProps) => {
+function WorkflowTableRow({ workflow, onRefresh }: WorkflowTableRowProps) {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);

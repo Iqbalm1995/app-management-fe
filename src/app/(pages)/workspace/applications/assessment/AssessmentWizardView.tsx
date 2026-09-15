@@ -435,6 +435,10 @@ export default function AssessmentWizardView() {
     !!rtoRpo.appsRtoSuggestionOperator &&
     (rtoRpo.appsRtoSuggestionMinutes ?? 0) > 0;
 
+  const isRtoItFilled =
+    !!rtoRpo.appsRtoItOperator &&
+    (rtoRpo.appsRtoItMinutes ?? 0) > 0;
+
   const isRpoFilled =
     !!rtoRpo.appsRpoOperator &&
     (rtoRpo.appsRpoMinutes ?? 0) > 0;
@@ -482,11 +486,7 @@ export default function AssessmentWizardView() {
   const isScoreComplete =
     crtScore > 0 && crtAverage > 0 && weight > 0 && crtFinal > 0;
 
-  const isRtoRpoComplete =
-    !!rtoRpo.appsRtoSuggestionOperator &&
-    (rtoRpo.appsRtoSuggestionMinutes ?? 0) > 0 &&
-    !!rtoRpo.appsRtoItOperator &&
-    (rtoRpo.appsRtoItMinutes ?? 0) > 0;
+  const isRtoRpoComplete = isRtoItFilled;
 
   const canSubmit = isSkipActive || (isScoreComplete && isRtoRpoComplete);
 
@@ -1261,11 +1261,10 @@ export default function AssessmentWizardView() {
                           color={isDark ? "orange.200" : "orange.800"}
                           lineHeight="relaxed"
                         >
-                          <b>RTO Pada Aplikasi ini Belum Dilakukan Review oleh IAG.</b>{" "}
-                          Aplikasi ini belum melalui proses peninjauan dan pengisian RTO
-                          Suggestion (Operator dan Nilai Benchmark) oleh IAG. Silakan hubungi tim IAG untuk melengkapi RTO
-                          Suggestion sebelum final submission. Anda tetap dapat melanjutkan
-                          pengisian kriteria lainnya.
+                          <b>RTO Suggestion (Benchmark IAG) Belum Diisi / Bersifat Opsional untuk PIC.</b>{" "}
+                          Aplikasi ini belum melalui peninjauan RTO Suggestion (Operator dan Nilai Benchmark) oleh tim IAG. 
+                          Anda tetap dapat melengkapi komitmen RTO IT di Step 4 dan mengajukan asesmen ini secara mandiri. 
+                          RTO Suggestion akan dilengkapi dan ditinjau lebih lanjut oleh tim IAG pada tahap Approval 2.
                         </Text>
 
                         {canEditRtoSuggestion && (
@@ -2418,14 +2417,14 @@ export default function AssessmentWizardView() {
                   <HStack justify="space-between">
                     <HStack spacing={2}>
                       <Icon
-                        as={isRtoSuggestionFilled ? FiCheckCircle : FiAlertCircle}
-                        color={isRtoSuggestionFilled ? "green.500" : "orange.500"}
+                        as={isRtoSuggestionFilled ? FiCheckCircle : FiInfo}
+                        color={isRtoSuggestionFilled ? "green.500" : "blue.500"}
                       />
                       <Text fontSize="xs">
-                        RTO Suggestion: {rtoRpo.appsRtoSuggestionOperator || "<="} {rtoRpo.appsRtoSuggestionMinutes ? `${rtoRpo.appsRtoSuggestionMinutes}m` : "Not Set"}
+                        RTO Suggestion: {rtoRpo.appsRtoSuggestionOperator || "<="} {rtoRpo.appsRtoSuggestionMinutes ? `${rtoRpo.appsRtoSuggestionMinutes}m` : "Not Set (IAG)"}
                       </Text>
                     </HStack>
-                    <Badge colorScheme={isRtoSuggestionFilled ? "green" : "orange"}>
+                    <Badge colorScheme={isRtoSuggestionFilled ? "green" : "blue"}>
                       {isRtoSuggestionFilled ? "Ready" : "Pending IAG"}
                     </Badge>
                   </HStack>
