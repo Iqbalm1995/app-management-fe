@@ -492,7 +492,7 @@ export default function ContractPaymentTabPanel({
                   px={2.5}
                   py={0.5}
                   rounded="md"
-                  fontSize="2xs"
+                  fontSize="xs"
                   fontWeight="bold"
                 >
                   {payment.paymentStatus}
@@ -503,7 +503,7 @@ export default function ContractPaymentTabPanel({
                   px={2}
                   py={0.5}
                   rounded="md"
-                  fontSize="2xs"
+                  fontSize="xs"
                 >
                   Realization Stage #{activeStep} of {totalTopSteps}
                 </Badge>
@@ -535,7 +535,7 @@ export default function ContractPaymentTabPanel({
                   rounded="full"
                   ml={1.5}
                   px={1.5}
-                  fontSize="2xs"
+                  fontSize="xs"
                 >
                   {activeJobsCount}
                 </Badge>
@@ -586,7 +586,7 @@ export default function ContractPaymentTabPanel({
           <Flex justify="space-between" align="center" mb={2}>
             <VStack align="start" spacing={0}>
               <Text
-                fontSize="2xs"
+                fontSize="xs"
                 color="gray.500"
                 fontWeight="bold"
                 textTransform="uppercase"
@@ -608,7 +608,7 @@ export default function ContractPaymentTabPanel({
 
             <VStack align="end" spacing={0}>
               <Text
-                fontSize="2xs"
+                fontSize="xs"
                 color="gray.500"
                 fontWeight="bold"
                 textTransform="uppercase"
@@ -732,19 +732,19 @@ export default function ContractPaymentTabPanel({
                       ? "purple"
                       : "blue"
                   }
-                  fontSize="2xs"
+                  fontSize="xs"
                 >
                   {contract.contractBillingType || "MILESTONE"}
                 </Badge>
                 {contract.subscriptionAutoRenew && (
-                  <Badge colorScheme="green" fontSize="2xs">
+                  <Badge colorScheme="green" fontSize="xs">
                     Auto-Renew
                   </Badge>
                 )}
               </HStack>
               {contract.contractBillingType &&
                 contract.contractBillingType !== "MILESTONE" && (
-                  <Text color="purple.500" fontWeight="bold" fontSize="2xs">
+                  <Text color="purple.500" fontWeight="bold" fontSize="xs">
                     Rate: {formatIDR(contract.subscriptionPeriodValue || 0)} /
                     cycle
                   </Text>
@@ -921,7 +921,7 @@ export default function ContractPaymentTabPanel({
                                   <Badge
                                     colorScheme="teal"
                                     variant="subtle"
-                                    fontSize="2xs"
+                                    fontSize="xs"
                                     px={2}
                                     py={0.5}
                                     rounded="md"
@@ -933,7 +933,7 @@ export default function ContractPaymentTabPanel({
                                       top.topStatus,
                                     )}
                                     variant="solid"
-                                    fontSize="2xs"
+                                    fontSize="xs"
                                     px={2.5}
                                     py={0.5}
                                     rounded="full"
@@ -944,7 +944,7 @@ export default function ContractPaymentTabPanel({
                                     top.billingPeriodEnd && (
                                       <Badge
                                         colorScheme="purple"
-                                        fontSize="2xs"
+                                        fontSize="xs"
                                         px={2}
                                         py={0.5}
                                         rounded="md"
@@ -963,7 +963,7 @@ export default function ContractPaymentTabPanel({
                                     <Badge
                                       colorScheme="cyan"
                                       variant="outline"
-                                      fontSize="2xs"
+                                      fontSize="xs"
                                       px={1.5}
                                       py={0.2}
                                       rounded="md"
@@ -1043,7 +1043,7 @@ export default function ContractPaymentTabPanel({
                                   boxSize={3.5}
                                 />
                                 <Text
-                                  fontSize="2xs"
+                                  fontSize="xs"
                                   fontWeight="bold"
                                   color="gray.500"
                                   textTransform="uppercase"
@@ -1056,7 +1056,7 @@ export default function ContractPaymentTabPanel({
 
                             {stepAttachments.length === 0 ? (
                               <Text
-                                fontSize="2xs"
+                                fontSize="xs"
                                 color="gray.400"
                                 fontStyle="italic"
                                 py={1}
@@ -1088,26 +1088,26 @@ export default function ContractPaymentTabPanel({
                                     }
                                   >
                                     <Tr>
-                                      <Th fontSize="2xs" py={2}>
+                                      <Th fontSize="xs" py={2}>
                                         Document Type
                                       </Th>
-                                      <Th fontSize="2xs" py={2}>
+                                      <Th fontSize="xs" py={2}>
                                         Nama & Nomor Ref
                                       </Th>
-                                      <Th fontSize="2xs" py={2}>
+                                      <Th fontSize="xs" py={2}>
                                         Realization (Rp)
                                       </Th>
-                                      <Th fontSize="2xs" py={2}>
+                                      <Th fontSize="xs" py={2}>
                                         Tax Invoice
                                       </Th>
-                                      <Th fontSize="2xs" py={2}>
+                                      <Th fontSize="xs" py={2}>
                                         Date
                                       </Th>
-                                      <Th fontSize="2xs" py={2}>
+                                      <Th fontSize="xs" py={2}>
                                         Versi
                                       </Th>
                                       <Th
-                                        fontSize="2xs"
+                                        fontSize="xs"
                                         py={2}
                                         textAlign="right"
                                       >
@@ -1124,7 +1124,7 @@ export default function ContractPaymentTabPanel({
                                           <Td py={2}>
                                             <Badge
                                               colorScheme="purple"
-                                              fontSize="2xs"
+                                              fontSize="xs"
                                               px={2}
                                               py={0.5}
                                               rounded="md"
@@ -1160,7 +1160,7 @@ export default function ContractPaymentTabPanel({
                                                 flexWrap="wrap"
                                               >
                                                 <Text
-                                                  fontSize="3xs"
+                                                  fontSize="xs"
                                                   color="gray.500"
                                                 >
                                                   Ref:{" "}
@@ -1170,7 +1170,7 @@ export default function ContractPaymentTabPanel({
                                                   ?.objectExtension && (
                                                   <Badge
                                                     colorScheme="gray"
-                                                    fontSize="3xs"
+                                                    fontSize="xs"
                                                     px={1}
                                                     rounded="sm"
                                                   >
@@ -1183,7 +1183,7 @@ export default function ContractPaymentTabPanel({
                                                   ?.objectSize && (
                                                   <Badge
                                                     colorScheme="blue"
-                                                    fontSize="3xs"
+                                                    fontSize="xs"
                                                     px={1}
                                                     rounded="sm"
                                                   >
@@ -1196,7 +1196,7 @@ export default function ContractPaymentTabPanel({
                                               </HStack>
                                               {att.note && (
                                                 <Text
-                                                  fontSize="3xs"
+                                                  fontSize="xs"
                                                   color="gray.400"
                                                 >
                                                   Note: {att.note}
@@ -1220,7 +1220,7 @@ export default function ContractPaymentTabPanel({
                                               <Badge
                                                 variant="outline"
                                                 colorScheme="orange"
-                                                fontSize="3xs"
+                                                fontSize="xs"
                                               >
                                                 {att.taxInvoiceNumber}
                                               </Badge>
@@ -1238,7 +1238,7 @@ export default function ContractPaymentTabPanel({
                                           <Td py={2} fontSize="xs">
                                             <Badge
                                               variant="outline"
-                                              fontSize="3xs"
+                                              fontSize="xs"
                                             >
                                               {att.documentVersion || "V.0"}
                                             </Badge>
@@ -1251,7 +1251,7 @@ export default function ContractPaymentTabPanel({
                                               {att.linkAttachment && (
                                                 <Tooltip
                                                   label="Buka External Link"
-                                                  fontSize="2xs"
+                                                  fontSize="xs"
                                                 >
                                                   <a
                                                     href={att.linkAttachment}
@@ -1270,7 +1270,7 @@ export default function ContractPaymentTabPanel({
                                               {att.mediaObjectId && (
                                                 <Tooltip
                                                   label="Download File (Secure OTP)"
-                                                  fontSize="2xs"
+                                                  fontSize="xs"
                                                 >
                                                   <IconButton
                                                     aria-label="Download attachment"
@@ -1296,7 +1296,7 @@ export default function ContractPaymentTabPanel({
                                               )}
                                               <Tooltip
                                                 label="Delete Document"
-                                                fontSize="2xs"
+                                                fontSize="xs"
                                               >
                                                 <IconButton
                                                   aria-label="Delete attachment"
@@ -1455,7 +1455,7 @@ export default function ContractPaymentTabPanel({
                         colorScheme={getTopStatusColor(
                           nextUpcomingTop.topStatus,
                         )}
-                        fontSize="3xs"
+                        fontSize="xs"
                         px={2}
                         rounded="full"
                       >
@@ -1467,7 +1467,7 @@ export default function ContractPaymentTabPanel({
                       {formatIDR(nextUpcomingTop.topValues)}
                     </Text>
 
-                    <HStack spacing={1} color="gray.500" fontSize="2xs">
+                    <HStack spacing={1} color="gray.500" fontSize="xs">
                       <Icon as={FiCalendar} boxSize={3} />
                       <Text>
                         Target:{" "}
@@ -1511,7 +1511,7 @@ export default function ContractPaymentTabPanel({
                       All Milestones Completed
                     </Text>
                   </HStack>
-                  <Text fontSize="2xs" color="gray.500" mt={1}>
+                  <Text fontSize="xs" color="gray.500" mt={1}>
                     All TOP milestones for this contract are marked as PAID.
                   </Text>
                 </Box>
@@ -1539,7 +1539,7 @@ export default function ContractPaymentTabPanel({
                 <VStack spacing={2} align="stretch" fontSize="xs">
                   <Flex justify="space-between">
                     <Text color="gray.500">Total TOP Documents:</Text>
-                    <Badge colorScheme="purple" fontSize="2xs" rounded="md">
+                    <Badge colorScheme="purple" fontSize="xs" rounded="md">
                       {totalTopAttachments} File
                     </Badge>
                   </Flex>
@@ -1568,7 +1568,7 @@ export default function ContractPaymentTabPanel({
                     my={1}
                   />
 
-                  <HStack spacing={1.5} color="gray.400" fontSize="3xs">
+                  <HStack spacing={1.5} color="gray.400" fontSize="xs">
                     <Icon as={FiInfo} boxSize={3} />
                     <Text>
                       File downloads are protected with OTP Secure Password sent
@@ -1607,7 +1607,7 @@ export default function ContractPaymentTabPanel({
                             ? "purple"
                             : "blue"
                         }
-                        fontSize="2xs"
+                        fontSize="xs"
                       >
                         {contract.contractBillingType}
                       </Badge>
@@ -1624,7 +1624,7 @@ export default function ContractPaymentTabPanel({
                     {contract.subscriptionAutoRenew && (
                       <Flex justify="space-between">
                         <Text color="gray.500">Perpanjangan:</Text>
-                        <Badge colorScheme="green" fontSize="3xs">
+                        <Badge colorScheme="green" fontSize="xs">
                           Auto-Renew
                         </Badge>
                       </Flex>
@@ -1655,7 +1655,7 @@ export default function ContractPaymentTabPanel({
               </Text>
               <Badge
                 colorScheme="blue"
-                fontSize="2xs"
+                fontSize="xs"
                 px={2}
                 py={0.5}
                 rounded="md"
@@ -1663,7 +1663,7 @@ export default function ContractPaymentTabPanel({
                 {(payment.workPrograms || []).length} Lines
               </Badge>
             </HStack>
-            <Text fontSize="2xs" color="gray.500">
+            <Text fontSize="xs" color="gray.500">
               Budget lines allocated from project RBB accounts
             </Text>
           </VStack>
@@ -1691,16 +1691,16 @@ export default function ContractPaymentTabPanel({
             <Table size="sm" variant="simple">
               <Thead bg={colorMode === "light" ? "gray.50" : "gray.800"}>
                 <Tr>
-                  <Th fontSize="2xs">RBB Source / Code</Th>
-                  <Th fontSize="2xs">Account Name / Cost Center</Th>
-                  <Th fontSize="2xs">Division</Th>
-                  <Th fontSize="2xs" isNumeric>
+                  <Th fontSize="xs">RBB Source / Code</Th>
+                  <Th fontSize="xs">Account Name / Cost Center</Th>
+                  <Th fontSize="xs">Division</Th>
+                  <Th fontSize="xs" isNumeric>
                     Budget
                   </Th>
-                  <Th fontSize="2xs" isNumeric>
+                  <Th fontSize="xs" isNumeric>
                     Debit Realization
                   </Th>
-                  <Th fontSize="2xs" isNumeric>
+                  <Th fontSize="xs" isNumeric>
                     Leftovers
                   </Th>
                 </Tr>
@@ -1710,7 +1710,7 @@ export default function ContractPaymentTabPanel({
                   <Tr key={idx}>
                     <Td>
                       <VStack align="start" spacing={0}>
-                        <Badge colorScheme="blue" fontSize="2xs">
+                        <Badge colorScheme="blue" fontSize="xs">
                           {wp.workProgramSource}
                         </Badge>
                         <Text fontSize="xs" fontWeight="bold">
@@ -1723,7 +1723,7 @@ export default function ContractPaymentTabPanel({
                         <Text fontSize="xs" fontWeight="semibold">
                           {wp.workProgramAccName || wp.workProgramName}
                         </Text>
-                        <Text fontSize="2xs" color="gray.500">
+                        <Text fontSize="xs" color="gray.500">
                           Acc: {wp.workProgramAccNumber || "-"} &bull; CC:{" "}
                           {wp.workProgramAccCc || "-"}
                         </Text>
@@ -1777,7 +1777,7 @@ export default function ContractPaymentTabPanel({
               </Text>
               <Badge
                 colorScheme="teal"
-                fontSize="2xs"
+                fontSize="xs"
                 px={2}
                 py={0.5}
                 rounded="md"
@@ -1785,7 +1785,7 @@ export default function ContractPaymentTabPanel({
                 {(payment.attachments || []).length} Files
               </Badge>
             </HStack>
-            <Text fontSize="2xs" color="gray.500">
+            <Text fontSize="xs" color="gray.500">
               Supporting verification files at master contract payment level
             </Text>
           </VStack>
@@ -1827,12 +1827,12 @@ export default function ContractPaymentTabPanel({
             <Table size="sm" variant="simple">
               <Thead bg={colorMode === "light" ? "gray.50" : "gray.800"}>
                 <Tr>
-                  <Th fontSize="2xs">Document Type</Th>
-                  <Th fontSize="2xs">Document Name / Ref Number</Th>
-                  <Th fontSize="2xs">Date</Th>
-                  <Th fontSize="2xs">Version</Th>
-                  <Th fontSize="2xs">File Size</Th>
-                  <Th fontSize="2xs" textAlign="right">
+                  <Th fontSize="xs">Document Type</Th>
+                  <Th fontSize="xs">Document Name / Ref Number</Th>
+                  <Th fontSize="xs">Date</Th>
+                  <Th fontSize="xs">Version</Th>
+                  <Th fontSize="xs">File Size</Th>
+                  <Th fontSize="xs" textAlign="right">
                     Actions
                   </Th>
                 </Tr>
@@ -1844,7 +1844,7 @@ export default function ContractPaymentTabPanel({
                       <Td>
                         <Badge
                           colorScheme="purple"
-                          fontSize="2xs"
+                          fontSize="xs"
                           px={2}
                           py={0.5}
                           rounded="md"
@@ -1870,13 +1870,13 @@ export default function ContractPaymentTabPanel({
                             </Text>
                           </HStack>
                           <HStack spacing={2} flexWrap="wrap">
-                            <Text fontSize="2xs" color="gray.500">
+                            <Text fontSize="xs" color="gray.500">
                               Ref: {att.documentNumber}
                             </Text>
                             {att.mediaObject?.objectExtension && (
                               <Badge
                                 colorScheme="gray"
-                                fontSize="3xs"
+                                fontSize="xs"
                                 px={1}
                                 rounded="sm"
                               >
@@ -1888,7 +1888,7 @@ export default function ContractPaymentTabPanel({
                             {att.mediaObject?.objectSize && (
                               <Badge
                                 colorScheme="blue"
-                                fontSize="3xs"
+                                fontSize="xs"
                                 px={1}
                                 rounded="sm"
                               >
@@ -1906,11 +1906,11 @@ export default function ContractPaymentTabPanel({
                           : "-"}
                       </Td>
                       <Td fontSize="xs">
-                        <Badge variant="outline" fontSize="2xs">
+                        <Badge variant="outline" fontSize="xs">
                           {att.documentVersion || "V.0"}
                         </Badge>
                       </Td>
-                      <Td fontSize="2xs" color="gray.500">
+                      <Td fontSize="xs" color="gray.500">
                         {att.mediaObject?.objectSize
                           ? `${(att.mediaObject.objectSize / 1024).toFixed(
                               1,
@@ -1920,7 +1920,7 @@ export default function ContractPaymentTabPanel({
                       <Td textAlign="right">
                         <HStack spacing={1} justify="flex-end">
                           {att.linkAttachment && (
-                            <Tooltip label="Open External Link" fontSize="2xs">
+                            <Tooltip label="Open External Link" fontSize="xs">
                               <a
                                 href={att.linkAttachment}
                                 target="_blank"
@@ -1938,7 +1938,7 @@ export default function ContractPaymentTabPanel({
                           {att.mediaObjectId && (
                             <Tooltip
                               label="Download File (Secure OTP)"
-                              fontSize="2xs"
+                              fontSize="xs"
                             >
                               <IconButton
                                 aria-label="Download attachment"
@@ -1959,7 +1959,7 @@ export default function ContractPaymentTabPanel({
                               />
                             </Tooltip>
                           )}
-                          <Tooltip label="Delete Document" fontSize="2xs">
+                          <Tooltip label="Delete Document" fontSize="xs">
                             <IconButton
                               aria-label="Delete attachment"
                               icon={<FiTrash2 />}

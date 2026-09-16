@@ -399,7 +399,7 @@ const SoftwareStep3 = ({
               }}
               menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
             />
-            <Text fontSize="2xs" color="gray.500" mt={1}>
+            <Text fontSize="xs" color="gray.500" mt={1}>
               Pilih dari daftar rekomendasi sistem atau ketik nama aplikasi lain lalu tekan <b>Enter</b> untuk menambahkan tag.
             </Text>
           </FormControl>
@@ -462,7 +462,7 @@ const SoftwareStep3 = ({
               Lengkapi data kepatuhan teknis atau pilih dokumen dari repositori proyek terkait:
             </Text>
             <HStack spacing={2}>
-              <Badge colorScheme="blue" fontSize="2xs" px={2} py={0.5} rounded="md">
+              <Badge colorScheme="blue" fontSize="xs" px={2} py={0.5} rounded="md">
                 Proyek: {projectContextLabel}
               </Badge>
               <Tooltip label="Buka halaman proyek di tab baru">
@@ -471,7 +471,7 @@ const SoftwareStep3 = ({
                   href={projectRouteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  size="2xs"
+                  size="xs"
                   variant="link"
                   colorScheme="blue"
                   rightIcon={<FiExternalLink />}
@@ -748,7 +748,7 @@ const SoftwareStep3 = ({
                   href={projectRouteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  size="2xs"
+                  size="xs"
                   colorScheme="blue"
                   variant="solid"
                   rightIcon={<FiExternalLink />}
@@ -778,9 +778,9 @@ const SoftwareStep3 = ({
                         onChange={toggleSelectAll}
                       />
                     </Th>
-                    <Th fontSize="2xs">Item Kepatuhan</Th>
-                    <Th fontSize="2xs">Nama Dokumen</Th>
-                    <Th fontSize="2xs">Sumber Project</Th>
+                    <Th fontSize="xs">Item Kepatuhan</Th>
+                    <Th fontSize="xs">Nama Dokumen</Th>
+                    <Th fontSize="xs">Sumber Project</Th>
                   </Tr>
                 </Thead>
                 <Tbody>
@@ -801,7 +801,7 @@ const SoftwareStep3 = ({
                           />
                         </Td>
                         <Td>
-                          <Badge colorScheme="blue" variant="subtle" fontSize="2xs" rounded="md">
+                          <Badge colorScheme="blue" variant="subtle" fontSize="xs" rounded="md">
                             {doc.label}
                           </Badge>
                         </Td>
@@ -812,13 +812,13 @@ const SoftwareStep3 = ({
                               <Text fontSize="xs" fontWeight="semibold" isTruncated maxW="200px">
                                 {doc.fileName}
                               </Text>
-                              <Text fontSize="2xs" color="gray.500">
+                              <Text fontSize="xs" color="gray.500">
                                 {doc.fileSize}
                               </Text>
                             </Box>
                           </HStack>
                         </Td>
-                        <Td fontSize="2xs" color="gray.500">
+                        <Td fontSize="xs" color="gray.500">
                           {doc.sourceProject}
                         </Td>
                       </Tr>

@@ -214,7 +214,7 @@ const CommitteeCabField = ({
               <Text fontWeight="bold" fontSize="md" color={textHeading}>
                 Committee CAB
               </Text>
-              <Badge colorScheme="purple" variant="solid" rounded="full" px={2.5} fontSize="2xs">
+              <Badge colorScheme="purple" variant="solid" rounded="full" px={2.5} fontSize="xs">
                 {memberList.length} Terpilih
               </Badge>
             </HStack>
@@ -226,23 +226,23 @@ const CommitteeCabField = ({
 
         {/* Quick Category Badges */}
         {memberList.length > 0 && (
-          <HStack spacing={1.5} wrap="wrap">
+          <HStack spacing={2} wrap="wrap">
             {itCount > 0 && (
-              <Tag size="sm" colorScheme="blue" variant="subtle" rounded="full">
-                <TagLeftIcon as={FiCpu} boxSize="10px" />
-                <TagLabel fontSize="2xs">{itCount} IT</TagLabel>
+              <Tag size="md" colorScheme="blue" variant="subtle" rounded="full" px={2.5} py={1}>
+                <TagLeftIcon as={FiCpu} boxSize="13px" />
+                <TagLabel fontSize="xs" fontWeight="semibold">{itCount} IT</TagLabel>
               </Tag>
             )}
             {bjbCount > 0 && (
-              <Tag size="sm" colorScheme="green" variant="subtle" rounded="full">
-                <TagLeftIcon as={FiBriefcase} boxSize="10px" />
-                <TagLabel fontSize="2xs">{bjbCount} BJB</TagLabel>
+              <Tag size="md" colorScheme="green" variant="subtle" rounded="full" px={2.5} py={1}>
+                <TagLeftIcon as={FiBriefcase} boxSize="13px" />
+                <TagLabel fontSize="xs" fontWeight="semibold">{bjbCount} BJB</TagLabel>
               </Tag>
             )}
             {externalCount > 0 && (
-              <Tag size="sm" colorScheme="purple" variant="subtle" rounded="full">
-                <TagLeftIcon as={FiGlobe} boxSize="10px" />
-                <TagLabel fontSize="2xs">{externalCount} Eksternal</TagLabel>
+              <Tag size="md" colorScheme="purple" variant="subtle" rounded="full" px={2.5} py={1}>
+                <TagLeftIcon as={FiGlobe} boxSize="13px" />
+                <TagLabel fontSize="xs" fontWeight="semibold">{externalCount} Eksternal</TagLabel>
               </Tag>
             )}
           </HStack>
@@ -364,7 +364,7 @@ const CommitteeCabField = ({
                       >
                         {tab.label}
                       </Text>
-                      <Text fontSize="2xs" color={textMuted} isTruncated mt={0.5}>
+                      <Text fontSize="xs" color={textMuted} isTruncated mt={0.5}>
                         {tab.key === "IT"
                           ? "Pencarian Master Pegawai"
                           : tab.key === "BJB"
@@ -379,8 +379,10 @@ const CommitteeCabField = ({
                       colorScheme={tab.color}
                       variant={isSelected ? "solid" : "subtle"}
                       rounded="full"
-                      px={2}
-                      fontSize="2xs"
+                      px={2.5}
+                      py={0.5}
+                      fontSize="xs"
+                      fontWeight="bold"
                       flexShrink={0}
                     >
                       {tab.count}
@@ -464,7 +466,7 @@ const CommitteeCabField = ({
                           Hasil Pencarian Personel ({searchResults.length} Kartu)
                         </Text>
                       </HStack>
-                      <Text fontSize="2xs" color={textMuted}>
+                      <Text fontSize="xs" color={textMuted}>
                         Klik pada kartu untuk memilih / membatalkan
                       </Text>
                     </Flex>
@@ -543,7 +545,7 @@ const CommitteeCabField = ({
                               <Badge
                                 colorScheme={selected ? "blue" : "gray"}
                                 variant={selected ? "solid" : "outline"}
-                                fontSize="2xs"
+                                fontSize="xs"
                                 rounded="full"
                                 px={2}
                                 py={0.5}
@@ -564,7 +566,7 @@ const CommitteeCabField = ({
 
                             <HStack spacing={1.5} mt={1} color={textMuted}>
                               <Icon as={FiCpu} boxSize="10px" />
-                              <Text fontSize="3xs" noOfLines={1} title={u.namaUnitKerja || u.namaGroupKerja || "Divisi IT"}>
+                              <Text fontSize="xs" noOfLines={1} title={u.namaUnitKerja || u.namaGroupKerja || "Divisi IT"}>
                                 {u.namaUnitKerja || u.namaGroupKerja || "Divisi IT"}
                               </Text>
                             </HStack>
@@ -610,7 +612,7 @@ const CommitteeCabField = ({
                     Form Kartu Komite Internal Bank BJB (Non-IT)
                   </Text>
                 </HStack>
-                <Badge colorScheme="green" variant="subtle" fontSize="2xs">
+                <Badge colorScheme="green" variant="subtle" fontSize="xs">
                   Internal BJB
                 </Badge>
               </Flex>
@@ -677,7 +679,7 @@ const CommitteeCabField = ({
                     Form Kartu Komite Eksternal (Regulator / Partner / Vendor)
                   </Text>
                 </HStack>
-                <Badge colorScheme="purple" variant="subtle" fontSize="2xs">
+                <Badge colorScheme="purple" variant="subtle" fontSize="xs">
                   Eksternal
                 </Badge>
               </Flex>
@@ -737,12 +739,12 @@ const CommitteeCabField = ({
               Daftar Kartu Komite CAB Terpilih
             </Text>
             {memberList.length > 0 && (
-              <Badge colorScheme="purple" variant="solid" rounded="full" px={2} fontSize="2xs">
+              <Badge colorScheme="purple" variant="solid" rounded="full" px={2} fontSize="xs">
                 {memberList.length}
               </Badge>
             )}
           </HStack>
-          <Text fontSize="2xs" color={textMuted}>
+          <Text fontSize="xs" color={textMuted}>
             {memberList.length > 0 ? "Seluruh anggota di bawah akan tercatat dalam notulen sidang" : "Minimal 1 anggota disarankan"}
           </Text>
         </Flex>
@@ -847,7 +849,7 @@ const CommitteeCabField = ({
                             <Badge
                               colorScheme={accentColor}
                               variant="subtle"
-                              fontSize="3xs"
+                              fontSize="xs"
                               rounded="md"
                               px={1.5}
                               py={0.2}
@@ -880,7 +882,7 @@ const CommitteeCabField = ({
                         color={textMuted}
                       >
                         <Icon as={TypeIcon} boxSize="11px" color={`${accentColor}.400`} />
-                        <Text fontSize="2xs" noOfLines={1} title={orgLabel}>
+                        <Text fontSize="xs" noOfLines={1} title={orgLabel}>
                           {orgLabel}
                         </Text>
                       </HStack>

@@ -95,6 +95,7 @@ import useWorkspace, {
   WorkspaceStatsViewModel,
   WorkspaceTaskViewModel,
 } from "@/app/services/useWorkspace";
+import WorkspaceTaskActivitiesModal from "./components/WorkspaceTaskActivitiesModal";
 import { radiusStyle } from "@/app/constants/applicationConstants";
 import {
   convertToCustomDateFormat,
@@ -142,6 +143,12 @@ const WorkspaceProject = () => {
     onClose: onProjectModalClose,
   } = useDisclosure();
 
+  const {
+    isOpen: isTaskActivitiesModalOpen,
+    onOpen: onTaskActivitiesModalOpen,
+    onClose: onTaskActivitiesModalClose,
+  } = useDisclosure();
+
   // Auth setup
   const [tokenData, setTokenData] = useState<string>("");
 
@@ -153,6 +160,7 @@ const WorkspaceProject = () => {
     GetQuarterProgress,
     GetProjectTypeCounts,
     GetMyTasks,
+    GetAssignedProjectsActivities,
     loading,
   } = useWorkspace();
   const { ListTaskActivitiesPaged } = useTasks();
@@ -180,31 +188,22 @@ const WorkspaceProject = () => {
   const [totalTasksCount, setTotalTasksCount] = useState(0);
   const [taskPageSize, setTaskPageSize] = useState<number>(5);
 
-  const fetchRecentActivities = async (userSysId?: string) => {
+  const fetchRecentActivities = async () => {
     const token = localStorage.getItem("tokenData");
     if (!token) return;
 
     setRecentActivitiesLoading(true);
     try {
-      const filterWhereList: any[] = [];
-      if (userSysId) {
-        filterWhereList.push({
-          field: "UserIdSys",
-          operator: "=",
-          value: userSysId,
-        });
-      }
-
       const payload: PaggingListPayloadCustom = {
         page: 0,
         limit: 5,
         search: "",
-        filterWhere: filterWhereList,
+        filterWhere: [],
         fieldOrder: ["CreatedAt"],
         orderDir: "desc",
       };
 
-      const response = await ListTaskActivitiesPaged(payload, token);
+      const response = await GetAssignedProjectsActivities(payload, token);
       if (response?.statusCode === 200 && Array.isArray(response.data)) {
         setRecentActivities(response.data);
       } else {
@@ -384,7 +383,7 @@ const WorkspaceProject = () => {
           GetAssignedProjects({ search: "", limit: 9, page: 0, projectType: null, filterWhere: [], fieldOrder: ["createdAt"], orderDir: "desc" }, token),
           GetQuarterProgress(q, y, token),
           GetMyTasks({ search: "", limit: 5, page: 0, filterWhere: [], fieldOrder: ["createdAt"], orderDir: "desc" }, token),
-          fetchRecentActivities(currentUserIdSys),
+          fetchRecentActivities(),
         ]);
 
         if (statsRes?.statusCode === 200 && statsRes.data) setStats(statsRes.data);
@@ -2313,17 +2312,30 @@ const WorkspaceProject = () => {
                         Recent Activity
                       </Heading>
                     </HStack>
-                    <Tooltip label="Refresh activity" fontSize="xs" placement="top">
-                      <IconButton
-                        aria-label="Refresh activity"
-                        icon={<FiRefreshCw />}
-                        size="xs"
-                        variant="ghost"
-                        color={textColor}
-                        isLoading={recentActivitiesLoading}
-                        onClick={() => fetchRecentActivities(dataAuth?.id)}
-                      />
-                    </Tooltip>
+                    <HStack spacing={1}>
+                      <Tooltip label="View detail activities" fontSize="xs" placement="top">
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          colorScheme="blue"
+                          leftIcon={<FiEye />}
+                          onClick={onTaskActivitiesModalOpen}
+                        >
+                          Detail
+                        </Button>
+                      </Tooltip>
+                      <Tooltip label="Refresh activity" fontSize="xs" placement="top">
+                        <IconButton
+                          aria-label="Refresh activity"
+                          icon={<FiRefreshCw />}
+                          size="xs"
+                          variant="ghost"
+                          color={textColor}
+                          isLoading={recentActivitiesLoading}
+                          onClick={() => fetchRecentActivities()}
+                        />
+                      </Tooltip>
+                    </HStack>
                   </HStack>
 
                   {recentActivitiesLoading ? (
@@ -2353,7 +2365,7 @@ const WorkspaceProject = () => {
                           act.userData?.nama ||
                           act.userData?.userId ||
                           dataAuth?.nama ||
-                          "You";
+                          "Team Member";
                         const userAvatar =
                           act.userData?.profilePict || dataAuth?.profilePict || undefined;
 
@@ -2411,20 +2423,36 @@ const WorkspaceProject = () => {
                                 >
                                   {act.activity}
                                 </Text>
-                                {act.taskName && (
-                                  <HStack spacing={1} mt="2px">
-                                    <Badge
-                                      variant="subtle"
-                                      colorScheme="blue"
-                                      fontSize="10px"
-                                      px={1.5}
-                                      py={0.5}
-                                      borderRadius="sm"
-                                      maxW="220px"
-                                      isTruncated
-                                    >
-                                      {act.taskName}
-                                    </Badge>
+                                {(act.taskName || act.projectName) && (
+                                  <HStack spacing={1.5} mt="2px" wrap="wrap">
+                                    {act.taskName && (
+                                      <Badge
+                                        variant="subtle"
+                                        colorScheme="blue"
+                                        fontSize="10px"
+                                        px={1.5}
+                                        py={0.5}
+                                        borderRadius="sm"
+                                        maxW="140px"
+                                        isTruncated
+                                      >
+                                        {act.taskName}
+                                      </Badge>
+                                    )}
+                                    {act.projectName && (
+                                      <Badge
+                                        variant="outline"
+                                        colorScheme="gray"
+                                        fontSize="10px"
+                                        px={1.5}
+                                        py={0.5}
+                                        borderRadius="sm"
+                                        maxW="130px"
+                                        isTruncated
+                                      >
+                                        {act.projectName}
+                                      </Badge>
+                                    )}
                                   </HStack>
                                 )}
                               </VStack>
@@ -2751,6 +2779,14 @@ const WorkspaceProject = () => {
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* Task Activities Detail Modal */}
+      <WorkspaceTaskActivitiesModal
+        isOpen={isTaskActivitiesModalOpen}
+        onClose={onTaskActivitiesModalClose}
+        radiusStyle={radiusStyle}
+        accentColor={accentColor}
+      />
     </LayoutAdminWorkspace>
   );
 };

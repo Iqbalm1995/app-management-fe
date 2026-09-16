@@ -344,7 +344,7 @@ export const ModalTopAutoAdjust = ({
                           <Icon as={FiPieChart} color="teal.500" />
                           <Text fontSize="xs" fontWeight="bold">Percentage Split</Text>
                         </HStack>
-                        <Text fontSize="2xs" color="gray.500">
+                        <Text fontSize="xs" color="gray.500">
                           Milestone % allocation
                         </Text>
                       </VStack>
@@ -368,7 +368,7 @@ export const ModalTopAutoAdjust = ({
                           <Icon as={FiLayers} color="teal.500" />
                           <Text fontSize="xs" fontWeight="bold">Equal Split</Text>
                         </HStack>
-                        <Text fontSize="2xs" color="gray.500">
+                        <Text fontSize="xs" color="gray.500">
                           Divide into N steps
                         </Text>
                       </VStack>
@@ -392,7 +392,7 @@ export const ModalTopAutoAdjust = ({
                           <Icon as={FiRepeat} color="teal.500" />
                           <Text fontSize="xs" fontWeight="bold">Subscription Cycle</Text>
                         </HStack>
-                        <Text fontSize="2xs" color="gray.500">
+                        <Text fontSize="xs" color="gray.500">
                           Monthly / Annual recurring
                         </Text>
                       </VStack>
@@ -408,7 +408,7 @@ export const ModalTopAutoAdjust = ({
                 <Flex justify="space-between" align="center" wrap="wrap" gap={2}>
                   <VStack align="start" spacing={0}>
                     <Text fontSize="xs" fontWeight="bold">Quick Percentage Presets</Text>
-                    <Text fontSize="2xs" color="gray.500">Click to apply common payment structures</Text>
+                    <Text fontSize="xs" color="gray.500">Click to apply common payment structures</Text>
                   </VStack>
 
                   <HStack spacing={2} wrap="wrap">
@@ -479,7 +479,7 @@ export const ModalTopAutoAdjust = ({
                       <Text fontSize="xs" fontWeight="bold">
                         Total Allocation: {totalPercentage}% / 100%
                       </Text>
-                      <Badge colorScheme={isPercentageValid ? "green" : "orange"} fontSize="2xs">
+                      <Badge colorScheme={isPercentageValid ? "green" : "orange"} fontSize="xs">
                         {isPercentageValid ? "100% Balanced" : `${(100 - totalPercentage).toFixed(1)}% Remaining`}
                       </Badge>
                     </Flex>
@@ -499,7 +499,7 @@ export const ModalTopAutoAdjust = ({
                     const stepAmount = Math.round(((step.pct || 0) / 100) * workValue);
                     return (
                       <HStack key={idx} spacing={3} align="center">
-                        <Badge colorScheme="teal" px={2} py={1} rounded="md" fontSize="2xs">
+                        <Badge colorScheme="teal" px={2} py={1} rounded="md" fontSize="xs">
                           #{idx + 1}
                         </Badge>
 
@@ -638,12 +638,12 @@ export const ModalTopAutoAdjust = ({
                   <Box p={3} rounded="xl" bg={colorMode === "light" ? "gray.50" : "gray.800"} border="1px solid" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
                     <HStack spacing={2}>
                       <Icon as={FiCalendar} color="teal.500" />
-                      <Text fontSize="2xs" fontWeight="bold">Contract Duration Reference:</Text>
+                      <Text fontSize="xs" fontWeight="bold">Contract Duration Reference:</Text>
                     </HStack>
                     <Text fontSize="xs" color="gray.600" mt={1}>
                       {contractStartDate || "Start Date"} &rarr; {contractEndDate || "End Date"}
                     </Text>
-                    <Text fontSize="2xs" color="teal.600" fontWeight="semibold" mt={0.5}>
+                    <Text fontSize="xs" color="teal.600" fontWeight="semibold" mt={0.5}>
                       {currentPreviewList.length} billing periods will be generated automatically.
                     </Text>
                   </Box>
@@ -676,7 +676,7 @@ export const ModalTopAutoAdjust = ({
                           <Td fontWeight="bold">Step #{step.stepOrder}</Td>
                           <Td fontSize="xs">{step.topDescriptions}</Td>
                           {mode === "SUBSCRIPTION" && (
-                            <Td fontSize="2xs" color="gray.500">
+                            <Td fontSize="xs" color="gray.500">
                               <HStack spacing={1}>
                                 <Icon as={FiCalendar} />
                                 <Text>{step.billingPeriodStart} &rarr; {step.billingPeriodEnd}</Text>
@@ -687,7 +687,7 @@ export const ModalTopAutoAdjust = ({
                             {formatIDR(step.topValues)}
                           </Td>
                           <Td textAlign="right">
-                            <Badge colorScheme="blue" fontSize="2xs">
+                            <Badge colorScheme="blue" fontSize="xs">
                               {pctShare}%
                             </Badge>
                           </Td>
@@ -699,7 +699,7 @@ export const ModalTopAutoAdjust = ({
               </Box>
 
               <Flex justify="space-between" align="center" px={2} pt={1}>
-                <Text fontSize="2xs" color="gray.500">
+                <Text fontSize="xs" color="gray.500">
                   Total Work Value: {formatIDR(workValue)}
                 </Text>
                 <HStack spacing={1}>

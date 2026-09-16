@@ -201,19 +201,19 @@ export const BulkSendToApprovalModal = ({
                   zIndex={1}
                 >
                   <Tr>
-                    <Th width="35px" fontSize="2xs" textAlign="center">
+                    <Th width="35px" fontSize="xs" textAlign="center">
                       NO.
                     </Th>
-                    <Th fontSize="2xs">REQUEST NO</Th>
-                    <Th fontSize="2xs">APLIKASI / JUDUL</Th>
-                    <Th fontSize="2xs" width="135px">
+                    <Th fontSize="xs">REQUEST NO</Th>
+                    <Th fontSize="xs">APLIKASI / JUDUL</Th>
+                    <Th fontSize="xs" width="135px">
                       TGL IMPLEMENTASI
                     </Th>
-                    <Th fontSize="2xs" width="140px" textAlign="center">
+                    <Th fontSize="xs" width="140px" textAlign="center">
                       REKOMENDASI MIGRASI
                     </Th>
-                    <Th fontSize="2xs">PEMOHON</Th>
-                    <Th width="80px" fontSize="2xs" textAlign="center">
+                    <Th fontSize="xs">PEMOHON</Th>
+                    <Th width="80px" fontSize="xs" textAlign="center">
                       AKSI
                     </Th>
                   </Tr>
@@ -239,10 +239,11 @@ export const BulkSendToApprovalModal = ({
                             {item.requestNo}
                           </Text>
                           <Badge
-                            fontSize="3xs"
+                            fontSize="xs"
                             colorScheme="purple"
                             variant="subtle"
                             rounded="sm"
+                            px={1.5}
                           >
                             {item.requestType}
                           </Badge>
@@ -256,7 +257,7 @@ export const BulkSendToApprovalModal = ({
                           >
                             {item.requestTitle}
                           </Text>
-                          <Text fontSize="2xs" color="gray.500" noOfLines={1}>
+                          <Text fontSize="xs" color="gray.500" noOfLines={1}>
                             {item.projectName}
                           </Text>
                         </Td>
@@ -264,7 +265,7 @@ export const BulkSendToApprovalModal = ({
                           <HStack spacing={1.5}>
                             <Icon
                               as={FiCalendar}
-                              boxSize={3}
+                              boxSize={3.5}
                               color="blue.500"
                               flexShrink={0}
                             />
@@ -284,14 +285,14 @@ export const BulkSendToApprovalModal = ({
                             rounded="full"
                             px={2.5}
                             py={0.5}
-                            fontSize="3xs"
+                            fontSize="xs"
                             display="inline-flex"
                             alignItems="center"
                             gap={1}
                           >
                             <Icon
                               as={migrasi.isYes ? FiCheckCircle : FiXCircle}
-                              boxSize={2.5}
+                              boxSize={3}
                             />
                             {migrasi.label}
                           </Badge>

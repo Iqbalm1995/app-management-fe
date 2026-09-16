@@ -1105,7 +1105,7 @@ export default function VendorContractDetailView() {
                       <SimpleGrid columns={2} spacing={3} pt={1}>
                         <VStack align="start" spacing={0}>
                           <Text
-                            fontSize="2xs"
+                            fontSize="xs"
                             textTransform="uppercase"
                             opacity={0.8}
                             fontWeight="700"
@@ -1119,7 +1119,7 @@ export default function VendorContractDetailView() {
 
                         <VStack align="start" spacing={0}>
                           <Text
-                            fontSize="2xs"
+                            fontSize="xs"
                             textTransform="uppercase"
                             opacity={0.8}
                             fontWeight="700"
@@ -1153,7 +1153,7 @@ export default function VendorContractDetailView() {
                         <Badge
                           bg="whiteAlpha.300"
                           color="white"
-                          fontSize="2xs"
+                          fontSize="xs"
                           px={2.5}
                           py={0.5}
                           rounded="md"
@@ -1250,7 +1250,7 @@ export default function VendorContractDetailView() {
                       <Badge
                         colorScheme={getStatusColorScheme(contract.status)}
                         variant="solid"
-                        fontSize="3xs"
+                        fontSize="xs"
                         px={2}
                         py={0.5}
                         rounded="full"
@@ -1297,7 +1297,7 @@ export default function VendorContractDetailView() {
                           <HStack spacing={1.5} wrap="wrap">
                             <Badge
                               colorScheme="blue"
-                              fontSize="3xs"
+                              fontSize="xs"
                               rounded="md"
                             >
                               {contract.vendor?.vendorCode ||
@@ -1306,7 +1306,7 @@ export default function VendorContractDetailView() {
                             </Badge>
                             <Badge
                               colorScheme="gray"
-                              fontSize="3xs"
+                              fontSize="xs"
                               rounded="md"
                             >
                               {contract.vendor?.vendorType || "PT"}
@@ -1358,7 +1358,7 @@ export default function VendorContractDetailView() {
                           <HStack
                             spacing={1.5}
                             color="secondary.600"
-                            fontSize="3xs"
+                            fontSize="xs"
                             fontWeight="800"
                             textTransform="uppercase"
                             letterSpacing="wider"
@@ -1627,7 +1627,7 @@ export default function VendorContractDetailView() {
                             {activeTabInfo.countBadge ? (
                               <Badge
                                 colorScheme="green"
-                                fontSize="2xs"
+                                fontSize="xs"
                                 px={2.5}
                                 py={0.5}
                                 rounded="md"
@@ -1639,7 +1639,7 @@ export default function VendorContractDetailView() {
                               activeTabInfo.count > 0 ? (
                               <Badge
                                 colorScheme="blue"
-                                fontSize="2xs"
+                                fontSize="xs"
                                 px={2.5}
                                 py={0.5}
                                 rounded="md"
@@ -1665,7 +1665,7 @@ export default function VendorContractDetailView() {
                         <Badge
                           colorScheme="secondary"
                           variant="subtle"
-                          fontSize="2xs"
+                          fontSize="xs"
                           px={3}
                           py={1}
                           rounded="full"
@@ -1796,7 +1796,7 @@ export default function VendorContractDetailView() {
                                   <HStack spacing={2} wrap="wrap">
                                     <Badge
                                       colorScheme="blue"
-                                      fontSize="2xs"
+                                      fontSize="xs"
                                       px={2}
                                       py={0.5}
                                       rounded="md"
@@ -1808,7 +1808,7 @@ export default function VendorContractDetailView() {
                                     </Badge>
                                     <Badge
                                       colorScheme="gray"
-                                      fontSize="2xs"
+                                      fontSize="xs"
                                       px={2}
                                       py={0.5}
                                       rounded="md"
@@ -1821,7 +1821,7 @@ export default function VendorContractDetailView() {
                                         contract.vendor?.status ||
                                           contract.status,
                                       )}
-                                      fontSize="2xs"
+                                      fontSize="xs"
                                       px={2}
                                       py={0.5}
                                       rounded="md"
@@ -1913,7 +1913,7 @@ export default function VendorContractDetailView() {
                                   flex={1}
                                 >
                                   <Text
-                                    fontSize="3xs"
+                                    fontSize="xs"
                                     color="gray.500"
                                     fontWeight="700"
                                     textTransform="uppercase"
@@ -1944,7 +1944,7 @@ export default function VendorContractDetailView() {
                                   flex={1}
                                 >
                                   <Text
-                                    fontSize="3xs"
+                                    fontSize="xs"
                                     color="gray.500"
                                     fontWeight="700"
                                     textTransform="uppercase"
@@ -1987,7 +1987,7 @@ export default function VendorContractDetailView() {
                                     <HStack
                                       spacing={1.5}
                                       color="blue.500"
-                                      fontSize="3xs"
+                                      fontSize="xs"
                                       fontWeight="800"
                                       textTransform="uppercase"
                                       letterSpacing="wider"
@@ -2010,7 +2010,7 @@ export default function VendorContractDetailView() {
                                     {contract.vendor?.picBusinessEmail && (
                                       <HStack
                                         spacing={1.5}
-                                        fontSize="3xs"
+                                        fontSize="xs"
                                         color="gray.500"
                                       >
                                         <Icon as={FiMail} boxSize={3} />
@@ -2023,7 +2023,7 @@ export default function VendorContractDetailView() {
                                       ?.picBusinessNumberHotline && (
                                       <HStack
                                         spacing={1.5}
-                                        fontSize="3xs"
+                                        fontSize="xs"
                                         color="gray.500"
                                       >
                                         <Icon as={FiPhone} boxSize={3} />
@@ -2056,7 +2056,7 @@ export default function VendorContractDetailView() {
                                     <HStack
                                       spacing={1.5}
                                       color="teal.500"
-                                      fontSize="3xs"
+                                      fontSize="xs"
                                       fontWeight="800"
                                       textTransform="uppercase"
                                       letterSpacing="wider"
@@ -2079,7 +2079,7 @@ export default function VendorContractDetailView() {
                                     {contract.vendor?.picTechnicalEmail && (
                                       <HStack
                                         spacing={1.5}
-                                        fontSize="3xs"
+                                        fontSize="xs"
                                         color="gray.500"
                                       >
                                         <Icon as={FiMail} boxSize={3} />
@@ -2092,7 +2092,7 @@ export default function VendorContractDetailView() {
                                       ?.picTechnicalNumberHotline && (
                                       <HStack
                                         spacing={1.5}
-                                        fontSize="3xs"
+                                        fontSize="xs"
                                         color="gray.500"
                                       >
                                         <Icon as={FiPhone} boxSize={3} />
@@ -2131,7 +2131,7 @@ export default function VendorContractDetailView() {
                                   <HStack
                                     spacing={1.5}
                                     color="gray.500"
-                                    fontSize="2xs"
+                                    fontSize="xs"
                                     fontWeight="700"
                                     textTransform="uppercase"
                                   >
@@ -2163,7 +2163,7 @@ export default function VendorContractDetailView() {
                                   ) : (
                                     <Badge
                                       colorScheme="gray"
-                                      fontSize="3xs"
+                                      fontSize="xs"
                                       rounded="md"
                                       px={2}
                                       py={0.5}
@@ -2346,7 +2346,7 @@ export default function VendorContractDetailView() {
                                     }
                                   />
                                   {projectData?.projectDurationDays ? (
-                                    <Text fontSize="3xs" color="gray.500">
+                                    <Text fontSize="xs" color="gray.500">
                                       Durasi: {projectData.projectDurationDays}{" "}
                                       Calendar Days
                                     </Text>
@@ -2376,7 +2376,7 @@ export default function VendorContractDetailView() {
                                 >
                                   <VStack align="start" spacing={1}>
                                     <Text
-                                      fontSize="2xs"
+                                      fontSize="xs"
                                       color="gray.500"
                                       fontWeight="700"
                                       textTransform="uppercase"
@@ -2396,7 +2396,7 @@ export default function VendorContractDetailView() {
                                         contract.proOwnerDivisionName ||
                                         "-"}
                                     </Text>
-                                    <Text fontSize="2xs" color="gray.500">
+                                    <Text fontSize="xs" color="gray.500">
                                       {projectData?.proOwnerDirectorateName ||
                                         contract.proOwnerDirectorateName ||
                                         "-"}
@@ -2420,7 +2420,7 @@ export default function VendorContractDetailView() {
                                 >
                                   <VStack align="start" spacing={1}>
                                     <Text
-                                      fontSize="2xs"
+                                      fontSize="xs"
                                       color="gray.500"
                                       fontWeight="700"
                                       textTransform="uppercase"
@@ -2439,7 +2439,7 @@ export default function VendorContractDetailView() {
                                       {projectData?.proManageByDivisionName ||
                                         "Information Technology Division"}
                                     </Text>
-                                    <Text fontSize="2xs" color="gray.500">
+                                    <Text fontSize="xs" color="gray.500">
                                       {projectData?.proManageByTeamName ||
                                         projectData?.proManageByGroupName ||
                                         "-"}
@@ -2463,7 +2463,7 @@ export default function VendorContractDetailView() {
                                 >
                                   <VStack align="start" spacing={1}>
                                     <Text
-                                      fontSize="2xs"
+                                      fontSize="xs"
                                       color="gray.500"
                                       fontWeight="700"
                                       textTransform="uppercase"
@@ -2473,7 +2473,7 @@ export default function VendorContractDetailView() {
                                     <HStack spacing={1.5} wrap="wrap">
                                       <Badge
                                         colorScheme="teal"
-                                        fontSize="2xs"
+                                        fontSize="xs"
                                         px={2}
                                         py={0.5}
                                         rounded="md"
@@ -2486,7 +2486,7 @@ export default function VendorContractDetailView() {
                                       {projectData?.sdlcName && (
                                         <Badge
                                           colorScheme="gray"
-                                          fontSize="2xs"
+                                          fontSize="xs"
                                           px={2}
                                           py={0.5}
                                           rounded="md"
@@ -2618,7 +2618,7 @@ export default function VendorContractDetailView() {
                                   <HStack spacing={2}>
                                     <Badge
                                       colorScheme="blue"
-                                      fontSize="2xs"
+                                      fontSize="xs"
                                       px={2.5}
                                       py={0.5}
                                       rounded="md"
@@ -2629,7 +2629,7 @@ export default function VendorContractDetailView() {
                                     </Badge>
                                     <Badge
                                       colorScheme="purple"
-                                      fontSize="2xs"
+                                      fontSize="xs"
                                       px={2}
                                       py={0.5}
                                       rounded="md"
@@ -2642,7 +2642,7 @@ export default function VendorContractDetailView() {
                                     {projectData.requirementData.reqStatus && (
                                       <Badge
                                         colorScheme="green"
-                                        fontSize="2xs"
+                                        fontSize="xs"
                                         px={2}
                                         py={0.5}
                                         rounded="md"
@@ -2789,7 +2789,7 @@ export default function VendorContractDetailView() {
                                         <Td py={3} px={4} fontSize="sm">
                                           <Badge
                                             colorScheme="blue"
-                                            fontSize="2xs"
+                                            fontSize="xs"
                                           >
                                             {wp.workProgramCode || "-"}
                                           </Badge>
@@ -2946,7 +2946,7 @@ export default function VendorContractDetailView() {
                                         {idx + 1}
                                       </Td>
                                       <Td py={3.5} px={4} fontSize="sm">
-                                        <Badge fontSize="2xs">
+                                        <Badge fontSize="xs">
                                           {item.itemCode || "-"}
                                         </Badge>
                                       </Td>
@@ -2961,7 +2961,7 @@ export default function VendorContractDetailView() {
                                       <Td py={3.5} px={4} fontSize="sm">
                                         <Badge
                                           colorScheme="blue"
-                                          fontSize="2xs"
+                                          fontSize="xs"
                                         >
                                           {item.itemType || "-"}
                                         </Badge>
@@ -3044,7 +3044,7 @@ export default function VendorContractDetailView() {
                               </Text>
                               <Badge
                                 colorScheme="blue"
-                                fontSize="2xs"
+                                fontSize="xs"
                                 px={2}
                                 py={0.5}
                                 rounded="md"
@@ -3082,7 +3082,7 @@ export default function VendorContractDetailView() {
                               </Text>
                               <Badge
                                 colorScheme="purple"
-                                fontSize="2xs"
+                                fontSize="xs"
                                 px={2}
                                 py={0.5}
                                 rounded="md"
@@ -3124,7 +3124,7 @@ export default function VendorContractDetailView() {
                               </Text>
                               <Badge
                                 colorScheme="teal"
-                                fontSize="2xs"
+                                fontSize="xs"
                                 px={2}
                                 py={0.5}
                                 rounded="md"
@@ -3180,7 +3180,7 @@ export default function VendorContractDetailView() {
                                       )}
                                     </Text>
                                     <Text
-                                      fontSize="3xs"
+                                      fontSize="xs"
                                       color="gray.500"
                                       fontWeight="medium"
                                     >
@@ -3196,7 +3196,7 @@ export default function VendorContractDetailView() {
                                     <Badge
                                       colorScheme="purple"
                                       variant="subtle"
-                                      fontSize="3xs"
+                                      fontSize="xs"
                                       px={2}
                                       py={0.5}
                                       rounded="md"
@@ -3211,7 +3211,7 @@ export default function VendorContractDetailView() {
                                           : "gray"
                                       }
                                       variant="solid"
-                                      fontSize="3xs"
+                                      fontSize="xs"
                                       px={2}
                                       py={0.5}
                                       rounded="md"

@@ -182,7 +182,7 @@ export default function ContractPaymentDetailModal({
                 <SimpleGrid columns={{ base: 1, md: 4 }} spacing={4}>
                   <Box>
                     <Text
-                      fontSize="2xs"
+                      fontSize="xs"
                       color="gray.500"
                       textTransform="uppercase"
                       fontWeight="bold"
@@ -195,7 +195,7 @@ export default function ContractPaymentDetailModal({
                   </Box>
                   <Box>
                     <Text
-                      fontSize="2xs"
+                      fontSize="xs"
                       color="gray.500"
                       textTransform="uppercase"
                       fontWeight="bold"
@@ -208,7 +208,7 @@ export default function ContractPaymentDetailModal({
                   </Box>
                   <Box>
                     <Text
-                      fontSize="2xs"
+                      fontSize="xs"
                       color="gray.500"
                       textTransform="uppercase"
                       fontWeight="bold"
@@ -225,7 +225,7 @@ export default function ContractPaymentDetailModal({
                   </Box>
                   <Box>
                     <Text
-                      fontSize="2xs"
+                      fontSize="xs"
                       color="gray.500"
                       textTransform="uppercase"
                       fontWeight="bold"
@@ -289,15 +289,15 @@ export default function ContractPaymentDetailModal({
                             bg={colorMode === "light" ? "gray.50" : "gray.800"}
                           >
                             <Tr>
-                              <Th fontSize="2xs">RBB Account / Code</Th>
-                              <Th fontSize="2xs">Account Name / Cost Center</Th>
-                              <Th fontSize="2xs" isNumeric>
+                              <Th fontSize="xs">RBB Account / Code</Th>
+                              <Th fontSize="xs">Account Name / Cost Center</Th>
+                              <Th fontSize="xs" isNumeric>
                                 Budget
                               </Th>
-                              <Th fontSize="2xs" isNumeric>
+                              <Th fontSize="xs" isNumeric>
                                 Realization
                               </Th>
-                              <Th fontSize="2xs" isNumeric>
+                              <Th fontSize="xs" isNumeric>
                                 Leftovers
                               </Th>
                             </Tr>
@@ -307,7 +307,7 @@ export default function ContractPaymentDetailModal({
                               <Tr key={wp.id || idx}>
                                 <Td>
                                   <VStack align="start" spacing={0}>
-                                    <Badge colorScheme="blue" fontSize="2xs">
+                                    <Badge colorScheme="blue" fontSize="xs">
                                       {wp.workProgramSource}
                                     </Badge>
                                     <Text fontSize="xs" fontWeight="bold">
@@ -321,7 +321,7 @@ export default function ContractPaymentDetailModal({
                                       {wp.workProgramAccName ||
                                         wp.workProgramName}
                                     </Text>
-                                    <Text fontSize="2xs" color="gray.500">
+                                    <Text fontSize="xs" color="gray.500">
                                       Acc: {wp.workProgramAccNumber || "-"} •
                                       CC: {wp.workProgramAccCc || "-"}
                                     </Text>
@@ -411,10 +411,10 @@ export default function ContractPaymentDetailModal({
                                   mr={2}
                                 >
                                   <HStack spacing={2} wrap="wrap">
-                                    <Badge colorScheme="purple" fontSize="2xs">
+                                    <Badge colorScheme="purple" fontSize="xs">
                                       {att.documentType}
                                     </Badge>
-                                    <Badge colorScheme="gray" fontSize="2xs">
+                                    <Badge colorScheme="gray" fontSize="xs">
                                       {att.documentVersion}
                                     </Badge>
                                   </HStack>
@@ -425,7 +425,7 @@ export default function ContractPaymentDetailModal({
                                   >
                                     {att.documentName}
                                   </Text>
-                                  <Text fontSize="2xs" color="gray.500">
+                                  <Text fontSize="xs" color="gray.500">
                                     Ref: {att.documentNumber} • Date:{" "}
                                     {new Date(
                                       att.documentDate,

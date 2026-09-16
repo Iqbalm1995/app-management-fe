@@ -166,7 +166,7 @@ const SoftwareReview = ({ step1, step2, step3, step4, step5 }: SoftwareReviewPro
                         variant={isMainApp ? "solid" : "subtle"}
                         rounded="md"
                         px={2}
-                        fontSize="2xs"
+                        fontSize="xs"
                         fontWeight="semibold"
                       >
                         {isMainApp ? "Aplikasi Utama" : `Aplikasi Terkait #${idx}`}
@@ -189,7 +189,7 @@ const SoftwareReview = ({ step1, step2, step3, step4, step5 }: SoftwareReviewPro
                               rounded="full"
                               px={2}
                               py={0.5}
-                              fontSize="3xs"
+                              fontSize="xs"
                               fontWeight="semibold"
                             >
                               {cat}
@@ -581,13 +581,13 @@ const SoftwareReview = ({ step1, step2, step3, step4, step5 }: SoftwareReviewPro
                   <Table size="sm" variant="simple">
                     <Thead bg={colorMode === "light" ? "gray.50" : "gray.750"}>
                       <Tr>
-                        <Th w="60px" textAlign="center" fontSize="2xs" color="gray.500">
+                        <Th w="60px" textAlign="center" fontSize="xs" color="gray.500">
                           NO
                         </Th>
-                        <Th fontSize="2xs" color="gray.500">
+                        <Th fontSize="xs" color="gray.500">
                           NAME
                         </Th>
-                        <Th fontSize="2xs" color="gray.500">
+                        <Th fontSize="xs" color="gray.500">
                           ASAL DIVISI
                         </Th>
                       </Tr>
@@ -610,7 +610,7 @@ const SoftwareReview = ({ step1, step2, step3, step4, step5 }: SoftwareReviewPro
                               <HStack spacing={2}>
                                 <Text fontWeight="semibold">{m.userName}</Text>
                                 <Badge
-                                  fontSize="3xs"
+                                  fontSize="xs"
                                   rounded="full"
                                   px={2}
                                   colorScheme={

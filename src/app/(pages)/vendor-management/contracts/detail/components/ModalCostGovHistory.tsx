@@ -278,7 +278,7 @@ export default function ModalCostGovHistory({
                                   {hist.revisionReason || "Cost Governance Update"}
                                 </Text>
                                 {hist.benchmarkHpsKey && (
-                                  <Badge colorScheme="yellow" fontSize="3xs" px={1.5}>
+                                  <Badge colorScheme="yellow" fontSize="xs" px={1.5}>
                                     Benchmark: {hist.benchmarkHpsKey.toUpperCase()}
                                   </Badge>
                                 )}
@@ -298,7 +298,7 @@ export default function ModalCostGovHistory({
 
                           <HStack spacing={4}>
                             <VStack align="end" spacing={0}>
-                              <Text fontSize="2xs" color="gray.500" fontWeight="bold">
+                              <Text fontSize="xs" color="gray.500" fontWeight="bold">
                                 RBB BUDGET CEILING
                               </Text>
                               <Text fontSize="xs" fontWeight="bold" color="blue.600">
@@ -307,12 +307,12 @@ export default function ModalCostGovHistory({
                             </VStack>
 
                             <VStack align="end" spacing={0}>
-                              <Text fontSize="2xs" color="gray.500" fontWeight="bold">
+                              <Text fontSize="xs" color="gray.500" fontWeight="bold">
                                 CONTRACT ABSORPTION
                               </Text>
                               <Badge
                                 colorScheme={hist.globalResapanPercentage >= 0 ? "teal" : "red"}
-                                fontSize="2xs"
+                                fontSize="xs"
                                 px={2}
                                 py={0.5}
                                 rounded="md"
@@ -338,13 +338,13 @@ export default function ModalCostGovHistory({
                               bg={colorMode === "light" ? "blue.50/30" : "gray.800"}
                             >
                               <VStack align="start" spacing={0.5}>
-                                <Text fontSize="2xs" color="gray.500" fontWeight="bold" textTransform="uppercase">
+                                <Text fontSize="xs" color="gray.500" fontWeight="bold" textTransform="uppercase">
                                   Total RBB Budget (A)
                                 </Text>
                                 <Text fontSize="sm" fontWeight="bold" color="blue.600">
                                   {formatIDR(hist.totalBudgetRbb)}
                                 </Text>
-                                <Text fontSize="3xs" color="gray.400">Snapshot reference budget ceiling</Text>
+                                <Text fontSize="xs" color="gray.400">Snapshot reference budget ceiling</Text>
                               </VStack>
                             </Box>
 
@@ -356,13 +356,13 @@ export default function ModalCostGovHistory({
                               bg={colorMode === "light" ? "teal.50/30" : "gray.800"}
                             >
                               <VStack align="start" spacing={0.5}>
-                                <Text fontSize="2xs" color="gray.500" fontWeight="bold" textTransform="uppercase">
+                                <Text fontSize="xs" color="gray.500" fontWeight="bold" textTransform="uppercase">
                                   Vendor Contract Value (C)
                                 </Text>
                                 <Text fontSize="sm" fontWeight="bold" color="teal.600">
                                   {formatIDR(hist.contractWorkValue)}
                                 </Text>
-                                <Text fontSize="3xs" color="gray.400">Nilai SPK saat snapshot</Text>
+                                <Text fontSize="xs" color="gray.400">Nilai SPK saat snapshot</Text>
                               </VStack>
                             </Box>
 
@@ -374,7 +374,7 @@ export default function ModalCostGovHistory({
                               bg={colorMode === "light" ? "green.50/30" : "gray.800"}
                             >
                               <VStack align="start" spacing={0.5}>
-                                <Text fontSize="2xs" color="gray.500" fontWeight="bold" textTransform="uppercase">
+                                <Text fontSize="xs" color="gray.500" fontWeight="bold" textTransform="uppercase">
                                   Remaining RBB Budget (A - C)
                                 </Text>
                                 <Text
@@ -384,7 +384,7 @@ export default function ModalCostGovHistory({
                                 >
                                   {formatIDR(diffResapan)}
                                 </Text>
-                                <Text fontSize="3xs" color="gray.400">
+                                <Text fontSize="xs" color="gray.400">
                                   {diffResapan >= 0 ? "Budget Surplus" : "Budget Deficit"}
                                 </Text>
                               </VStack>
@@ -398,13 +398,13 @@ export default function ModalCostGovHistory({
                               bg={colorMode === "light" ? "purple.50/30" : "gray.800"}
                             >
                               <VStack align="start" spacing={0.5}>
-                                <Text fontSize="2xs" color="gray.500" fontWeight="bold" textTransform="uppercase">
+                                <Text fontSize="xs" color="gray.500" fontWeight="bold" textTransform="uppercase">
                                   Global Absorption (A vs C)
                                 </Text>
                                 <Text fontSize="sm" fontWeight="bold" color="purple.600">
                                   {formatPct(hist.globalResapanPercentage)}
                                 </Text>
-                                <Text fontSize="3xs" color="gray.400">
+                                <Text fontSize="xs" color="gray.400">
                                   Status: {hist.globalResapanStatus || "NORMAL"}
                                 </Text>
                               </VStack>
@@ -446,13 +446,13 @@ export default function ModalCostGovHistory({
                                 <Table variant="simple" size="sm">
                                   <Thead bg={colorMode === "light" ? "gray.50/60" : "gray.850"}>
                                     <Tr>
-                                      <Th fontSize="2xs" py={2.5} w="40px">No.</Th>
-                                      <Th fontSize="2xs" py={2.5}>Pilar & Model HPS</Th>
-                                      <Th fontSize="2xs" py={2.5} isNumeric>Nominal HPS (Rp.)</Th>
-                                      <Th fontSize="2xs" py={2.5} isNumeric>vs RBB Budget (A - H)</Th>
-                                      <Th fontSize="2xs" py={2.5}>RBB Budget Sufficiency</Th>
-                                      <Th fontSize="2xs" py={2.5} isNumeric>vs Contract Value (H - C)</Th>
-                                      <Th fontSize="2xs" py={2.5}>Efficiency vs HPS</Th>
+                                      <Th fontSize="xs" py={2.5} w="40px">No.</Th>
+                                      <Th fontSize="xs" py={2.5}>Pilar & Model HPS</Th>
+                                      <Th fontSize="xs" py={2.5} isNumeric>Nominal HPS (Rp.)</Th>
+                                      <Th fontSize="xs" py={2.5} isNumeric>vs RBB Budget (A - H)</Th>
+                                      <Th fontSize="xs" py={2.5}>RBB Budget Sufficiency</Th>
+                                      <Th fontSize="xs" py={2.5} isNumeric>vs Contract Value (H - C)</Th>
+                                      <Th fontSize="xs" py={2.5}>Efficiency vs HPS</Th>
                                     </Tr>
                                   </Thead>
                                   <Tbody fontSize="xs">
@@ -476,7 +476,7 @@ export default function ModalCostGovHistory({
                                             <HStack spacing={2}>
                                               <Badge
                                                 colorScheme={tagColor}
-                                                fontSize="3xs"
+                                                fontSize="xs"
                                                 px={1.5}
                                                 py={0.2}
                                                 rounded="md"
@@ -485,7 +485,7 @@ export default function ModalCostGovHistory({
                                               </Badge>
                                               <Text fontWeight="semibold">{hps.hpsName}</Text>
                                               {hps.isBenchmark && (
-                                                <Badge colorScheme="yellow" fontSize="3xs" px={1.5}>
+                                                <Badge colorScheme="yellow" fontSize="xs" px={1.5}>
                                                   Benchmark
                                                 </Badge>
                                               )}
@@ -507,7 +507,7 @@ export default function ModalCostGovHistory({
                                           <Td>
                                             <Badge
                                               colorScheme={hps.diffRbbNominal >= 0 ? "green" : "red"}
-                                              fontSize="3xs"
+                                              fontSize="xs"
                                               px={1.5}
                                               py={0.5}
                                               rounded="md"
@@ -527,7 +527,7 @@ export default function ModalCostGovHistory({
                                           <Td>
                                             <Badge
                                               colorScheme={hps.diffContractNominal >= 0 ? "teal" : "red"}
-                                              fontSize="3xs"
+                                              fontSize="xs"
                                               px={1.5}
                                               py={0.5}
                                               rounded="md"
@@ -551,7 +551,7 @@ export default function ModalCostGovHistory({
                             p={3.5}
                             rounded="xl"
                             bg={colorMode === "light" ? "gray.50" : "gray.800"}
-                            fontSize="2xs"
+                            fontSize="xs"
                             color="gray.500"
                           >
                             <GridItem>

@@ -240,7 +240,7 @@ export default function PaymentAttachmentUploadModal({
                   ))}
                 </Select>
                 {errors.documentType && (
-                  <FormErrorMessage fontSize="2xs">{errors.documentType}</FormErrorMessage>
+                  <FormErrorMessage fontSize="xs">{errors.documentType}</FormErrorMessage>
                 )}
               </FormControl>
 
@@ -288,7 +288,7 @@ export default function PaymentAttachmentUploadModal({
                 placeholder="e.g. BAST Milestone 1 API Integration"
               />
               {errors.documentName && (
-                <FormErrorMessage fontSize="2xs">{errors.documentName}</FormErrorMessage>
+                <FormErrorMessage fontSize="xs">{errors.documentName}</FormErrorMessage>
               )}
             </FormControl>
 
@@ -315,7 +315,7 @@ export default function PaymentAttachmentUploadModal({
                   placeholder="e.g. BAST/BJB/2026/08/001"
                 />
                 {errors.documentNumber && (
-                  <FormErrorMessage fontSize="2xs">{errors.documentNumber}</FormErrorMessage>
+                  <FormErrorMessage fontSize="xs">{errors.documentNumber}</FormErrorMessage>
                 )}
               </FormControl>
 
@@ -340,7 +340,7 @@ export default function PaymentAttachmentUploadModal({
                   onChange={(e) => setDocumentDate(e.target.value)}
                 />
                 {errors.documentDate && (
-                  <FormErrorMessage fontSize="2xs">{errors.documentDate}</FormErrorMessage>
+                  <FormErrorMessage fontSize="xs">{errors.documentDate}</FormErrorMessage>
                 )}
               </FormControl>
             </Flex>
@@ -411,7 +411,7 @@ export default function PaymentAttachmentUploadModal({
                         <Text fontSize="xs" fontWeight="bold" noOfLines={1}>
                           {selectedFile.name}
                         </Text>
-                        <Text fontSize="2xs" color="gray.500">
+                        <Text fontSize="xs" color="gray.500">
                           {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB • Ready to upload
                         </Text>
                       </VStack>
@@ -434,14 +434,14 @@ export default function PaymentAttachmentUploadModal({
                     <Text fontSize="xs" fontWeight="semibold">
                       Drag and drop your file here, or click to browse
                     </Text>
-                    <Text fontSize="2xs" color="gray.500">
+                    <Text fontSize="xs" color="gray.500">
                       Supports PDF, Word, Excel, and scan formats
                     </Text>
                   </VStack>
                 )}
               </Box>
               {errors.file && (
-                <FormErrorMessage fontSize="2xs">{errors.file}</FormErrorMessage>
+                <FormErrorMessage fontSize="xs">{errors.file}</FormErrorMessage>
               )}
             </FormControl>
 

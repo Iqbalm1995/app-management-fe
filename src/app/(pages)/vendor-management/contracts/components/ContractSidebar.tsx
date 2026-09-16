@@ -151,7 +151,7 @@ const ContractSidebar = ({
                 <Text fontSize="2xl" fontWeight="bold" color="blue.600">
                   {totalContractsCount}
                 </Text>
-                <Text fontSize="2xs" color="gray.600" fontWeight="semibold">
+                <Text fontSize="xs" color="gray.600" fontWeight="semibold">
                   Total Contracts
                 </Text>
               </Box>
@@ -159,7 +159,7 @@ const ContractSidebar = ({
                 <Text fontSize="2xl" fontWeight="bold" color="green.600">
                   {totalActiveContractsCount}
                 </Text>
-                <Text fontSize="2xs" color="gray.600" fontWeight="semibold">
+                <Text fontSize="xs" color="gray.600" fontWeight="semibold">
                   Active Now
                 </Text>
               </Box>
@@ -168,7 +168,7 @@ const ContractSidebar = ({
             <Divider />
 
             <VStack align="start" spacing={1}>
-              <Text fontSize="2xs" color="gray.500" fontWeight="600">
+              <Text fontSize="xs" color="gray.500" fontWeight="600">
                 Total Portfolio Work Value
               </Text>
               <Text fontSize="md" fontWeight="800" color="secondary.700">
@@ -251,7 +251,7 @@ const ContractSidebar = ({
                 <Text fontSize="sm" fontWeight="bold" color="gray.800">
                   Vendor Filter
                 </Text>
-                <Text fontSize="2xs" color="gray.500">Filter by corporate vendor</Text>
+                <Text fontSize="xs" color="gray.500">Filter by corporate vendor</Text>
               </VStack>
             </HStack>
 
@@ -259,8 +259,8 @@ const ContractSidebar = ({
               <Box p={3} rounded="xl" border="1px" borderColor={colorMode === "light" ? "teal.200" : "teal.700"} bg={colorMode === "light" ? "teal.50" : "gray.700"}>
                 <VStack align="start" spacing={1.5}>
                   <HStack spacing={2}>
-                    <Badge colorScheme="blue" fontSize="2xs" rounded="md">{selectedVendor.vendorCode}</Badge>
-                    <Badge colorScheme="purple" fontSize="2xs" rounded="md">{selectedVendor.vendorType}</Badge>
+                    <Badge colorScheme="blue" fontSize="xs" rounded="md">{selectedVendor.vendorCode}</Badge>
+                    <Badge colorScheme="purple" fontSize="xs" rounded="md">{selectedVendor.vendorType}</Badge>
                   </HStack>
                   <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"} noOfLines={1}>
                     {selectedVendor.vendorName}
@@ -354,7 +354,7 @@ const ContractSidebar = ({
                         variant={isSelected ? "solid" : "subtle"}
                         rounded="full"
                         px={2}
-                        fontSize="2xs"
+                        fontSize="xs"
                       >
                         {count}
                       </Badge>

@@ -259,7 +259,7 @@ const ModalProjectSelector = ({
                             )}
                             <Badge
                               colorScheme={getStatusBadgeColor(p.projectStatus)}
-                              fontSize="2xs"
+                              fontSize="xs"
                               px={1.5}
                               rounded="full"
                             >

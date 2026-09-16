@@ -93,7 +93,7 @@ export const ContractHistoryTabPanel = ({
               </VStack>
             </HStack>
 
-            <Badge colorScheme="purple" fontSize="2xs" px={3} py={1} rounded="full">
+            <Badge colorScheme="purple" fontSize="xs" px={3} py={1} rounded="full">
               {historyList.length} Revisions Recorded
             </Badge>
           </Flex>
@@ -183,19 +183,19 @@ export const ContractHistoryTabPanel = ({
                       <Grid templateColumns={{ base: "1fr", md: "1fr 1fr 1fr" }} gap={3} p={4} rounded="xl" bg={colorMode === "light" ? "gray.50" : "gray.800"}>
                         <GridItem>
                           <VStack align="start" spacing={0}>
-                            <Text fontSize="2xs" color="gray.500" fontWeight="bold">SPK / CORP NUMBER</Text>
+                            <Text fontSize="xs" color="gray.500" fontWeight="bold">SPK / CORP NUMBER</Text>
                             <Text fontSize="xs" fontWeight="bold">{history.corpNumber}</Text>
                           </VStack>
                         </GridItem>
                         <GridItem>
                           <VStack align="start" spacing={0}>
-                            <Text fontSize="2xs" color="gray.500" fontWeight="bold">CONTRACT NUMBER</Text>
+                            <Text fontSize="xs" color="gray.500" fontWeight="bold">CONTRACT NUMBER</Text>
                             <Text fontSize="xs" fontWeight="bold">{history.contractNumber}</Text>
                           </VStack>
                         </GridItem>
                         <GridItem>
                           <VStack align="start" spacing={0}>
-                            <Text fontSize="2xs" color="gray.500" fontWeight="bold">SIGNING DATE</Text>
+                            <Text fontSize="xs" color="gray.500" fontWeight="bold">SIGNING DATE</Text>
                             <Text fontSize="xs" fontWeight="bold">
                               {history.contractDate ? new Date(history.contractDate).toLocaleDateString("en-US") : "-"}
                             </Text>
@@ -207,14 +207,14 @@ export const ContractHistoryTabPanel = ({
                       <SimpleGrid columns={{ base: 1, md: 3 }} spacing={3}>
                         <Box p={3.5} rounded="xl" border="1px" borderColor={colorMode === "light" ? "teal.200" : "teal.800"} bg={colorMode === "light" ? "teal.50/30" : "gray.800"}>
                           <VStack align="start" spacing={0}>
-                            <Text fontSize="2xs" color="gray.500" fontWeight="bold">TOTAL WORK VALUE</Text>
+                            <Text fontSize="xs" color="gray.500" fontWeight="bold">TOTAL WORK VALUE</Text>
                             <Text fontSize="sm" fontWeight="bold" color="teal.600">{formatIDR(history.workValue)}</Text>
                           </VStack>
                         </Box>
 
                         <Box p={3.5} rounded="xl" border="1px" borderColor={colorMode === "light" ? "blue.200" : "blue.800"} bg={colorMode === "light" ? "blue.50/30" : "gray.800"}>
                           <VStack align="start" spacing={0}>
-                            <Text fontSize="2xs" color="gray.500" fontWeight="bold">CAPEX EXPENDITURE</Text>
+                            <Text fontSize="xs" color="gray.500" fontWeight="bold">CAPEX EXPENDITURE</Text>
                             <Text fontSize="xs" fontWeight="bold" color="blue.600">
                               {formatIDR(history.cavexValues)} ({history.capexPercentage}%)
                             </Text>
@@ -223,7 +223,7 @@ export const ContractHistoryTabPanel = ({
 
                         <Box p={3.5} rounded="xl" border="1px" borderColor={colorMode === "light" ? "purple.200" : "purple.800"} bg={colorMode === "light" ? "purple.50/30" : "gray.800"}>
                           <VStack align="start" spacing={0}>
-                            <Text fontSize="2xs" color="gray.500" fontWeight="bold">OPEX EXPENDITURE</Text>
+                            <Text fontSize="xs" color="gray.500" fontWeight="bold">OPEX EXPENDITURE</Text>
                             <Text fontSize="xs" fontWeight="bold" color="purple.600">
                               {formatIDR(history.ovexValues)} ({history.ovexPercentage}%)
                             </Text>

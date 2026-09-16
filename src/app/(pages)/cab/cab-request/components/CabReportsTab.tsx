@@ -193,7 +193,7 @@ const getCabCategory = (item: CabRequestItem): "SOFTWARE" | "HARDWARE" => {
 
 const renderCabResultBadge = (_result?: string, _status?: string) => {
   return (
-    <Badge colorScheme="green" variant="subtle" rounded="full" px={2.5} py={0.5} fontSize="3xs" fontWeight="semibold">
+    <Badge colorScheme="green" variant="subtle" rounded="full" px={2.5} py={0.5} fontSize="xs" fontWeight="semibold">
       COMPLETED
     </Badge>
   );
@@ -705,7 +705,7 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
               <Text fontSize="xs" fontWeight="bold" color="secondary.600" noOfLines={1}>
                 {info.getValue() as string}
               </Text>
-              <Text fontSize="2xs" color={isDark ? "gray.400" : "gray.500"} noOfLines={1}>
+              <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"} noOfLines={1}>
                 {dateStr}
               </Text>
             </VStack>
@@ -735,7 +735,7 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
               <Text fontSize="xs" fontWeight="semibold" noOfLines={2} title={info.getValue() as string}>
                 {info.getValue() as string}
               </Text>
-              <Text fontSize="2xs" color={isDark ? "gray.400" : "gray.500"} noOfLines={1} title={item.projectName}>
+              <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"} noOfLines={1} title={item.projectName}>
                 Project: {item.projectName || "-"}
               </Text>
             </VStack>
@@ -771,9 +771,9 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
               colorScheme={cat === "HARDWARE" ? "orange" : "purple"}
               variant="subtle"
               rounded="full"
-              px={2}
+              px={2.5}
               py={0.5}
-              fontSize="3xs"
+              fontSize="xs"
               fontWeight="bold"
             >
               {cat}
@@ -811,7 +811,7 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
               <Text fontSize="xs" fontWeight="medium" noOfLines={1}>
                 {timeStr}
               </Text>
-              <Text fontSize="2xs" color={isDark ? "gray.400" : "gray.500"} noOfLines={1} title={item.cabLocation || "Online Meeting"}>
+              <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"} noOfLines={1} title={item.cabLocation || "Online Meeting"}>
                 {item.cabLocation || "Online Meeting"}
               </Text>
             </VStack>
@@ -926,12 +926,12 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
           const hasBukti = Boolean(item.buktiImplementasi && item.buktiImplementasi.length > 0);
 
           return (
-            <Flex justify="center" align="center" minW="60px">
+            <Flex justify="center" align="center" minW="80px">
               <Menu isLazy placement="bottom-end">
                 <MenuButton
                   as={Button}
                   rightIcon={<FiMoreVertical />}
-                  size="xs"
+                  size="sm"
                   variant="outline"
                   colorScheme="blue"
                   bg="transparent"
@@ -939,9 +939,9 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
                   color={isDark ? "blue.300" : "blue.600"}
                   rounded="md"
                   fontSize="xs"
-                  fontWeight="medium"
-                  px={2.5}
-                  h="24px"
+                  fontWeight="semibold"
+                  px={3}
+                  h="32px"
                   _hover={{
                     bg: isDark ? "rgba(66, 153, 225, 0.15)" : "blue.50",
                     borderColor: isDark ? "blue.300" : "blue.600",
@@ -954,16 +954,18 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
                 </MenuButton>
                 <MenuList
                   zIndex={20}
-                  shadow="lg"
-                  py={1}
-                  minW="190px"
+                  shadow="xl"
+                  py={2}
+                  minW="220px"
                   bg={isDark ? "gray.800" : "white"}
                   borderColor={isDark ? "gray.700" : "gray.200"}
-                  rounded="lg"
+                  rounded="xl"
                 >
                   <MenuItem
                     icon={<FiEye />}
-                    fontSize="xs"
+                    fontSize="sm"
+                    py={2.5}
+                    px={3.5}
                     onClick={() => router.push(`/cab/cab-request/detail?id=${item.id}`)}
                   >
                     Lihat Detail
@@ -972,7 +974,9 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
                   {hasBukti && (
                     <MenuItem
                       icon={<FiImage />}
-                      fontSize="xs"
+                      fontSize="sm"
+                      py={2.5}
+                      px={3.5}
                       onClick={() =>
                         setPreviewModalData({
                           isOpen: true,
@@ -986,11 +990,13 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
                     </MenuItem>
                   )}
 
-                  <MenuDivider />
+                  <MenuDivider my={1.5} />
 
                   <MenuItem
                     icon={<FiFileText />}
-                    fontSize="xs"
+                    fontSize="sm"
+                    py={2.5}
+                    px={3.5}
                     onClick={() => handleExportSingleChecklistPdf(item)}
                   >
                     Ekspor Checklist (PDF)
@@ -998,7 +1004,9 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
 
                   <MenuItem
                     icon={<FiFileText />}
-                    fontSize="xs"
+                    fontSize="sm"
+                    py={2.5}
+                    px={3.5}
                     onClick={async () => {
                       try {
                         await exportCabComplianceChecklistExcel(item);
@@ -1224,24 +1232,28 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
                   >
                     Export Periode
                   </MenuButton>
-                  <MenuList zIndex={20} shadow="lg" py={1.5}>
+                  <MenuList zIndex={20} shadow="xl" py={2} minW="220px" rounded="xl">
                     {/* <MenuItem
                       icon={<FiDownload />}
-                      fontSize="xs"
+                      fontSize="sm"
                       onClick={handleExportCurrentPeriodPdf}
                     >
                       Export Berita Acara Periode (PDF)
                     </MenuItem> */}
                     <MenuItem
                       icon={<FiFileText />}
-                      fontSize="xs"
+                      fontSize="sm"
+                      py={2.5}
+                      px={3.5}
                       onClick={handleExportCurrentPeriodChecklistPdf}
                     >
                       Export Checklist ZIP (PDF)
                     </MenuItem>
                     <MenuItem
                       icon={<FiFileText />}
-                      fontSize="xs"
+                      fontSize="sm"
+                      py={2.5}
+                      px={3.5}
                       onClick={handleExportCurrentPeriodExcel}
                     >
                       Export Checklist ZIP (Excel)
@@ -1284,42 +1296,42 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
                   placement="bottom"
                 >
                   <PopoverTrigger>
-                    <Button size="sm" leftIcon={<FiFilter />}>
+                    <Button size="sm" leftIcon={<FiFilter />} fontSize="xs" fontWeight="semibold" h="32px">
                       Filter{" "}
                       {ParamFilter.length > 0 && (
                         <Flex
                           as="span"
                           pl={1}
                           color="secondary.500"
-                          fontWeight={600}
+                          fontWeight={700}
                         >
                           ({ParamFilter.length})
                         </Flex>
                       )}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent width="auto" minW="xs">
-                    <PopoverBody>
-                      <Flex as={Stack} w="full">
-                        <Text fontWeight={600}>Filter Kolom Aktif</Text>
+                  <PopoverContent width="auto" minW="300px" rounded="xl" shadow="xl">
+                    <PopoverBody p={3.5}>
+                      <Flex as={Stack} w="full" spacing={2.5}>
+                        <Text fontWeight={700} fontSize="sm">Filter Kolom Aktif</Text>
                         <Divider />
                         {ParamFilter.length === 0 ? (
                           <Text fontSize="xs" color="gray.500">
                             Belum ada filter kolom aktif. Klik ikon filter pada header tabel untuk menyaring.
                           </Text>
                         ) : (
-                          <Stack spacing={2}>
+                          <Stack spacing={2.5}>
                             {ParamFilter.map((dt, idx) => (
                               <Flex
                                 key={idx}
                                 w="full"
                                 alignItems="center"
                                 as={HStack}
-                                spacing={2}
+                                spacing={2.5}
                               >
                                 <Text fontSize="xs">
                                   {dt.filterLabel || dt.field} :{" "}
-                                  <Text as="span" fontWeight={600}>
+                                  <Text as="span" fontWeight={700}>
                                     {dt.value}
                                   </Text>
                                 </Text>
@@ -1335,7 +1347,7 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
                             ))}
                             <Divider />
                             <Button
-                              size="xs"
+                              size="sm"
                               colorScheme="red"
                               variant="outline"
                               onClick={() => {
@@ -1343,6 +1355,8 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
                                 onFilterPopoverClose();
                               }}
                               w="full"
+                              fontSize="xs"
+                              fontWeight="semibold"
                             >
                               Clear All
                             </Button>
@@ -1388,7 +1402,7 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
               <Text fontSize="sm" fontWeight="bold">
                 {activePeriodLabel}
               </Text>
-              <Text fontSize="3xs" color="gray.500">
+              <Text fontSize="xs" color="gray.500">
                 Daftar agenda sidang CAB yang telah selesai disidangkan & siap laporan ({tableData.length} agenda)
               </Text>
             </VStack>
@@ -1451,7 +1465,7 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
                     <Text fontSize="xs" fontWeight="bold" color={isDark ? "orange.200" : "orange.800"}>
                       Bukti Implementasi Wajib Dilampirkan
                     </Text>
-                    <Text fontSize="3xs" color={isDark ? "orange.300" : "orange.700"}>
+                    <Text fontSize="xs" color={isDark ? "orange.300" : "orange.700"}>
                       Unggah screenshot deployment, log verifikasi, atau hasil uji coba live untuk melengkapi Berita Acara CAB dan membuka fitur export PDF.
                     </Text>
                   </VStack>
@@ -1535,10 +1549,10 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
                           }
                         />
                         <Box p={2}>
-                          <Text fontSize="3xs" fontWeight="semibold" noOfLines={1} title={file.name}>
+                          <Text fontSize="xs" fontWeight="semibold" noOfLines={1} title={file.name}>
                             {file.name}
                           </Text>
-                          <Text fontSize="4xs" color="gray.500">
+                          <Text fontSize="xs" color="gray.500">
                             {formatFileSize(file.size)}
                           </Text>
                         </Box>
@@ -1622,7 +1636,7 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
                   {previewModalData.name}
                 </Text>
                 {previewModalData.size && (
-                  <Text fontSize="3xs" color="gray.500">
+                  <Text fontSize="xs" color="gray.500">
                     Ukuran: {formatFileSize(previewModalData.size)}
                   </Text>
                 )}
@@ -1645,7 +1659,7 @@ const CabReportsTab = ({ items, onRefresh }: CabReportsTabProps) => {
 
           <ModalFooter py={2.5} px={4} borderTop="1px" borderColor={isDark ? "gray.700" : "gray.200"}>
             <HStack justify="space-between" w="full">
-              <Text fontSize="3xs" color="gray.500">
+              <Text fontSize="xs" color="gray.500">
                 Bukti Implementasi Resmi CAB
               </Text>
               <HStack spacing={2}>
