@@ -169,21 +169,21 @@ const ModalVendorSelector = ({
                       <Flex justify="space-between" align="center" wrap="wrap" gap={3}>
                         <VStack align="start" spacing={1}>
                           <HStack spacing={2} wrap="wrap">
-                            <Badge colorScheme="blue" fontSize="2xs" rounded="md">
+                            <Badge colorScheme="blue" fontSize="xs" rounded="md">
                               {v.vendorCode}
                             </Badge>
-                            <Badge colorScheme="purple" fontSize="2xs" rounded="md">
+                            <Badge colorScheme="purple" fontSize="xs" rounded="md">
                               {v.vendorType}
                             </Badge>
-                            <Badge colorScheme={v.status === "ACTIVE" ? "green" : "red"} fontSize="2xs" rounded="md">
+                            <Badge colorScheme={v.status === "ACTIVE" ? "green" : "red"} fontSize="xs" rounded="md">
                               {v.status}
                             </Badge>
                             {hasActiveTdr ? (
-                              <Badge colorScheme="teal" fontSize="2xs" rounded="md">
+                              <Badge colorScheme="teal" fontSize="xs" rounded="md">
                                 ✓ TDR Active: {activeTdr.trdNumber}
                               </Badge>
                             ) : (
-                              <Badge colorScheme="red" fontSize="2xs" rounded="md">
+                              <Badge colorScheme="red" fontSize="xs" rounded="md">
                                 ⚠️ No Active TDR
                               </Badge>
                             )}

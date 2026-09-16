@@ -251,7 +251,7 @@ const HardwareStep3 = ({
               <Text fontSize="xs" fontWeight="bold" color={isDark ? "blue.200" : "blue.800"}>
                 Proyek Hardware:
               </Text>
-              <Badge colorScheme="blue" fontSize="2xs" px={2} py={0.5} rounded="md">
+              <Badge colorScheme="blue" fontSize="xs" px={2} py={0.5} rounded="md">
                 {projectContextLabel}
               </Badge>
               <Tooltip label="Buka halaman proyek di tab baru">
@@ -260,7 +260,7 @@ const HardwareStep3 = ({
                   href={projectRouteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  size="2xs"
+                  size="xs"
                   variant="link"
                   colorScheme="blue"
                   rightIcon={<FiExternalLink />}
@@ -269,7 +269,7 @@ const HardwareStep3 = ({
                 </Button>
               </Tooltip>
             </HStack>
-            <Text fontSize="2xs" color={isDark ? "blue.300" : "blue.600"}>
+            <Text fontSize="xs" color={isDark ? "blue.300" : "blue.600"}>
               Tersedia 6 berkas teknis hardware dari repositori proyek terkait yang siap dilampirkan otomatis atau dipilih per butir.
             </Text>
           </VStack>
@@ -437,7 +437,7 @@ const HardwareStep3 = ({
                   href={projectRouteUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  size="2xs"
+                  size="xs"
                   colorScheme="blue"
                   variant="solid"
                   rightIcon={<FiExternalLink />}
@@ -470,10 +470,10 @@ const HardwareStep3 = ({
                         colorScheme="blue"
                       />
                     </Th>
-                    <Th fontSize="2xs">Item Compliance</Th>
-                    <Th fontSize="2xs">Nama Berkas</Th>
-                    <Th fontSize="2xs">Asal Project</Th>
-                    <Th fontSize="2xs" isNumeric>Ukuran</Th>
+                    <Th fontSize="xs">Item Compliance</Th>
+                    <Th fontSize="xs">Nama Berkas</Th>
+                    <Th fontSize="xs">Asal Project</Th>
+                    <Th fontSize="xs" isNumeric>Ukuran</Th>
                   </Tr>
                 </Thead>
                 <Tbody>
@@ -498,7 +498,7 @@ const HardwareStep3 = ({
                             <Badge
                               colorScheme={doc.positiveVal === "ADA" ? "blue" : "teal"}
                               variant="subtle"
-                              fontSize="2xs"
+                              fontSize="xs"
                               rounded="md"
                             >
                               {doc.positiveVal}
@@ -517,12 +517,12 @@ const HardwareStep3 = ({
                           </HStack>
                         </Td>
                         <Td>
-                          <Text fontSize="2xs" color="gray.500">
+                          <Text fontSize="xs" color="gray.500">
                             {doc.sourceProject}
                           </Text>
                         </Td>
                         <Td isNumeric>
-                          <Text fontSize="2xs" color="gray.400">
+                          <Text fontSize="xs" color="gray.400">
                             {doc.fileSize}
                           </Text>
                         </Td>

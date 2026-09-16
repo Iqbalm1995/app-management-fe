@@ -110,10 +110,10 @@ const RadioGroupField = ({
                       </Text>
                       {onOpenProjectFilesModal && (
                         <Button
-                          size="2xs"
+                          size="xs"
                           variant="ghost"
                           colorScheme="blue"
-                          fontSize="2xs"
+                          fontSize="xs"
                           h="20px"
                           px={1.5}
                           onClick={onOpenProjectFilesModal}
@@ -123,7 +123,7 @@ const RadioGroupField = ({
                         </Button>
                       )}
                       <IconButton
-                        size="2xs"
+                        size="xs"
                         icon={<FiX />}
                         aria-label="Hapus file"
                         variant="ghost"

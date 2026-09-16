@@ -259,7 +259,7 @@ const VendorContractsPage = () => {
                 <Text fontSize="xl" fontWeight="bold" color={colorMode === "light" ? "gray.900" : "white"}>
                   {totalCount}
                 </Text>
-                <Text fontSize="2xs" color={colorMode === "light" ? "gray.600" : "white"} textTransform="uppercase" fontWeight="600">
+                <Text fontSize="xs" color={colorMode === "light" ? "gray.600" : "white"} textTransform="uppercase" fontWeight="600">
                   Total
                 </Text>
               </VStack>
@@ -268,7 +268,7 @@ const VendorContractsPage = () => {
                 <Text fontSize="xl" fontWeight="bold" color="teal.500">
                   {activeContractsCount}
                 </Text>
-                <Text fontSize="2xs" color={colorMode === "light" ? "gray.600" : "white"} textTransform="uppercase" fontWeight="600">
+                <Text fontSize="xs" color={colorMode === "light" ? "gray.600" : "white"} textTransform="uppercase" fontWeight="600">
                   Active
                 </Text>
               </VStack>
@@ -277,7 +277,7 @@ const VendorContractsPage = () => {
                 <Text fontSize="xl" fontWeight="bold" color="orange.500">
                   {expiringSoonContractsCount}
                 </Text>
-                <Text fontSize="2xs" color="orange.500" textTransform="uppercase" fontWeight="700">
+                <Text fontSize="xs" color="orange.500" textTransform="uppercase" fontWeight="700">
                   Expiring Soon (1-Mo)
                 </Text>
               </VStack>
@@ -286,7 +286,7 @@ const VendorContractsPage = () => {
                 <Text fontSize="xl" fontWeight="bold" color="red.500">
                   {expiredContractsCount}
                 </Text>
-                <Text fontSize="2xs" color="red.500" textTransform="uppercase" fontWeight="700">
+                <Text fontSize="xs" color="red.500" textTransform="uppercase" fontWeight="700">
                   Expired
                 </Text>
               </VStack>
@@ -298,7 +298,7 @@ const VendorContractsPage = () => {
                   </Text>
                   <Icon as={showWorkValue ? FiEye : FiEyeOff} boxSize={3} color="gray.400" />
                 </HStack>
-                <Text fontSize="2xs" color={colorMode === "light" ? "gray.600" : "white"} textTransform="uppercase" fontWeight="600">
+                <Text fontSize="xs" color={colorMode === "light" ? "gray.600" : "white"} textTransform="uppercase" fontWeight="600">
                   Page Work Value
                 </Text>
               </VStack>
@@ -441,7 +441,7 @@ const VendorContractsPage = () => {
                                   <Td py={3}>
                                     <Badge
                                       colorScheme={getContractDeadlineStatus(contract.contractEndDate).badgeColor}
-                                      fontSize="2xs"
+                                      fontSize="xs"
                                       rounded="md"
                                       px={2}
                                     >

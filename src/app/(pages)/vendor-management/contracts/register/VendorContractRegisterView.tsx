@@ -735,7 +735,7 @@ const VendorContractRegisterView = () => {
                       {selectedProject && (
                         <Badge
                           colorScheme="purple"
-                          fontSize="2xs"
+                          fontSize="xs"
                           px={2}
                           py={0.5}
                           rounded="md"
@@ -1095,7 +1095,7 @@ const VendorContractRegisterView = () => {
                               ? "blue"
                               : "purple"
                           }
-                          fontSize="2xs"
+                          fontSize="xs"
                           px={2}
                           py={0.5}
                           rounded="md"
@@ -1117,7 +1117,7 @@ const VendorContractRegisterView = () => {
                       >
                         <GridItem>
                           <FormControl>
-                            <FormLabel fontSize="2xs" fontWeight="bold">
+                            <FormLabel fontSize="xs" fontWeight="bold">
                               Billing Model Type
                             </FormLabel>
                             <ChakraSelect
@@ -1161,7 +1161,7 @@ const VendorContractRegisterView = () => {
                           <>
                             <GridItem>
                               <FormControl>
-                                <FormLabel fontSize="2xs" fontWeight="bold">
+                                <FormLabel fontSize="xs" fontWeight="bold">
                                   Periodic Rate (Rp. per cycle)
                                 </FormLabel>
                                 <CurrencyInput
@@ -1265,7 +1265,7 @@ const VendorContractRegisterView = () => {
                           onChange={(_, val) => handleWorkValueChange(val)}
                         />
                         {formik.values.contractBillingType !== "MILESTONE" ? (
-                          <Text fontSize="2xs" color="purple.500" mt={1}>
+                          <Text fontSize="xs" color="purple.500" mt={1}>
                             Note: For subscription/recurring models without a
                             fixed total upfront, total value can be estimated or
                             auto-generated from the TOP schedule below.
@@ -1324,7 +1324,7 @@ const VendorContractRegisterView = () => {
                         />
                         <HStack spacing={1.5} mt={2} wrap="wrap">
                           <Text
-                            fontSize="2xs"
+                            fontSize="xs"
                             color="gray.500"
                             fontWeight="bold"
                             mr={1}
@@ -1338,7 +1338,7 @@ const VendorContractRegisterView = () => {
                               variant="outline"
                               colorScheme="purple"
                               rounded="md"
-                              fontSize="2xs"
+                              fontSize="xs"
                               fontWeight="bold"
                               h="22px"
                               px={2}
@@ -1408,7 +1408,7 @@ const VendorContractRegisterView = () => {
                         {formik.values.contractBillingType !== "MILESTONE" && (
                           <Badge
                             colorScheme="purple"
-                            fontSize="2xs"
+                            fontSize="xs"
                             px={2}
                             py={0.5}
                             rounded="md"
@@ -1519,7 +1519,7 @@ const VendorContractRegisterView = () => {
                               px={2.5}
                               py={1}
                               rounded="lg"
-                              fontSize="2xs"
+                              fontSize="xs"
                               display="flex"
                               alignItems="center"
                               gap={1.5}
@@ -1533,7 +1533,7 @@ const VendorContractRegisterView = () => {
                             px={2.5}
                             py={1}
                             rounded="lg"
-                            fontSize="2xs"
+                            fontSize="xs"
                           >
                             CAPEX: {formik.values.capexPercentage || 0}% (
                             {formatIDR(formik.values.cavexValues || 0)})
@@ -1543,7 +1543,7 @@ const VendorContractRegisterView = () => {
                             px={2.5}
                             py={1}
                             rounded="lg"
-                            fontSize="2xs"
+                            fontSize="xs"
                           >
                             OPEX: {formik.values.ovexPercentage || 0}% (
                             {formatIDR(formik.values.ovexValues || 0)})
@@ -1605,7 +1605,7 @@ const VendorContractRegisterView = () => {
                                   >
                                     CAPEX Allocation
                                   </Text>
-                                  <Text fontSize="2xs" color="gray.500">
+                                  <Text fontSize="xs" color="gray.500">
                                     Method 1: Direct % Input
                                   </Text>
                                 </VStack>
@@ -1664,11 +1664,11 @@ const VendorContractRegisterView = () => {
                                 <HStack spacing={1}>
                                   <Icon
                                     as={FiSliders}
-                                    fontSize="2xs"
+                                    fontSize="xs"
                                     color="blue.500"
                                   />
                                   <Text
-                                    fontSize="2xs"
+                                    fontSize="xs"
                                     color="gray.500"
                                     fontWeight="bold"
                                   >
@@ -1676,7 +1676,7 @@ const VendorContractRegisterView = () => {
                                   </Text>
                                 </HStack>
                                 <Text
-                                  fontSize="2xs"
+                                  fontSize="xs"
                                   color="blue.600"
                                   fontWeight="bold"
                                 >
@@ -1712,7 +1712,7 @@ const VendorContractRegisterView = () => {
                                 mb={1}
                               >
                                 <FormLabel
-                                  fontSize="2xs"
+                                  fontSize="xs"
                                   color="gray.500"
                                   fontWeight="bold"
                                   mb={0}
@@ -1723,7 +1723,7 @@ const VendorContractRegisterView = () => {
                                   <Badge
                                     colorScheme="orange"
                                     variant="subtle"
-                                    fontSize="3xs"
+                                    fontSize="xs"
                                     rounded="md"
                                     px={1.5}
                                     py={0.5}
@@ -1735,7 +1735,7 @@ const VendorContractRegisterView = () => {
                                     Auto-adjusting in 3s...
                                   </Badge>
                                 ) : (
-                                  <Text fontSize="2xs" color="gray.400">
+                                  <Text fontSize="xs" color="gray.400">
                                     Method 3: Exact Nominal
                                   </Text>
                                 )}
@@ -1787,7 +1787,7 @@ const VendorContractRegisterView = () => {
                                   >
                                     OPEX Allocation
                                   </Text>
-                                  <Text fontSize="2xs" color="gray.500">
+                                  <Text fontSize="xs" color="gray.500">
                                     Method 1: Direct % Input
                                   </Text>
                                 </VStack>
@@ -1846,11 +1846,11 @@ const VendorContractRegisterView = () => {
                                 <HStack spacing={1}>
                                   <Icon
                                     as={FiSliders}
-                                    fontSize="2xs"
+                                    fontSize="xs"
                                     color="purple.500"
                                   />
                                   <Text
-                                    fontSize="2xs"
+                                    fontSize="xs"
                                     color="gray.500"
                                     fontWeight="bold"
                                   >
@@ -1858,7 +1858,7 @@ const VendorContractRegisterView = () => {
                                   </Text>
                                 </HStack>
                                 <Text
-                                  fontSize="2xs"
+                                  fontSize="xs"
                                   color="purple.600"
                                   fontWeight="bold"
                                 >
@@ -1894,7 +1894,7 @@ const VendorContractRegisterView = () => {
                                 mb={1}
                               >
                                 <FormLabel
-                                  fontSize="2xs"
+                                  fontSize="xs"
                                   color="gray.500"
                                   fontWeight="bold"
                                   mb={0}
@@ -1905,7 +1905,7 @@ const VendorContractRegisterView = () => {
                                   <Badge
                                     colorScheme="orange"
                                     variant="subtle"
-                                    fontSize="3xs"
+                                    fontSize="xs"
                                     rounded="md"
                                     px={1.5}
                                     py={0.5}
@@ -1917,7 +1917,7 @@ const VendorContractRegisterView = () => {
                                     Auto-adjusting in 3s...
                                   </Badge>
                                 ) : (
-                                  <Text fontSize="2xs" color="gray.400">
+                                  <Text fontSize="xs" color="gray.400">
                                     Method 3: Exact Nominal
                                   </Text>
                                 )}
@@ -1950,7 +1950,7 @@ const VendorContractRegisterView = () => {
                         Total TOP Schedule: {formatIDR(totalTopValues)} / Work
                         Value: {formatIDR(formik.values.workValue)}
                       </Text>
-                      <Text fontSize="2xs" opacity={0.85}>
+                      <Text fontSize="xs" opacity={0.85}>
                         {isTopMatch
                           ? "✓ Payment schedule sum perfectly matches the total contract work value."
                           : "⚠️ TOP schedule sum does not equal total work value. Adjust step amounts."}
@@ -2022,7 +2022,7 @@ const VendorContractRegisterView = () => {
                         >
                           <GridItem>
                             <FormControl>
-                              <FormLabel fontSize="2xs" fontWeight="bold">
+                              <FormLabel fontSize="xs" fontWeight="bold">
                                 Payment Amount (Rp.) *
                               </FormLabel>
                               <CurrencyInput
@@ -2040,7 +2040,7 @@ const VendorContractRegisterView = () => {
 
                           <GridItem>
                             <FormControl>
-                              <FormLabel fontSize="2xs" fontWeight="bold">
+                              <FormLabel fontSize="xs" fontWeight="bold">
                                 TOP Description / Milestone Note
                               </FormLabel>
                               <Textarea
@@ -2063,7 +2063,7 @@ const VendorContractRegisterView = () => {
                             <>
                               <GridItem>
                                 <FormControl>
-                                  <FormLabel fontSize="2xs" fontWeight="bold">
+                                  <FormLabel fontSize="xs" fontWeight="bold">
                                     Period Start
                                   </FormLabel>
                                   <Input
@@ -2086,7 +2086,7 @@ const VendorContractRegisterView = () => {
                               </GridItem>
                               <GridItem>
                                 <FormControl>
-                                  <FormLabel fontSize="2xs" fontWeight="bold">
+                                  <FormLabel fontSize="xs" fontWeight="bold">
                                     Period End
                                   </FormLabel>
                                   <Input
@@ -2107,7 +2107,7 @@ const VendorContractRegisterView = () => {
                                   />
                                   <HStack spacing={1} mt={1.5} wrap="wrap">
                                     <Text
-                                      fontSize="2xs"
+                                      fontSize="xs"
                                       color="gray.500"
                                       fontWeight="bold"
                                       mr={0.5}
@@ -2121,7 +2121,7 @@ const VendorContractRegisterView = () => {
                                         variant="outline"
                                         colorScheme="purple"
                                         rounded="md"
-                                        fontSize="2xs"
+                                        fontSize="xs"
                                         fontWeight="bold"
                                         h="20px"
                                         px={1.5}
@@ -2149,7 +2149,7 @@ const VendorContractRegisterView = () => {
                             showTopDates && (
                               <GridItem>
                                 <FormControl>
-                                  <FormLabel fontSize="2xs" fontWeight="bold">
+                                  <FormLabel fontSize="xs" fontWeight="bold">
                                     Scheduled Due Date (Optional)
                                   </FormLabel>
                                   <Input
@@ -2271,7 +2271,7 @@ const VendorContractRegisterView = () => {
                         />
                         <HStack spacing={1.5} mt={2} wrap="wrap">
                           <Text
-                            fontSize="2xs"
+                            fontSize="xs"
                             color="gray.500"
                             fontWeight="bold"
                             mr={1}
@@ -2285,7 +2285,7 @@ const VendorContractRegisterView = () => {
                               variant="outline"
                               colorScheme="purple"
                               rounded="md"
-                              fontSize="2xs"
+                              fontSize="xs"
                               fontWeight="bold"
                               h="22px"
                               px={2}
@@ -2362,7 +2362,7 @@ const VendorContractRegisterView = () => {
                         />
                         <HStack spacing={1.5} mt={2} wrap="wrap">
                           <Text
-                            fontSize="2xs"
+                            fontSize="xs"
                             color="gray.500"
                             fontWeight="bold"
                             mr={1}
@@ -2376,7 +2376,7 @@ const VendorContractRegisterView = () => {
                               variant="outline"
                               colorScheme="purple"
                               rounded="md"
-                              fontSize="2xs"
+                              fontSize="xs"
                               fontWeight="bold"
                               h="22px"
                               px={2}
@@ -2457,7 +2457,7 @@ const VendorContractRegisterView = () => {
                         <Heading size="sm">
                           SECTION 4: Contract Documents & Legal Files
                         </Heading>
-                        <Badge colorScheme="teal" rounded="full" px={2} fontSize="2xs">
+                        <Badge colorScheme="teal" rounded="full" px={2} fontSize="xs">
                           Optional Initial Upload
                         </Badge>
                       </HStack>
@@ -2678,10 +2678,10 @@ const VendorContractRegisterView = () => {
                                 {contractFile.name}
                               </Text>
                               <HStack spacing={2}>
-                                <Badge colorScheme="teal" fontSize="3xs" rounded="md">
+                                <Badge colorScheme="teal" fontSize="xs" rounded="md">
                                   {(contractFile.size / 1024).toFixed(1)} KB
                                 </Badge>
-                                <Text fontSize="3xs" color="gray.500">
+                                <Text fontSize="xs" color="gray.500">
                                   Will be stored in MinIO Object Storage upon submitting
                                 </Text>
                               </HStack>
@@ -2850,7 +2850,7 @@ const VendorContractRegisterView = () => {
                   </Text>
                   <Text>
                     <strong>Billing Model:</strong>{" "}
-                    <Badge colorScheme="purple" fontSize="2xs">
+                    <Badge colorScheme="purple" fontSize="xs">
                       {formik.values.contractBillingType || "MILESTONE"}
                     </Badge>
                   </Text>

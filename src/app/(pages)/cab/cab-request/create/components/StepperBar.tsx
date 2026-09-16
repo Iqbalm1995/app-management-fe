@@ -40,7 +40,7 @@ const StepperBar = ({ steps, currentStep }: StepperBarProps) => {
               </Flex>
               {/* Label — hide on mobile */}
               <Text
-                fontSize="2xs"
+                fontSize="xs"
                 mt={1}
                 textAlign="center"
                 maxW="70px"

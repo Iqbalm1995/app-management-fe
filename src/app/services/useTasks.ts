@@ -104,6 +104,8 @@ export interface TaskViewModel {
 export interface TaskActivityResponse {
   id: string;
   taskId: string;
+  projectId?: string | null;
+  projectName?: string | null;
   taskName?: string | null;
   userIdSys: string;
   activity?: string | null;

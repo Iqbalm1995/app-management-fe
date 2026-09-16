@@ -169,12 +169,12 @@ const PicMigrasiField = ({ value, onChange, fetchUsers, tokenData }: PicMigrasiF
                           <Text fontSize="sm" fontWeight="semibold">
                             {u.nama}
                           </Text>
-                          <Text fontSize="2xs" color={textMuted}>
+                          <Text fontSize="xs" color={textMuted}>
                             {u.namaUnitKerja || u.namaGroupKerja || "Divisi IT"}
                           </Text>
                         </VStack>
                         {added ? (
-                          <Badge colorScheme="green" fontSize="2xs" rounded="md" px={2} py={0.5}>
+                          <Badge colorScheme="green" fontSize="xs" rounded="md" px={2} py={0.5}>
                             ✓ Ditambahkan
                           </Badge>
                         ) : (
@@ -244,13 +244,13 @@ const PicMigrasiField = ({ value, onChange, fetchUsers, tokenData }: PicMigrasiF
                           <Text fontSize="sm" fontWeight="bold">
                             {pic.userName}
                           </Text>
-                          <Text fontSize="2xs" color={textMuted}>
+                          <Text fontSize="xs" color={textMuted}>
                             {pic.divisi}
                           </Text>
                         </VStack>
                       </HStack>
                       <HStack spacing={1.5}>
-                        <Badge colorScheme="blue" fontSize="2xs" px={2} py={0.5} borderRadius="full">
+                        <Badge colorScheme="blue" fontSize="xs" px={2} py={0.5} borderRadius="full">
                           Internal IT
                         </Badge>
                         <IconButton

@@ -401,7 +401,7 @@ export const BulkScheduleModal = ({
                   <Text fontSize="xs" fontWeight="bold" color={isDark ? "gray.200" : "gray.700"}>
                     Metode Penjadwalan:
                   </Text>
-                  <Text fontSize="2xs" color="gray.500">
+                  <Text fontSize="xs" color="gray.500">
                     {mode === "UNIFIED"
                       ? "Seluruh permohonan dibahas dalam satu sesi rapat gabungan yang sama."
                       : "Setiap permohonan memiliki slot waktu tersendiri secara berurutan."}
@@ -520,7 +520,7 @@ export const BulkScheduleModal = ({
                     spacing={2}
                   >
                     <Icon as={FiCheckCircle} color="blue.500" boxSize={4} />
-                    <Text fontSize="2xs" color={isDark ? "blue.200" : "blue.900"}>
+                    <Text fontSize="xs" color={isDark ? "blue.200" : "blue.900"}>
                       Semua <b>{selectedRequests.length} permohonan</b> akan dijadwalkan pada hari{" "}
                       <b>{formattedTargetDate}</b> pukul <b>{unifiedStartTime} - {unifiedEndTime} WIB</b>.
                     </Text>
@@ -554,7 +554,7 @@ export const BulkScheduleModal = ({
 
                     <HStack spacing={2} wrap="wrap">
                       <FormControl maxW="120px" size="xs">
-                        <FormLabel fontSize="2xs" mb={0.5}>
+                        <FormLabel fontSize="xs" mb={0.5}>
                           Mulai Sesi 1
                         </FormLabel>
                         <Input
@@ -568,7 +568,7 @@ export const BulkScheduleModal = ({
                       </FormControl>
 
                       <FormControl maxW="130px" size="xs">
-                        <FormLabel fontSize="2xs" mb={0.5}>
+                        <FormLabel fontSize="xs" mb={0.5}>
                           Durasi / Permohonan
                         </FormLabel>
                         <Select
@@ -619,13 +619,13 @@ export const BulkScheduleModal = ({
                       spacing={2.5}
                     >
                       <Icon as={FiAlertCircle} color="orange.500" boxSize={4} flexShrink={0} />
-                      <Text fontSize="2xs" color={isDark ? "orange.200" : "orange.900"}>
+                      <Text fontSize="xs" color={isDark ? "orange.200" : "orange.900"}>
                         <b>Perhatian:</b> Permohonan memiliki tanggal yang berbeda ({uniqueRequestedDates.length > 1 ? `Tanggal Pengajuan: ${uniqueRequestedDates.join(", ")}` : `Tanggal Jadwal: ${uniqueSlotDates.join(", ")}`}). Fitur <b>Auto-Urutkan</b> dinonaktifkan. Silakan sesuaikan tanggal dan jam masing-masing secara manual pada tabel di bawah.
                       </Text>
                     </HStack>
                   )}
 
-                  <Text fontSize="2xs" color="gray.500">
+                  <Text fontSize="xs" color="gray.500">
                     Anda dapat mengubah tanggal serta jam mulai dan selesai masing-masing permohonan secara langsung pada tabel daftar permohonan di bawah ini.
                   </Text>
                 </VStack>
@@ -638,7 +638,7 @@ export const BulkScheduleModal = ({
                 <Text fontSize="xs" fontWeight="bold" color={isDark ? "gray.200" : "gray.700"}>
                   Daftar Urutan Permohonan ({orderedRequests.length}):
                 </Text>
-                <Text fontSize="2xs" color="gray.500">
+                <Text fontSize="xs" color="gray.500">
                   Tanggal Utama: {formattedTargetDate}
                 </Text>
               </Flex>
@@ -654,15 +654,15 @@ export const BulkScheduleModal = ({
                 <Table size="sm" variant="simple">
                   <Thead bg={isDark ? "gray.900" : "gray.50"}>
                     <Tr>
-                      <Th fontSize="2xs" w="75px" textAlign="center">
+                      <Th fontSize="xs" w="75px" textAlign="center">
                         URUTAN
                       </Th>
-                      <Th fontSize="2xs">Permohonan CAB</Th>
-                      <Th fontSize="2xs">Pemohon / Aplikasi</Th>
-                      <Th fontSize="2xs" w="140px">
+                      <Th fontSize="xs">Permohonan CAB</Th>
+                      <Th fontSize="xs">Pemohon / Aplikasi</Th>
+                      <Th fontSize="xs" w="140px">
                         Waktu Request CAB
                       </Th>
-                      <Th fontSize="2xs" w={mode === "STAGGERED" ? "240px" : "180px"}>
+                      <Th fontSize="xs" w={mode === "STAGGERED" ? "240px" : "180px"}>
                         Tanggal & Waktu Jadwal
                       </Th>
                     </Tr>
@@ -686,9 +686,9 @@ export const BulkScheduleModal = ({
                                 colorScheme="blue"
                                 variant="subtle"
                                 rounded="md"
-                                px={1.5}
+                                px={2}
                                 py={0.5}
-                                fontSize="2xs"
+                                fontSize="xs"
                                 fontWeight="bold"
                                 minW="26px"
                                 textAlign="center"
@@ -700,11 +700,11 @@ export const BulkScheduleModal = ({
                                   <IconButton
                                     aria-label="Geser ke atas"
                                     icon={<FiChevronUp />}
-                                    size="2xs"
+                                    size="xs"
                                     variant="ghost"
                                     colorScheme="blue"
-                                    h="14px"
-                                    minW="16px"
+                                    h="16px"
+                                    minW="18px"
                                     isDisabled={idx === 0}
                                     onClick={() => handleMoveUp(idx)}
                                   />
@@ -713,11 +713,11 @@ export const BulkScheduleModal = ({
                                   <IconButton
                                     aria-label="Geser ke bawah"
                                     icon={<FiChevronDown />}
-                                    size="2xs"
+                                    size="xs"
                                     variant="ghost"
                                     colorScheme="blue"
-                                    h="14px"
-                                    minW="16px"
+                                    h="16px"
+                                    minW="18px"
                                     isDisabled={idx === orderedRequests.length - 1}
                                     onClick={() => handleMoveDown(idx)}
                                   />
@@ -739,8 +739,8 @@ export const BulkScheduleModal = ({
                                       : "purple"
                                   }
                                   variant="subtle"
-                                  fontSize="3xs"
-                                  px={1.5}
+                                  fontSize="xs"
+                                  px={2}
                                   rounded="full"
                                 >
                                   {req.requestType}
@@ -756,7 +756,7 @@ export const BulkScheduleModal = ({
                               <Text fontSize="xs" fontWeight="semibold">
                                 {req.projectName || "-"}
                               </Text>
-                              <Text fontSize="2xs" color="gray.500">
+                              <Text fontSize="xs" color="gray.500">
                                 {req.requesterName}
                               </Text>
                             </VStack>
@@ -764,7 +764,7 @@ export const BulkScheduleModal = ({
                           <Td>
                             <VStack align="start" spacing={0.5}>
                               <HStack spacing={1.5}>
-                                <Icon as={FiCalendar} boxSize={3} color="blue.500" />
+                                <Icon as={FiCalendar} boxSize={3.5} color="blue.500" />
                                 <Text
                                   fontSize="xs"
                                   fontWeight="medium"
@@ -775,8 +775,8 @@ export const BulkScheduleModal = ({
                               </HStack>
                               {dtInfo.timePart && (
                                 <HStack spacing={1}>
-                                  <Icon as={FiClock} boxSize={3} color="orange.500" />
-                                  <Text fontSize="2xs" fontWeight="semibold" color="orange.500">
+                                  <Icon as={FiClock} boxSize={3.5} color="orange.500" />
+                                  <Text fontSize="xs" fontWeight="semibold" color="orange.500">
                                     {dtInfo.timePart} WIB
                                   </Text>
                                 </HStack>
@@ -787,16 +787,16 @@ export const BulkScheduleModal = ({
                             {mode === "UNIFIED" ? (
                               <VStack align="start" spacing={1}>
                                 <HStack spacing={1}>
-                                  <Icon as={FiCalendar} boxSize={3} color="purple.500" />
-                                  <Text fontSize="2xs" fontWeight="bold" color={isDark ? "purple.300" : "purple.700"}>
+                                  <Icon as={FiCalendar} boxSize={3.5} color="purple.500" />
+                                  <Text fontSize="xs" fontWeight="bold" color={isDark ? "purple.300" : "purple.700"}>
                                     {scheduledDate || "-"}
                                   </Text>
                                 </HStack>
                                 <Badge
                                   colorScheme="blue"
                                   variant="outline"
-                                  fontSize="2xs"
-                                  px={1.5}
+                                  fontSize="xs"
+                                  px={2}
                                   py={0.5}
                                   rounded="md"
                                 >
@@ -807,7 +807,7 @@ export const BulkScheduleModal = ({
                               <VStack align="start" spacing={1.5} py={0.5}>
                                 <InputGroup size="xs" w="140px">
                                   <InputLeftElement pointerEvents="none" h="24px">
-                                    <Icon as={FiCalendar} boxSize={3} color="blue.500" />
+                                    <Icon as={FiCalendar} boxSize={3.5} color="blue.500" />
                                   </InputLeftElement>
                                   <Input
                                     type="date"
@@ -820,7 +820,7 @@ export const BulkScheduleModal = ({
                                     }
                                     rounded="md"
                                     bg={isDark ? "gray.800" : "white"}
-                                    fontSize="2xs"
+                                    fontSize="xs"
                                   />
                                 </InputGroup>
                                 <HStack spacing={1}>
@@ -833,9 +833,9 @@ export const BulkScheduleModal = ({
                                       handleSlotChange(req.id, "startTime", e.target.value)
                                     }
                                     rounded="md"
-                                    w="75px"
+                                    w="80px"
                                     bg={isDark ? "gray.800" : "white"}
-                                    fontSize="2xs"
+                                    fontSize="xs"
                                   />
                                   <Text fontSize="xs" color="gray.400">-</Text>
                                   <Input
@@ -847,9 +847,9 @@ export const BulkScheduleModal = ({
                                       handleSlotChange(req.id, "endTime", e.target.value)
                                     }
                                     rounded="md"
-                                    w="75px"
+                                    w="80px"
                                     bg={isDark ? "gray.800" : "white"}
-                                    fontSize="2xs"
+                                    fontSize="xs"
                                   />
                                 </HStack>
                               </VStack>

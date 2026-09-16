@@ -307,7 +307,7 @@ const SoftwareStep1 = ({
                     rounded="full"
                     px={2}
                     py={0.5}
-                    fontSize="3xs"
+                    fontSize="xs"
                   >
                     {selectedAppsCount} Terpilih
                   </Badge>
@@ -357,7 +357,7 @@ const SoftwareStep1 = ({
                         rounded="md"
                         px={2}
                         py={0.5}
-                        fontSize="2xs"
+                        fontSize="xs"
                         fontWeight="semibold"
                       >
                         {isMainApp ? "Aplikasi Utama" : `Aplikasi Terkait #${index}`}
@@ -386,7 +386,7 @@ const SoftwareStep1 = ({
                                 rounded="full"
                                 px={2}
                                 py={0.5}
-                                fontSize="3xs"
+                                fontSize="xs"
                                 fontWeight="semibold"
                               >
                                 {cat}
@@ -449,7 +449,7 @@ const SoftwareStep1 = ({
                                 </Text>
                                 <HStack spacing={1.5}>
                                   <Badge
-                                    fontSize="3xs"
+                                    fontSize="xs"
                                     colorScheme="blue"
                                     variant="subtle"
                                     px={1.5}
@@ -463,7 +463,7 @@ const SoftwareStep1 = ({
                                     <Badge
                                       colorScheme="teal"
                                       variant="subtle"
-                                      fontSize="3xs"
+                                      fontSize="xs"
                                       rounded="full"
                                       px={1.5}
                                     >
@@ -539,7 +539,7 @@ const SoftwareStep1 = ({
                               {isMainApp ? "Cari & Pilih dari Katalog Aplikasi..." : "Cari & Pilih Aplikasi Terkait..."}
                             </Text>
                           </HStack>
-                          <Badge colorScheme="blue" variant="solid" fontSize="3xs" px={2} py={0.5} rounded="md">
+                          <Badge colorScheme="blue" variant="solid" fontSize="xs" px={2} py={0.5} rounded="md">
                             Buka Katalog
                           </Badge>
                         </Button>
@@ -575,7 +575,7 @@ const SoftwareStep1 = ({
                                 <HStack spacing={1.5} maxW="full">
                                   <Badge
                                     colorScheme="purple"
-                                    fontSize="2xs"
+                                    fontSize="xs"
                                     px={1.5}
                                     borderRadius="sm"
                                     fontFamily="mono"
@@ -663,7 +663,7 @@ const SoftwareStep1 = ({
                             </Text>
                           </HStack>
                           {appItem.applicationId && (
-                            <Badge colorScheme="purple" variant="solid" fontSize="3xs" px={2} py={0.5} rounded="md">
+                            <Badge colorScheme="purple" variant="solid" fontSize="xs" px={2} py={0.5} rounded="md">
                               Buka Project
                             </Badge>
                           )}

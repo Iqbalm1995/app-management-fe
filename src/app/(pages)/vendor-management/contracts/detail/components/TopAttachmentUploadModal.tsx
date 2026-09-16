@@ -502,10 +502,10 @@ export default function TopAttachmentUploadModal({
                           {selectedFile.name}
                         </Text>
                         <HStack spacing={2}>
-                          <Badge colorScheme="gray" fontSize="3xs">
+                          <Badge colorScheme="gray" fontSize="xs">
                             {(selectedFile.name.split(".").pop() || "").toUpperCase()}
                           </Badge>
-                          <Badge colorScheme="blue" fontSize="3xs">
+                          <Badge colorScheme="blue" fontSize="xs">
                             {formatKBMB(selectedFile.size / 1024)}
                           </Badge>
                         </HStack>

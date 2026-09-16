@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useToast } from '@chakra-ui/react';
 import { buildUrlPort } from "../helper/MasterHelper";
 import {
@@ -10,6 +10,9 @@ import {
 } from "../constants/applicationConstants";
 import axiosInstance from "../utils/axiosInstance";
 import handleAxiosError from "../utils/handleAxiosError";
+import { PaggingListPayloadCustom } from "../types/masterTypes";
+import { TaskActivityResponse } from "./useTasks";
+import { UserShortResponse } from "./useUsers";
 
 // Types
 export interface WorkspaceStatsViewModel {
@@ -413,6 +416,51 @@ const useWorkspace = () => {
     }
   };
 
+  const GetAssignedProjectsActivities = useCallback(
+    async (payload: PaggingListPayloadCustom, tokenData: string) => {
+      try {
+        const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+
+        const response = await axiosInstance.post(
+          `${UrlEndpoint}/v1/Workspace/assigned-projects-activities`,
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${tokenData}`,
+            },
+          }
+        );
+
+        return response.data;
+      } catch (error: any) {
+        return handleAxiosError(error);
+      }
+    },
+    []
+  );
+
+  const GetAssignedProjectsMembers = useCallback(
+    async (tokenData: string) => {
+      try {
+        const UrlEndpoint: string = buildUrlPort(ENDPOINT_API_BASEURL, ENDPOINT_PORT_BASIC);
+
+        const response = await axiosInstance.get(
+          `${UrlEndpoint}/v1/Workspace/assigned-projects-members`,
+          {
+            headers: {
+              Authorization: `Bearer ${tokenData}`,
+            },
+          }
+        );
+
+        return response.data;
+      } catch (error: any) {
+        return handleAxiosError(error);
+      }
+    },
+    []
+  );
+
   return {
     // Methods
     GetWorkspaceStats,
@@ -427,6 +475,8 @@ const useWorkspace = () => {
     GetQuarterProgress,
     GetProjectStatus,
     GetProjectTypeCounts,
+    GetAssignedProjectsActivities,
+    GetAssignedProjectsMembers,
 
     // Loading states
     loading,

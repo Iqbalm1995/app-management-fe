@@ -341,7 +341,7 @@ export default function GeneratePaymentModal({
                 px={2.5}
                 py={0.5}
                 rounded="md"
-                fontSize="2xs"
+                fontSize="xs"
               >
                 1:1 Contract Payment Master
               </Badge>
@@ -366,7 +366,7 @@ export default function GeneratePaymentModal({
                       <HStack spacing={1.5} color="blue.600">
                         <Icon as={FiBriefcase} />
                         <Text
-                          fontSize="2xs"
+                          fontSize="xs"
                           fontWeight="bold"
                           textTransform="uppercase"
                         >
@@ -374,7 +374,7 @@ export default function GeneratePaymentModal({
                         </Text>
                       </HStack>
                       <Button
-                        size="2xs"
+                        size="xs"
                         variant="ghost"
                         colorScheme="blue"
                         onClick={projectSelectorModal.onOpen}
@@ -422,7 +422,7 @@ export default function GeneratePaymentModal({
                     <HStack spacing={1.5} color="purple.600">
                       <Icon as={FiUser} />
                       <Text
-                        fontSize="2xs"
+                        fontSize="xs"
                         fontWeight="bold"
                         textTransform="uppercase"
                       >
@@ -461,7 +461,7 @@ export default function GeneratePaymentModal({
                     <HStack spacing={1.5} color="teal.600">
                       <Icon as={FiShield} />
                       <Text
-                        fontSize="2xs"
+                        fontSize="xs"
                         fontWeight="bold"
                         textTransform="uppercase"
                       >
@@ -628,7 +628,7 @@ export default function GeneratePaymentModal({
                 >
                   <VStack align="start" spacing={0}>
                     <Text
-                      fontSize="2xs"
+                      fontSize="xs"
                       color="gray.500"
                       fontWeight="bold"
                       textTransform="uppercase"
@@ -660,7 +660,7 @@ export default function GeneratePaymentModal({
                       <Text fontSize="xs" fontWeight="bold">
                         RBB Work Program Snapshot ({workPrograms.length} Line)
                       </Text>
-                      <Text fontSize="2xs" color="gray.500">
+                      <Text fontSize="xs" color="gray.500">
                         Budget lines linked from parent project
                       </Text>
                     </VStack>
@@ -668,7 +668,7 @@ export default function GeneratePaymentModal({
 
                   <Badge
                     colorScheme="blue"
-                    fontSize="2xs"
+                    fontSize="xs"
                     px={2}
                     py={0.5}
                     rounded="md"
@@ -686,12 +686,12 @@ export default function GeneratePaymentModal({
                   <Table size="sm" variant="simple">
                     <Thead bg={colorMode === "light" ? "gray.50" : "gray.800"}>
                       <Tr>
-                        <Th fontSize="2xs">RBB Source / Code</Th>
-                        <Th fontSize="2xs">Account Name & Cost Center</Th>
-                        <Th fontSize="2xs" isNumeric>
+                        <Th fontSize="xs">RBB Source / Code</Th>
+                        <Th fontSize="xs">Account Name & Cost Center</Th>
+                        <Th fontSize="xs" isNumeric>
                           Budget
                         </Th>
-                        <Th fontSize="2xs" isNumeric>
+                        <Th fontSize="xs" isNumeric>
                           Realization
                         </Th>
                       </Tr>
@@ -701,7 +701,7 @@ export default function GeneratePaymentModal({
                         <Tr key={idx}>
                           <Td>
                             <VStack align="start" spacing={0}>
-                              <Badge colorScheme="blue" fontSize="2xs">
+                              <Badge colorScheme="blue" fontSize="xs">
                                 {wp.workProgramSource}
                               </Badge>
                               <Text fontSize="xs" fontWeight="bold">
@@ -714,7 +714,7 @@ export default function GeneratePaymentModal({
                               <Text fontSize="xs" fontWeight="semibold">
                                 {wp.workProgramAccName || wp.workProgramName}
                               </Text>
-                              <Text fontSize="2xs" color="gray.500">
+                              <Text fontSize="xs" color="gray.500">
                                 Acc: {wp.workProgramAccNumber || "-"} • CC:{" "}
                                 {wp.workProgramAccCc || "-"}
                               </Text>

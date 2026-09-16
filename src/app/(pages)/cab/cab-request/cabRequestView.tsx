@@ -276,7 +276,7 @@ const UpcomingSummaryPanel = ({
                   {timeStr}
                 </Text>
                 <Text
-                  fontSize="2xs"
+                  fontSize="xs"
                   fontWeight="bold"
                   letterSpacing="0.05em"
                   color={isDark ? "gray.400" : "gray.500"}
@@ -311,7 +311,7 @@ const UpcomingSummaryPanel = ({
 
               {/* Line 4: Status Badge + Action Buttons (SCHEDULE for REQUEST, DETAIL for WAITING APPROVE/APPROVED) */}
               <Flex justify="space-between" align="center" pt={1.5} borderTop="1px solid" borderColor={isDark ? "gray.700" : "gray.100"}>
-                <StatusBadge status={item.status} fontSize="2xs" px={2} py={0.5} rounded="full" />
+                <StatusBadge status={item.status} fontSize="xs" px={2} py={0.5} rounded="full" />
 
                 {item.status === "PENGAJUAN" || item.status === "REQUEST" ? (
                   <Button
@@ -319,8 +319,8 @@ const UpcomingSummaryPanel = ({
                     colorScheme="purple"
                     rounded="md"
                     px={2.5}
-                    h="24px"
-                    fontSize="2xs"
+                    h="26px"
+                    fontSize="xs"
                     fontWeight="bold"
                     leftIcon={<FiCalendar />}
                     onClick={(e) => {
@@ -337,8 +337,8 @@ const UpcomingSummaryPanel = ({
                     variant="solid"
                     rounded="md"
                     px={2.5}
-                    h="24px"
-                    fontSize="2xs"
+                    h="26px"
+                    fontSize="xs"
                     fontWeight="bold"
                     leftIcon={<FiEye />}
                     onClick={(e) => {
@@ -355,8 +355,8 @@ const UpcomingSummaryPanel = ({
                     colorScheme="blue"
                     rounded="md"
                     px={2.5}
-                    h="24px"
-                    fontSize="2xs"
+                    h="26px"
+                    fontSize="xs"
                     fontWeight="bold"
                     leftIcon={<FiEye />}
                     onClick={(e) => {
@@ -595,7 +595,7 @@ const RequestedCabSection = ({
               <Heading size="xs" fontWeight="700" color={isDark ? "white" : "gray.800"}>
                 {title}
               </Heading>
-              <Text fontSize="2xs" color={isDark ? "gray.400" : "gray.500"}>
+              <Text fontSize="xs" color={isDark ? "gray.400" : "gray.500"}>
                 {subtitle}
               </Text>
             </VStack>
@@ -604,9 +604,9 @@ const RequestedCabSection = ({
             colorScheme={themeColor}
             variant="solid"
             rounded="full"
-            px={2}
+            px={2.5}
             py={0.5}
-            fontSize="3xs"
+            fontSize="xs"
           >
             {badgeLabel}
           </Badge>
@@ -652,14 +652,14 @@ const RequestedCabSection = ({
                 <Flex justify="space-between" align="center" mb={1}>
                   <Text
                     fontFamily="mono"
-                    fontSize="2xs"
+                    fontSize="xs"
                     fontWeight="bold"
                     color="secondary.600"
                   >
                     {item.requestNo}
                   </Text>
                   <Badge
-                    fontSize="3xs"
+                    fontSize="xs"
                     colorScheme={
                       item.status === "CONFIRM"
                         ? "teal"
@@ -669,6 +669,7 @@ const RequestedCabSection = ({
                     }
                     variant="subtle"
                     rounded="sm"
+                    px={1.5}
                   >
                     {item.status}
                   </Badge>
@@ -684,13 +685,13 @@ const RequestedCabSection = ({
                   {item.requestTitle}
                 </Text>
 
-                <Flex justify="space-between" align="center" fontSize="2xs" color="gray.500" mb={2}>
+                <Flex justify="space-between" align="center" fontSize="xs" color="gray.500" mb={2}>
                   <HStack spacing={1} maxW="55%">
-                    <Icon as={FiUser} boxSize={3} flexShrink={0} />
+                    <Icon as={FiUser} boxSize={3.5} flexShrink={0} />
                     <Text noOfLines={1}>{item.requesterName}</Text>
                   </HStack>
                   <HStack spacing={1} flexShrink={0}>
-                    <Icon as={FiCalendar} boxSize={3} color={`${themeColor}.500`} />
+                    <Icon as={FiCalendar} boxSize={3.5} color={`${themeColor}.500`} />
                     <Text>{item.targetDate || item.requestDate}</Text>
                   </HStack>
                 </Flex>
@@ -701,8 +702,8 @@ const RequestedCabSection = ({
                     colorScheme={themeColor}
                     variant="outline"
                     rounded="md"
-                    h="22px"
-                    fontSize="3xs"
+                    h="26px"
+                    fontSize="xs"
                     fontWeight="bold"
                     leftIcon={<FiEye />}
                     onClick={() => onNavigate(item.id)}
@@ -1449,7 +1450,7 @@ const CabRequestView = () => {
               <Text fontSize="xs" fontWeight="bold" color="secondary.500">
                 {item.requestNo}
               </Text>
-              <StatusBadge status={item.status} fontSize="3xs" px={2} py={0.5} rounded="full" />
+              <StatusBadge status={item.status} fontSize="xs" px={2} py={0.5} rounded="full" />
             </HStack>
             <Text
               fontSize="xs"
@@ -1461,11 +1462,11 @@ const CabRequestView = () => {
             </Text>
             <Divider borderColor={isDark ? "gray.700" : "gray.200"} />
             <HStack justify="space-between" w="full">
-              <Text fontSize="2xs" color="gray.500">
+              <Text fontSize="xs" color="gray.500">
                 Waktu:
               </Text>
               <Text
-                fontSize="2xs"
+                fontSize="xs"
                 fontWeight="medium"
                 color={isDark ? "gray.300" : "gray.700"}
               >
@@ -1473,37 +1474,37 @@ const CabRequestView = () => {
               </Text>
             </HStack>
             <HStack justify="space-between" w="full">
-              <Text fontSize="2xs" color="gray.500">
+              <Text fontSize="xs" color="gray.500">
                 Type:
               </Text>
               <Badge
                 colorScheme="purple"
                 variant="subtle"
-                fontSize="2xs"
+                fontSize="xs"
                 rounded="full"
-                px={1.5}
+                px={2}
               >
                 {item.requestType}
               </Badge>
             </HStack>
             <HStack justify="space-between" w="full">
-              <Text fontSize="2xs" color="gray.500">
+              <Text fontSize="xs" color="gray.500">
                 Status:
               </Text>
               <StatusBadge
                 status={item.status}
-                fontSize="2xs"
+                fontSize="xs"
                 px={2}
                 py={0.5}
                 rounded="full"
               />
             </HStack>
             <HStack justify="space-between" w="full">
-              <Text fontSize="2xs" color="gray.500">
+              <Text fontSize="xs" color="gray.500">
                 Project:
               </Text>
               <Text
-                fontSize="2xs"
+                fontSize="xs"
                 color={isDark ? "gray.300" : "gray.700"}
                 noOfLines={1}
               >
@@ -1511,11 +1512,11 @@ const CabRequestView = () => {
               </Text>
             </HStack>
             <HStack justify="space-between" w="full">
-              <Text fontSize="2xs" color="gray.500">
+              <Text fontSize="xs" color="gray.500">
                 Requester:
               </Text>
               <Text
-                fontSize="2xs"
+                fontSize="xs"
                 color={isDark ? "gray.300" : "gray.700"}
               >
                 {item.requesterName}
@@ -1549,16 +1550,16 @@ const CabRequestView = () => {
           <Flex justify="space-between" align="center" w="full" mb="1px">
             <HStack spacing={1.5} overflow="hidden">
               {startTimeStr && (
-                <Text fontSize="2xs" fontWeight="bold" color={style.textColor} opacity={0.95}>
+                <Text fontSize="xs" fontWeight="bold" color={style.textColor} opacity={0.95}>
                   {startTimeStr}
                 </Text>
               )}
-              <Text fontSize="2xs" fontWeight="medium" color={style.textColor} opacity={0.8} noOfLines={1}>
+              <Text fontSize="xs" fontWeight="medium" color={style.textColor} opacity={0.8} noOfLines={1}>
                 {item.requestNo}
               </Text>
             </HStack>
             <Text
-              fontSize="3xs"
+              fontSize="xs"
               fontWeight="bold"
               letterSpacing="0.05em"
               color={style.textColor}
@@ -1772,7 +1773,7 @@ const CabRequestView = () => {
                 {dateStr}
               </Text>
               {timeStr && (
-                <Text fontSize="2xs" color="gray.500">
+                <Text fontSize="xs" color="gray.500">
                   {timeStr}
                 </Text>
               )}
@@ -1829,10 +1830,14 @@ const CabRequestView = () => {
         header: "ACTION",
         cell: (info) => (
           <Button
-            size="xs"
+            size="sm"
             colorScheme="blue"
             variant="outline"
             leftIcon={<FiEye />}
+            fontSize="xs"
+            fontWeight="semibold"
+            h="30px"
+            px={3}
             onClick={() => router.push(`/cab/cab-request/detail?id=${info.row.original.id}`)}
           >
             Detail
@@ -2020,7 +2025,7 @@ const CabRequestView = () => {
                 {dateStr}
               </Text>
               {timeStr && (
-                <Text fontSize="2xs" color="gray.500">
+                <Text fontSize="xs" color="gray.500">
                   {timeStr}
                 </Text>
               )}
@@ -2038,10 +2043,14 @@ const CabRequestView = () => {
         header: "ACTION",
         cell: (info) => (
           <Button
-            size="xs"
+            size="sm"
             colorScheme="blue"
             variant="outline"
             leftIcon={<FiEye />}
+            fontSize="xs"
+            fontWeight="semibold"
+            h="30px"
+            px={3}
             onClick={() => router.push(`/cab/cab-request/detail?id=${info.row.original.id}`)}
           >
             Detail
@@ -2199,36 +2208,35 @@ const CabRequestView = () => {
                             )}
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent width="auto" minW="xs">
-                          <PopoverBody>
-                            <Flex as={Stack} w={"full"}>
-                              <Text fontWeight={600}>Filter Data</Text>
+                        <PopoverContent width="auto" minW="300px" rounded="xl" shadow="xl">
+                          <PopoverBody p={3.5}>
+                            <Flex as={Stack} w={"full"} spacing={2.5}>
+                              <Text fontWeight={700} fontSize="sm">Filter Data</Text>
                               <Divider />
 
-                              <Stack spacing={2}>
+                              <Stack spacing={2.5}>
                                 {ParamFilter.map((dt, idx) => (
                                   <Flex
                                     key={idx}
                                     w={"full"}
                                     alignItems="center"
                                     as={HStack}
-                                    spacing={2}
+                                    spacing={2.5}
                                   >
-                                    <Text fontSize="sm">
+                                    <Text fontSize="xs">
                                       {dt.filterLabel} :{" "}
-                                      <Text as={"span"} fontWeight={600}>
+                                      <Text as={"span"} fontWeight={700}>
                                         {dt.value}
                                       </Text>
                                     </Text>
-                                    <Button
-                                      size={"xs"}
-                                      colorScheme={"red"}
-                                      justifyContent={"center"}
-                                      variant={"ghost"}
+                                    <IconButton
+                                      aria-label="Remove filter"
+                                      size="xs"
+                                      colorScheme="red"
+                                      variant="ghost"
+                                      icon={<FiX />}
                                       onClick={() => removeFilterData(dt)}
-                                    >
-                                      <FiX />
-                                    </Button>
+                                    />
                                   </Flex>
                                 ))}
                               </Stack>
@@ -2244,6 +2252,8 @@ const CabRequestView = () => {
                                       onFilterPopoverClose();
                                     }}
                                     w="full"
+                                    fontSize="xs"
+                                    fontWeight="semibold"
                                   >
                                     Clear All
                                   </Button>
@@ -2462,22 +2472,22 @@ const CabRequestView = () => {
                                           {selectedRequestsList.length} Permohonan Terpilih
                                         </Text>
                                         {selectedRequestItems.length > 0 && (
-                                          <Badge colorScheme="blue" variant="subtle" fontSize="3xs" rounded="full" px={2}>
+                                          <Badge colorScheme="blue" variant="subtle" fontSize="xs" rounded="full" px={2.5}>
                                             {selectedRequestItems.length} Pengajuan
                                           </Badge>
                                         )}
                                         {selectedConfirmItems.length > 0 && (
-                                          <Badge colorScheme="teal" variant="subtle" fontSize="3xs" rounded="full" px={2}>
+                                          <Badge colorScheme="teal" variant="subtle" fontSize="xs" rounded="full" px={2.5}>
                                             {selectedConfirmItems.length} Pelaksanaan
                                           </Badge>
                                         )}
                                         {selectedImplementasiItems.length > 0 && (
-                                          <Badge colorScheme="purple" variant="subtle" fontSize="3xs" rounded="full" px={2}>
+                                          <Badge colorScheme="purple" variant="subtle" fontSize="xs" rounded="full" px={2.5}>
                                             {selectedImplementasiItems.length} Implementasi
                                           </Badge>
                                         )}
                                       </HStack>
-                                      <Text fontSize="2xs" color="gray.500">
+                                      <Text fontSize="xs" color="gray.500">
                                         Pilih aksi massal untuk permohonan yang dicentang.
                                       </Text>
                                     </VStack>
@@ -2659,8 +2669,8 @@ const CabRequestView = () => {
                                 borderColor={isDark ? "blue.800" : "blue.200"}
                                 rounded="md"
                               >
-                                <Icon as={FiUser} boxSize={3} color="blue.500" />
-                                <Text fontSize="2xs" color={isDark ? "blue.300" : "blue.700"} fontWeight="medium">
+                                <Icon as={FiUser} boxSize={3.5} color="blue.500" />
+                                <Text fontSize="xs" color={isDark ? "blue.300" : "blue.700"} fontWeight="medium">
                                   Permohonan Saya ({visibleCalendarData.length})
                                 </Text>
                               </HStack>
@@ -2991,7 +3001,7 @@ const CabRequestView = () => {
                 <Text fontSize="sm" fontWeight="medium">{SelectedEvent.requestTitle}</Text>
                 <Divider />
                 <HStack justify="space-between"><Text fontSize="xs" color="gray.500">Project</Text><Text fontSize="xs" fontWeight="medium">{SelectedEvent.projectName}</Text></HStack>
-                <HStack justify="space-between"><Text fontSize="xs" color="gray.500">Type</Text><Badge colorScheme="purple" variant="subtle" fontSize="2xs" rounded="full" px={2}>{SelectedEvent.requestType}</Badge></HStack>
+                <HStack justify="space-between"><Text fontSize="xs" color="gray.500">Type</Text><Badge colorScheme="purple" variant="subtle" fontSize="xs" rounded="full" px={2.5}>{SelectedEvent.requestType}</Badge></HStack>
                 <HStack justify="space-between"><Text fontSize="xs" color="gray.500">Requester</Text><Text fontSize="xs">{SelectedEvent.requesterName}</Text></HStack>
                 <Divider />
                 <Button colorScheme="blue" size="sm" leftIcon={<FiEye />} onClick={() => { eventModal.onClose(); router.push(`/cab/cab-request/detail?id=${SelectedEvent.id}`); }}>

@@ -250,11 +250,11 @@ export const ProjectFilesModal = ({
                       <Text fontSize="xs" fontWeight="bold" color={isDark ? "blue.200" : "blue.800"}>
                         Proyek Utama Terpilih:
                       </Text>
-                      <Badge colorScheme="blue" fontSize="2xs" px={2} py={0.5} rounded="md">
+                      <Badge colorScheme="blue" fontSize="xs" px={2} py={0.5} rounded="md">
                         {displayProjectName}
                       </Badge>
                     </HStack>
-                    <Text fontSize="2xs" color={isDark ? "blue.300" : "blue.600"}>
+                    <Text fontSize="xs" color={isDark ? "blue.300" : "blue.600"}>
                       Berkas di bawah berasal dari repositori artefak & dokumen proyek ini.
                     </Text>
                   </VStack>
@@ -408,16 +408,16 @@ export const ProjectFilesModal = ({
                               <Badge
                                 size="sm"
                                 colorScheme="blue"
-                                fontSize="2xs"
+                                fontSize="xs"
                                 px={1.5}
                                 rounded="sm"
                               >
                                 {file.category}
                               </Badge>
-                              <Tag size="sm" variant="subtle" fontSize="2xs">
+                              <Tag size="sm" variant="subtle" fontSize="xs">
                                 {file.fileSize}
                               </Tag>
-                              <Text fontSize="2xs" color="gray.500">
+                              <Text fontSize="xs" color="gray.500">
                                 Diunggah {file.uploadedAt} oleh {file.uploadedBy}
                               </Text>
                             </HStack>

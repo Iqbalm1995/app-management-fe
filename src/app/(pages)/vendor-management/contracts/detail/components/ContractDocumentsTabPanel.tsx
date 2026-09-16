@@ -91,19 +91,19 @@ export default function ContractDocumentsTabPanel({
   const getDocTypeBadge = (code?: string) => {
     switch (code?.toUpperCase()) {
       case "PKS_MAIN":
-        return <Badge colorScheme="blue" rounded="md" fontSize="3xs" px={2} py={0.5}>PKS Utama</Badge>;
+        return <Badge colorScheme="blue" rounded="md" fontSize="xs" px={2} py={0.5}>PKS Utama</Badge>;
       case "SPK":
-        return <Badge colorScheme="teal" rounded="md" fontSize="3xs" px={2} py={0.5}>SPK / PO</Badge>;
+        return <Badge colorScheme="teal" rounded="md" fontSize="xs" px={2} py={0.5}>SPK / PO</Badge>;
       case "ADDENDUM":
-        return <Badge colorScheme="purple" rounded="md" fontSize="3xs" px={2} py={0.5}>Addendum</Badge>;
+        return <Badge colorScheme="purple" rounded="md" fontSize="xs" px={2} py={0.5}>Addendum</Badge>;
       case "PERFORMANCE_GUARANTEE":
-        return <Badge colorScheme="green" rounded="md" fontSize="3xs" px={2} py={0.5}>Jaminan Pelaksanaan</Badge>;
+        return <Badge colorScheme="green" rounded="md" fontSize="xs" px={2} py={0.5}>Jaminan Pelaksanaan</Badge>;
       case "WARRANTY_CERTIFICATE":
-        return <Badge colorScheme="orange" rounded="md" fontSize="3xs" px={2} py={0.5}>Jaminan Pemeliharaan</Badge>;
+        return <Badge colorScheme="orange" rounded="md" fontSize="xs" px={2} py={0.5}>Jaminan Pemeliharaan</Badge>;
       case "SLA_DOCUMENT":
-        return <Badge colorScheme="cyan" rounded="md" fontSize="3xs" px={2} py={0.5}>SLA Terms</Badge>;
+        return <Badge colorScheme="cyan" rounded="md" fontSize="xs" px={2} py={0.5}>SLA Terms</Badge>;
       default:
-        return <Badge colorScheme="gray" rounded="md" fontSize="3xs" px={2} py={0.5}>{code || "Document"}</Badge>;
+        return <Badge colorScheme="gray" rounded="md" fontSize="xs" px={2} py={0.5}>{code || "Document"}</Badge>;
     }
   };
 
@@ -288,7 +288,7 @@ export default function ContractDocumentsTabPanel({
               <VStack align="start" spacing={0}>
                 <HStack spacing={2}>
                   <Heading size="sm">Contract Files & Legal Attachments</Heading>
-                  <Badge colorScheme="teal" rounded="full" px={2} fontSize="2xs">
+                  <Badge colorScheme="teal" rounded="full" px={2} fontSize="xs">
                     {mediaList.length} Files
                   </Badge>
                 </HStack>
@@ -312,7 +312,7 @@ export default function ContractDocumentsTabPanel({
                     rounded="full"
                     ml={1.5}
                     px={1.5}
-                    fontSize="2xs"
+                    fontSize="xs"
                   >
                     {activeJobsCount}
                   </Badge>
@@ -380,12 +380,12 @@ export default function ContractDocumentsTabPanel({
               <Table variant="simple" size="sm">
                 <Thead bg={colorMode === "light" ? "gray.50" : "gray.850"}>
                   <Tr>
-                    <Th fontSize="2xs" textTransform="uppercase" py={3}>Category</Th>
-                    <Th fontSize="2xs" textTransform="uppercase" py={3}>Document Name / Ref</Th>
-                    <Th fontSize="2xs" textTransform="uppercase" py={3}>Size / Type</Th>
-                    <Th fontSize="2xs" textTransform="uppercase" py={3}>Uploaded Date</Th>
-                    <Th fontSize="2xs" textTransform="uppercase" py={3}>Uploader</Th>
-                    <Th fontSize="2xs" textTransform="uppercase" py={3} textAlign="right">Actions</Th>
+                    <Th fontSize="xs" textTransform="uppercase" py={3}>Category</Th>
+                    <Th fontSize="xs" textTransform="uppercase" py={3}>Document Name / Ref</Th>
+                    <Th fontSize="xs" textTransform="uppercase" py={3}>Size / Type</Th>
+                    <Th fontSize="xs" textTransform="uppercase" py={3}>Uploaded Date</Th>
+                    <Th fontSize="xs" textTransform="uppercase" py={3}>Uploader</Th>
+                    <Th fontSize="xs" textTransform="uppercase" py={3} textAlign="right">Actions</Th>
                   </Tr>
                 </Thead>
                 <Tbody>
@@ -406,8 +406,8 @@ export default function ContractDocumentsTabPanel({
                                   {item.objectRawName || item.objectName || "Unnamed File"}
                                 </Text>
                                 {isPdf && (
-                                  <Tooltip label="Watermark & OTP protected" fontSize="3xs" hasArrow>
-                                    <Badge colorScheme="blue" fontSize="3xs" rounded="full" px={1.5}>
+                                  <Tooltip label="Watermark & OTP protected" fontSize="xs" hasArrow>
+                                    <Badge colorScheme="blue" fontSize="xs" rounded="full" px={1.5}>
                                       <HStack spacing={0.5}>
                                         <Icon as={FiLock} boxSize={2.5} />
                                         <span>OTP</span>
@@ -417,7 +417,7 @@ export default function ContractDocumentsTabPanel({
                                 )}
                               </HStack>
                               {item.objectName && item.objectName !== "EXTERNAL_LINK" && (
-                                <Text fontSize="3xs" color="gray.400" isTruncated maxW="280px">
+                                <Text fontSize="xs" color="gray.400" isTruncated maxW="280px">
                                   {item.objectName}
                                 </Text>
                               )}
@@ -429,7 +429,7 @@ export default function ContractDocumentsTabPanel({
                             <Text fontSize="xs" fontWeight="semibold">
                               {item.objectSize && item.objectSize > 0 ? `${item.objectSize.toFixed(1)} KB` : isLink ? "Cloud Link" : "< 1 KB"}
                             </Text>
-                            <Text fontSize="3xs" color="gray.400" textTransform="uppercase">
+                            <Text fontSize="xs" color="gray.400" textTransform="uppercase">
                               {item.objectExtension ? item.objectExtension.replace(".", "") : "URL"}
                             </Text>
                           </VStack>

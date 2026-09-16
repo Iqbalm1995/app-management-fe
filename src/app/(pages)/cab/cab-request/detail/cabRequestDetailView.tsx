@@ -481,7 +481,7 @@ const CabRequestDetailView = () => {
             rounded="md"
             px={2}
             py={0.5}
-            fontSize="3xs"
+            fontSize="xs"
             fontWeight="semibold"
           >
             {cat}
@@ -1709,7 +1709,7 @@ const CabRequestDetailView = () => {
                                 color={colorMode === "light" ? "gray.400" : "gray.500"}
                                 align="center"
                                 justify="center"
-                                fontSize="2xs"
+                                fontSize="xs"
                                 fontWeight="semibold"
                               >
                                 {st.stage}
@@ -1811,7 +1811,7 @@ const CabRequestDetailView = () => {
                     <CardHeader py={3} px={5} borderBottom="1px" borderColor={colorMode === "light" ? "gray.100" : "gray.700"}>
                       <Flex justify="space-between" align="center" w="full" wrap="wrap" gap={2}>
                         <HStack spacing={2}>
-                          <Badge colorScheme="blue" variant="subtle" rounded="full" px={2} fontSize="2xs">STEP 1</Badge>
+                          <Badge colorScheme="blue" variant="subtle" rounded="full" px={2} fontSize="xs">STEP 1</Badge>
                           <Box w="4px" h="18px" bg="secondary.400" rounded="full" />
                           <Heading size="sm">Identitas Permohonan CAB</Heading>
                         </HStack>
@@ -2028,10 +2028,10 @@ const CabRequestDetailView = () => {
                                 >
                                   <Flex justify="space-between" align="center" wrap="wrap" gap={2} mb={3}>
                                     <HStack spacing={2}>
-                                      <Badge colorScheme="blue" variant="solid" rounded="md" px={2} py={0.5} fontSize="2xs" fontWeight="bold">
+                                      <Badge colorScheme="blue" variant="solid" rounded="md" px={2} py={0.5} fontSize="xs" fontWeight="bold">
                                         Aplikasi Utama
                                       </Badge>
-                                      <Badge colorScheme="gray" variant="subtle" rounded="md" px={2} py={0.5} fontSize="3xs">
+                                      <Badge colorScheme="gray" variant="subtle" rounded="md" px={2} py={0.5} fontSize="xs">
                                         Terkunci
                                       </Badge>
                                       {apps[0]?.applicationName && (
@@ -2051,7 +2051,7 @@ const CabRequestDetailView = () => {
                                       border="1px solid"
                                       borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
                                     >
-                                      <Text fontSize="3xs" fontWeight="bold" color="gray.500" textTransform="uppercase" letterSpacing="wider" mb={1}>
+                                      <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase" letterSpacing="wider" mb={1}>
                                         Nama Aplikasi
                                       </Text>
                                       <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "gray.100"}>
@@ -2066,7 +2066,7 @@ const CabRequestDetailView = () => {
                                       border="1px solid"
                                       borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
                                     >
-                                      <Text fontSize="3xs" fontWeight="bold" color="gray.500" textTransform="uppercase" letterSpacing="wider" mb={1}>
+                                      <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase" letterSpacing="wider" mb={1}>
                                         RFC / Nomor Project
                                       </Text>
                                       <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "blue.600" : "blue.300"}>
@@ -2081,7 +2081,7 @@ const CabRequestDetailView = () => {
                                       border="1px solid"
                                       borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
                                     >
-                                      <Text fontSize="3xs" fontWeight="bold" color="gray.500" textTransform="uppercase" letterSpacing="wider" mb={1}>
+                                      <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase" letterSpacing="wider" mb={1}>
                                         Kategori Aplikasi
                                       </Text>
                                       {renderCategoryBadges(apps[0]?.aplikasiKategori || requestEditForm.aplikasiKategori, "teal")}
@@ -2094,7 +2094,7 @@ const CabRequestDetailView = () => {
                                       border="1px solid"
                                       borderColor={colorMode === "light" ? "gray.200" : "gray.600"}
                                     >
-                                      <Text fontSize="3xs" fontWeight="bold" color="gray.500" textTransform="uppercase" letterSpacing="wider" mb={1}>
+                                      <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase" letterSpacing="wider" mb={1}>
                                         Kode ITSP
                                       </Text>
                                       <Input
@@ -2106,7 +2106,7 @@ const CabRequestDetailView = () => {
                                       />
                                     </Box>
                                   </SimpleGrid>
-                                  <Text mt={2.5} fontSize="3xs" color="gray.500" fontStyle="italic">
+                                  <Text mt={2.5} fontSize="xs" color="gray.500" fontStyle="italic">
                                     * Nama aplikasi & Project/RFC mengacu pada registrasi awal. Anda dapat menyesuaikan Kode ITSP di atas atau mengelola Aplikasi Terkait di bawah.
                                   </Text>
                                 </Box>
@@ -2118,7 +2118,7 @@ const CabRequestDetailView = () => {
                                       <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase" letterSpacing="wider">
                                         Aplikasi Terkait
                                       </Text>
-                                      <Badge colorScheme="purple" variant="subtle" rounded="full" px={2} fontSize="3xs">
+                                      <Badge colorScheme="purple" variant="subtle" rounded="full" px={2} fontSize="xs">
                                         {apps.slice(1).length} Terpilih
                                       </Badge>
                                     </HStack>
@@ -2149,7 +2149,7 @@ const CabRequestDetailView = () => {
                                           >
                                             <Flex justify="space-between" align="center" wrap="wrap" gap={2} mb={2.5}>
                                               <HStack spacing={2}>
-                                                <Badge colorScheme="purple" variant="solid" rounded="md" px={2} py={0.5} fontSize="3xs" fontWeight="bold">
+                                                <Badge colorScheme="purple" variant="solid" rounded="md" px={2} py={0.5} fontSize="xs" fontWeight="bold">
                                                   Aplikasi Terkait #{relIdx + 1}
                                                 </Badge>
                                                 {app.applicationName && (
@@ -2207,7 +2207,7 @@ const CabRequestDetailView = () => {
                                                           </Text>
                                                           <HStack spacing={1.5}>
                                                             <Badge
-                                                              fontSize="3xs"
+                                                              fontSize="xs"
                                                               colorScheme="blue"
                                                               variant="subtle"
                                                               px={1.5}
@@ -2221,7 +2221,7 @@ const CabRequestDetailView = () => {
                                                               <Badge
                                                                 colorScheme="teal"
                                                                 variant="subtle"
-                                                                fontSize="3xs"
+                                                                fontSize="xs"
                                                                 rounded="full"
                                                                 px={1.5}
                                                               >
@@ -2298,7 +2298,7 @@ const CabRequestDetailView = () => {
                                                         Cari & Pilih Aplikasi Terkait...
                                                       </Text>
                                                     </HStack>
-                                                    <Badge colorScheme="blue" variant="solid" fontSize="3xs" px={2} py={0.5} rounded="md">
+                                                    <Badge colorScheme="blue" variant="solid" fontSize="xs" px={2} py={0.5} rounded="md">
                                                       Buka Katalog
                                                     </Badge>
                                                   </Button>
@@ -2332,7 +2332,7 @@ const CabRequestDetailView = () => {
                                                           <HStack spacing={1.5} maxW="full">
                                                             <Badge
                                                               colorScheme="purple"
-                                                              fontSize="2xs"
+                                                              fontSize="xs"
                                                               px={1.5}
                                                               borderRadius="sm"
                                                               fontFamily="mono"
@@ -2421,7 +2421,7 @@ const CabRequestDetailView = () => {
                                                       </Text>
                                                     </HStack>
                                                     {app.applicationId && (
-                                                      <Badge colorScheme="purple" variant="solid" fontSize="3xs" px={2} py={0.5} rounded="md">
+                                                      <Badge colorScheme="purple" variant="solid" fontSize="xs" px={2} py={0.5} rounded="md">
                                                         Buka Project
                                                       </Badge>
                                                     )}
@@ -2542,7 +2542,7 @@ const CabRequestDetailView = () => {
                                   >
                                     <Flex justify="space-between" align="center" wrap="wrap" gap={2} mb={3}>
                                       <HStack spacing={2.5}>
-                                        <Badge colorScheme="blue" variant="solid" rounded="md" px={2.5} py={0.5} fontSize="2xs" fontWeight="bold">
+                                        <Badge colorScheme="blue" variant="solid" rounded="md" px={2.5} py={0.5} fontSize="xs" fontWeight="bold">
                                           Aplikasi Utama
                                         </Badge>
                                         <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "blue.900" : "blue.100"}>
@@ -2554,17 +2554,17 @@ const CabRequestDetailView = () => {
 
                                     <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={3} fontSize="xs">
                                       <Box p={2.5} bg={colorMode === "light" ? "white" : "gray.700"} rounded="md" border="1px solid" borderColor={colorMode === "light" ? "gray.200" : "gray.600"}>
-                                        <Text color="gray.500" fontSize="2xs" fontWeight="semibold" mb={1}>Kategori Aplikasi</Text>
+                                        <Text color="gray.500" fontSize="xs" fontWeight="semibold" mb={1}>Kategori Aplikasi</Text>
                                         {renderCategoryBadges(mainApp.aplikasiKategori || Data.aplikasiKategori, "teal")}
                                       </Box>
                                       <Box p={2.5} bg={colorMode === "light" ? "white" : "gray.700"} rounded="md" border="1px solid" borderColor={colorMode === "light" ? "gray.200" : "gray.600"}>
-                                        <Text color="gray.500" fontSize="2xs" fontWeight="semibold" mb={1}>RFC / Nomor Project</Text>
+                                        <Text color="gray.500" fontSize="xs" fontWeight="semibold" mb={1}>RFC / Nomor Project</Text>
                                         <Text fontWeight="bold" color={colorMode === "light" ? "blue.700" : "blue.200"}>
                                           {mainApp.rfcKodeProject || Data.rfcKodeProject || "-"}
                                         </Text>
                                       </Box>
                                       <Box p={2.5} bg={colorMode === "light" ? "white" : "gray.700"} rounded="md" border="1px solid" borderColor={colorMode === "light" ? "gray.200" : "gray.600"}>
-                                        <Text color="gray.500" fontSize="2xs" fontWeight="semibold" mb={1}>Kode ITSP</Text>
+                                        <Text color="gray.500" fontSize="xs" fontWeight="semibold" mb={1}>Kode ITSP</Text>
                                         <Text fontWeight="semibold" color={colorMode === "light" ? "gray.800" : "gray.100"}>
                                           {mainApp.itspKode || Data.itspKode || "-"}
                                         </Text>
@@ -2580,7 +2580,7 @@ const CabRequestDetailView = () => {
                                       <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase" letterSpacing="wider">
                                         Aplikasi Terkait
                                       </Text>
-                                      <Badge colorScheme={relatedApps.length > 0 ? "purple" : "gray"} variant="subtle" rounded="full" px={2} fontSize="3xs">
+                                      <Badge colorScheme={relatedApps.length > 0 ? "purple" : "gray"} variant="subtle" rounded="full" px={2} fontSize="xs">
                                         {relatedApps.length} Terpilih
                                       </Badge>
                                     </HStack>
@@ -2599,7 +2599,7 @@ const CabRequestDetailView = () => {
                                         >
                                           <Flex justify="space-between" align="center" wrap="wrap" gap={2} mb={2.5}>
                                             <HStack spacing={2}>
-                                              <Badge colorScheme="purple" variant="solid" rounded="md" px={2} py={0.5} fontSize="3xs" fontWeight="bold">
+                                              <Badge colorScheme="purple" variant="solid" rounded="md" px={2} py={0.5} fontSize="xs" fontWeight="bold">
                                                 Aplikasi Terkait #{idx + 1}
                                               </Badge>
                                               <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "gray.100"}>
@@ -2611,15 +2611,15 @@ const CabRequestDetailView = () => {
 
                                           <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={2.5} fontSize="xs">
                                             <Box p={2} bg={colorMode === "light" ? "white" : "gray.700"} rounded="md" border="1px solid" borderColor={colorMode === "light" ? "gray.200" : "gray.600"}>
-                                              <Text color="gray.500" fontSize="2xs" fontWeight="semibold" mb={1}>Kategori Aplikasi</Text>
+                                              <Text color="gray.500" fontSize="xs" fontWeight="semibold" mb={1}>Kategori Aplikasi</Text>
                                               {renderCategoryBadges(app.aplikasiKategori, "purple")}
                                             </Box>
                                             <Box p={2} bg={colorMode === "light" ? "white" : "gray.700"} rounded="md" border="1px solid" borderColor={colorMode === "light" ? "gray.200" : "gray.600"}>
-                                              <Text color="gray.500" fontSize="2xs" fontWeight="semibold" mb={1}>RFC / Nomor Project</Text>
+                                              <Text color="gray.500" fontSize="xs" fontWeight="semibold" mb={1}>RFC / Nomor Project</Text>
                                               <Text fontWeight="bold" color={colorMode === "light" ? "purple.700" : "purple.200"}>{app.rfcKodeProject || "-"}</Text>
                                             </Box>
                                             <Box p={2} bg={colorMode === "light" ? "white" : "gray.700"} rounded="md" border="1px solid" borderColor={colorMode === "light" ? "gray.200" : "gray.600"}>
-                                              <Text color="gray.500" fontSize="2xs" fontWeight="semibold" mb={1}>Kode ITSP</Text>
+                                              <Text color="gray.500" fontSize="xs" fontWeight="semibold" mb={1}>Kode ITSP</Text>
                                               <Text fontWeight="medium" color={colorMode === "light" ? "gray.800" : "gray.200"}>{app.itspKode || "-"}</Text>
                                             </Box>
                                           </SimpleGrid>
@@ -2653,7 +2653,7 @@ const CabRequestDetailView = () => {
                     <CardHeader py={3} px={5} borderBottom="1px" borderColor={colorMode === "light" ? "gray.100" : "gray.700"}>
                       <Flex justify="space-between" align="center" w="full">
                         <HStack spacing={2}>
-                          <Badge colorScheme="green" variant="subtle" rounded="full" px={2} fontSize="2xs">STEP 2</Badge>
+                          <Badge colorScheme="green" variant="subtle" rounded="full" px={2} fontSize="xs">STEP 2</Badge>
                           <Box w="4px" h="18px" bg="green.500" rounded="full" />
                           <Heading size="sm">Hasil UAT</Heading>
                         </HStack>
@@ -2724,7 +2724,7 @@ const CabRequestDetailView = () => {
                                       <Radio size="sm" value="N">Belum</Radio>
                                     </HStack>
                                   </RadioGroup>
-                                  <Text fontSize="2xs" color="gray.500" fontStyle="italic" mt={1}>
+                                  <Text fontSize="xs" color="gray.500" fontStyle="italic" mt={1}>
                                     Jika belum memiliki Memo pengantar, ada beberapa informasi yang akan diinputkan lain waktu jika Memo pengantar sudah ada.*
                                   </Text>
                                 </FormControl>
@@ -2912,7 +2912,7 @@ const CabRequestDetailView = () => {
                                     </FormControl>
 
                                     <HStack spacing={2} p={2} bg={colorMode === "light" ? "white" : "gray.800"} rounded="md" border="1px solid" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
-                                      <Text fontSize="2xs" color="gray.500" fontWeight="bold">Durasi Memo:</Text>
+                                      <Text fontSize="xs" color="gray.500" fontWeight="bold">Durasi Memo:</Text>
                                       <Text fontSize="xs" fontWeight="bold" color="blue.600">
                                         {requestEditForm.memoTanggal && requestEditForm.memoTanggalDiterima
                                           ? `${calculateDurationInDays(requestEditForm.memoTanggal, requestEditForm.memoTanggalDiterima)} Hari Kalendar`
@@ -3028,7 +3028,7 @@ const CabRequestDetailView = () => {
                     <CardHeader py={3} px={5} borderBottom="1px" borderColor={colorMode === "light" ? "gray.100" : "gray.700"}>
                       <Flex justify="space-between" align="center" w="full">
                         <HStack spacing={2}>
-                          <Badge colorScheme="purple" variant="subtle" rounded="full" px={2} fontSize="2xs">STEP 3</Badge>
+                          <Badge colorScheme="purple" variant="subtle" rounded="full" px={2} fontSize="xs">STEP 3</Badge>
                           <Box w="4px" h="18px" bg="blue.500" rounded="full" />
                           <Heading size="sm">Waktu Pelaksanaan & Rencana Downtime</Heading>
                         </HStack>
@@ -3238,7 +3238,7 @@ const CabRequestDetailView = () => {
                     <CardHeader py={3} px={5} borderBottom="1px" borderColor={colorMode === "light" ? "gray.100" : "gray.700"}>
                       <Flex justify="space-between" align="center" w="full">
                         <HStack spacing={2}>
-                          <Badge colorScheme="cyan" variant="subtle" rounded="full" px={2} fontSize="2xs">STEP 4</Badge>
+                          <Badge colorScheme="cyan" variant="subtle" rounded="full" px={2} fontSize="xs">STEP 4</Badge>
                           <Box w="4px" h="18px" bg="purple.500" rounded="full" />
                           <Heading size="sm">Kelengkapan Dokumen & Security Assessment</Heading>
                         </HStack>
@@ -3363,7 +3363,7 @@ const CabRequestDetailView = () => {
                     <CardHeader py={3} px={5} borderBottom="1px" borderColor={colorMode === "light" ? "gray.100" : "gray.700"}>
                       <Flex justify="space-between" align="center" w="full">
                         <HStack spacing={2}>
-                          <Badge colorScheme="teal" variant="subtle" rounded="full" px={2} fontSize="2xs">STEP 5</Badge>
+                          <Badge colorScheme="teal" variant="subtle" rounded="full" px={2} fontSize="xs">STEP 5</Badge>
                           <Box w="4px" h="18px" bg="teal.500" rounded="full" />
                           <Heading size="sm">PIC Migrasi & Komite CAB</Heading>
                         </HStack>
@@ -3428,7 +3428,7 @@ const CabRequestDetailView = () => {
                                     <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase" letterSpacing="wider">
                                       PIC Pelaksana Migrasi (Internal IT)
                                     </Text>
-                                    <Badge colorScheme="blue" variant="subtle" rounded="full" px={2} fontSize="3xs">
+                                    <Badge colorScheme="blue" variant="subtle" rounded="full" px={2} fontSize="xs">
                                       {picList.length} PIC
                                     </Badge>
                                   </HStack>
@@ -3446,16 +3446,16 @@ const CabRequestDetailView = () => {
                                     <Table size="sm" variant="simple">
                                       <Thead bg={colorMode === "light" ? "gray.50" : "gray.750"}>
                                         <Tr>
-                                          <Th w="60px" textAlign="center" fontSize="2xs" color="gray.500">
+                                          <Th w="60px" textAlign="center" fontSize="xs" color="gray.500">
                                             NO
                                           </Th>
-                                          <Th fontSize="2xs" color="gray.500">
+                                          <Th fontSize="xs" color="gray.500">
                                             NAMA PIC
                                           </Th>
-                                          <Th fontSize="2xs" color="gray.500">
+                                          <Th fontSize="xs" color="gray.500">
                                             ASAL DIVISI
                                           </Th>
-                                          <Th w="120px" textAlign="center" fontSize="2xs" color="gray.500">
+                                          <Th w="120px" textAlign="center" fontSize="xs" color="gray.500">
                                             TIPE
                                           </Th>
                                         </Tr>
@@ -3482,7 +3482,7 @@ const CabRequestDetailView = () => {
                                               {pic.divisi || "Divisi IT"}
                                             </Td>
                                             <Td textAlign="center">
-                                              <Badge colorScheme="blue" variant="subtle" fontSize="3xs" rounded="full" px={2} py={0.5}>
+                                              <Badge colorScheme="blue" variant="subtle" fontSize="xs" rounded="full" px={2} py={0.5}>
                                                 Internal IT
                                               </Badge>
                                             </Td>
@@ -3521,7 +3521,7 @@ const CabRequestDetailView = () => {
                                     <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase" letterSpacing="wider">
                                       Anggota Komite CAB yang Hadir / Terlibat
                                     </Text>
-                                    <Badge colorScheme="teal" variant="subtle" rounded="full" px={2} fontSize="3xs">
+                                    <Badge colorScheme="teal" variant="subtle" rounded="full" px={2} fontSize="xs">
                                       {committeeList.length} Anggota
                                     </Badge>
                                   </HStack>
@@ -3539,16 +3539,16 @@ const CabRequestDetailView = () => {
                                     <Table size="sm" variant="simple">
                                       <Thead bg={colorMode === "light" ? "gray.50" : "gray.750"}>
                                         <Tr>
-                                          <Th w="60px" textAlign="center" fontSize="2xs" color="gray.500">
+                                          <Th w="60px" textAlign="center" fontSize="xs" color="gray.500">
                                             NO
                                           </Th>
-                                          <Th fontSize="2xs" color="gray.500">
+                                          <Th fontSize="xs" color="gray.500">
                                             NAMA ANGGOTA
                                           </Th>
-                                          <Th fontSize="2xs" color="gray.500">
+                                          <Th fontSize="xs" color="gray.500">
                                             ASAL DIVISI / INSTITUSI
                                           </Th>
-                                          <Th w="120px" textAlign="center" fontSize="2xs" color="gray.500">
+                                          <Th w="120px" textAlign="center" fontSize="xs" color="gray.500">
                                             KATEGORI
                                           </Th>
                                         </Tr>
@@ -3581,7 +3581,7 @@ const CabRequestDetailView = () => {
                                               </Td>
                                               <Td textAlign="center">
                                                 <Badge
-                                                  fontSize="3xs"
+                                                  fontSize="xs"
                                                   rounded="full"
                                                   px={2}
                                                   py={0.5}
@@ -3739,11 +3739,11 @@ const CabRequestDetailView = () => {
                                         <Box w="full" h="70px" rounded="md" overflow="hidden" bg="gray.100" mb={1.5} position="relative">
                                           <Image src={item.url} alt={item.name} w="full" h="full" objectFit="cover" />
                                         </Box>
-                                        <Text fontSize="2xs" fontWeight="medium" isTruncated title={item.name}>
+                                        <Text fontSize="xs" fontWeight="medium" isTruncated title={item.name}>
                                           {item.name}
                                         </Text>
                                         {item.size && (
-                                          <Text fontSize="3xs" color="gray.500">
+                                          <Text fontSize="xs" color="gray.500">
                                             {formatFileSize(item.size)}
                                           </Text>
                                         )}
@@ -3765,7 +3765,7 @@ const CabRequestDetailView = () => {
                               <Icon as={FiCheckCircle} color="green.500" />
                               <Heading size="sm" color="green.700">Permohonan CAB Selesai (COMPLETED)</Heading>
                             </HStack>
-                            <Badge colorScheme="green" variant="solid" rounded="full" px={2.5} py={0.5} fontSize="2xs">
+                            <Badge colorScheme="green" variant="solid" rounded="full" px={2.5} py={0.5} fontSize="xs">
                               SELESAI / COMPLETED
                             </Badge>
                           </Flex>
@@ -3802,34 +3802,34 @@ const CabRequestDetailView = () => {
                             <Heading size="xs" color={colorMode === "light" ? "blue.900" : "blue.200"}>
                               Konteks & Ringkasan Permohonan CAB
                             </Heading>
-                            <Text fontSize="2xs" color={colorMode === "light" ? "blue.700" : "blue.300"}>
+                            <Text fontSize="xs" color={colorMode === "light" ? "blue.700" : "blue.300"}>
                               {getStep2Desc(Data.status)}
                             </Text>
                           </VStack>
                         </HStack>
-                        <Badge colorScheme="blue" variant="solid" rounded="full" px={3} py={0.5} fontSize="2xs">
+                        <Badge colorScheme="blue" variant="solid" rounded="full" px={3} py={0.5} fontSize="xs">
                           TAHAPAN: {getStep2Title(Data.status).toUpperCase()}
                         </Badge>
                       </Flex>
 
                       <SimpleGrid columns={{ base: 1, sm: 2, md: 4 }} spacing={3}>
                         <Box p={2.5} rounded="md" bg={colorMode === "light" ? "white" : "gray.800"} border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
-                          <Text fontSize="3xs" color="gray.400" fontWeight="bold" textTransform="uppercase">No. Permohonan</Text>
+                          <Text fontSize="xs" color="gray.400" fontWeight="bold" textTransform="uppercase">No. Permohonan</Text>
                           <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>{Data.requestNo || "-"}</Text>
                         </Box>
                         <Box p={2.5} rounded="md" bg={colorMode === "light" ? "white" : "gray.800"} border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
-                          <Text fontSize="3xs" color="gray.400" fontWeight="bold" textTransform="uppercase">Pemohon / Maker</Text>
+                          <Text fontSize="xs" color="gray.400" fontWeight="bold" textTransform="uppercase">Pemohon / Maker</Text>
                           <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"} noOfLines={1}>{Data.requesterName || "Maker"}</Text>
                         </Box>
                         <Box p={2.5} rounded="md" bg={colorMode === "light" ? "white" : "gray.800"} border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
-                          <Text fontSize="3xs" color="gray.400" fontWeight="bold" textTransform="uppercase">Kategori / Tipe</Text>
+                          <Text fontSize="xs" color="gray.400" fontWeight="bold" textTransform="uppercase">Kategori / Tipe</Text>
                           <HStack spacing={1} mt={0.5}>
-                            <Badge colorScheme="purple" fontSize="3xs">{Data.category || "SOFTWARE"}</Badge>
-                            <Badge colorScheme="blue" fontSize="3xs">{Data.requestType || "DEPLOYMENT"}</Badge>
+                            <Badge colorScheme="purple" fontSize="xs">{Data.category || "SOFTWARE"}</Badge>
+                            <Badge colorScheme="blue" fontSize="xs">{Data.requestType || "DEPLOYMENT"}</Badge>
                           </HStack>
                         </Box>
                         <Box p={2.5} rounded="md" bg={colorMode === "light" ? "white" : "gray.800"} border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
-                          <Text fontSize="3xs" color="gray.400" fontWeight="bold" textTransform="uppercase">Estimasi Downtime</Text>
+                          <Text fontSize="xs" color="gray.400" fontWeight="bold" textTransform="uppercase">Estimasi Downtime</Text>
                           <Text fontSize="xs" fontWeight="bold" color={Data.downtime === "ADA" ? "orange.500" : "green.500"}>
                             {Data.downtime === "ADA" ? (Data.downtimeDurasi || "Ada Downtime") : "Tanpa Downtime"}
                           </Text>
@@ -3887,7 +3887,7 @@ const CabRequestDetailView = () => {
                                           </Text>
                                         </HStack>
                                         {isDateDifferent && (
-                                          <Badge colorScheme="orange" variant="subtle" px={2} py={0.5} rounded="full" fontSize="3xs" fontWeight="bold">
+                                          <Badge colorScheme="orange" variant="subtle" px={2} py={0.5} rounded="full" fontSize="xs" fontWeight="bold">
                                             RESCHEDULED (DISESUAIKAN)
                                           </Badge>
                                         )}
@@ -3928,11 +3928,11 @@ const CabRequestDetailView = () => {
                                                 <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
                                                   {Data.requesterName || "Maker"}
                                                 </Text>
-                                                <Text fontSize="2xs" color="gray.500">
+                                                <Text fontSize="xs" color="gray.500">
                                                   mengajukan jadwal CAB
                                                 </Text>
                                               </HStack>
-                                              <Badge colorScheme="blue" variant="subtle" fontSize="3xs" px={1.5} rounded="sm">
+                                              <Badge colorScheme="blue" variant="subtle" fontSize="xs" px={1.5} rounded="sm">
                                                 USULAN AWAL
                                               </Badge>
                                             </Flex>
@@ -3946,7 +3946,7 @@ const CabRequestDetailView = () => {
                                               w="full"
                                             >
                                               <HStack spacing={2} wrap="wrap">
-                                                <Text fontSize="2xs" color="gray.500" fontWeight="semibold">
+                                                <Text fontSize="xs" color="gray.500" fontWeight="semibold">
                                                   Tanggal & Jam:
                                                 </Text>
                                                 <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
@@ -3987,11 +3987,11 @@ const CabRequestDetailView = () => {
                                                   <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
                                                     Scheduler (PIC CAB)
                                                   </Text>
-                                                  <Text fontSize="2xs" color="gray.500">
+                                                  <Text fontSize="xs" color="gray.500">
                                                     menetapkan jadwal baru
                                                   </Text>
                                                 </HStack>
-                                                <Badge colorScheme="orange" variant="solid" fontSize="3xs" px={1.5} rounded="sm">
+                                                <Badge colorScheme="orange" variant="solid" fontSize="xs" px={1.5} rounded="sm">
                                                   JADWAL PENETAPAN
                                                 </Badge>
                                               </Flex>
@@ -4006,10 +4006,10 @@ const CabRequestDetailView = () => {
                                               >
                                                 <VStack align="start" spacing={1}>
                                                   <HStack spacing={2} wrap="wrap">
-                                                    <Text fontSize="2xs" color="gray.500" fontWeight="semibold">
+                                                    <Text fontSize="xs" color="gray.500" fontWeight="semibold">
                                                       Perubahan Tanggal:
                                                     </Text>
-                                                    <Text fontSize="2xs" as="s" color="gray.400">
+                                                    <Text fontSize="xs" as="s" color="gray.400">
                                                       {new Date(Data.requestedCabDate).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })}
                                                     </Text>
                                                     <Icon as={FiArrowRight} color="orange.500" boxSize={3} />
@@ -4023,7 +4023,7 @@ const CabRequestDetailView = () => {
                                                     </Text>
                                                   </HStack>
                                                   <HStack spacing={2} wrap="wrap">
-                                                    <Text fontSize="2xs" color="gray.500" fontWeight="semibold">
+                                                    <Text fontSize="xs" color="gray.500" fontWeight="semibold">
                                                       Rentang Waktu:
                                                     </Text>
                                                     <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
@@ -4074,7 +4074,7 @@ const CabRequestDetailView = () => {
                                       max={scheduleForm.scheduledDate ? `${scheduleForm.scheduledDate.slice(0, 10)}T23:59` : undefined}
                                       onChange={(e) => handleScheduleEndDateChange(e.target.value)}
                                     />
-                                    <Text fontSize="2xs" color="blue.500" mt={1}>
+                                    <Text fontSize="xs" color="blue.500" mt={1}>
                                       * Waktu selesai pada hari yang sama dengan tanggal mulai (maks. 24 jam).
                                     </Text>
                                   </FormControl>
@@ -4131,7 +4131,7 @@ const CabRequestDetailView = () => {
                             </Text>
                             {Data.requestedCabDate && (
                               <Box p={3.5} bg={colorMode === "light" ? "gray.50" : "gray.750"} rounded="lg" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.650"} w="full">
-                                <Text fontSize="2xs" color="gray.500" fontWeight="bold" mb={1}>
+                                <Text fontSize="xs" color="gray.500" fontWeight="bold" mb={1}>
                                   USULAN JADWAL AWAL DARI MAKER:
                                 </Text>
                                 <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
@@ -4160,7 +4160,7 @@ const CabRequestDetailView = () => {
                             <Icon as={FiUsers} color="teal.500" />
                             <Heading size="sm" color="teal.700">Pelaksanaan Rapat CAB (Scheduler & All Tim)</Heading>
                           </HStack>
-                          <Badge colorScheme="teal" variant="solid" rounded="full" px={2.5} py={0.5} fontSize="2xs">
+                          <Badge colorScheme="teal" variant="solid" rounded="full" px={2.5} py={0.5} fontSize="xs">
                             TAHAP: PELAKSANAAN
                           </Badge>
                         </Flex>
@@ -4171,7 +4171,7 @@ const CabRequestDetailView = () => {
                           {Data.scheduledDate && (
                             <Box p={3.5} bg={colorMode === "light" ? "white" : "gray.750"} rounded="lg" border="1px solid" borderColor={colorMode === "light" ? "teal.200" : "gray.650"}>
                               <VStack align="start" spacing={1.5}>
-                                <Text fontSize="2xs" color="gray.500" fontWeight="bold" textTransform="uppercase">Jadwal Sidang Terkonfirmasi:</Text>
+                                <Text fontSize="xs" color="gray.500" fontWeight="bold" textTransform="uppercase">Jadwal Sidang Terkonfirmasi:</Text>
                                 <Text fontSize="sm" fontWeight="bold" color={colorMode === "light" ? "gray.800" : "white"}>
                                   {new Date(Data.scheduledDate).toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
                                   {" "}• {new Date(Data.scheduledDate).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
@@ -4193,7 +4193,7 @@ const CabRequestDetailView = () => {
                           {Data.schedules && Data.schedules.length > 0 && (
                             <Box p={3.5} bg={colorMode === "light" ? "white" : "gray.750"} rounded="lg" border="1px solid" borderColor={colorMode === "light" ? "teal.200" : "gray.650"}>
                               <VStack align="start" spacing={2.5} w="full">
-                                <Text fontSize="2xs" color="gray.500" fontWeight="bold" textTransform="uppercase">
+                                <Text fontSize="xs" color="gray.500" fontWeight="bold" textTransform="uppercase">
                                   Daftar Sesi Jadwal ({Data.schedules.length} Sesi):
                                 </Text>
                                 <VStack spacing={2} align="stretch" w="full">
@@ -4201,7 +4201,7 @@ const CabRequestDetailView = () => {
                                     <Box key={s.id || sIdx} p={2.5} rounded="md" bg={colorMode === "light" ? "gray.50" : "gray.700"} border="1px solid" borderColor={colorMode === "light" ? "gray.200" : "gray.600"}>
                                       <Flex justify="space-between" align="center" wrap="wrap" gap={2}>
                                         <HStack spacing={2}>
-                                          <Badge colorScheme="teal" variant="subtle" fontSize="2xs">Sesi {s.scheduleOrder || sIdx + 1}</Badge>
+                                          <Badge colorScheme="teal" variant="subtle" fontSize="xs">Sesi {s.scheduleOrder || sIdx + 1}</Badge>
                                           <Text fontSize="xs" fontWeight="bold">{s.scheduleTitle || s.scheduleType}</Text>
                                         </HStack>
                                         <Text fontSize="xs" color="gray.500">
@@ -4209,7 +4209,7 @@ const CabRequestDetailView = () => {
                                         </Text>
                                       </Flex>
                                       {s.location && (
-                                        <Text fontSize="2xs" color="gray.500" mt={1}>📍 Lokasi / Link: {s.location}</Text>
+                                        <Text fontSize="xs" color="gray.500" mt={1}>📍 Lokasi / Link: {s.location}</Text>
                                       )}
                                     </Box>
                                   ))}
@@ -4233,14 +4233,14 @@ const CabRequestDetailView = () => {
                                     <Box key={h.id || hIdx} p={2.5} rounded="md" bg={colorMode === "light" ? "white" : "gray.750"} border="1px solid" borderColor={colorMode === "light" ? "orange.100" : "gray.700"}>
                                       <Flex justify="space-between" align="center">
                                         <Text fontSize="xs" fontWeight="bold" color="orange.600">Revisi #{h.scheduleOrder || hIdx + 1}</Text>
-                                        <Text fontSize="2xs" color="gray.500">
+                                        <Text fontSize="xs" color="gray.500">
                                           {h.createdAt ? new Date(h.createdAt).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "-"}
                                         </Text>
                                       </Flex>
                                       <Text fontSize="xs" mt={1} color={colorMode === "light" ? "gray.800" : "gray.200"}>
                                         <strong>Alasan:</strong> {h.revisionReason || h.note || "Penyesuaian jadwal sidang"}
                                       </Text>
-                                      <Text fontSize="2xs" color="gray.500" mt={0.5}>
+                                      <Text fontSize="xs" color="gray.500" mt={0.5}>
                                         Jadwal Sebelumnya: {new Date(h.startDate).toLocaleDateString("id-ID")} {new Date(h.startDate).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} s/d {new Date(h.endDate).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB
                                       </Text>
                                     </Box>
@@ -4266,7 +4266,7 @@ const CabRequestDetailView = () => {
                                     Kesepakatan & Komitmen Pelaksanaan Migrasi
                                   </Text>
                                 </HStack>
-                                <Badge colorScheme="teal" variant="subtle" fontSize="3xs" rounded="md">
+                                <Badge colorScheme="teal" variant="subtle" fontSize="xs" rounded="md">
                                   Scheduler Action
                                 </Badge>
                               </Flex>
@@ -4415,7 +4415,7 @@ const CabRequestDetailView = () => {
                       {/* Summary of Commitment from Pelaksanaan */}
                       {(Data.ketersediaanWaktuMigrasiDc || Data.kesepakatanWaktuPelaksanaanMigrasi || Data.pir || Data.catatanKomitmen) && (
                         <Box p={3.5} bg={colorMode === "light" ? "white" : "gray.750"} rounded="lg" border="1px" borderColor={colorMode === "light" ? "teal.200" : "gray.600"}>
-                          <Text fontSize="2xs" color="gray.500" fontWeight="bold" textTransform="uppercase" mb={2}>
+                          <Text fontSize="xs" color="gray.500" fontWeight="bold" textTransform="uppercase" mb={2}>
                             Kesepakatan & Komitmen Migrasi Terkonfirmasi:
                           </Text>
                           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
@@ -4475,7 +4475,7 @@ const CabRequestDetailView = () => {
                                   Daftar Verifikasi Kesiapan & Compliance
                                 </Text>
                               </HStack>
-                              <Text fontSize="2xs" color={colorMode === "light" ? "blue.700" : "blue.300"}>
+                              <Text fontSize="xs" color={colorMode === "light" ? "blue.700" : "blue.300"}>
                                 Verifikasi Terakhir
                               </Text>
                             </Box>
@@ -4488,7 +4488,7 @@ const CabRequestDetailView = () => {
                                 rounded="full"
                                 mb={1.5}
                               />
-                              <Text fontSize="2xs" color="gray.500">
+                              <Text fontSize="xs" color="gray.500">
                                 {allActivitiesDone
                                   ? "✓ Seluruh aktivitas telah diverifikasi dan selesai."
                                   : "Scheduler wajib mencentang seluruh aktivitas verifikasi sebelum mengirim request ke approval."}
@@ -4556,10 +4556,10 @@ const CabRequestDetailView = () => {
                                       {togglingActivityId === act.id ? (
                                         <HStack spacing={1.5} bg={colorMode === "light" ? "blue.50" : "blue.900"} px={2} py={0.5} rounded="full">
                                           <Spinner size="xs" color="blue.500" />
-                                          <Text fontSize="3xs" color="blue.600" fontWeight="bold">Menyimpan...</Text>
+                                          <Text fontSize="xs" color="blue.600" fontWeight="bold">Menyimpan...</Text>
                                         </HStack>
                                       ) : act.isDone ? (
-                                        <Badge colorScheme="green" variant="solid" rounded="full" px={2} py={0.5} fontSize="3xs">
+                                        <Badge colorScheme="green" variant="solid" rounded="full" px={2} py={0.5} fontSize="xs">
                                           Done {act.doneBy ? `by ${act.doneBy}` : ""}
                                         </Badge>
                                       ) : null}
@@ -4580,7 +4580,7 @@ const CabRequestDetailView = () => {
                               <Icon as={FiFileText} color="purple.500" />
                               <Heading size="sm" color="purple.700">Evaluasi Migrasi & Hasil Sidang CAB</Heading>
                             </HStack>
-                            <Badge colorScheme="purple" variant="solid" rounded="full" px={2.5} py={0.5} fontSize="2xs">
+                            <Badge colorScheme="purple" variant="solid" rounded="full" px={2.5} py={0.5} fontSize="xs">
                               TAHAP: IMPLEMENTASI
                             </Badge>
                           </Flex>
@@ -4633,11 +4633,11 @@ const CabRequestDetailView = () => {
                                       <FormLabel fontSize="sm" fontWeight="semibold" mb={0}>
                                         Bukti Implementasi
                                       </FormLabel>
-                                      {/* <Badge colorScheme="purple" variant="subtle" fontSize="2xs" rounded="md" px={2} py={0.5}>
+                                      {/* <Badge colorScheme="purple" variant="subtle" fontSize="xs" rounded="md" px={2} py={0.5}>
                                         PNG / JPG / WEBP only
                                       </Badge> */}
                                     </HStack>
-                                    <Text fontSize="2xs" color="gray.500">
+                                    <Text fontSize="xs" color="gray.500">
                                       Maks. 10MB
                                     </Text>
                                   </Flex>
@@ -4707,7 +4707,7 @@ const CabRequestDetailView = () => {
                                           Uploaded ({buktiFiles.length}):
                                         </Text>
                                         <Button
-                                          size="2xs"
+                                          size="xs"
                                           variant="ghost"
                                           colorScheme="red"
                                           onClick={() => setBuktiFiles([])}
@@ -4762,11 +4762,11 @@ const CabRequestDetailView = () => {
                                                   {item.name}
                                                 </Text>
                                                 {item.size && (
-                                                  <Text fontSize="3xs" color="gray.500">
+                                                  <Text fontSize="xs" color="gray.500">
                                                     {formatFileSize(item.size)}
                                                   </Text>
                                                 )}
-                                                <Badge colorScheme="purple" variant="subtle" fontSize="3xs" px={1.5} rounded="md">
+                                                <Badge colorScheme="purple" variant="subtle" fontSize="xs" px={1.5} rounded="md">
                                                   IMG
                                                 </Badge>
                                               </VStack>
@@ -4888,7 +4888,7 @@ const CabRequestDetailView = () => {
                             <Icon as={FiXCircle} color="red.500" />
                             <Heading size="sm" color="red.700">Permohonan CAB Ditolak (REJECTED)</Heading>
                           </HStack>
-                          <Badge colorScheme="red" variant="solid" rounded="full" px={2.5} py={0.5} fontSize="2xs">
+                          <Badge colorScheme="red" variant="solid" rounded="full" px={2.5} py={0.5} fontSize="xs">
                             DITOLAK / REJECTED
                           </Badge>
                         </Flex>
@@ -4983,7 +4983,7 @@ const CabRequestDetailView = () => {
                             Jadwal Rapat CAB
                           </Heading>
                         </HStack>
-                        <Badge colorScheme="blue" variant="subtle" rounded="full" px={2.5} py={0.5} fontSize="2xs" fontWeight="bold">
+                        <Badge colorScheme="blue" variant="subtle" rounded="full" px={2.5} py={0.5} fontSize="xs" fontWeight="bold">
                           CONFIRMED
                         </Badge>
                       </Flex>
@@ -5010,7 +5010,7 @@ const CabRequestDetailView = () => {
                             flexShrink={0}
                             shadow="xs"
                           >
-                            <Box bg="blue.600" color="white" fontSize="3xs" fontWeight="bold" textAlign="center" py={0.5} letterSpacing="wider">
+                            <Box bg="blue.600" color="white" fontSize="xs" fontWeight="bold" textAlign="center" py={0.5} letterSpacing="wider">
                               {monthName}
                             </Box>
                             <Box
@@ -5045,7 +5045,7 @@ const CabRequestDetailView = () => {
                           <HStack align="start" spacing={2.5} px={1}>
                             <Icon as={FiMapPin} color="gray.400" boxSize={4} mt={0.5} flexShrink={0} />
                             <VStack align="start" spacing={0}>
-                              <Text fontSize="3xs" color="gray.400" fontWeight="bold" textTransform="uppercase" letterSpacing="wider">
+                              <Text fontSize="xs" color="gray.400" fontWeight="bold" textTransform="uppercase" letterSpacing="wider">
                                 Link Meeting
                               </Text>
                               <Text fontSize="xs" fontWeight="medium" color={colorMode === "light" ? "gray.700" : "gray.200"}>
@@ -5055,7 +5055,7 @@ const CabRequestDetailView = () => {
                           </HStack>
                         )}
 
-                        {/* <Text fontSize="3xs" color="gray.400" fontStyle="italic" px={1}>
+                        {/* <Text fontSize="xs" color="gray.400" fontStyle="italic" px={1}>
                           * Jadwal pelaksanaan rapat CAB telah ditetapkan oleh Scheduler.
                         </Text> */}
                       </VStack>
@@ -5086,8 +5086,8 @@ const CabRequestDetailView = () => {
                               <Text fontSize="sm" fontWeight="semibold">{step.approverName}</Text>
                               <Text fontSize="xs" color="gray.500">{step.approverRole}</Text>
                               <HStack spacing={2} mt={1}>
-                                <Badge colorScheme={stepColor} fontSize="2xs" rounded="full" px={2}>{step.status}</Badge>
-                                {step.actionDate && <Text fontSize="2xs" color="gray.400">{new Date(step.actionDate).toLocaleDateString("id-ID")}</Text>}
+                                <Badge colorScheme={stepColor} fontSize="xs" rounded="full" px={2}>{step.status}</Badge>
+                                {step.actionDate && <Text fontSize="xs" color="gray.400">{new Date(step.actionDate).toLocaleDateString("id-ID")}</Text>}
                               </HStack>
                               {step.note && (
                                 <Box mt={2} p={2} bg={colorMode === "light" ? "gray.50" : "gray.700"} rounded="md" w="full">
@@ -5120,7 +5120,7 @@ const CabRequestDetailView = () => {
                     {previewModalData.name}
                   </Text>
                   {previewModalData.size ? (
-                    <Text fontSize="2xs" color="gray.500">
+                    <Text fontSize="xs" color="gray.500">
                       Ukuran: {formatFileSize(previewModalData.size)}
                     </Text>
                   ) : null}

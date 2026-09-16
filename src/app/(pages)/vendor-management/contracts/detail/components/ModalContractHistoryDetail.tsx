@@ -97,7 +97,7 @@ export const ModalContractHistoryDetail = ({
               <VStack align="start" spacing={0}>
                 <HStack spacing={2}>
                   <Heading size="md">Contract Revision Detail Snapshot</Heading>
-                  <Badge colorScheme="purple" fontSize="2xs" px={2} py={0.5} rounded="md">
+                  <Badge colorScheme="purple" fontSize="xs" px={2} py={0.5} rounded="md">
                     Rev #{revNumber}
                   </Badge>
                 </HStack>
@@ -126,13 +126,13 @@ export const ModalContractHistoryDetail = ({
                       <Box p={2.5} rounded="lg" bg={colorMode === "light" ? "purple.50" : "gray.750"} border="1px" borderColor={colorMode === "light" ? "purple.200" : "purple.700"}>
                         <VStack align="start" spacing={0.5}>
                           <HStack spacing={2}>
-                            <Text fontSize="2xs" color="purple.600" fontWeight="bold">LINKED PROCUREMENT PROJECT</Text>
-                            <Badge colorScheme="purple" fontSize="2xs">{history.projectCode || history.projectNo || "PROJ"}</Badge>
-                            {history.sdlcStageName && <Badge colorScheme="teal" variant="outline" fontSize="2xs">{history.sdlcStageName}</Badge>}
+                            <Text fontSize="xs" color="purple.600" fontWeight="bold">LINKED PROCUREMENT PROJECT</Text>
+                            <Badge colorScheme="purple" fontSize="xs">{history.projectCode || history.projectNo || "PROJ"}</Badge>
+                            {history.sdlcStageName && <Badge colorScheme="teal" variant="outline" fontSize="xs">{history.sdlcStageName}</Badge>}
                           </HStack>
                           <Text fontSize="xs" fontWeight="bold">{history.projectName || "Corporate Project"}</Text>
                           {(history.proOwnerDivisionName || history.proOwnerDirectorateName) && (
-                            <Text fontSize="2xs" color="gray.500">{history.proOwnerDivisionName} • {history.proOwnerDirectorateName}</Text>
+                            <Text fontSize="xs" color="gray.500">{history.proOwnerDivisionName} • {history.proOwnerDirectorateName}</Text>
                           )}
                         </VStack>
                       </Box>
@@ -141,28 +141,28 @@ export const ModalContractHistoryDetail = ({
 
                   <GridItem>
                     <VStack align="start" spacing={0}>
-                      <Text fontSize="2xs" color="gray.500" fontWeight="bold">SPK / CORP REF NUMBER</Text>
+                      <Text fontSize="xs" color="gray.500" fontWeight="bold">SPK / CORP REF NUMBER</Text>
                       <Text fontSize="sm" fontWeight="bold">{history.corpNumber}</Text>
                     </VStack>
                   </GridItem>
 
                   <GridItem>
                     <VStack align="start" spacing={0}>
-                      <Text fontSize="2xs" color="gray.500" fontWeight="bold">PROJECT / CONTRACT TITLE</Text>
+                      <Text fontSize="xs" color="gray.500" fontWeight="bold">PROJECT / CONTRACT TITLE</Text>
                       <Text fontSize="sm" fontWeight="bold">{history.corpName}</Text>
                     </VStack>
                   </GridItem>
 
                   <GridItem>
                     <VStack align="start" spacing={0}>
-                      <Text fontSize="2xs" color="gray.500" fontWeight="bold">OFFICIAL CONTRACT NUMBER</Text>
+                      <Text fontSize="xs" color="gray.500" fontWeight="bold">OFFICIAL CONTRACT NUMBER</Text>
                       <Text fontSize="xs" fontWeight="bold">{history.contractNumber}</Text>
                     </VStack>
                   </GridItem>
 
                   <GridItem>
                     <VStack align="start" spacing={0}>
-                      <Text fontSize="2xs" color="gray.500" fontWeight="bold">CONTRACT SIGNING DATE</Text>
+                      <Text fontSize="xs" color="gray.500" fontWeight="bold">CONTRACT SIGNING DATE</Text>
                       <Text fontSize="xs" fontWeight="bold">{formatDateStr(history.contractDate)}</Text>
                     </VStack>
                   </GridItem>
@@ -171,17 +171,17 @@ export const ModalContractHistoryDetail = ({
                     <Box p={2.5} rounded="lg" bg={colorMode === "light" ? "white" : "gray.750"} border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"}>
                       <HStack justify="space-between" wrap="wrap" gap={2}>
                         <VStack align="start" spacing={0}>
-                          <Text fontSize="2xs" color="gray.500" fontWeight="bold">BILLING MODEL</Text>
+                          <Text fontSize="xs" color="gray.500" fontWeight="bold">BILLING MODEL</Text>
                           <HStack spacing={2}>
-                            <Badge colorScheme={history.contractBillingType && history.contractBillingType !== "MILESTONE" ? "purple" : "blue"} fontSize="2xs">
+                            <Badge colorScheme={history.contractBillingType && history.contractBillingType !== "MILESTONE" ? "purple" : "blue"} fontSize="xs">
                               {history.contractBillingType || "MILESTONE"}
                             </Badge>
-                            {history.subscriptionAutoRenew && <Badge colorScheme="green" fontSize="2xs">Auto-Renew</Badge>}
+                            {history.subscriptionAutoRenew && <Badge colorScheme="green" fontSize="xs">Auto-Renew</Badge>}
                           </HStack>
                         </VStack>
                         {history.contractBillingType && history.contractBillingType !== "MILESTONE" && (
                           <VStack align="end" spacing={0}>
-                            <Text fontSize="2xs" color="gray.500" fontWeight="bold">PERIODIC RATE</Text>
+                            <Text fontSize="xs" color="gray.500" fontWeight="bold">PERIODIC RATE</Text>
                             <Text fontSize="xs" fontWeight="bold" color="purple.600">
                               {formatIDR(history.subscriptionPeriodValue || 0)} / cycle
                             </Text>
@@ -205,24 +205,24 @@ export const ModalContractHistoryDetail = ({
                 <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
                   <Box p={3.5} rounded="xl" bg={colorMode === "light" ? "white" : "gray.750"} border="1px" borderColor={colorMode === "light" ? "teal.200" : "teal.700"}>
                     <VStack align="start" spacing={0}>
-                      <Text fontSize="2xs" color="gray.500" fontWeight="bold">TOTAL WORK VALUE</Text>
+                      <Text fontSize="xs" color="gray.500" fontWeight="bold">TOTAL WORK VALUE</Text>
                       <Text fontSize="md" fontWeight="bold" color="teal.600">{formatIDR(history.workValue)}</Text>
                     </VStack>
                   </Box>
 
                   <Box p={3.5} rounded="xl" bg={colorMode === "light" ? "white" : "gray.750"} border="1px" borderColor={colorMode === "light" ? "blue.200" : "blue.700"}>
                     <VStack align="start" spacing={0}>
-                      <Text fontSize="2xs" color="gray.500" fontWeight="bold">CAPEX ALLOCATION</Text>
+                      <Text fontSize="xs" color="gray.500" fontWeight="bold">CAPEX ALLOCATION</Text>
                       <Text fontSize="sm" fontWeight="bold" color="blue.600">{formatIDR(history.cavexValues)}</Text>
-                      <Badge colorScheme="blue" fontSize="2xs" mt={1}>{history.capexPercentage}% Share</Badge>
+                      <Badge colorScheme="blue" fontSize="xs" mt={1}>{history.capexPercentage}% Share</Badge>
                     </VStack>
                   </Box>
 
                   <Box p={3.5} rounded="xl" bg={colorMode === "light" ? "white" : "gray.750"} border="1px" borderColor={colorMode === "light" ? "purple.200" : "purple.700"}>
                     <VStack align="start" spacing={0}>
-                      <Text fontSize="2xs" color="gray.500" fontWeight="bold">OPEX ALLOCATION</Text>
+                      <Text fontSize="xs" color="gray.500" fontWeight="bold">OPEX ALLOCATION</Text>
                       <Text fontSize="sm" fontWeight="bold" color="purple.600">{formatIDR(history.ovexValues)}</Text>
-                      <Badge colorScheme="purple" fontSize="2xs" mt={1}>{history.ovexPercentage}% Share</Badge>
+                      <Badge colorScheme="purple" fontSize="xs" mt={1}>{history.ovexPercentage}% Share</Badge>
                     </VStack>
                   </Box>
                 </SimpleGrid>
@@ -240,28 +240,28 @@ export const ModalContractHistoryDetail = ({
                 <SimpleGrid columns={{ base: 1, sm: 2, md: 4 }} spacing={3}>
                   <Box p={3} rounded="lg" bg={colorMode === "light" ? "gray.50" : "gray.800"}>
                     <VStack align="start" spacing={0.5}>
-                      <Text fontSize="2xs" color="gray.500" fontWeight="bold">Contract Duration</Text>
+                      <Text fontSize="xs" color="gray.500" fontWeight="bold">Contract Duration</Text>
                       <Text fontSize="xs">{formatDateStr(history.contractStartDate)} – {formatDateStr(history.contractEndDate)}</Text>
                     </VStack>
                   </Box>
 
                   <Box p={3} rounded="lg" bg={colorMode === "light" ? "gray.50" : "gray.800"}>
                     <VStack align="start" spacing={0.5}>
-                      <Text fontSize="2xs" color="gray.500" fontWeight="bold">Works Execution</Text>
+                      <Text fontSize="xs" color="gray.500" fontWeight="bold">Works Execution</Text>
                       <Text fontSize="xs">{formatDateStr(history.worksStartDate)} – {formatDateStr(history.worksEndDate)}</Text>
                     </VStack>
                   </Box>
 
                   <Box p={3} rounded="lg" bg={colorMode === "light" ? "gray.50" : "gray.800"}>
                     <VStack align="start" spacing={0.5}>
-                      <Text fontSize="2xs" color="gray.500" fontWeight="bold">Warranty SLA</Text>
+                      <Text fontSize="xs" color="gray.500" fontWeight="bold">Warranty SLA</Text>
                       <Text fontSize="xs">{formatDateStr(history.warrantyStartDate)} – {formatDateStr(history.warrantyEndDate)}</Text>
                     </VStack>
                   </Box>
 
                   <Box p={3} rounded="lg" bg={colorMode === "light" ? "gray.50" : "gray.800"}>
                     <VStack align="start" spacing={0.5}>
-                      <Text fontSize="2xs" color="gray.500" fontWeight="bold">Maintenance SLA</Text>
+                      <Text fontSize="xs" color="gray.500" fontWeight="bold">Maintenance SLA</Text>
                       <Text fontSize="xs">{formatDateStr(history.maintenanceStartDate)} – {formatDateStr(history.maintenanceEndDate)}</Text>
                     </VStack>
                   </Box>
@@ -280,9 +280,9 @@ export const ModalContractHistoryDetail = ({
                 <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={3}>
                   <Box p={3.5} rounded="xl" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"} bg={colorMode === "light" ? "gray.50" : "gray.800"}>
                     <VStack align="start" spacing={1}>
-                      <Text fontSize="2xs" color="gray.500" fontWeight="bold" textTransform="uppercase">Performance Guarantee Bond</Text>
+                      <Text fontSize="xs" color="gray.500" fontWeight="bold" textTransform="uppercase">Performance Guarantee Bond</Text>
                       <Text fontSize="sm" fontWeight="bold" color="teal.600">{formatIDR(history.performanceGuaranteeValues)}</Text>
-                      <Text fontSize="2xs" color="gray.500">
+                      <Text fontSize="xs" color="gray.500">
                         Validity: {formatDateStr(history.performanceGuaranteeStartDate)} – {formatDateStr(history.performanceGuaranteeEndDate)}
                       </Text>
                     </VStack>
@@ -290,9 +290,9 @@ export const ModalContractHistoryDetail = ({
 
                   <Box p={3.5} rounded="xl" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.700"} bg={colorMode === "light" ? "gray.50" : "gray.800"}>
                     <VStack align="start" spacing={1}>
-                      <Text fontSize="2xs" color="gray.500" fontWeight="bold" textTransform="uppercase">Maintenance Warranty Bond</Text>
+                      <Text fontSize="xs" color="gray.500" fontWeight="bold" textTransform="uppercase">Maintenance Warranty Bond</Text>
                       <Text fontSize="sm" fontWeight="bold" color="teal.600">{formatIDR(history.maintenanceWarrantyValues)}</Text>
-                      <Text fontSize="2xs" color="gray.500">
+                      <Text fontSize="xs" color="gray.500">
                         Validity: {formatDateStr(history.maintenanceWarrantyStartDate)} – {formatDateStr(history.maintenanceWarrantyEndDate)}
                       </Text>
                     </VStack>
@@ -310,7 +310,7 @@ export const ModalContractHistoryDetail = ({
                     <Text fontSize="xs" fontWeight="bold" textTransform="uppercase">5. Archived Terms of Payment (TOP) Schedule</Text>
                   </HStack>
 
-                  <Badge colorScheme="teal" fontSize="2xs" px={2.5} py={0.5} rounded="md">
+                  <Badge colorScheme="teal" fontSize="xs" px={2.5} py={0.5} rounded="md">
                     Total: {formatIDR(totalTopVal)} ({topHistoryList.length} Steps)
                   </Badge>
                 </Flex>
@@ -337,7 +337,7 @@ export const ModalContractHistoryDetail = ({
                             <Td fontSize="xs">{step.topDescriptions || "-"}</Td>
                             <Td fontSize="xs">
                               {step.billingPeriodStart && step.billingPeriodEnd ? (
-                                <Badge colorScheme="purple" fontSize="2xs">
+                                <Badge colorScheme="purple" fontSize="xs">
                                   {formatDateStr(step.billingPeriodStart)} &rarr; {formatDateStr(step.billingPeriodEnd)}
                                 </Badge>
                               ) : (
@@ -348,7 +348,7 @@ export const ModalContractHistoryDetail = ({
                               {formatIDR(step.topValues || 0)}
                             </Td>
                             <Td textAlign="right">
-                              <Badge colorScheme="green" fontSize="2xs">
+                              <Badge colorScheme="green" fontSize="xs">
                                 {step.topStatus || "ACTIVE"}
                               </Badge>
                             </Td>
@@ -375,10 +375,10 @@ export const ModalContractHistoryDetail = ({
                     </HStack>
 
                     <HStack spacing={2}>
-                      <Badge colorScheme="blue" fontSize="2xs" px={2} py={0.5} rounded="md">
+                      <Badge colorScheme="blue" fontSize="xs" px={2} py={0.5} rounded="md">
                         RBB Budget: {formatIDR(history.costGovernanceHistory.totalBudgetRbb || 0)}
                       </Badge>
-                      <Badge colorScheme={history.costGovernanceHistory.globalResapanPercentage >= 0 ? "teal" : "red"} fontSize="2xs" px={2} py={0.5} rounded="md">
+                      <Badge colorScheme={history.costGovernanceHistory.globalResapanPercentage >= 0 ? "teal" : "red"} fontSize="xs" px={2} py={0.5} rounded="md">
                         Absorption: {history.costGovernanceHistory.globalResapanPercentage?.toFixed(2)}%
                       </Badge>
                     </HStack>
@@ -405,12 +405,12 @@ export const ModalContractHistoryDetail = ({
                                 <HStack spacing={1.5}>
                                   <Text>{hps.hpsName}</Text>
                                   {hps.isBenchmark && (
-                                    <Badge colorScheme="yellow" fontSize="3xs">Benchmark</Badge>
+                                    <Badge colorScheme="yellow" fontSize="xs">Benchmark</Badge>
                                   )}
                                 </HStack>
                               </Td>
                               <Td fontSize="xs">
-                                <Badge colorScheme="purple" fontSize="3xs">{hps.hpsTag}</Badge>
+                                <Badge colorScheme="purple" fontSize="xs">{hps.hpsTag}</Badge>
                               </Td>
                               <Td fontWeight="bold" textAlign="right" color="blue.600" fontSize="xs">
                                 {formatIDR(hps.hpsNominal || 0)}

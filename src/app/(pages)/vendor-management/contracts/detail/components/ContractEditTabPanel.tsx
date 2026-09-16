@@ -655,7 +655,7 @@ export const ContractEditTabPanel = ({
                   Corporate Procurement Project
                 </FormLabel>
                 {selectedProject && (
-                  <Badge colorScheme="purple" fontSize="2xs" px={2} py={0.5} rounded="md">
+                  <Badge colorScheme="purple" fontSize="xs" px={2} py={0.5} rounded="md">
                     Linked to Project
                   </Badge>
                 )}
@@ -748,8 +748,8 @@ export const ContractEditTabPanel = ({
                   </Box>
                   <VStack align="start" spacing={0}>
                     <HStack spacing={2}>
-                      <Badge colorScheme="purple" fontSize="2xs">Locked Vendor Partner</Badge>
-                      <Badge colorScheme="blue" fontSize="2xs">{contract.vendorCode || "VEN-CODE"}</Badge>
+                      <Badge colorScheme="purple" fontSize="xs">Locked Vendor Partner</Badge>
+                      <Badge colorScheme="blue" fontSize="xs">{contract.vendorCode || "VEN-CODE"}</Badge>
                     </HStack>
                     <Text fontSize="md" fontWeight="bold">
                       {contract.vendorName || contract.vendor?.vendorName || "Vendor Company"}
@@ -845,7 +845,7 @@ export const ContractEditTabPanel = ({
                     <Icon as={FiRepeat} color="teal.500" />
                     <Text fontSize="xs" fontWeight="bold">Contract Billing Model & Schedule Type</Text>
                   </HStack>
-                  <Badge colorScheme={formik.values.contractBillingType === "MILESTONE" ? "blue" : "purple"} fontSize="2xs" px={2} py={0.5} rounded="md">
+                  <Badge colorScheme={formik.values.contractBillingType === "MILESTONE" ? "blue" : "purple"} fontSize="xs" px={2} py={0.5} rounded="md">
                     {formik.values.contractBillingType || "MILESTONE"}
                   </Badge>
                 </Flex>
@@ -854,10 +854,10 @@ export const ContractEditTabPanel = ({
                   <GridItem>
                     <FormControl isReadOnly isDisabled>
                       <Flex justify="space-between" align="center" mb={1}>
-                        <FormLabel fontSize="2xs" fontWeight="bold" m={0}>
+                        <FormLabel fontSize="xs" fontWeight="bold" m={0}>
                           Billing Model Type
                         </FormLabel>
-                        <Badge colorScheme="gray" fontSize="3xs">
+                        <Badge colorScheme="gray" fontSize="xs">
                           <HStack spacing={1}>
                             <Icon as={FiLock} />
                             <Text>Locked Structure</Text>
@@ -889,10 +889,10 @@ export const ContractEditTabPanel = ({
                       <GridItem>
                         <FormControl>
                           <Flex justify="space-between" align="center" mb={1}>
-                            <FormLabel fontSize="2xs" fontWeight="bold" m={0}>
+                            <FormLabel fontSize="xs" fontWeight="bold" m={0}>
                               Periodic Rate (Rp. per cycle) *
                             </FormLabel>
-                            <Badge colorScheme="purple" fontSize="3xs">
+                            <Badge colorScheme="purple" fontSize="xs">
                               Auto-adjusts Unpaid TOPs
                             </Badge>
                           </Flex>
@@ -951,7 +951,7 @@ export const ContractEditTabPanel = ({
                   px={2.5}
                   py={1}
                   rounded="lg"
-                  fontSize="2xs"
+                  fontSize="xs"
                   display="flex"
                   alignItems="center"
                   gap={1.5}
@@ -960,10 +960,10 @@ export const ContractEditTabPanel = ({
                   Auto-adjusting allocations in 3s...
                 </Badge>
               )}
-              <Badge colorScheme="blue" px={2.5} py={1} rounded="lg" fontSize="2xs">
+              <Badge colorScheme="blue" px={2.5} py={1} rounded="lg" fontSize="xs">
                 CAPEX: {formik.values.capexPercentage || 0}% ({formatIDR(formik.values.cavexValues || 0)})
               </Badge>
-              <Badge colorScheme="purple" px={2.5} py={1} rounded="lg" fontSize="2xs">
+              <Badge colorScheme="purple" px={2.5} py={1} rounded="lg" fontSize="xs">
                 OPEX: {formik.values.ovexPercentage || 0}% ({formatIDR(formik.values.ovexValues || 0)})
               </Badge>
             </HStack>
@@ -1020,7 +1020,7 @@ export const ContractEditTabPanel = ({
                         <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "blue.700" : "blue.300"}>
                           CAPEX Allocation
                         </Text>
-                        <Text fontSize="2xs" color="gray.500">Method 1: Direct % Input</Text>
+                        <Text fontSize="xs" color="gray.500">Method 1: Direct % Input</Text>
                       </VStack>
                     </HStack>
 
@@ -1050,10 +1050,10 @@ export const ContractEditTabPanel = ({
                   <VStack align="stretch" spacing={1} pt={1} pb={1} px={1}>
                     <Flex justify="space-between" align="center">
                       <HStack spacing={1}>
-                        <Icon as={FiSliders} fontSize="2xs" color="blue.500" />
-                        <Text fontSize="2xs" color="gray.500" fontWeight="bold">Method 2: Slide to Adjust Ratio</Text>
+                        <Icon as={FiSliders} fontSize="xs" color="blue.500" />
+                        <Text fontSize="xs" color="gray.500" fontWeight="bold">Method 2: Slide to Adjust Ratio</Text>
                       </HStack>
-                      <Text fontSize="2xs" color="blue.600" fontWeight="bold">{formik.values.capexPercentage || 0}%</Text>
+                      <Text fontSize="xs" color="blue.600" fontWeight="bold">{formik.values.capexPercentage || 0}%</Text>
                     </Flex>
                     <Slider
                       min={0}
@@ -1073,14 +1073,14 @@ export const ContractEditTabPanel = ({
                   {/* Method 3: Nominal Currency Input */}
                   <FormControl>
                     <Flex justify="space-between" align="center" mb={1}>
-                      <FormLabel fontSize="2xs" color="gray.500" fontWeight="bold" mb={0}>
+                      <FormLabel fontSize="xs" color="gray.500" fontWeight="bold" mb={0}>
                         CAPEX Value (Rp.)
                       </FormLabel>
                       {isCapexAdjusting ? (
                         <Badge
                           colorScheme="orange"
                           variant="subtle"
-                          fontSize="3xs"
+                          fontSize="xs"
                           rounded="md"
                           px={1.5}
                           py={0.5}
@@ -1091,7 +1091,7 @@ export const ContractEditTabPanel = ({
                           <Spinner size="xs" color="orange.500" /> Auto-adjusting in 3s...
                         </Badge>
                       ) : (
-                        <Text fontSize="2xs" color="gray.400">Method 3: Exact Nominal</Text>
+                        <Text fontSize="xs" color="gray.400">Method 3: Exact Nominal</Text>
                       )}
                     </Flex>
                     <CurrencyInput
@@ -1122,7 +1122,7 @@ export const ContractEditTabPanel = ({
                         <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "purple.700" : "purple.300"}>
                           OPEX Allocation
                         </Text>
-                        <Text fontSize="2xs" color="gray.500">Method 1: Direct % Input</Text>
+                        <Text fontSize="xs" color="gray.500">Method 1: Direct % Input</Text>
                       </VStack>
                     </HStack>
 
@@ -1152,10 +1152,10 @@ export const ContractEditTabPanel = ({
                   <VStack align="stretch" spacing={1} pt={1} pb={1} px={1}>
                     <Flex justify="space-between" align="center">
                       <HStack spacing={1}>
-                        <Icon as={FiSliders} fontSize="2xs" color="purple.500" />
-                        <Text fontSize="2xs" color="gray.500" fontWeight="bold">Method 2: Slide to Adjust Ratio</Text>
+                        <Icon as={FiSliders} fontSize="xs" color="purple.500" />
+                        <Text fontSize="xs" color="gray.500" fontWeight="bold">Method 2: Slide to Adjust Ratio</Text>
                       </HStack>
-                      <Text fontSize="2xs" color="purple.600" fontWeight="bold">{formik.values.ovexPercentage || 0}%</Text>
+                      <Text fontSize="xs" color="purple.600" fontWeight="bold">{formik.values.ovexPercentage || 0}%</Text>
                     </Flex>
                     <Slider
                       min={0}
@@ -1175,14 +1175,14 @@ export const ContractEditTabPanel = ({
                   {/* Method 3: Nominal Currency Input */}
                   <FormControl>
                     <Flex justify="space-between" align="center" mb={1}>
-                      <FormLabel fontSize="2xs" color="gray.500" fontWeight="bold" mb={0}>
+                      <FormLabel fontSize="xs" color="gray.500" fontWeight="bold" mb={0}>
                         OPEX Value (Rp.)
                       </FormLabel>
                       {isOvexAdjusting ? (
                         <Badge
                           colorScheme="orange"
                           variant="subtle"
-                          fontSize="3xs"
+                          fontSize="xs"
                           rounded="md"
                           px={1.5}
                           py={0.5}
@@ -1193,7 +1193,7 @@ export const ContractEditTabPanel = ({
                           <Spinner size="xs" color="orange.500" /> Auto-adjusting in 3s...
                         </Badge>
                       ) : (
-                        <Text fontSize="2xs" color="gray.400">Method 3: Exact Nominal</Text>
+                        <Text fontSize="xs" color="gray.400">Method 3: Exact Nominal</Text>
                       )}
                     </Flex>
                     <CurrencyInput
@@ -1414,7 +1414,7 @@ export const ContractEditTabPanel = ({
                 <HStack spacing={2}>
                   <Heading size="md">5. Terms of Payment (TOP) Schedule</Heading>
                   {formik.values.contractBillingType !== "MILESTONE" && (
-                    <Badge colorScheme="purple" fontSize="2xs" px={2} py={0.5} rounded="md">
+                    <Badge colorScheme="purple" fontSize="xs" px={2} py={0.5} rounded="md">
                       {formik.values.contractBillingType}
                     </Badge>
                   )}
@@ -1486,7 +1486,7 @@ export const ContractEditTabPanel = ({
                       Payment Realization In-Progress ({paidTopCount} Paid, {inProgressTopCount} Active Steps)
                     </Text>
                   </HStack>
-                  <Text fontSize="2xs" color="gray.600">
+                  <Text fontSize="xs" color="gray.600">
                     Payment milestones that are already PAID or under verification are locked to preserve financial integrity and BAST/Invoice archives. You can still add or modify upcoming unpaid milestones.
                   </Text>
                 </Box>
@@ -1512,20 +1512,20 @@ export const ContractEditTabPanel = ({
               <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }} gap={4}>
                 {/* 1. Total Work Value */}
                 <Box>
-                  <Text fontSize="2xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
+                  <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
                     Total Contract Value
                   </Text>
                   <Text fontSize="md" fontWeight="extrabold" color="teal.500">
                     {formatIDR(totalWorkValue)}
                   </Text>
-                  <Badge colorScheme="teal" fontSize="3xs" rounded="md" px={1.5}>
+                  <Badge colorScheme="teal" fontSize="xs" rounded="md" px={1.5}>
                     {formik.values.contractBillingType || "MILESTONE"}
                   </Badge>
                 </Box>
 
                 {/* 2. Paid / Realized */}
                 <Box>
-                  <Text fontSize="2xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
+                  <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
                     Realized / Disbursed (Paid)
                   </Text>
                   <HStack spacing={1.5} align="baseline">
@@ -1533,19 +1533,19 @@ export const ContractEditTabPanel = ({
                       {formatIDR(paidTopAmount)}
                     </Text>
                     {paidTopAmount > 0 && (
-                      <Badge colorScheme="green" fontSize="3xs" rounded="md" px={1}>
+                      <Badge colorScheme="green" fontSize="xs" rounded="md" px={1}>
                         {paidPercentage}%
                       </Badge>
                     )}
                   </HStack>
-                  <Text fontSize="3xs" color="gray.500">
+                  <Text fontSize="xs" color="gray.500">
                     {paidTopCount} of {(formik.values.topList || []).length} steps paid (Locked)
                   </Text>
                 </Box>
 
                 {/* 3. Available Remaining Budget */}
                 <Box>
-                  <Text fontSize="2xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
+                  <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
                     Available Remaining Budget
                   </Text>
                   <Text
@@ -1555,14 +1555,14 @@ export const ContractEditTabPanel = ({
                   >
                     {formatIDR(remainingBudget)}
                   </Text>
-                  <Text fontSize="3xs" color="gray.500">
+                  <Text fontSize="xs" color="gray.500">
                     Work Value - Disbursed Amount
                   </Text>
                 </Box>
 
                 {/* 4. Scheduled TOP Milestones */}
                 <Box>
-                  <Text fontSize="2xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
+                  <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
                     Scheduled Milestones
                   </Text>
                   <Text
@@ -1574,7 +1574,7 @@ export const ContractEditTabPanel = ({
                   </Text>
                   <Badge
                     colorScheme={isTopMatch ? "green" : isDeficitAnomaly ? "red" : "orange"}
-                    fontSize="3xs"
+                    fontSize="xs"
                     rounded="md"
                     px={1.5}
                   >
@@ -1595,7 +1595,7 @@ export const ContractEditTabPanel = ({
                       Critical Financial Anomaly: Total Work Value Underflow
                     </Text>
                   </HStack>
-                  <Text fontSize="2xs" color="gray.600" mb={2}>
+                  <Text fontSize="xs" color="gray.600" mb={2}>
                     Total Contract Work Value ({formatIDR(totalWorkValue)}) cannot be less than the amount already disbursed to the vendor ({formatIDR(paidTopAmount)}). Deficit variance: {formatIDR(Math.abs(remainingBudget))}. Please adjust Total Work Value to at least {formatIDR(paidTopAmount)}.
                   </Text>
                   <Button
@@ -1618,7 +1618,7 @@ export const ContractEditTabPanel = ({
                       TOP Schedule & Contract Value Mismatch
                     </Text>
                   </HStack>
-                  <Text fontSize="2xs" color="gray.600" mb={2}>
+                  <Text fontSize="xs" color="gray.600" mb={2}>
                     Total TOP milestones ({formatIDR(totalTopValues)}) {variance > 0 ? "exceeds" : "is less than"} Total Work Value ({formatIDR(totalWorkValue)}) by {formatIDR(Math.abs(variance))}. Available allocation for remaining unpaid milestones is {formatIDR(remainingBudget)}.
                   </Text>
                   <HStack spacing={2} wrap="wrap">
@@ -1650,7 +1650,7 @@ export const ContractEditTabPanel = ({
                   <Text fontSize="xs" fontWeight="bold">
                     Reconciliation Perfect: Total TOP Milestones ({formatIDR(totalTopValues)}) matches Total Work Value ({formatIDR(totalWorkValue)})
                   </Text>
-                  <Text fontSize="2xs" opacity={0.85}>
+                  <Text fontSize="xs" opacity={0.85}>
                     All payment milestones are allocated with 100% precision matching the total contract value.
                   </Text>
                 </Box>
@@ -1696,35 +1696,35 @@ export const ContractEditTabPanel = ({
                   <VStack align="stretch" spacing={3}>
                     <Flex justify="space-between" align="center">
                       <HStack spacing={2}>
-                        <Badge colorScheme="teal" rounded="md" px={2.5} py={0.5} fontSize="2xs">
+                        <Badge colorScheme="teal" rounded="md" px={2.5} py={0.5} fontSize="xs">
                           Step #{top.stepOrder}
                         </Badge>
                         {isStepPaid ? (
-                          <Badge colorScheme="green" rounded="md" px={2} py={0.5} fontSize="2xs" display="flex" alignItems="center" gap={1}>
+                          <Badge colorScheme="green" rounded="md" px={2} py={0.5} fontSize="xs" display="flex" alignItems="center" gap={1}>
                             <Icon as={FiCheck} /> PAID
                           </Badge>
                         ) : top.topStatus && top.topStatus.toUpperCase() === "VERIFIED" ? (
-                          <Badge colorScheme="blue" rounded="md" px={2} py={0.5} fontSize="2xs">
+                          <Badge colorScheme="blue" rounded="md" px={2} py={0.5} fontSize="xs">
                             VERIFIED
                           </Badge>
                         ) : top.topStatus && top.topStatus.toUpperCase() === "SUBMITTED" ? (
-                          <Badge colorScheme="yellow" rounded="md" px={2} py={0.5} fontSize="2xs">
+                          <Badge colorScheme="yellow" rounded="md" px={2} py={0.5} fontSize="xs">
                             SUBMITTED
                           </Badge>
                         ) : top.topStatus && top.topStatus.toUpperCase() === "APPROVED" ? (
-                          <Badge colorScheme="teal" rounded="md" px={2} py={0.5} fontSize="2xs">
+                          <Badge colorScheme="teal" rounded="md" px={2} py={0.5} fontSize="xs">
                             APPROVED
                           </Badge>
                         ) : null}
 
                         {isStepLocked && (
-                          <Badge colorScheme="gray" rounded="md" px={2} py={0.5} fontSize="2xs" display="flex" alignItems="center" gap={1}>
+                          <Badge colorScheme="gray" rounded="md" px={2} py={0.5} fontSize="xs" display="flex" alignItems="center" gap={1}>
                             <Icon as={FiLock} /> Locked
                           </Badge>
                         )}
 
                         {top.billingPeriodStart && top.billingPeriodEnd && (
-                          <Badge colorScheme="purple" rounded="md" px={2} py={0.5} fontSize="2xs">
+                          <Badge colorScheme="purple" rounded="md" px={2} py={0.5} fontSize="xs">
                             Period: {top.billingPeriodStart} &rarr; {top.billingPeriodEnd}
                           </Badge>
                         )}
@@ -1757,11 +1757,11 @@ export const ContractEditTabPanel = ({
                     <GridItem>
                       <FormControl isDisabled={isStepLocked}>
                         <Flex justify="space-between" align="center" mb={1}>
-                          <FormLabel fontSize="2xs" fontWeight="bold" m={0}>
+                          <FormLabel fontSize="xs" fontWeight="bold" m={0}>
                             Payment Amount (Rp.) *
                           </FormLabel>
                           {isStepLocked && (
-                            <Badge colorScheme="gray" fontSize="3xs">Locked</Badge>
+                            <Badge colorScheme="gray" fontSize="xs">Locked</Badge>
                           )}
                         </Flex>
                         <CurrencyInput
@@ -1779,7 +1779,7 @@ export const ContractEditTabPanel = ({
 
                     <GridItem>
                       <FormControl>
-                        <FormLabel fontSize="2xs" fontWeight="bold">TOP Description / Milestone Note</FormLabel>
+                        <FormLabel fontSize="xs" fontWeight="bold">TOP Description / Milestone Note</FormLabel>
                         <Textarea
                           size="sm"
                           rounded="md"
@@ -1795,7 +1795,7 @@ export const ContractEditTabPanel = ({
                       <>
                         <GridItem>
                           <FormControl>
-                            <FormLabel fontSize="2xs" fontWeight="bold">Period Start</FormLabel>
+                            <FormLabel fontSize="xs" fontWeight="bold">Period Start</FormLabel>
                             <Input
                               size="sm"
                               type="date"
@@ -1807,7 +1807,7 @@ export const ContractEditTabPanel = ({
                         </GridItem>
                         <GridItem>
                           <FormControl>
-                            <FormLabel fontSize="2xs" fontWeight="bold">Period End</FormLabel>
+                            <FormLabel fontSize="xs" fontWeight="bold">Period End</FormLabel>
                             <Input
                               size="sm"
                               type="date"
@@ -1822,7 +1822,7 @@ export const ContractEditTabPanel = ({
                       showTopDates && (
                         <GridItem>
                           <FormControl>
-                            <FormLabel fontSize="2xs" fontWeight="bold">Scheduled Due Date (Optional)</FormLabel>
+                            <FormLabel fontSize="xs" fontWeight="bold">Scheduled Due Date (Optional)</FormLabel>
                             <Input
                               size="sm"
                               type="date"
@@ -1892,7 +1892,7 @@ export const ContractEditTabPanel = ({
                   <Text><strong>SPK / Corp Ref:</strong> {formik.values.corpNumber}</Text>
                   <Text><strong>Project Title:</strong> {formik.values.corpName}</Text>
                   <Text><strong>Contract No:</strong> {formik.values.contractNumber}</Text>
-                  <Text><strong>Billing Model:</strong> <Badge colorScheme="purple" fontSize="2xs">{formik.values.contractBillingType || "MILESTONE"}</Badge></Text>
+                  <Text><strong>Billing Model:</strong> <Badge colorScheme="purple" fontSize="xs">{formik.values.contractBillingType || "MILESTONE"}</Badge></Text>
                   <Text><strong>Total Work Value:</strong> <span style={{ color: "#319795", fontWeight: "bold" }}>{formatIDR(formik.values.workValue)}</span></Text>
                   <Text><strong>TOP Steps:</strong> {formik.values.topList?.length || 0} steps ({formatIDR(totalTopValues)})</Text>
                 </VStack>

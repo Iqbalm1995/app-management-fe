@@ -435,10 +435,10 @@ export default function ContractAttachmentUploadModal({
                           {selectedFile.name}
                         </Text>
                         <HStack spacing={2}>
-                          <Badge colorScheme="teal" fontSize="3xs" rounded="md">
+                          <Badge colorScheme="teal" fontSize="xs" rounded="md">
                             {(selectedFile.size / 1024).toFixed(1)} KB
                           </Badge>
-                          <Text fontSize="3xs" color="gray.500">
+                          <Text fontSize="xs" color="gray.500">
                             Ready for MinIO Object Storage
                           </Text>
                         </HStack>
