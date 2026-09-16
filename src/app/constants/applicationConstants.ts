@@ -131,13 +131,13 @@ export const BASE_PORT_MAIN: string = "5555";
 // export const BASE_PORT_MAIN: string = "8998";
 
 // Base Url Endpoint API
-// export const ENDPOINT_API_BASEURL: string = "http://192.168.239.117";
-export const ENDPOINT_API_BASEURL: string = "https://localhost";
+export const ENDPOINT_API_BASEURL: string = "http://192.168.239.117";
+// export const ENDPOINT_API_BASEURL: string = "https://localhost";
 export const ENDPOINT_PORT_BASIC: string = "2332";
 
 // Base Url Endpoint API
-// export const ENDPOINT_API_BASEURL_OBJECT: string = "http://192.168.239.117";
-export const ENDPOINT_API_BASEURL_OBJECT: string = "https://localhost";
+export const ENDPOINT_API_BASEURL_OBJECT: string = "http://192.168.239.117";
+// export const ENDPOINT_API_BASEURL_OBJECT: string = "https://localhost";
 export const ENDPOINT_PORT_BASIC_OBJECT: string = "2332";
 
 // http://192.168.239.117:5000
@@ -665,3 +665,37 @@ export const VENDOR_TYPE_OPTIONS = ["PT", "CV", "INDIVIDUAL"];
 
 // WORKER QUEUE TECH ACCESS PASSKEY
 export const WORKER_QUEUE_PASSKEY: string = "555501";
+
+// ── MULTI-PROJECT WORKLOAD & CONTENTION ESTIMATION RULES ──
+import workloadRulesJson from "@/app/json/workloadEstimationRules.json";
+
+export interface WorkloadRuleItem {
+  projectCount: number;
+  ruleName: string;
+  severity: "low" | "medium" | "high" | "critical";
+  color: string;
+  badgeLabel: string;
+  nominalAllocationPct: number;
+  contextSwitchingLossPct: number;
+  effectiveProductiveCapacityPct: number;
+  overheadFactor: number;
+  description: string;
+}
+
+export interface WorkloadEstimationConfig {
+  version: string;
+  metadata: {
+    title: string;
+    description: string;
+    references: string[];
+  };
+  rules: WorkloadRuleItem[];
+  teamMitigation: {
+    enabled: boolean;
+    criticalPathBias: number;
+    description: string;
+  };
+}
+
+export const WORKLOAD_ESTIMATION_RULES: WorkloadEstimationConfig =
+  workloadRulesJson as WorkloadEstimationConfig;

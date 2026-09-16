@@ -326,7 +326,7 @@ export const LinkItems: LinkItemProps[] = [
         name: "Timeline Simulation",
         icon: TbTimeline,
         iconName: "TbTimeline",
-        link: "/coming-soon",
+        link: "/timeline-simulation",
         role: ["admin"],
         isPro: false,
         menuID: "1",
