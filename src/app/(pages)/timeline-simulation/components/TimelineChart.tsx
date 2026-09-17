@@ -364,9 +364,9 @@ const TimelineChart = ({ stages }: TimelineChartProps) => {
                         }}
                         transition="all 0.2s ease"
                       >
-                        <HStack justify="space-between" align="start" mb={1}>
+                        <HStack justify="space-between" align="center" mb={1.5}>
                           <Text
-                            fontSize="xs"
+                            fontSize="sm"
                             fontWeight="800"
                             lineHeight="short"
                             noOfLines={2}
@@ -377,32 +377,33 @@ const TimelineChart = ({ stages }: TimelineChartProps) => {
                           <Badge
                             bg={palette.bg}
                             color="white"
-                            fontSize="3xs"
+                            fontSize="xs"
                             fontWeight="bold"
                             rounded="full"
-                            px={2}
+                            px={2.5}
                             py={0.5}
                             flexShrink={0}
+                            lineHeight="normal"
                           >
                             {duration} hari
                           </Badge>
                         </HStack>
 
                         <HStack
-                          spacing={1}
-                          fontSize="3xs"
-                          color={isDark ? "gray.400" : "gray.500"}
+                          spacing={1.5}
+                          fontSize="xs"
+                          color={isDark ? "gray.400" : "gray.600"}
                           mb={1.5}
                         >
-                          <Icon as={FiCalendar} boxSize={3} />
-                          <Text fontFamily="mono">
-                            {stage.startDate ?? "—"} → {stage.endDate ?? "—"}
+                          <Icon as={FiCalendar} boxSize={3.5} />
+                          <Text fontFamily="mono" fontWeight="medium">
+                            {stage.startDate ?? "—"} - {stage.endDate ?? "—"}
                           </Text>
                         </HStack>
 
                         {stage.parties.length > 0 && (
-                          <HStack spacing={1} fontSize="3xs" color="gray.500">
-                            <Icon as={FiUsers} boxSize={3} />
+                          <HStack spacing={1.5} fontSize="xs" color="gray.500" mb={1.5}>
+                            <Icon as={FiUsers} boxSize={3.5} />
                             <Text noOfLines={1}>
                               {stage.parties.map((p) => p.name).join(", ")}
                             </Text>
@@ -410,7 +411,7 @@ const TimelineChart = ({ stages }: TimelineChartProps) => {
                         )}
 
                         {stage.members && stage.members.length > 0 && (
-                          <HStack spacing={1.5} mt={1.5} justify="space-between" w="100%">
+                          <HStack spacing={1.5} mt={1} justify="space-between" w="100%">
                             {stage.members.length > 1 ? (
                               <AvatarGroup size="2xs" max={4} spacing="-1.5">
                                 {stage.members.map((m) => (
@@ -426,8 +427,8 @@ const TimelineChart = ({ stages }: TimelineChartProps) => {
                                   >
                                     <Avatar
                                       size="2xs"
-                                      boxSize="18px"
-                                      fontSize="8px"
+                                      boxSize="20px"
+                                      fontSize="9px"
                                       name={m.name}
                                       src={m.profilePict || undefined}
                                     />
@@ -435,7 +436,7 @@ const TimelineChart = ({ stages }: TimelineChartProps) => {
                                 ))}
                               </AvatarGroup>
                             ) : (
-                              <HStack spacing={1} minW="0">
+                              <HStack spacing={1.5} minW="0">
                                 <Tooltip
                                   label={`${stage.members[0].name}${stage.members[0].role ? ` (${stage.members[0].role})` : ""}${
                                     stage.members[0].activeProjectCount && stage.members[0].activeProjectCount >= 2
@@ -447,19 +448,19 @@ const TimelineChart = ({ stages }: TimelineChartProps) => {
                                 >
                                   <Avatar
                                     size="2xs"
-                                    boxSize="18px"
-                                    fontSize="8px"
+                                    boxSize="20px"
+                                    fontSize="9px"
                                     name={stage.members[0].name}
                                     src={stage.members[0].profilePict || undefined}
                                   />
                                 </Tooltip>
-                                <Text fontSize="3xs" color={isDark ? "gray.300" : "gray.600"} noOfLines={1} maxW="70px">
+                                <Text fontSize="xs" color={isDark ? "gray.300" : "gray.600"} noOfLines={1} maxW="80px">
                                   {stage.members[0].name}
                                 </Text>
                               </HStack>
                             )}
                             {stage.extendedDays && stage.extendedDays > 0 ? (
-                              <Badge colorScheme="orange" fontSize="4xs" rounded="xs" px={1}>
+                              <Badge colorScheme="orange" fontSize="2xs" rounded="sm" px={1.5} py={0.5}>
                                 +{stage.extendedDays}d buffer
                               </Badge>
                             ) : null}
@@ -470,9 +471,10 @@ const TimelineChart = ({ stages }: TimelineChartProps) => {
                           <Badge
                             colorScheme="teal"
                             variant="subtle"
-                            fontSize="3xs"
+                            fontSize="2xs"
                             rounded="sm"
-                            px={1.5}
+                            px={2}
+                            py={0.5}
                             mt={1.5}
                             noOfLines={1}
                           >
@@ -499,6 +501,7 @@ const TimelineChart = ({ stages }: TimelineChartProps) => {
           </Flex>
 
           {/* ── B. Central Chevron Ribbon (Interlocking process arrows) ── */}
+          {/* ── B. Central Chevron Ribbon (Interlocking SVG process arrows) ── */}
           <Flex
             w="100%"
             h="52px"
@@ -510,38 +513,52 @@ const TimelineChart = ({ stages }: TimelineChartProps) => {
             {sortedStages.map((stage, idx) => {
               const palette = CHEVRON_PALETTE[idx % CHEVRON_PALETTE.length];
               const isFirst = idx === 0;
+              const w = STAGE_COL_WIDTH + 20;
+              const h = 48;
+              const arrowDepth = 22;
 
-              // Authentic interlocking chevron polygon clip path
-              const clipPath = isFirst
-                ? "polygon(0% 0%, calc(100% - 22px) 0%, 100% 50%, calc(100% - 22px) 100%, 0% 100%)"
-                : "polygon(0% 0%, calc(100% - 22px) 0%, 100% 50%, calc(100% - 22px) 100%, 0% 100%, 22px 50%)";
+              // Authentic interlocking chevron polygon points in SVG for html2canvas compatibility
+              const points = isFirst
+                ? `0,0 ${w - arrowDepth},0 ${w},${h / 2} ${w - arrowDepth},${h} 0,${h}`
+                : `0,0 ${w - arrowDepth},0 ${w},${h / 2} ${w - arrowDepth},${h} 0,${h} ${arrowDepth},${h / 2}`;
 
               return (
                 <Box
                   key={`chevron_${stage.id}`}
-                  w={`${STAGE_COL_WIDTH + 20}px`}
-                  minW={`${STAGE_COL_WIDTH + 20}px`}
-                  h="48px"
-                  bg={palette.bg}
-                  color="white"
-                  style={{ clipPath }}
-                  ml={isFirst ? 0 : "-20px"}
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                  pl={isFirst ? "14px" : "32px"}
-                  pr="28px"
-                  shadow="md"
-                  _hover={{
-                    filter: "brightness(1.1)",
-                    transform: "scale(1.02)",
-                    zIndex: 5,
-                  }}
-                  transition="all 0.15s ease"
+                  w={`${w}px`}
+                  minW={`${w}px`}
+                  h={`${h}px`}
+                  position="relative"
+                  ml={isFirst ? 0 : `-${arrowDepth}px`}
+                  zIndex={idx + 1}
                   cursor="default"
                   title={`${stage.stageName} — ${stage.startDate} to ${stage.endDate}`}
                 >
-                  <HStack spacing={2} justify="center">
+                  <svg
+                    width={w}
+                    height={h}
+                    viewBox={`0 0 ${w} ${h}`}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: "100%",
+                      display: "block",
+                    }}
+                  >
+                    <polygon points={points} fill={palette.bg} />
+                  </svg>
+                  <Flex
+                    position="relative"
+                    w="100%"
+                    h="100%"
+                    align="center"
+                    justify="center"
+                    pl={isFirst ? "12px" : "30px"}
+                    pr="24px"
+                    color="white"
+                  >
                     <Text
                       fontSize="sm"
                       fontWeight="900"
@@ -551,7 +568,7 @@ const TimelineChart = ({ stages }: TimelineChartProps) => {
                     >
                       STAGE {stage.order + 1}
                     </Text>
-                  </HStack>
+                  </Flex>
                 </Box>
               );
             })}
@@ -607,9 +624,9 @@ const TimelineChart = ({ stages }: TimelineChartProps) => {
                         }}
                         transition="all 0.2s ease"
                       >
-                        <HStack justify="space-between" align="start" mb={1}>
+                        <HStack justify="space-between" align="center" mb={1.5}>
                           <Text
-                            fontSize="xs"
+                            fontSize="sm"
                             fontWeight="800"
                             lineHeight="short"
                             noOfLines={2}
@@ -620,32 +637,33 @@ const TimelineChart = ({ stages }: TimelineChartProps) => {
                           <Badge
                             bg={palette.bg}
                             color="white"
-                            fontSize="3xs"
+                            fontSize="xs"
                             fontWeight="bold"
                             rounded="full"
-                            px={2}
+                            px={2.5}
                             py={0.5}
                             flexShrink={0}
+                            lineHeight="normal"
                           >
                             {duration} hari
                           </Badge>
                         </HStack>
 
                         <HStack
-                          spacing={1}
-                          fontSize="3xs"
-                          color={isDark ? "gray.400" : "gray.500"}
+                          spacing={1.5}
+                          fontSize="xs"
+                          color={isDark ? "gray.400" : "gray.600"}
                           mb={1.5}
                         >
-                          <Icon as={FiCalendar} boxSize={3} />
-                          <Text fontFamily="mono">
-                            {stage.startDate ?? "—"} → {stage.endDate ?? "—"}
+                          <Icon as={FiCalendar} boxSize={3.5} />
+                          <Text fontFamily="mono" fontWeight="medium">
+                            {stage.startDate ?? "—"} - {stage.endDate ?? "—"}
                           </Text>
                         </HStack>
 
                         {stage.parties.length > 0 && (
-                          <HStack spacing={1} fontSize="3xs" color="gray.500">
-                            <Icon as={FiUsers} boxSize={3} />
+                          <HStack spacing={1.5} fontSize="xs" color="gray.500" mb={1.5}>
+                            <Icon as={FiUsers} boxSize={3.5} />
                             <Text noOfLines={1}>
                               {stage.parties.map((p) => p.name).join(", ")}
                             </Text>
@@ -653,7 +671,7 @@ const TimelineChart = ({ stages }: TimelineChartProps) => {
                         )}
 
                         {stage.members && stage.members.length > 0 && (
-                          <HStack spacing={1.5} mt={1.5} justify="space-between" w="100%">
+                          <HStack spacing={1.5} mt={1} justify="space-between" w="100%">
                             {stage.members.length > 1 ? (
                               <AvatarGroup size="2xs" max={4} spacing="-1.5">
                                 {stage.members.map((m) => (
@@ -669,8 +687,8 @@ const TimelineChart = ({ stages }: TimelineChartProps) => {
                                   >
                                     <Avatar
                                       size="2xs"
-                                      boxSize="18px"
-                                      fontSize="8px"
+                                      boxSize="20px"
+                                      fontSize="9px"
                                       name={m.name}
                                       src={m.profilePict || undefined}
                                     />
@@ -678,7 +696,7 @@ const TimelineChart = ({ stages }: TimelineChartProps) => {
                                 ))}
                               </AvatarGroup>
                             ) : (
-                              <HStack spacing={1} minW="0">
+                              <HStack spacing={1.5} minW="0">
                                 <Tooltip
                                   label={`${stage.members[0].name}${stage.members[0].role ? ` (${stage.members[0].role})` : ""}${
                                     stage.members[0].activeProjectCount && stage.members[0].activeProjectCount >= 2
@@ -690,19 +708,19 @@ const TimelineChart = ({ stages }: TimelineChartProps) => {
                                 >
                                   <Avatar
                                     size="2xs"
-                                    boxSize="18px"
-                                    fontSize="8px"
+                                    boxSize="20px"
+                                    fontSize="9px"
                                     name={stage.members[0].name}
                                     src={stage.members[0].profilePict || undefined}
                                   />
                                 </Tooltip>
-                                <Text fontSize="3xs" color={isDark ? "gray.300" : "gray.600"} noOfLines={1} maxW="70px">
+                                <Text fontSize="xs" color={isDark ? "gray.300" : "gray.600"} noOfLines={1} maxW="80px">
                                   {stage.members[0].name}
                                 </Text>
                               </HStack>
                             )}
                             {stage.extendedDays && stage.extendedDays > 0 ? (
-                              <Badge colorScheme="orange" fontSize="4xs" rounded="xs" px={1}>
+                              <Badge colorScheme="orange" fontSize="2xs" rounded="sm" px={1.5} py={0.5}>
                                 +{stage.extendedDays}d buffer
                               </Badge>
                             ) : null}
@@ -713,9 +731,10 @@ const TimelineChart = ({ stages }: TimelineChartProps) => {
                           <Badge
                             colorScheme="teal"
                             variant="subtle"
-                            fontSize="3xs"
+                            fontSize="2xs"
                             rounded="sm"
-                            px={1.5}
+                            px={2}
+                            py={0.5}
                             mt={1.5}
                             noOfLines={1}
                           >

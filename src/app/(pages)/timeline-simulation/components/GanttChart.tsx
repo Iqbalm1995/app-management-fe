@@ -253,72 +253,92 @@ const GanttChart = ({ stages }: GanttChartProps) => {
         >
           <Thead>
             {/* ── Header Tier 1: Fixed Columns (Rowspan 2) + Month Groups (Colspan 4) ── */}
-            <Tr bg={headerBgPrimary} color="white">
+            {/* ── Header Tier 1: Fixed Columns (Rowspan 2) + Month Groups (Colspan 4) ── */}
+            <Tr color="white">
               <Th
                 rowSpan={2}
+                bg={headerBgPrimary}
                 color="white"
                 textAlign="center"
+                verticalAlign="middle"
                 w={`${NO_COL_WIDTH}px`}
                 minW={`${NO_COL_WIDTH}px`}
                 maxW={`${NO_COL_WIDTH}px`}
-                py={3}
+                py={2}
                 px={2}
                 fontSize="xs"
                 fontWeight="bold"
                 borderRight="1px solid rgba(255, 255, 255, 0.2)"
                 borderBottom="1px solid rgba(255, 255, 255, 0.2)"
               >
-                No.
+                <Flex align="center" justify="center" minH="46px">
+                  No.
+                </Flex>
               </Th>
               <Th
                 rowSpan={2}
+                bg={headerBgPrimary}
                 color="white"
                 textAlign="center"
+                verticalAlign="middle"
                 w={`${AKTIVITAS_COL_WIDTH}px`}
                 minW={`${AKTIVITAS_COL_WIDTH}px`}
                 maxW={`${AKTIVITAS_COL_WIDTH}px`}
-                py={3}
+                py={2}
                 px={3}
                 fontSize="xs"
                 fontWeight="bold"
                 borderRight="1px solid rgba(255, 255, 255, 0.2)"
                 borderBottom="1px solid rgba(255, 255, 255, 0.2)"
               >
-                Aktivitas
+                <Flex align="center" justify="center" minH="46px">
+                  Aktivitas
+                </Flex>
               </Th>
               <Th
                 rowSpan={2}
+                bg={headerBgPrimary}
                 color="white"
                 textAlign="center"
+                verticalAlign="middle"
                 w={`${PIHAK_COL_WIDTH}px`}
                 minW={`${PIHAK_COL_WIDTH}px`}
                 maxW={`${PIHAK_COL_WIDTH}px`}
-                py={3}
+                py={2}
                 px={3}
                 fontSize="xs"
                 fontWeight="bold"
                 borderRight="1px solid rgba(255, 255, 255, 0.2)"
                 borderBottom="1px solid rgba(255, 255, 255, 0.2)"
               >
-                Pihak Terlibat
+                <Flex align="center" justify="center" minH="46px">
+                  Pihak Terlibat
+                </Flex>
               </Th>
               <Th
                 rowSpan={2}
+                bg={headerBgPrimary}
                 color="white"
                 textAlign="center"
+                verticalAlign="middle"
                 w={`${DURASI_COL_WIDTH}px`}
                 minW={`${DURASI_COL_WIDTH}px`}
                 maxW={`${DURASI_COL_WIDTH}px`}
-                py={3}
+                py={2}
                 px={2}
                 fontSize="xs"
                 fontWeight="bold"
                 borderRight="1px solid rgba(255, 255, 255, 0.2)"
                 borderBottom="1px solid rgba(255, 255, 255, 0.2)"
               >
-                Durasi
-                <br />
-                (Hari)
+                <VStack spacing={0} justify="center" align="center" minH="46px">
+                  <Text fontSize="xs" fontWeight="bold" color="white">
+                    Durasi
+                  </Text>
+                  <Text fontSize="2xs" fontWeight="normal" color="whiteAlpha.800">
+                    (Hari)
+                  </Text>
+                </VStack>
               </Th>
 
               {/* Month Group Headers (Colspan 4, fixed 4 * 64px width) */}
@@ -358,11 +378,12 @@ const GanttChart = ({ stages }: GanttChartProps) => {
             </Tr>
 
             {/* ── Header Tier 2: Standard uniform Week columns M1, M2, M3, M4 (M = Minggu) ── */}
-            <Tr bg={headerBgSub} color="white">
+            <Tr color="white">
               {monthGroups.map((mg) =>
                 mg.weeks.map((w) => (
                   <Th
                     key={`${mg.monthKey}-w${w.week}`}
+                    bg={headerBgSub}
                     color="white"
                     textAlign="center"
                     w={`${WEEK_COL_WIDTH}px`}

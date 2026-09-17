@@ -12,8 +12,14 @@ import {
 } from "@chakra-ui/react";
 import { Select } from "chakra-react-select";
 import { FiDownload, FiLayers, FiCheckCircle, FiInfo } from "react-icons/fi";
-import useProjects from "@/app/services/useProjects";
-import { RES_CODE_OK, radiusStyle } from "@/app/constants/applicationConstants";
+import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
+import {
+  RES_CODE_OK,
+  radiusStyle,
+  PROJECT_TYPE_INTERNAL_DEVELOPMENT,
+  PROJECT_TYPE_PROCUREMENT,
+} from "@/app/constants/applicationConstants";
+import { ListSearchByParam, PaggingListPayloadCustom } from "@/app/types/masterTypes";
 import { ActivityType, SimulationStage } from "../types";
 import { STAGE_TEMPLATES } from "../constants/stageTemplates";
 import { computeDuration, autoScheduleStages } from "../utils/weekBucket";
@@ -55,6 +61,11 @@ const AssignedProjectPicker = ({
   const [isClaiming, setIsClaiming] = useState(false);
   const hasLoadedKeyRef = useRef<string | null>(null);
 
+  // Clear selected project if user switches activity stream
+  useEffect(() => {
+    setSelected(null);
+  }, [activityType]);
+
   const loadProjects = useCallback(async () => {
     const activeToken =
       token ||
@@ -63,25 +74,87 @@ const AssignedProjectPicker = ({
         : "");
     if (!activeToken) return;
 
-    const cacheKey = `${activeToken}_${userId}`;
+    const cacheKey = `${activeToken}_${userId}_${activityType}`;
     if (hasLoadedKeyRef.current === cacheKey) return;
     hasLoadedKeyRef.current = cacheKey;
 
     setIsLoadingProjects(true);
     try {
-      const payload = {
+      // Build filters aligned with /projects-manager?reqType= logic
+      const filterWhere: ListSearchByParam[] = [];
+      let projectTypeFilter: string | null = null;
+      let requirementTypeFilter: string | null = null;
+
+      if (activityType === "INTERNAL DEVELOPMENT") {
+        projectTypeFilter = PROJECT_TYPE_INTERNAL_DEVELOPMENT;
+        requirementTypeFilter = "BRD";
+        filterWhere.push({
+          field: "projectType",
+          operator: "=",
+          value: PROJECT_TYPE_INTERNAL_DEVELOPMENT,
+        });
+      } else if (activityType === "PROCUREMENT") {
+        projectTypeFilter = PROJECT_TYPE_PROCUREMENT;
+        filterWhere.push({
+          field: "projectType",
+          operator: "=",
+          value: PROJECT_TYPE_PROCUREMENT,
+        });
+      } else if (activityType === "RFC") {
+        requirementTypeFilter = "RFC";
+        filterWhere.push({
+          field: "requirementType",
+          operator: "=",
+          value: "RFC",
+        });
+      }
+
+      const payload: PaggingListPayloadCustom = {
         search: "",
         limit: 100,
         page: 0,
-        filterWhere: [],
+        projectType: projectTypeFilter,
+        requirementType: requirementTypeFilter,
+        filterWhere,
         fieldOrder: ["projectName"],
-        orderDir: "asc" as const,
+        orderDir: "asc",
+      };
+
+      // Strict client-side validator ensuring only projects matching the activity stream are displayed
+      const matchesActivity = (p: ProjectDataResponse) => {
+        const pType = (p.projectType || "").toUpperCase();
+        const rType = (
+          p.requirementData?.requirementType ||
+          (p as any).requirementType ||
+          ""
+        ).toUpperCase();
+        const cat = (p.projectCategory || "").toUpperCase();
+
+        if (activityType === "INTERNAL DEVELOPMENT") {
+          return (
+            pType === PROJECT_TYPE_INTERNAL_DEVELOPMENT ||
+            pType.includes("INTERNAL") ||
+            (rType === "BRD" && !pType.includes("PROCUREMENT"))
+          );
+        }
+        if (activityType === "PROCUREMENT") {
+          return (
+            pType === PROJECT_TYPE_PROCUREMENT ||
+            pType.includes("PROCUREMENT") ||
+            cat.includes("PROCUREMENT")
+          );
+        }
+        if (activityType === "RFC") {
+          return rType === "RFC" || pType === "RFC" || cat === "RFC";
+        }
+        return true;
       };
 
       const res = await GetAssignedProjects(payload, activeToken);
       if (res?.statusCode === RES_CODE_OK && Array.isArray(res.data) && res.data.length > 0) {
+        const matched = res.data.filter(matchesActivity);
         setOptions(
-          res.data.map((p) => {
+          matched.map((p) => {
             const code = p.projectNo || p.projectCode;
             const typeLabel = p.projectType ? ` [${p.projectType}]` : "";
             return {
@@ -92,10 +165,21 @@ const AssignedProjectPicker = ({
         );
       } else {
         // Fallback to List (matching /projects-manager for admins & non-group users)
-        const listRes = await List(payload, activeToken);
+        const listRes = await List(
+          {
+            search: payload.search,
+            limit: payload.limit,
+            page: payload.page,
+            filterWhere: payload.filterWhere,
+            fieldOrder: payload.fieldOrder,
+            orderDir: payload.orderDir,
+          },
+          activeToken
+        );
         if (listRes?.statusCode === RES_CODE_OK && Array.isArray(listRes.data)) {
+          const matched = listRes.data.filter(matchesActivity);
           setOptions(
-            listRes.data.map((p) => {
+            matched.map((p) => {
               const code = p.projectNo || p.projectCode;
               const typeLabel = p.projectType ? ` [${p.projectType}]` : "";
               return {
@@ -109,8 +193,7 @@ const AssignedProjectPicker = ({
     } finally {
       setIsLoadingProjects(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, userId]);
+  }, [token, userId, activityType, GetAssignedProjects, List]);
 
   useEffect(() => {
     loadProjects();
@@ -215,8 +298,14 @@ const AssignedProjectPicker = ({
         value={selected}
         onChange={(opt) => setSelected(opt as ProjectOption | null)}
         isLoading={isLoadingProjects}
-        placeholder="Select assigned project…"
+        placeholder="Select Project"
         isClearable
+        menuPortalTarget={typeof document !== "undefined" ? document.body : undefined}
+        menuPosition="fixed"
+        menuPlacement="auto"
+        styles={{
+          menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+        }}
         chakraStyles={{
           container: (base) => ({ ...base, width: "100%" }),
           control: (base) => ({
@@ -237,8 +326,24 @@ const AssignedProjectPicker = ({
             ...base,
             borderRadius: radiusStyle,
             bg: isDark ? "gray.800" : "white",
-            boxShadow: "lg",
-            zIndex: 10,
+            boxShadow: "2xl",
+            border: "1px solid",
+            borderColor: isDark ? "gray.700" : "gray.200",
+            zIndex: 9999,
+          }),
+          menuList: (base) => ({
+            ...base,
+            py: 1,
+            maxHeight: "280px",
+            overflowY: "auto",
+          }),
+          option: (base) => ({
+            ...base,
+            fontSize: "xs",
+            lineHeight: "tall",
+            whiteSpace: "normal",
+            wordBreak: "break-word",
+            py: 2,
           }),
         }}
       />

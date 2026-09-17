@@ -35,14 +35,17 @@ import {
   FiUsers,
   FiCheckCircle,
   FiZap,
+  FiDownload,
 } from "react-icons/fi";
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import { radiusStyle, RES_CODE_OK, WORKLOAD_ESTIMATION_RULES } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
+import { useDownloadManagerModal } from "@/app/context/DownloadManagerContext";
 import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
 
 import { ActivityType, SimulationMember, SimulationStage } from "./types";
+import { exportTimelineSimulationPdf } from "./utils/timelineSimulationPdfExport";
 import {
   ACTIVITY_TYPE_META,
   STAGE_TEMPLATES,
@@ -65,7 +68,6 @@ import StageFormModal from "./components/StageFormModal";
 import VisualizationSwitcher from "./components/VisualizationSwitcher";
 import GanttChart from "./components/GanttChart";
 import TimelineChart from "./components/TimelineChart";
-import SaveLoadBar from "./components/SaveLoadBar";
 
 const TimelineSimulationView = () => {
   const { colorMode } = useColorMode();
@@ -78,6 +80,8 @@ const TimelineSimulationView = () => {
   const [tokenData, setTokenData] = useState<string>("");
   const [editingStage, setEditingStage] = useState<SimulationStage | null>(null);
   const [isSimulating, setIsSimulating] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const { requestExport } = useDownloadManagerModal();
 
   // Auto-schedule default template stages on mount so the visualization renders immediately
   useEffect(() => {
@@ -305,6 +309,97 @@ const TimelineSimulationView = () => {
     return ids.size;
   }, [sim.stages]);
 
+  const handleExportPDF = useCallback(async () => {
+    if (sim.stages.length === 0) {
+      toast({
+        title: "No stages to export",
+        description: "Please add at least one stage before exporting to PDF.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    setIsExportingPdf(true);
+    try {
+      const currentProject = allProjects.find((p) => p.id === sim.projectId);
+      const generatedBy =
+        DataAuth?.nama ||
+        DataAuth?.username ||
+        `${DataAuth?.firstName ?? ""} ${DataAuth?.lastName ?? ""}`.trim() ||
+        "Bank bjb System";
+
+      // 1. Direct high-fidelity client-side PDF export (immediate download)
+      await exportTimelineSimulationPdf({
+        simulationName: sim.simulationName,
+        activityType: sim.activityType,
+        projectName: currentProject?.projectName ?? null,
+        stages: sim.stages,
+        generatedBy,
+        totalDays: totalDurationDays,
+        contentionTotals,
+        visualizationMode: sim.visualizationMode,
+        elementId: "timeline-visualization-chart-container",
+        isDark,
+      });
+
+      // 2. Dual dispatch: queue in Download Manager if backend worker is active
+      try {
+        const chartLabel = sim.visualizationMode === "gantt" ? "Gantt Chart" : "Timeline Chart";
+        const exportTitle = currentProject?.projectName
+          ? `${currentProject.projectName} Timeline (${chartLabel})`
+          : `template_timeline (${chartLabel})`;
+        await requestExport({
+          moduleName: "TIMELINE_SIMULATION",
+          reportTitle: exportTitle,
+          exportType: "PDF",
+          filterParams: {
+            simulationName: sim.simulationName,
+            activityType: sim.activityType,
+            projectId: sim.projectId,
+            chartType: sim.visualizationMode === "gantt" ? "GANTT" : "TIMELINE",
+            visualizationMode: sim.visualizationMode,
+            stagesCount: sim.stages.length,
+            totalDurationDays,
+          },
+        });
+      } catch (dmErr) {
+        console.info("Download Manager queue fallback:", dmErr);
+      }
+
+      toast({
+        title: "Export Successful",
+        description: `Timeline simulation PDF (${sim.visualizationMode === "gantt" ? "Gantt Chart" : "Roadmap Timeline"}) downloaded.`,
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (err: any) {
+      toast({
+        title: "Export Failed",
+        description: err?.message || "Failed to generate PDF.",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+      });
+    } finally {
+      setIsExportingPdf(false);
+    }
+  }, [
+    sim.stages,
+    sim.simulationName,
+    sim.activityType,
+    sim.projectId,
+    sim.visualizationMode,
+    allProjects,
+    DataAuth,
+    totalDurationDays,
+    contentionTotals,
+    requestExport,
+    toast,
+  ]);
+
   const activityMeta = ACTIVITY_TYPE_META[sim.activityType];
   const border = isDark ? "gray.700" : "gray.200";
   const cardBg = isDark ? "gray.800" : "white";
@@ -344,14 +439,6 @@ const TimelineSimulationView = () => {
               </Text>
             </VStack>
           </HStack>
-          <SaveLoadBar
-            token={tokenData}
-            simulationName={sim.simulationName}
-            onNameChange={sim.setSimulationName}
-            buildPayload={(name) => sim.toSavePayload(name)}
-            onLoaded={sim.hydrate}
-            onSaved={sim.hydrate}
-          />
         </Flex>
 
         {/* ── Two-column layout: sidebar (controls & metrics) + main (stages + viz) ── */}
@@ -371,12 +458,13 @@ const TimelineSimulationView = () => {
               shadow="lg"
               border="1px solid"
               borderColor={border}
-              overflow="hidden"
+              overflow="visible"
             >
               <CardHeader
                 pb={3}
                 pt={4}
                 px={4}
+                roundedTop={radiusStyle}
                 borderBottom="1px solid"
                 borderColor={border}
                 bg={isDark ? "whiteAlpha.50" : "gray.50"}
@@ -414,8 +502,8 @@ const TimelineSimulationView = () => {
                 </Flex>
               </CardHeader>
 
-              <CardBody p={4}>
-                <VStack spacing={4} align="stretch">
+              <CardBody p={4} overflow="visible">
+                <VStack spacing={4} align="stretch" overflow="visible">
                   {/* Activity Stream Section */}
                   <Box>
                     <HStack justify="space-between" mb={2}>
@@ -441,7 +529,7 @@ const TimelineSimulationView = () => {
                   <Divider borderColor={border} />
 
                   {/* Project Linkage Section */}
-                  <Box>
+                  <Box overflow="visible">
                     <HStack justify="space-between" mb={2}>
                       <HStack spacing={1.5}>
                         <Icon as={FiFolder} color="secondary.500" boxSize={3.5} />
@@ -943,14 +1031,37 @@ const TimelineSimulationView = () => {
                       </Text>
                     </VStack>
                   </HStack>
-                  <VisualizationSwitcher
-                    value={sim.visualizationMode}
-                    onChange={sim.setVisualizationMode}
-                  />
+                  <HStack spacing={3} wrap="wrap">
+                    <VisualizationSwitcher
+                      value={sim.visualizationMode}
+                      onChange={sim.setVisualizationMode}
+                    />
+                    <Button
+                      size="sm"
+                      leftIcon={<FiDownload />}
+                      variant="outline"
+                      colorScheme="secondary"
+                      rounded={radiusStyle}
+                      px={3.5}
+                      onClick={handleExportPDF}
+                      isLoading={isExportingPdf}
+                      isDisabled={sim.stages.length === 0}
+                      _hover={{ transform: "translateY(-1px)", shadow: "sm" }}
+                      transition="all 0.2s ease"
+                    >
+                      Export PDF
+                    </Button>
+                  </HStack>
                 </Flex>
               </CardHeader>
               <CardBody p={5} minW="0" maxW="100%" overflowX="hidden">
-                <Box w="100%" minW="0" maxW="100%" overflow="hidden">
+                <Box
+                  id="timeline-visualization-chart-container"
+                  w="100%"
+                  minW="0"
+                  maxW="100%"
+                  overflow="hidden"
+                >
                   {sim.visualizationMode === "gantt" ? (
                     <GanttChart
                       key={`gantt-${sim.stages.length}-${colorMode}`}
