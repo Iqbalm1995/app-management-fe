@@ -1,4 +1,4 @@
-import { SimulationStage, ActivityType } from "../types";
+import { SimulationStage, ActivityType, MonthWeekBucket } from "../types";
 import { WORKLOAD_ESTIMATION_RULES } from "@/app/constants/applicationConstants";
 import {
   autoScheduleStages,
@@ -7,7 +7,6 @@ import {
   computeDuration,
   dateToWeekBucket,
   groupAxisByMonth,
-  MonthWeekBucket,
 } from "./weekBucket";
 
 export interface ExportTimelineSimulationPdfOptions {

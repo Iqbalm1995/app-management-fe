@@ -13,6 +13,7 @@ import {
 } from "date-fns";
 
 import { MonthWeekBucket } from "../types";
+export type { MonthWeekBucket };
 
 /** Parse a yyyy-MM-dd string safely. Returns null when invalid/empty. */
 export const parseDate = (value: string | null | undefined): Date | null => {
