@@ -1,0 +1,67 @@
+{
+  "version": "1.0.0",
+  "metadata": {
+    "title": "Realistic Multi-Project Workload & Contention Estimation Model",
+    "description": "Empirical context-switching & schedule slippage rules for multi-project resource contention in banking IT PMO.",
+    "references": [
+      "Gerald Weinberg, Quality Software Management: Systems Thinking (1991)",
+      "Clark & Wheelwright, Revolutionizing Product Development (Harvard Business Review)",
+      "Tom DeMarco & Timothy Lister, Peopleware: Productive Projects and Teams"
+    ]
+  },
+  "rules": [
+    {
+      "projectCount": 1,
+      "ruleName": "Dedicated Single Project",
+      "severity": "low",
+      "color": "green",
+      "badgeLabel": "1 Project (Dedicated)",
+      "nominalAllocationPct": 100,
+      "contextSwitchingLossPct": 0,
+      "effectiveProductiveCapacityPct": 100,
+      "overheadFactor": 0.0,
+      "description": "100% capacity dedicated to project. Zero context-switching loss."
+    },
+    {
+      "projectCount": 2,
+      "ruleName": "Dual Project Contention (1 + 1)",
+      "severity": "medium",
+      "color": "blue",
+      "badgeLabel": "2 Projects (1+1)",
+      "nominalAllocationPct": 50,
+      "contextSwitchingLossPct": 20,
+      "effectiveProductiveCapacityPct": 40,
+      "overheadFactor": 0.40,
+      "description": "40% real capacity per project. 20% lost to mental context-switching."
+    },
+    {
+      "projectCount": 3,
+      "ruleName": "Triple Project Contention (1 + 1 + 1)",
+      "severity": "high",
+      "color": "orange",
+      "badgeLabel": "3 Projects (1+1+1)",
+      "nominalAllocationPct": 33.3,
+      "contextSwitchingLossPct": 40,
+      "effectiveProductiveCapacityPct": 20,
+      "overheadFactor": 0.85,
+      "description": "High contention: only ~20% capacity per project. 40% lost to context-switching and multi-project meetings."
+    },
+    {
+      "projectCount": 4,
+      "ruleName": "Severe Multi-Project Bottleneck (>= 4 Projects)",
+      "severity": "critical",
+      "color": "red",
+      "badgeLabel": "4+ Projects (Bottleneck)",
+      "nominalAllocationPct": 25,
+      "contextSwitchingLossPct": 60,
+      "effectiveProductiveCapacityPct": 10,
+      "overheadFactor": 1.50,
+      "description": "Critical bottleneck: <10% capacity per project. Over 60% consumed by cognitive thrashing and meeting fragmentation."
+    }
+  ],
+  "teamMitigation": {
+    "enabled": true,
+    "criticalPathBias": 1.2,
+    "description": "When multiple members are assigned, bottleneck member drives primary schedule delay with team mitigation factor."
+  }
+}

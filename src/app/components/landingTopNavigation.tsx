@@ -253,7 +253,7 @@ export default function TopNavigationLanding() {
                       </VStack>
                     </MenuItem>
                     <MenuDivider />
-                    {/* <Link href={"/dev"}>
+                    <Link href={"/dev"} style={{ display: "none" }}>
                       <MenuItem
                         icon={<FaTerminal />}
                         color={colorMode == "light" ? "purple.600" : "purple.300"}
@@ -266,7 +266,7 @@ export default function TopNavigationLanding() {
                       >
                         Focus Mode
                       </MenuItem>
-                    </Link> */}
+                    </Link>
                     <Link href={LINK_MENU_HOME}>
                       <MenuItem
                         icon={<RiHomeLine />}
@@ -350,8 +350,8 @@ const DesktopNav = () => {
         </Portal>
       )}
       <Stack direction={"row"} spacing={4} align="center">
-        {/* {isAuthenticated && (
-          <Link href={"/dev"} onClick={handleEnterDev}>
+        {isAuthenticated && (
+          <Link href={"/dev"} onClick={handleEnterDev} style={{ display: "none" }}>
             <Button
               leftIcon={<FaTerminal />}
               size="sm"
@@ -398,7 +398,7 @@ const DesktopNav = () => {
               Focus Mode
             </Button>
           </Link>
-        )} */}
+        )}
         {NAV_ITEMS_LANDING.map((navItem) => (
         <Box key={navItem.label}>
           <Popover trigger={"hover"} placement={"bottom-start"}>
