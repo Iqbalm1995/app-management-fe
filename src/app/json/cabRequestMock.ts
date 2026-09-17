@@ -1132,10 +1132,12 @@ export interface ProjectFileItem {
   fileName: string;
   fileSize: string;
   fileType: "pdf" | "docx" | "xlsx" | "zip" | "png" | "drawio";
-  category: "Arsitektur" | "Security & SAST" | "UAT & QA" | "BRD & RFC" | "Manual & Runbook";
+  category: "Arsitektur" | "Security & SAST" | "UAT & QA" | "BRD & RFC" | "Manual & Runbook" | string;
   uploadedAt: string;
   uploadedBy: string;
-  downloadUrl: string;
+  downloadUrl?: string;
+  sourceUrl?: string;
+  mediaObjectId?: string;
   projectCode?: string;
   description?: string;
 }

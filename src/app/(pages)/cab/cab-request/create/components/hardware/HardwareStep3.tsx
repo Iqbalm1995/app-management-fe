@@ -46,6 +46,7 @@ interface HardwareStep3Props {
   mainProjectId?: string;
   mainProjectCode?: string;
   mainProjectName?: string;
+  tokenData?: string;
 }
 
 interface HardwareActiveFieldTarget {
@@ -54,90 +55,19 @@ interface HardwareActiveFieldTarget {
   category: string;
 }
 
-interface HardwareProjectDocItem {
-  id: string;
-  targetField: keyof CabHardwareStep3;
-  label: string;
-  fileName: string;
-  fileSize: string;
-  sourceProject: string;
-  positiveVal: "ADA" | "YA";
-}
-
-const AVAILABLE_HARDWARE_PROJECT_DOCS: HardwareProjectDocItem[] = [
-  {
-    id: "hdoc-checklist",
-    targetField: "checklistFile",
-    label: "Checklist",
-    fileName: "Hardware_Deployment_PreChecklist_DC_v2.pdf",
-    fileSize: "1.1 MB",
-    sourceProject: "Project HW-2026-0410 (Server Blade Upgrade)",
-    positiveVal: "ADA",
-  },
-  {
-    id: "hdoc-arsitektur",
-    targetField: "dokumenArsitekturFile",
-    label: "Dokumen Arsitektur",
-    fileName: "Topology_Hardware_Network_Storage_v3.1.pdf",
-    fileSize: "3.2 MB",
-    sourceProject: "Project HW-2026-0410 (Server Blade Upgrade)",
-    positiveVal: "ADA",
-  },
-  {
-    id: "hdoc-test",
-    targetField: "testFungsionalFile",
-    label: "Test Fungsional",
-    fileName: "Hardware_Diagnostic_Functional_Test_Passed.xlsx",
-    fileSize: "890 KB",
-    sourceProject: "Project HW-2026-0410 (Server Blade Upgrade)",
-    positiveVal: "ADA",
-  },
-  {
-    id: "hdoc-rollback",
-    targetField: "rollbackPlanFile",
-    label: "Rollback Plan",
-    fileName: "Hardware_Fallback_HotSpare_SOP_v1.0.pdf",
-    fileSize: "1.3 MB",
-    sourceProject: "Project HW-2026-0410 (Server Blade Upgrade)",
-    positiveVal: "ADA",
-  },
-  {
-    id: "hdoc-monitoring",
-    targetField: "perangkatMonitoringFile",
-    label: "Perangkat Monitoring",
-    fileName: "Zabbix_Grafana_HW_Monitoring_Dashboard_Spec.pdf",
-    fileSize: "750 KB",
-    sourceProject: "Project HW-2026-0410 (Server Blade Upgrade)",
-    positiveVal: "YA",
-  },
-  {
-    id: "hdoc-approval",
-    targetField: "persetujuanItSecurityFile",
-    label: "Persetujuan Divisi IT Security",
-    fileName: "IT_Security_Hardening_Clearance_SignOff.pdf",
-    fileSize: "620 KB",
-    sourceProject: "Project HW-2026-0410 (Server Blade Upgrade)",
-    positiveVal: "YA",
-  },
-];
-
 const HardwareStep3 = ({
   data,
   onChange,
   mainProjectId,
   mainProjectCode,
   mainProjectName,
+  tokenData,
 }: HardwareStep3Props) => {
   const { colorMode } = useColorMode();
   const isDark = colorMode === "dark";
-  const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
 
   const [activeFieldTarget, setActiveFieldTarget] = useState<HardwareActiveFieldTarget | null>(null);
-
-  const [selectedDocIds, setSelectedDocIds] = useState<string[]>(
-    AVAILABLE_HARDWARE_PROJECT_DOCS.map((d) => d.id)
-  );
 
   const projectContextLabel = mainProjectName || mainProjectCode || "Proyek Hardware Terpilih";
   const projectRouteUrl = getProjectRouteUrl(
@@ -171,63 +101,6 @@ const HardwareStep3 = ({
       position: "top",
     });
     setActiveFieldTarget(null);
-  };
-
-  const handleToggleDoc = (docId: string) => {
-    setSelectedDocIds((prev) =>
-      prev.includes(docId) ? prev.filter((id) => id !== docId) : [...prev, docId]
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selectedDocIds.length === AVAILABLE_HARDWARE_PROJECT_DOCS.length) {
-      setSelectedDocIds([]);
-    } else {
-      setSelectedDocIds(AVAILABLE_HARDWARE_PROJECT_DOCS.map((d) => d.id));
-    }
-  };
-
-  const handleApplyDocs = () => {
-    const updatedData = { ...data };
-
-    AVAILABLE_HARDWARE_PROJECT_DOCS.forEach((doc) => {
-      if (selectedDocIds.includes(doc.id)) {
-        if (doc.targetField === "checklistFile") {
-          updatedData.checklist = "ADA";
-          updatedData.checklistFile = doc.fileName;
-        } else if (doc.targetField === "dokumenArsitekturFile") {
-          updatedData.dokumenArsitektur = "ADA";
-          updatedData.dokumenArsitekturFile = doc.fileName;
-        } else if (doc.targetField === "testFungsionalFile") {
-          updatedData.testFungsional = "ADA";
-          updatedData.testFungsionalFile = doc.fileName;
-        } else if (doc.targetField === "rollbackPlanFile") {
-          updatedData.rollbackPlan = "ADA";
-          updatedData.rollbackPlanFile = doc.fileName;
-        } else if (doc.targetField === "perangkatMonitoringFile") {
-          updatedData.perangkatMonitoring = "YA";
-          updatedData.perangkatMonitoringFile = doc.fileName;
-          if (!updatedData.perangkatMonitoringDetail) {
-            updatedData.perangkatMonitoringDetail = "Zabbix & Grafana HW Sensor Monitoring";
-          }
-        } else if (doc.targetField === "persetujuanItSecurityFile") {
-          updatedData.persetujuanItSecurity = "YA";
-          updatedData.persetujuanItSecurityFile = doc.fileName;
-        }
-      }
-    });
-
-    onChange(updatedData);
-    onClose();
-
-    toast({
-      title: "Dokumen Berhasil Ditarik",
-      description: `${selectedDocIds.length} berkas hardware dari project terkait berhasil dilampirkan ke formulir.`,
-      status: "success",
-      duration: 3500,
-      isClosable: true,
-      position: "top",
-    });
   };
 
   return (
@@ -398,166 +271,6 @@ const HardwareStep3 = ({
         />
       </InputGroupPanel>
 
-      {/* Modal Import Project Documents */}
-      <Modal isOpen={isOpen} onClose={onClose} size="3xl" isCentered scrollBehavior="inside">
-        <ModalOverlay backdropFilter="blur(2px)" />
-        <ModalContent rounded="xl" bg={isDark ? "gray.800" : "white"}>
-          <ModalHeader pb={2}>
-            <HStack spacing={2}>
-              <Icon as={FiDownloadCloud} color="blue.500" />
-              <Text fontSize="md" fontWeight="bold">
-                Tarik Dokumen Hardware dari Project Sebelumnya
-              </Text>
-            </HStack>
-            <Text fontSize="xs" fontWeight="normal" color="gray.500" mt={1}>
-              Pilih dokumen kesiapan hardware yang ingin digunakan langsung pada formulir CAB ini.
-            </Text>
-          </ModalHeader>
-          <ModalCloseButton />
-
-          <ModalBody py={2}>
-            {/* Project Context Info in Modal */}
-            <Box
-              p={3}
-              mb={3}
-              rounded="lg"
-              bg={isDark ? "blue.950" : "blue.50"}
-              border="1px solid"
-              borderColor={isDark ? "blue.800" : "blue.200"}
-            >
-              <Flex justify="space-between" align="center">
-                <HStack spacing={2}>
-                  <Icon as={FiInfo} color="blue.500" />
-                  <Text fontSize="xs" fontWeight="semibold" color={isDark ? "blue.200" : "blue.800"}>
-                    Referensi: {projectContextLabel}
-                  </Text>
-                </HStack>
-                <Button
-                  as="a"
-                  href={projectRouteUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  size="xs"
-                  colorScheme="blue"
-                  variant="solid"
-                  rightIcon={<FiExternalLink />}
-                >
-                  Buka Proyek ↗
-                </Button>
-              </Flex>
-            </Box>
-
-            <Box
-              border="1px solid"
-              borderColor={isDark ? "gray.700" : "gray.200"}
-              rounded="lg"
-              overflow="hidden"
-            >
-              <Table size="sm" variant="simple">
-                <Thead bg={isDark ? "gray.750" : "gray.50"}>
-                  <Tr>
-                    <Th w="40px" textAlign="center">
-                      <Checkbox
-                        isChecked={
-                          selectedDocIds.length === AVAILABLE_HARDWARE_PROJECT_DOCS.length &&
-                          AVAILABLE_HARDWARE_PROJECT_DOCS.length > 0
-                        }
-                        isIndeterminate={
-                          selectedDocIds.length > 0 &&
-                          selectedDocIds.length < AVAILABLE_HARDWARE_PROJECT_DOCS.length
-                        }
-                        onChange={handleSelectAll}
-                        colorScheme="blue"
-                      />
-                    </Th>
-                    <Th fontSize="xs">Item Compliance</Th>
-                    <Th fontSize="xs">Nama Berkas</Th>
-                    <Th fontSize="xs">Asal Project</Th>
-                    <Th fontSize="xs" isNumeric>Ukuran</Th>
-                  </Tr>
-                </Thead>
-                <Tbody>
-                  {AVAILABLE_HARDWARE_PROJECT_DOCS.map((doc) => {
-                    const isChecked = selectedDocIds.includes(doc.id);
-                    return (
-                      <Tr
-                        key={doc.id}
-                        cursor="pointer"
-                        _hover={{ bg: isDark ? "gray.700" : "gray.50" }}
-                        onClick={() => handleToggleDoc(doc.id)}
-                      >
-                        <Td textAlign="center" onClick={(e) => e.stopPropagation()}>
-                          <Checkbox
-                            isChecked={isChecked}
-                            onChange={() => handleToggleDoc(doc.id)}
-                            colorScheme="blue"
-                          />
-                        </Td>
-                        <Td>
-                          <HStack spacing={1.5}>
-                            <Badge
-                              colorScheme={doc.positiveVal === "ADA" ? "blue" : "teal"}
-                              variant="subtle"
-                              fontSize="xs"
-                              rounded="md"
-                            >
-                              {doc.positiveVal}
-                            </Badge>
-                            <Text fontSize="xs" fontWeight="semibold">
-                              {doc.label}
-                            </Text>
-                          </HStack>
-                        </Td>
-                        <Td>
-                          <HStack spacing={1.5}>
-                            <Icon as={FiFileText} color="blue.500" />
-                            <Text fontSize="xs" color={isDark ? "gray.200" : "gray.800"} noOfLines={1}>
-                              {doc.fileName}
-                            </Text>
-                          </HStack>
-                        </Td>
-                        <Td>
-                          <Text fontSize="xs" color="gray.500">
-                            {doc.sourceProject}
-                          </Text>
-                        </Td>
-                        <Td isNumeric>
-                          <Text fontSize="xs" color="gray.400">
-                            {doc.fileSize}
-                          </Text>
-                        </Td>
-                      </Tr>
-                    );
-                  })}
-                </Tbody>
-              </Table>
-            </Box>
-          </ModalBody>
-
-          <ModalFooter pt={2} pb={4} borderTop="1px solid" borderColor={isDark ? "gray.700" : "gray.200"}>
-            <Flex justify="space-between" align="center" w="full">
-              <Text fontSize="xs" color="gray.500">
-                {selectedDocIds.length} dari {AVAILABLE_HARDWARE_PROJECT_DOCS.length} dokumen terpilih
-              </Text>
-              <HStack spacing={2}>
-                <Button size="sm" variant="ghost" onClick={onClose}>
-                  Batal
-                </Button>
-                <Button
-                  size="sm"
-                  colorScheme="blue"
-                  leftIcon={<FiCheckCircle />}
-                  onClick={handleApplyDocs}
-                  isDisabled={selectedDocIds.length === 0}
-                >
-                  Terapkan Dokumen ({selectedDocIds.length})
-                </Button>
-              </HStack>
-            </Flex>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
       {/* ─── Modal Pilih Dokumen Spesifik Per Pertanyaan ─── */}
       <ProjectFilesModal
         isOpen={!!activeFieldTarget}
@@ -569,6 +282,7 @@ const HardwareStep3 = ({
         categoryFilter={activeFieldTarget?.category}
         fieldTitle={activeFieldTarget?.label}
         projectUrl={projectRouteUrl}
+        tokenData={tokenData}
       />
     </VStack>
   );

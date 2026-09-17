@@ -8,6 +8,7 @@ import {
   Flex,
   HStack,
   Icon,
+  IconButton,
   Input,
   InputGroup,
   InputLeftElement,
@@ -19,6 +20,7 @@ import {
   ModalHeader,
   ModalOverlay,
   SimpleGrid,
+  Spinner,
   Tag,
   Text,
   Tooltip,
@@ -29,6 +31,7 @@ import {
 } from "@chakra-ui/react";
 import {
   FiCheck,
+  FiDownload,
   FiExternalLink,
   FiFile,
   FiFileText,
@@ -38,8 +41,9 @@ import {
   FiSearch,
 } from "react-icons/fi";
 import { radiusStyle, RES_CODE_OK } from "@/app/constants/applicationConstants";
-import { MOCK_PROJECT_FILES, ProjectFileItem } from "@/app/json/cabRequestMock";
-import useProjects, { ProjectWorkflowValueResponse } from "@/app/services/useProjects";
+import { ProjectFileItem } from "@/app/json/cabRequestMock";
+import useProjects, { ProjectWorkflowResponse } from "@/app/services/useProjects";
+import useMediaObject from "@/app/services/useMediaObject";
 
 export interface ProjectFilesModalProps {
   isOpen: boolean;
@@ -89,6 +93,7 @@ export const ProjectFilesModal = ({
   const { colorMode } = useColorMode();
   const isDark = colorMode === "dark";
   const { ListProjectWorkflow } = useProjects();
+  const { SecureDownloadFiles } = useMediaObject();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>(
@@ -96,59 +101,175 @@ export const ProjectFilesModal = ({
   );
   const [liveProjectFiles, setLiveProjectFiles] = useState<ProjectFileItem[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  // Fetch real project documents if projectId is provided
+  // Fetch and extract real project documents recursively
   useEffect(() => {
-    const fetchDocs = async () => {
-      const token = tokenData || (typeof window !== "undefined" ? localStorage.getItem("tokenData") || "" : "");
-      if (!isOpen || !projectId || !token) return;
+    if (!isOpen) {
+      setLoadingFiles(false);
+      return;
+    }
 
-      setLoadingFiles(true);
+    const token =
+      tokenData ||
+      (typeof window !== "undefined"
+        ? localStorage.getItem("tokenData") || ""
+        : "");
+
+    if (!projectId || !token) {
+      setLiveProjectFiles([]);
+      setLoadingFiles(false);
+      return;
+    }
+
+    let isMounted = true;
+    setLoadingFiles(true);
+
+    const fetchDocs = async () => {
       try {
         const res = await ListProjectWorkflow(projectId, token);
+        if (!isMounted) return;
 
         if (res?.statusCode === RES_CODE_OK && res.data) {
-          const mapped: ProjectFileItem[] = [];
-          res.data.forEach((wf) => {
-            if (wf.workflowValues && wf.workflowValues.length > 0) {
-              wf.workflowValues.forEach((val) => {
-                if (val.mediaObjectId || val.documentName) {
-                  let cat = "BRD & RFC";
-                  const dt = (val.documentType || "").toUpperCase();
-                  if (dt.includes("ARSI") || dt.includes("ARCH") || dt.includes("FSD") || dt.includes("TSD")) cat = "Arsitektur";
-                  else if (dt.includes("SAST") || dt.includes("SEC") || dt.includes("PEN_TEST")) cat = "Security & SAST";
-                  else if (dt.includes("UAT") || dt.includes("QA") || dt.includes("TEST")) cat = "UAT & QA";
-                  else if (dt.includes("SOP") || dt.includes("MANUAL") || dt.includes("RUNDOWN") || dt.includes("RUNBOOK")) cat = "Manual & Runbook";
+          const extractedDocs: ProjectFileItem[] = [];
 
-                  mapped.push({
-                    id: val.id,
-                    fileName: val.documentName || "Dokumen Proyek",
-                    fileSize: "Dokumen Proyek",
-                    fileType: val.documentName?.endsWith(".pdf") ? "pdf" : "doc",
-                    uploadedBy: val.createdBy || "Project Team",
-                    uploadedDate: val.documentDate ? new Date(val.documentDate).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
-                    category: cat,
-                    description: `Versi: ${val.documentVersion || "v1.0"} | No: ${val.documentNumber || "-"}`,
-                    sourceUrl: val.linkAttachment,
-                    mediaObjectId: val.mediaObjectId,
-                  } as any);
-                }
-              });
-            }
-          });
-          if (mapped.length > 0) {
-            setLiveProjectFiles(mapped);
-          }
+          // Recursive helper to extract all documents from Level 1, Level 2, and child workflows
+          const traverseWorkflows = (wfList: ProjectWorkflowResponse[]) => {
+            if (!wfList || !Array.isArray(wfList)) return;
+
+            wfList.forEach((wf) => {
+              // 1. Process documents attached at this level
+              if (wf.workflowValues && Array.isArray(wf.workflowValues)) {
+                wf.workflowValues.forEach((val) => {
+                  if (val.mediaObjectId || val.documentName) {
+                    let cat = "BRD & RFC";
+                    const dt = (
+                      (val.documentType || "") +
+                      " " +
+                      (wf.wfCategoryName || "") +
+                      " " +
+                      (wf.wfgName || "")
+                    ).toUpperCase();
+
+                    if (
+                      dt.includes("ARSI") ||
+                      dt.includes("ARCH") ||
+                      dt.includes("FSD") ||
+                      dt.includes("TSD") ||
+                      dt.includes("TOPOLOGI") ||
+                      dt.includes("INFRA")
+                    ) {
+                      cat = "Arsitektur";
+                    } else if (
+                      dt.includes("SAST") ||
+                      dt.includes("SEC") ||
+                      dt.includes("PEN_TEST") ||
+                      dt.includes("VA") ||
+                      dt.includes("VULN") ||
+                      dt.includes("MATRIKS")
+                    ) {
+                      cat = "Security & SAST";
+                    } else if (
+                      dt.includes("UAT") ||
+                      dt.includes("QA") ||
+                      dt.includes("TEST") ||
+                      dt.includes("SIT") ||
+                      dt.includes("PENGUJIAN")
+                    ) {
+                      cat = "UAT & QA";
+                    } else if (
+                      dt.includes("SOP") ||
+                      dt.includes("MANUAL") ||
+                      dt.includes("RUNDOWN") ||
+                      dt.includes("RUNBOOK") ||
+                      dt.includes("JUKNIS") ||
+                      dt.includes("MIGRASI") ||
+                      dt.includes("ROLLBACK")
+                    ) {
+                      cat = "Manual & Runbook";
+                    }
+
+                    const formattedDate = val.documentDate
+                      ? new Date(val.documentDate).toLocaleDateString("id-ID", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : val.createdAt
+                      ? new Date(val.createdAt).toLocaleDateString("id-ID", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "-";
+
+                    const docDescParts = [];
+                    if (val.documentVersion) docDescParts.push(`Versi: ${val.documentVersion}`);
+                    if (val.documentNumber && val.documentNumber !== "-")
+                      docDescParts.push(`No: ${val.documentNumber}`);
+                    if (wf.wfgName) docDescParts.push(`Tahapan: ${wf.wfgName}`);
+
+                    extractedDocs.push({
+                      id: val.id || `doc-${extractedDocs.length + 1}`,
+                      fileName: val.documentName || "Dokumen Proyek",
+                      fileSize: val.documentType || wf.wfgName || "Dokumen SDLC",
+                      fileType: (val.documentName || "").toLowerCase().endsWith(".pdf")
+                        ? "pdf"
+                        : (val.documentName || "").toLowerCase().endsWith(".png") ||
+                          (val.documentName || "").toLowerCase().endsWith(".jpg") ||
+                          (val.documentName || "").toLowerCase().endsWith(".jpeg")
+                        ? "png"
+                        : (val.documentName || "").toLowerCase().endsWith(".xls") ||
+                          (val.documentName || "").toLowerCase().endsWith(".xlsx")
+                        ? "xlsx"
+                        : (val.documentName || "").toLowerCase().endsWith(".zip") ||
+                          (val.documentName || "").toLowerCase().endsWith(".rar") ||
+                          (val.documentName || "").toLowerCase().endsWith(".tar.gz")
+                        ? "zip"
+                        : (val.documentName || "").toLowerCase().endsWith(".drawio")
+                        ? "drawio"
+                        : "docx",
+                      uploadedBy: val.createdBy || "Project Team",
+                      uploadedAt: formattedDate,
+                      category: cat,
+                      description: docDescParts.join(" | "),
+                      sourceUrl: val.linkAttachment || undefined,
+                      mediaObjectId: val.mediaObjectId || undefined,
+                      projectCode: projectCode,
+                    });
+                  }
+                });
+              }
+
+              // 2. Recursively process child workflows
+              if (
+                wf.workflowChild &&
+                Array.isArray(wf.workflowChild) &&
+                wf.workflowChild.length > 0
+              ) {
+                traverseWorkflows(wf.workflowChild);
+              }
+            });
+          };
+
+          traverseWorkflows(res.data);
+          setLiveProjectFiles(extractedDocs);
+        } else {
+          setLiveProjectFiles([]);
         }
       } catch {
-        // Fallback to mock
+        if (isMounted) setLiveProjectFiles([]);
       } finally {
-        setLoadingFiles(false);
+        if (isMounted) setLoadingFiles(false);
       }
     };
 
     fetchDocs();
-  }, [isOpen, projectId, tokenData]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, projectId, tokenData, projectCode]);
 
   // Sync category filter when modal opens with a new initialCategory
   useEffect(() => {
@@ -165,12 +286,8 @@ export const ProjectFilesModal = ({
     );
   }, [projectUrl, projectId, projectCode, projectContext]);
 
-  const allAvailableFiles = useMemo(() => {
-    return liveProjectFiles.length > 0 ? liveProjectFiles : MOCK_PROJECT_FILES;
-  }, [liveProjectFiles]);
-
   const filteredFiles = useMemo(() => {
-    return allAvailableFiles.filter((file) => {
+    return liveProjectFiles.filter((file) => {
       const matchCategory =
         activeCategory === "Semua" || file.category === activeCategory;
       const matchSearch =
@@ -180,7 +297,35 @@ export const ProjectFilesModal = ({
         file.uploadedBy.toLowerCase().includes(searchTerm.toLowerCase());
       return matchCategory && matchSearch;
     });
-  }, [allAvailableFiles, activeCategory, searchTerm]);
+  }, [liveProjectFiles, activeCategory, searchTerm]);
+
+  const handleDownloadPreview = async (mediaObjectId: string, fileName: string) => {
+    const token =
+      tokenData ||
+      (typeof window !== "undefined"
+        ? localStorage.getItem("tokenData") || ""
+        : "");
+    if (!mediaObjectId || !token) return;
+
+    setDownloadingId(mediaObjectId);
+    try {
+      const blob = await SecureDownloadFiles([mediaObjectId], token, undefined, "PROJECT_DOC");
+      if (blob) {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName || `Document_${mediaObjectId}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
+    } catch {
+      // Ignore preview failure
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const getFileIcon = (type: string) => {
     switch (type) {
@@ -220,7 +365,7 @@ export const ProjectFilesModal = ({
                 )}
               </HStack>
               <Text fontSize="xs" color="gray.500" fontWeight="normal">
-                Pilih berkas yang telah terunggah pada proyek terpilih untuk dilampirkan ke formulir permohonan CAB.
+                Pilih berkas yang telah terunggah pada tahapan SDLC/workflow proyek terpilih untuk dilampirkan ke formulir permohonan CAB.
               </Text>
             </VStack>
           </HStack>
@@ -255,7 +400,7 @@ export const ProjectFilesModal = ({
                       </Badge>
                     </HStack>
                     <Text fontSize="xs" color={isDark ? "blue.300" : "blue.600"}>
-                      Berkas di bawah berasal dari repositori artefak & dokumen proyek ini.
+                      Berkas di bawah diambil langsung secara otomatis dari repositori artefak & dokumen SDLC proyek ini.
                     </Text>
                   </VStack>
                 </HStack>
@@ -275,6 +420,7 @@ export const ProjectFilesModal = ({
                     rightIcon={<FiExternalLink />}
                     fontWeight="semibold"
                     flexShrink={0}
+                    h="28px"
                   >
                     Buka Work Documentation ↗
                   </Button>
@@ -294,10 +440,11 @@ export const ProjectFilesModal = ({
                   <Icon as={FiSearch} color="gray.400" />
                 </InputLeftElement>
                 <Input
-                  placeholder="Cari nama dokumen atau pengunggah..."
+                  placeholder="Cari nama dokumen atau tahapan..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   rounded="md"
+                  fontSize="xs"
                 />
               </InputGroup>
 
@@ -311,6 +458,7 @@ export const ProjectFilesModal = ({
                       rounded="full"
                       px={3}
                       onClick={() => setActiveCategory(cat)}
+                      fontSize="xs"
                     >
                       {cat}
                     </Button>
@@ -319,10 +467,21 @@ export const ProjectFilesModal = ({
               </Wrap>
             </Flex>
 
-            {/* Document List */}
-            {filteredFiles.length === 0 ? (
+            {/* Loading State */}
+            {loadingFiles ? (
+              <Flex justify="center" align="center" py={12}>
+                <VStack spacing={3}>
+                  <Spinner color="blue.500" size="lg" thickness="3px" />
+                  <Text fontSize="xs" color="gray.500">
+                    Memuat daftar dokumentasi proyek...
+                  </Text>
+                </VStack>
+              </Flex>
+            ) : filteredFiles.length === 0 ? (
+              /* Empty State */
               <Box
                 py={12}
+                px={4}
                 textAlign="center"
                 borderWidth="1px"
                 borderStyle="dashed"
@@ -330,26 +489,53 @@ export const ProjectFilesModal = ({
                 rounded="lg"
               >
                 <Icon as={FiFile} boxSize={8} color="gray.400" mb={2} />
-                <Text fontSize="sm" color="gray.500" fontWeight="medium">
-                  Tidak ada dokumen yang sesuai dengan pencarian / kategori &ldquo;{activeCategory}&rdquo;
+                <Text fontSize="sm" color={isDark ? "gray.200" : "gray.700"} fontWeight="medium">
+                  {liveProjectFiles.length === 0
+                    ? `Belum ada dokumen yang diunggah pada proyek "${displayProjectName}".`
+                    : `Tidak ada dokumen yang sesuai dengan filter kategori "${activeCategory}".`}
                 </Text>
-                <Button
-                  size="xs"
-                  mt={2}
-                  variant="ghost"
-                  colorScheme="blue"
-                  onClick={() => {
-                    setActiveCategory("Semua");
-                    setSearchTerm("");
-                  }}
-                >
-                  Tampilkan Semua Dokumen
-                </Button>
+                <Text fontSize="xs" color="gray.500" mt={1} maxW="480px" mx="auto">
+                  {liveProjectFiles.length === 0
+                    ? "Anda dapat mengunggah berkas arsitektur, SAST, atau pengujian terlebih dahulu melalui menu Work Documentation proyek atau mengunggah berkas secara manual."
+                    : "Silakan pilih kategori 'Semua' atau gunakan kata kunci pencarian yang berbeda."}
+                </Text>
+                <HStack spacing={2} justify="center" mt={3}>
+                  {liveProjectFiles.length > 0 && (
+                    <Button
+                      size="xs"
+                      variant="outline"
+                      colorScheme="blue"
+                      onClick={() => {
+                        setActiveCategory("Semua");
+                        setSearchTerm("");
+                      }}
+                      fontSize="xs"
+                    >
+                      Tampilkan Semua Dokumen
+                    </Button>
+                  )}
+                  <Button
+                    as="a"
+                    href={targetProjectRoute}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    size="xs"
+                    variant="solid"
+                    colorScheme="blue"
+                    rightIcon={<FiExternalLink />}
+                    fontSize="xs"
+                  >
+                    Unggah Dokumen di Halaman Proyek ↗
+                  </Button>
+                </HStack>
               </Box>
             ) : (
+              /* Document List */
               <SimpleGrid columns={{ base: 1, md: 1 }} spacing={2.5}>
                 {filteredFiles.map((file) => {
                   const isSelected = selectedFileId === file.id;
+                  const isDownloading = downloadingId === file.mediaObjectId;
+
                   return (
                     <Box
                       key={file.id}
@@ -424,21 +610,41 @@ export const ProjectFilesModal = ({
                           </VStack>
                         </HStack>
 
-                        <Button
-                          size="xs"
-                          colorScheme={isSelected ? "green" : "blue"}
-                          variant={isSelected ? "solid" : "outline"}
-                          leftIcon={isSelected ? <FiCheck /> : undefined}
-                          onClick={() => {
-                            onSelectFile(file);
-                            onClose();
-                          }}
-                          flexShrink={0}
-                          h="32px"
-                          px={3}
-                        >
-                          {isSelected ? "Terpilih" : "Gunakan Dokumen Ini"}
-                        </Button>
+                        <HStack spacing={2} flexShrink={0}>
+                          {file.mediaObjectId && (
+                            <Tooltip label="Unduh berkas untuk pratinjau" placement="top">
+                              <IconButton
+                                aria-label="Unduh Dokumen"
+                                icon={isDownloading ? <Spinner size="xs" /> : <FiDownload />}
+                                size="xs"
+                                variant="outline"
+                                colorScheme="gray"
+                                isDisabled={isDownloading}
+                                onClick={() =>
+                                  handleDownloadPreview(file.mediaObjectId!, file.fileName)
+                                }
+                                h="32px"
+                                w="32px"
+                              />
+                            </Tooltip>
+                          )}
+                          <Button
+                            size="xs"
+                            colorScheme={isSelected ? "green" : "blue"}
+                            variant={isSelected ? "solid" : "outline"}
+                            leftIcon={isSelected ? <FiCheck /> : undefined}
+                            onClick={() => {
+                              onSelectFile(file);
+                              onClose();
+                            }}
+                            h="32px"
+                            px={3}
+                            fontSize="xs"
+                            fontWeight="semibold"
+                          >
+                            {isSelected ? "Terpilih" : "Gunakan Dokumen Ini"}
+                          </Button>
+                        </HStack>
                       </Flex>
                     </Box>
                   );
@@ -449,7 +655,7 @@ export const ProjectFilesModal = ({
         </ModalBody>
 
         <ModalFooter borderTopWidth="1px" borderColor={isDark ? "gray.700" : "gray.200"} py={3}>
-          <Button size="sm" variant="ghost" onClick={onClose}>
+          <Button size="sm" variant="ghost" onClick={onClose} fontSize="xs">
             Tutup
           </Button>
         </ModalFooter>

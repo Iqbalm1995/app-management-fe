@@ -194,6 +194,7 @@ const CreateView = () => {
                             form.swStep1.rfcKodeProject ||
                             ""
                           }
+                          tokenData={tokenData}
                         />
                       )}
                       {form.currentStep === 3 && (
@@ -241,6 +242,7 @@ const CreateView = () => {
                           mainProjectName={
                             form.hwStep1.namaHardware || form.hwStep1.kodeProject || ""
                           }
+                          tokenData={tokenData}
                         />
                       )}
                       {form.currentStep === 3 && (

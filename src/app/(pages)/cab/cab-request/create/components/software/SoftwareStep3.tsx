@@ -55,6 +55,7 @@ interface SoftwareStep3Props {
   mainProjectId?: string;
   mainProjectCode?: string;
   mainProjectName?: string;
+  tokenData?: string;
 }
 
 interface SoftwareActiveFieldTarget {
@@ -62,109 +63,6 @@ interface SoftwareActiveFieldTarget {
   label: string;
   category: string;
 }
-
-interface ProjectDocItem {
-  id: string;
-  targetField: keyof CabSoftwareStep4;
-  label: string;
-  fileName: string;
-  fileSize: string;
-  sourceProject: string;
-  positiveVal: "ADA" | "YA";
-}
-
-const AVAILABLE_PROJECT_DOCS: ProjectDocItem[] = [
-  {
-    id: "doc-sast",
-    targetField: "sastFile",
-    label: "SAST",
-    fileName: "SAST_SonarQube_Security_Report_Passed.pdf",
-    fileSize: "1.4 MB",
-    sourceProject: "Project BRD-2026-0812 (Core Banking)",
-    positiveVal: "ADA",
-  },
-  {
-    id: "doc-arsitektur",
-    targetField: "dokumenArsitekturFile",
-    label: "Dokumen Arsitektur",
-    fileName: "High_Level_Architecture_Design_v2.2.pdf",
-    fileSize: "3.8 MB",
-    sourceProject: "Project BRD-2026-0812 (Core Banking)",
-    positiveVal: "ADA",
-  },
-  {
-    id: "doc-infrastruktur",
-    targetField: "kesiapanInfrastrukturFile",
-    label: "Kesiapan Infrastruktur",
-    fileName: "Infrastructure_Readiness_Checklist_DRC.pdf",
-    fileSize: "840 KB",
-    sourceProject: "RFC Infra-DRC-2026-004",
-    positiveVal: "YA",
-  },
-  {
-    id: "doc-source",
-    targetField: "sourceAplikasiFile",
-    label: "Source Aplikasi",
-    fileName: "Application_Source_Code_Hash_Verification.pdf",
-    fileSize: "420 KB",
-    sourceProject: "Gitlab Release Tag v2.4.0",
-    positiveVal: "ADA",
-  },
-  {
-    id: "doc-matriks",
-    targetField: "userMatriksFile",
-    label: "User Matriks",
-    fileName: "User_Access_Matrix_Roles_Production.xlsx",
-    fileSize: "260 KB",
-    sourceProject: "Project BRD-2026-0812 (Core Banking)",
-    positiveVal: "ADA",
-  },
-  {
-    id: "doc-rollback",
-    targetField: "rollbackPlanFile",
-    label: "Rollback / Fallback Plan",
-    fileName: "Disaster_Recovery_Rollback_Execution_Plan.docx",
-    fileSize: "680 KB",
-    sourceProject: "Project BRD-2026-0812 (Core Banking)",
-    positiveVal: "ADA",
-  },
-  {
-    id: "doc-monitoring",
-    targetField: "toolsMonitoringFile",
-    label: "Tools / Cara Monitoring",
-    fileName: "Monitoring_APM_Grafana_Prometheus_Guide.pdf",
-    fileSize: "1.1 MB",
-    sourceProject: "Monitoring Standard Ops 2026",
-    positiveVal: "ADA",
-  },
-  {
-    id: "doc-security",
-    targetField: "securityChecklistFile",
-    label: "Security Checklist",
-    fileName: "Security_Hardening_Checklist_Compliant.pdf",
-    fileSize: "920 KB",
-    sourceProject: "IT Security Baseline Assessment",
-    positiveVal: "ADA",
-  },
-  {
-    id: "doc-approval",
-    targetField: "persetujuanItSecurityFile",
-    label: "Persetujuan Divisi IT Security",
-    fileName: "Approval_Memo_Divisi_IT_Security_Signed.pdf",
-    fileSize: "510 KB",
-    sourceProject: "IT Sec Ticket #SEC-2026-891",
-    positiveVal: "YA",
-  },
-  {
-    id: "doc-juknis",
-    targetField: "petunjukTeknisFile",
-    label: "Petunjuk Teknis",
-    fileName: "Standard_Operating_Procedure_Juknis_Deployment.pdf",
-    fileSize: "1.8 MB",
-    sourceProject: "Standard Release Procedures v3",
-    positiveVal: "ADA",
-  },
-];
 
 const SoftwareStep3 = ({
   dataStep3,
@@ -174,31 +72,13 @@ const SoftwareStep3 = ({
   mainProjectId,
   mainProjectCode,
   mainProjectName,
+  tokenData,
 }: SoftwareStep3Props) => {
   const { colorMode } = useColorMode();
   const isDark = colorMode === "dark";
   const toast = useToast();
 
   const [activeFieldTarget, setActiveFieldTarget] = useState<SoftwareActiveFieldTarget | null>(null);
-  const { isOpen, onOpen, onClose } = useDisclosure();
-
-  const [selectedDocIds, setSelectedDocIds] = useState<string[]>(
-    AVAILABLE_PROJECT_DOCS.map((d) => d.id)
-  );
-
-  const toggleSelectDoc = (id: string) => {
-    setSelectedDocIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedDocIds.length === AVAILABLE_PROJECT_DOCS.length) {
-      setSelectedDocIds([]);
-    } else {
-      setSelectedDocIds(AVAILABLE_PROJECT_DOCS.map((d) => d.id));
-    }
-  };
 
   const handleSelectFileForField = (file: ProjectFileItem) => {
     if (!activeFieldTarget) return;
@@ -241,59 +121,6 @@ const SoftwareStep3 = ({
     mainProjectId || mainProjectCode || mainProjectName,
     "documentation"
   );
-
-  const handleApplyImportedDocs = () => {
-    const updatedStep4 = { ...dataStep4 };
-
-    AVAILABLE_PROJECT_DOCS.forEach((doc) => {
-      if (selectedDocIds.includes(doc.id)) {
-        // Set positive value (ADA or YA)
-        if (doc.targetField === "sastFile") {
-          updatedStep4.sast = "ADA";
-          updatedStep4.sastFile = doc.fileName;
-        } else if (doc.targetField === "dokumenArsitekturFile") {
-          updatedStep4.dokumenArsitektur = "ADA";
-          updatedStep4.dokumenArsitekturFile = doc.fileName;
-        } else if (doc.targetField === "kesiapanInfrastrukturFile") {
-          updatedStep4.kesiapanInfrastruktur = "YA";
-          updatedStep4.kesiapanInfrastrukturFile = doc.fileName;
-        } else if (doc.targetField === "sourceAplikasiFile") {
-          updatedStep4.sourceAplikasi = "ADA";
-          updatedStep4.sourceAplikasiFile = doc.fileName;
-        } else if (doc.targetField === "userMatriksFile") {
-          updatedStep4.userMatriks = "ADA";
-          updatedStep4.userMatriksFile = doc.fileName;
-        } else if (doc.targetField === "rollbackPlanFile") {
-          updatedStep4.rollbackPlan = "ADA";
-          updatedStep4.rollbackPlanFile = doc.fileName;
-        } else if (doc.targetField === "toolsMonitoringFile") {
-          updatedStep4.toolsMonitoring = "ADA";
-          updatedStep4.toolsMonitoringFile = doc.fileName;
-        } else if (doc.targetField === "securityChecklistFile") {
-          updatedStep4.securityChecklist = "ADA";
-          updatedStep4.securityChecklistFile = doc.fileName;
-        } else if (doc.targetField === "persetujuanItSecurityFile") {
-          updatedStep4.persetujuanItSecurity = "YA";
-          updatedStep4.persetujuanItSecurityFile = doc.fileName;
-        } else if (doc.targetField === "petunjukTeknisFile") {
-          updatedStep4.petunjukTeknis = "ADA";
-          updatedStep4.petunjukTeknisFile = doc.fileName;
-        }
-      }
-    });
-
-    onChangeStep4(updatedStep4);
-    onClose();
-
-    toast({
-      title: "Dokumen Berhasil Ditarik",
-      description: `${selectedDocIds.length} berkas dari project terkait berhasil dilampirkan ke formulir.`,
-      status: "success",
-      duration: 3500,
-      isClosable: true,
-      position: "top",
-    });
-  };
 
   return (
     <VStack spacing={5} align="stretch" w="full">
@@ -708,146 +535,6 @@ const SoftwareStep3 = ({
         />
       </InputGroupPanel>
 
-      {/* ─── Modal Tarik Dokumen dari Project Sebelumnya ─── */}
-      <Modal isOpen={isOpen} onClose={onClose} size="xl" isCentered>
-        <ModalOverlay backdropFilter="blur(2px)" />
-        <ModalContent rounded="xl" bg={isDark ? "gray.800" : "white"}>
-          <ModalHeader pb={2}>
-            <HStack spacing={2.5}>
-              <Icon as={FiDownloadCloud} color="blue.500" fontSize="lg" />
-              <Text fontSize="md" fontWeight="bold">
-                Tarik Dokumen dari Project Sebelumnya
-              </Text>
-            </HStack>
-            <Text fontSize="xs" color="gray.500" fontWeight="normal" mt={1}>
-              Pilih dokumen arsitektur, SAST, dan kepatuhan dari berkas project sebelumnya untuk dilampirkan otomatis ke formulir CAB.
-            </Text>
-          </ModalHeader>
-          <ModalCloseButton />
-          <Divider />
-
-          <ModalBody py={4}>
-            {/* Project Context Info in Modal */}
-            <Box
-              p={3}
-              mb={3}
-              rounded="lg"
-              bg={isDark ? "blue.950" : "blue.50"}
-              border="1px solid"
-              borderColor={isDark ? "blue.800" : "blue.200"}
-            >
-              <Flex justify="space-between" align="center">
-                <HStack spacing={2}>
-                  <Icon as={FiInfo} color="blue.500" />
-                  <Text fontSize="xs" fontWeight="semibold" color={isDark ? "blue.200" : "blue.800"}>
-                    Referensi: {projectContextLabel}
-                  </Text>
-                </HStack>
-                <Button
-                  as="a"
-                  href={projectRouteUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  size="xs"
-                  colorScheme="blue"
-                  variant="solid"
-                  rightIcon={<FiExternalLink />}
-                >
-                  Buka Proyek ↗
-                </Button>
-              </Flex>
-            </Box>
-
-            <Flex justify="space-between" align="center" mb={3}>
-              <Text fontSize="xs" fontWeight="semibold" color="gray.500">
-                Dokumen Tersedia ({AVAILABLE_PROJECT_DOCS.length} Berkas)
-              </Text>
-              <Button size="xs" variant="ghost" colorScheme="blue" onClick={toggleSelectAll}>
-                {selectedDocIds.length === AVAILABLE_PROJECT_DOCS.length ? "Hapus Semua Pilihan" : "Pilih Semua"}
-              </Button>
-            </Flex>
-
-            <Box border="1px solid" borderColor={isDark ? "gray.700" : "gray.200"} rounded="lg" overflow="hidden">
-              <Table size="sm" variant="simple">
-                <Thead bg={isDark ? "gray.750" : "gray.50"}>
-                  <Tr>
-                    <Th w="40px">
-                      <Checkbox
-                        isChecked={selectedDocIds.length === AVAILABLE_PROJECT_DOCS.length}
-                        isIndeterminate={selectedDocIds.length > 0 && selectedDocIds.length < AVAILABLE_PROJECT_DOCS.length}
-                        onChange={toggleSelectAll}
-                      />
-                    </Th>
-                    <Th fontSize="xs">Item Kepatuhan</Th>
-                    <Th fontSize="xs">Nama Dokumen</Th>
-                    <Th fontSize="xs">Sumber Project</Th>
-                  </Tr>
-                </Thead>
-                <Tbody>
-                  {AVAILABLE_PROJECT_DOCS.map((doc) => {
-                    const isChecked = selectedDocIds.includes(doc.id);
-                    return (
-                      <Tr
-                        key={doc.id}
-                        _hover={{ bg: isDark ? "gray.700" : "blue.50" }}
-                        cursor="pointer"
-                        onClick={() => toggleSelectDoc(doc.id)}
-                        bg={isChecked ? (isDark ? "blue.950" : "blue.50") : undefined}
-                      >
-                        <Td onClick={(e) => e.stopPropagation()}>
-                          <Checkbox
-                            isChecked={isChecked}
-                            onChange={() => toggleSelectDoc(doc.id)}
-                          />
-                        </Td>
-                        <Td>
-                          <Badge colorScheme="blue" variant="subtle" fontSize="xs" rounded="md">
-                            {doc.label}
-                          </Badge>
-                        </Td>
-                        <Td>
-                          <HStack spacing={1.5}>
-                            <Icon as={FiFileText} color="blue.500" fontSize="xs" />
-                            <Box>
-                              <Text fontSize="xs" fontWeight="semibold" isTruncated maxW="200px">
-                                {doc.fileName}
-                              </Text>
-                              <Text fontSize="xs" color="gray.500">
-                                {doc.fileSize}
-                              </Text>
-                            </Box>
-                          </HStack>
-                        </Td>
-                        <Td fontSize="xs" color="gray.500">
-                          {doc.sourceProject}
-                        </Td>
-                      </Tr>
-                    );
-                  })}
-                </Tbody>
-              </Table>
-            </Box>
-          </ModalBody>
-
-          <ModalFooter borderTop="1px solid" borderColor={isDark ? "gray.700" : "gray.200"}>
-            <HStack spacing={3}>
-              <Button size="sm" variant="ghost" onClick={onClose}>
-                Batal
-              </Button>
-              <Button
-                size="sm"
-                colorScheme="blue"
-                leftIcon={<FiCheckCircle />}
-                isDisabled={selectedDocIds.length === 0}
-                onClick={handleApplyImportedDocs}
-              >
-                Terapkan Dokumen ({selectedDocIds.length})
-              </Button>
-            </HStack>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-
       {/* ─── Modal Pilih Dokumen Spesifik Per Pertanyaan ─── */}
       <ProjectFilesModal
         isOpen={!!activeFieldTarget}
@@ -859,6 +546,7 @@ const SoftwareStep3 = ({
         categoryFilter={activeFieldTarget?.category}
         fieldTitle={activeFieldTarget?.label}
         projectUrl={projectRouteUrl}
+        tokenData={tokenData}
       />
     </VStack>
   );
