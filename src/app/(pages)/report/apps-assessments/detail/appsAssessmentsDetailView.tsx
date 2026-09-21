@@ -9,8 +9,6 @@ import {
   RES_GENERIC_ERROR_MSG,
   ORG_CATEGORY_KEY_GROUP,
   DIVISION_ID_IT_BJB,
-  ORG_GROUP_WHITELIST_ALL_ACCESS,
-  ORG_GROUP_WHITELIST_FULL_OVERRIDE,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useDownloadManagerModal } from "@/app/context/DownloadManagerContext";
@@ -20,6 +18,7 @@ import useAppsCriticalReport, {
   AppsCriticalReportAssessmentViewModel,
   AppsCriticalReportBatchDetailViewModel,
 } from "@/app/services/useAppsCriticalReport";
+import useSysModuleGroup from "@/app/services/useSysModuleGroup";
 import { ConfirmationDialog } from "@/app/components/confirmationDialog";
 import { Search2Icon } from "@chakra-ui/icons";
 import useOrganization, {
@@ -165,10 +164,8 @@ export default function AppsAssessmentsDetailView() {
   const [isGroupLocked, setIsGroupLocked] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Check New Apps action button is ONLY available to users in ORG_GROUP_WHITELIST_FULL_OVERRIDE
-  const canCheckNewApps = userOrgGroupId
-    ? ORG_GROUP_WHITELIST_FULL_OVERRIDE.includes(userOrgGroupId)
-    : false;
+  const { GetFeatures } = useSysModuleGroup();
+  const [canCheckNewApps, setCanCheckNewApps] = useState(false);
 
   const handleRefreshBatchData = async () => {
     if (!batchCode || !tokenData) return;
@@ -310,21 +307,57 @@ export default function AppsAssessmentsDetailView() {
         .dataLogin as AuthDataResponse;
       setDataAuth(parsed);
 
-      // Determine group filter lock based on orgGroupId
-      // Note: JWT encodes null as "-" — treat "-" as no group
       const rawOrgGroupId = parsed.team?.orgGroupId || null;
       const orgGroupId =
         rawOrgGroupId && rawOrgGroupId !== "-" ? rawOrgGroupId : null;
       setUserOrgGroupId(orgGroupId);
-
-      // Lock group filter only if user has a real orgGroupId AND it's NOT in the whitelist
-      if (orgGroupId && !ORG_GROUP_WHITELIST_ALL_ACCESS.includes(orgGroupId)) {
-        setIsGroupLocked(true);
-        setFilterGroup(orgGroupId);
-      }
     }
     if (token) setTokenData(token);
   }, []);
+
+  // Fetch dynamic feature permissions from Sys Module
+  useEffect(() => {
+    if (!tokenData || !DataAuth) return;
+    const rawOrgGroupId = DataAuth.team?.orgGroupId || null;
+    const orgGroupId =
+      rawOrgGroupId && rawOrgGroupId !== "-" ? rawOrgGroupId : null;
+
+    if (!orgGroupId) {
+      // Superuser without specific group has full access
+      setCanCheckNewApps(true);
+      setIsGroupLocked(false);
+      return;
+    }
+
+    GetFeatures("sys_apps_assessment", tokenData).then((res) => {
+      if (res?.statusCode === RES_CODE_OK && res.data) {
+        const features = res.data;
+        const isFeatureAllowed = (featCode: string) => {
+          const feat = features.find(
+            (f) => f.featureCode.toUpperCase() === featCode.toUpperCase(),
+          );
+          if (!feat || !feat.whitelists) return false;
+          return feat.whitelists.some(
+            (w) =>
+              (w.principalType === "USER" && w.userSysId === DataAuth.id) ||
+              (w.principalType === "ORG_GROUP" && w.orgGroupId === orgGroupId),
+          );
+        };
+
+        const hasOverride = isFeatureAllowed("FULL_OVERRIDE");
+        const hasAllAccess = isFeatureAllowed("ALL_ACCESS") || hasOverride;
+
+        setCanCheckNewApps(hasOverride);
+
+        if (!hasAllAccess) {
+          setIsGroupLocked(true);
+          setFilterGroup(orgGroupId);
+        } else {
+          setIsGroupLocked(false);
+        }
+      }
+    });
+  }, [tokenData, DataAuth?.id, DataAuth?.team?.orgGroupId]);
 
   // Load group org options for the manual group filter dropdown
   useEffect(() => {

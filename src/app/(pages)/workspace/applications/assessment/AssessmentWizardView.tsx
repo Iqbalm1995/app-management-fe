@@ -99,15 +99,12 @@ import useMstAppsCriteria, {
 import useOrganization, {
   OrganizationResponse,
 } from "@/app/services/useOrganization";
+import useSysModuleGroup from "@/app/services/useSysModuleGroup";
 import { PaggingListPayload } from "@/app/types/masterTypes";
 import {
   CRITERIA_VALUE_OPERATORS,
   DIVISION_ID_IT_BJB,
   ORG_CATEGORY_KEY_GROUP,
-  ORG_GROUP_WHITELIST_ALL_ACCESS,
-  ORG_GROUP_WHITELIST_ASSESMENT_RPO,
-  ORG_GROUP_WHITELIST_ASSESMENT_RTO_SUGGESTIONS,
-  ORG_GROUP_WHITELIST_FULL_OVERRIDE,
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
@@ -223,6 +220,14 @@ export default function AssessmentWizardView() {
   // Dialog States
   const [isSaveConfirmOpen, setIsSaveConfirmOpen] = useState<boolean>(false);
   const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState<boolean>(false);
+
+  // Dynamic feature access states
+  const { GetFeatures } = useSysModuleGroup();
+  const [isWhitelisted, setIsWhitelisted] = useState(false);
+  const [canEditRtoSuggestion, setCanEditRtoSuggestion] = useState(false);
+  const [canEditRpo, setCanEditRpo] = useState(false);
+  const [hasAllAccess, setHasAllAccess] = useState(false);
+  const [hasRpoOnly, setHasRpoOnly] = useState(false);
 
   // Form Field States: Flags
   const [flags, setFlags] = useState({
@@ -368,15 +373,60 @@ export default function AssessmentWizardView() {
     }
   }, [tokenData, assessmentId, loadData]);
 
-  // --- Whitelist & Permission Computation ---
+  // --- Dynamic Sys Module Feature Permissions ---
   const userOrgGroupId =
     DataAuth?.team?.orgGroupId && DataAuth.team.orgGroupId !== "-"
       ? DataAuth.team.orgGroupId
       : null;
 
-  const isWhitelisted = userOrgGroupId
-    ? ORG_GROUP_WHITELIST_FULL_OVERRIDE.includes(userOrgGroupId)
-    : false;
+  useEffect(() => {
+    if (!tokenData || !DataAuth) return;
+    const orgGroupId =
+      DataAuth.team?.orgGroupId && DataAuth.team.orgGroupId !== "-"
+        ? DataAuth.team.orgGroupId
+        : null;
+
+    if (!orgGroupId) {
+      setIsWhitelisted(true);
+      setCanEditRtoSuggestion(true);
+      setCanEditRpo(true);
+      setHasAllAccess(true);
+      setHasRpoOnly(false);
+      return;
+    }
+
+    GetFeatures("sys_apps_assessment", tokenData).then((res) => {
+      if (res?.statusCode === RES_CODE_OK && res.data) {
+        const features = res.data;
+        const isFeatureAllowed = (featCode: string) => {
+          const feat = features.find(
+            (f) => f.featureCode.toUpperCase() === featCode.toUpperCase(),
+          );
+          if (!feat || !feat.whitelists) return false;
+          return feat.whitelists.some(
+            (w) =>
+              (w.principalType === "USER" && w.userSysId === DataAuth.id) ||
+              (w.principalType === "ORG_GROUP" && w.orgGroupId === orgGroupId),
+          );
+        };
+
+        const override = isFeatureAllowed("FULL_OVERRIDE");
+        const rtoSugg = isFeatureAllowed("RTO_SUGGESTIONS_EDIT") || override;
+        const rpoEdit = isFeatureAllowed("RPO_EDIT") || rtoSugg || override;
+        const allAcc = isFeatureAllowed("ALL_ACCESS") || override;
+        const isRpoOnly =
+          isFeatureAllowed("RPO_EDIT") &&
+          !isFeatureAllowed("RTO_SUGGESTIONS_EDIT") &&
+          !override;
+
+        setIsWhitelisted(override);
+        setCanEditRtoSuggestion(rtoSugg);
+        setCanEditRpo(rpoEdit);
+        setHasAllAccess(allAcc);
+        setHasRpoOnly(isRpoOnly);
+      }
+    });
+  }, [tokenData, DataAuth?.id, DataAuth?.team?.orgGroupId]);
 
   const isDraft = data?.statusReport === "DRAFT";
   const isDeclined = data?.statusReport === "DECLINE";
@@ -386,12 +436,7 @@ export default function AssessmentWizardView() {
 
   const canOverrideWA2 = isWaitingApproval2 && isWhitelisted;
 
-  const isRpoOnlyUser =
-    DataAuth && userOrgGroupId
-      ? ORG_GROUP_WHITELIST_ASSESMENT_RPO.includes(userOrgGroupId) &&
-        !ORG_GROUP_WHITELIST_ASSESMENT_RTO_SUGGESTIONS.includes(userOrgGroupId) &&
-        !isWhitelisted
-      : false;
+  const isRpoOnlyUser = hasRpoOnly;
 
   const rpoUserOwnsAssessment =
     isRpoOnlyUser &&
@@ -399,24 +444,12 @@ export default function AssessmentWizardView() {
     !!data?.appManageByGroupId &&
     data.appManageByGroupId === userOrgGroupId;
 
-  const isSubmitBlockedBase = userOrgGroupId
-    ? ORG_GROUP_WHITELIST_ALL_ACCESS.includes(userOrgGroupId) && !isWhitelisted
-    : false;
+  const isSubmitBlockedBase = hasAllAccess && !isWhitelisted;
 
   const isSubmitBlocked = isSubmitBlockedBase && !rpoUserOwnsAssessment;
 
-  const canEditRtoSuggestion = userOrgGroupId
-    ? ORG_GROUP_WHITELIST_ASSESMENT_RTO_SUGGESTIONS.includes(userOrgGroupId)
-    : false;
-
-  const canEditRpo = userOrgGroupId
-    ? ORG_GROUP_WHITELIST_ASSESMENT_RPO.includes(userOrgGroupId) ||
-      ORG_GROUP_WHITELIST_ASSESMENT_RTO_SUGGESTIONS.includes(userOrgGroupId)
-    : false;
-
   const canEditRtoIt = userOrgGroupId
-    ? !ORG_GROUP_WHITELIST_ASSESMENT_RPO.includes(userOrgGroupId) ||
-      rpoUserOwnsAssessment
+    ? !hasRpoOnly || rpoUserOwnsAssessment
     : true;
 
   const canEditRpoWA2 =
@@ -426,10 +459,7 @@ export default function AssessmentWizardView() {
     (isDraft || isDeclined || canOverrideWA2) &&
     (!isRpoOnlyUser || rpoUserOwnsAssessment);
 
-  const canEditManageGroup =
-    isEditable && userOrgGroupId
-      ? ORG_GROUP_WHITELIST_FULL_OVERRIDE.includes(userOrgGroupId)
-      : false;
+  const canEditManageGroup = isEditable && isWhitelisted;
 
   const isRtoSuggestionFilled =
     !!rtoRpo.appsRtoSuggestionOperator &&

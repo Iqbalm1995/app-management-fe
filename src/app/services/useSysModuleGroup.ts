@@ -165,6 +165,85 @@ export interface UserPermissionsResponse {
   canApprove: boolean;
 }
 
+export interface SysModuleFeatureWhitelistResponse {
+  id: string;
+  moduleFeatureId: string;
+  principalType: "ORG_GROUP" | "USER";
+  orgGroupId?: string | null;
+  userSysId?: string | null;
+  accessLevel: string;
+  remarks?: string | null;
+  createdAt: string;
+  createdBy: string;
+  orgCode?: string | null;
+  orgName?: string | null;
+  orgDesc?: string | null;
+  userId?: string | null;
+  userName?: string | null;
+  userEmail?: string | null;
+  userGroupKerja?: string | null;
+}
+
+export interface SysModuleFeatureResponse {
+  id: string;
+  moduleId: string;
+  featureCode: string;
+  featureName: string;
+  pageUrl?: string | null;
+  featureCategory: string;
+  descriptions?: string | null;
+  isActive: string;
+  createdAt: string;
+  createdBy: string;
+  updatedAt?: string | null;
+  updatedBy?: string | null;
+  whitelistCount: number;
+  whitelists: SysModuleFeatureWhitelistResponse[];
+}
+
+export interface SysModuleFeatureInsertPayload {
+  moduleId: string;
+  featureCode: string;
+  featureName: string;
+  pageUrl?: string | null;
+  featureCategory?: string;
+  descriptions?: string | null;
+  isActive?: string;
+}
+
+export interface SysModuleFeatureUpdatePayload {
+  id: string;
+  featureCode: string;
+  featureName: string;
+  pageUrl?: string | null;
+  featureCategory?: string;
+  descriptions?: string | null;
+  isActive: string;
+}
+
+export interface SysModuleFeatureWhitelistInsertPayload {
+  moduleFeatureId: string;
+  principalType: "ORG_GROUP" | "USER";
+  orgGroupId?: string | null;
+  userSysId?: string | null;
+  accessLevel?: string;
+  remarks?: string | null;
+}
+
+export interface CheckFeatureAccessPayload {
+  moduleCode: string;
+  featureCode: string;
+  userSysId?: string | null;
+  orgGroupId?: string | null;
+}
+
+export interface FeatureAccessCheckResult {
+  hasAccess: boolean;
+  accessLevel?: string | null;
+  featureCode?: string | null;
+  matchedRule?: string | null;
+}
+
 interface useSysModuleGroupServices {
   List: (
     payload: PaggingListPayload,
@@ -229,6 +308,40 @@ interface useSysModuleGroupServices {
   GetMyAccess: (
     token: string
   ) => Promise<ApiGenericResponse<UserAccessResponse | null> | null>;
+
+  // Feature & Whitelist Matrix
+  GetFeatures: (
+    moduleId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<SysModuleFeatureResponse[] | null> | null>;
+  InsertFeature: (
+    payload: SysModuleFeatureInsertPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  UpdateFeature: (
+    payload: SysModuleFeatureUpdatePayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  DeleteFeature: (
+    id: string,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  GetFeatureWhitelists: (
+    featureId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<SysModuleFeatureWhitelistResponse[] | null> | null>;
+  AddFeatureWhitelist: (
+    payload: SysModuleFeatureWhitelistInsertPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  RemoveFeatureWhitelist: (
+    id: string,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  CheckFeatureAccess: (
+    payload: CheckFeatureAccessPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<FeatureAccessCheckResult | null> | null>;
 
   isLoading: boolean;
   error: string | null;
@@ -862,6 +975,309 @@ const useSysModuleGroup = (): useSysModuleGroupServices => {
       }
     }
   };
+  const GetFeatures = async (
+    moduleId: string,
+    token: string
+  ): Promise<ApiGenericResponse<SysModuleFeatureResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/SysModuleGroup/features/${moduleId}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<SysModuleFeatureResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "An error occurred.");
+        return errorResponse;
+      } else {
+        setError("An unexpected error occurred.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          message: "An unexpected error occurred.",
+          data: null,
+        };
+      }
+    }
+  };
+
+  const InsertFeature = async (
+    payload: SysModuleFeatureInsertPayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/SysModuleGroup/feature/insert";
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "An error occurred.");
+        return errorResponse;
+      } else {
+        setError("An unexpected error occurred.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          message: "An unexpected error occurred.",
+          data: null,
+        };
+      }
+    }
+  };
+
+  const UpdateFeature = async (
+    payload: SysModuleFeatureUpdatePayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/SysModuleGroup/feature/update";
+    try {
+      const response = await axiosInstance.put<
+        ApiGenericResponse<string>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "An error occurred.");
+        return errorResponse;
+      } else {
+        setError("An unexpected error occurred.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          message: "An unexpected error occurred.",
+          data: null,
+        };
+      }
+    }
+  };
+
+  const DeleteFeature = async (
+    id: string,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/SysModuleGroup/feature/${id}`;
+    try {
+      const response = await axiosInstance.delete<
+        ApiGenericResponse<string>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "An error occurred.");
+        return errorResponse;
+      } else {
+        setError("An unexpected error occurred.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          message: "An unexpected error occurred.",
+          data: null,
+        };
+      }
+    }
+  };
+
+  const GetFeatureWhitelists = async (
+    featureId: string,
+    token: string
+  ): Promise<ApiGenericResponse<SysModuleFeatureWhitelistResponse[] | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/SysModuleGroup/feature-whitelists/${featureId}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<SysModuleFeatureWhitelistResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "An error occurred.");
+        return errorResponse;
+      } else {
+        setError("An unexpected error occurred.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          message: "An unexpected error occurred.",
+          data: null,
+        };
+      }
+    }
+  };
+
+  const AddFeatureWhitelist = async (
+    payload: SysModuleFeatureWhitelistInsertPayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/SysModuleGroup/feature-whitelist/add";
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "An error occurred.");
+        return errorResponse;
+      } else {
+        setError("An unexpected error occurred.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          message: "An unexpected error occurred.",
+          data: null,
+        };
+      }
+    }
+  };
+
+  const RemoveFeatureWhitelist = async (
+    id: string,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/SysModuleGroup/feature-whitelist/${id}`;
+    try {
+      const response = await axiosInstance.delete<
+        ApiGenericResponse<string>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "An error occurred.");
+        return errorResponse;
+      } else {
+        setError("An unexpected error occurred.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          message: "An unexpected error occurred.",
+          data: null,
+        };
+      }
+    }
+  };
+
+  const CheckFeatureAccess = async (
+    payload: CheckFeatureAccessPayload,
+    token: string
+  ): Promise<ApiGenericResponse<FeatureAccessCheckResult | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/SysModuleGroup/check-feature-access";
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<FeatureAccessCheckResult>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "An error occurred.");
+        return errorResponse;
+      } else {
+        setError("An unexpected error occurred.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          message: "An unexpected error occurred.",
+          data: null,
+        };
+      }
+    }
+  };
 
   return {
     List,
@@ -880,6 +1296,14 @@ const useSysModuleGroup = (): useSysModuleGroupServices => {
     AddUserApprover,
     RemoveUserApprover,
     GetMyAccess,
+    GetFeatures,
+    InsertFeature,
+    UpdateFeature,
+    DeleteFeature,
+    GetFeatureWhitelists,
+    AddFeatureWhitelist,
+    RemoveFeatureWhitelist,
+    CheckFeatureAccess,
     isLoading,
     error,
   };

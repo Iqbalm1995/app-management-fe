@@ -18,43 +18,35 @@ export const DIRECTORATE_ID_IT_BJB: string =
   "BD4C8AE4-BF61-5C96-B5A7-60A921553";
 export const DIVISION_ID_IT_BJB: string = "8922E4AD-8183-B61B-34D1-CF629361D";
 
-// OrgGroupIds that bypass group filter restriction — these users can see ALL data
+// [DEPRECATED / MIGRATED]: The following hardcoded whitelists have been replaced by
+// dynamic database-driven Sys Module Features (SYS_MODULE_FEATURE & SYS_MODULE_FEATURE_WHITELIST).
+// Manage these dynamically from /master-data/sys-module-group/detail?id=mod-apps-assessment-001
 
-// for generate report assesment
-export const ORG_GROUP_WHITELIST_ACCESS_GENERATE_REPORT_ASSESMENT: string[] = [
-  "8922E4AD-8183-B61B-34D1-CF629361D", // ADMINISTRATOR (D440)
-  "F4233FE8-7788-C0DC-99F5-9D17EB679", // IAG
-  // Add orgGroupIds here that should have unrestricted list access
-];
+// export const ORG_GROUP_WHITELIST_ACCESS_GENERATE_REPORT_ASSESMENT: string[] = [
+//   "8922E4AD-8183-B61B-34D1-CF629361D", // ADMINISTRATOR (D440)
+//   "F4233FE8-7788-C0DC-99F5-9D17EB679", // IAG
+// ];
 
-// regardless of their own orgGroupId
-export const ORG_GROUP_WHITELIST_ALL_ACCESS: string[] = [
-  "8922E4AD-8183-B61B-34D1-CF629361D", // ADMINISTRATOR (D440)
-  "F4233FE8-7788-C0DC-99F5-9D17EB679", // IAG
-  "1C15B798-2ABD-B74C-C8DB-F6191913B", // BMT — can view all, edit RPO only
-  // Add orgGroupIds here that should have unrestricted list access
-];
+// export const ORG_GROUP_WHITELIST_ALL_ACCESS: string[] = [
+//   "8922E4AD-8183-B61B-34D1-CF629361D", // ADMINISTRATOR (D440)
+//   "F4233FE8-7788-C0DC-99F5-9D17EB679", // IAG
+//   "1C15B798-2ABD-B74C-C8DB-F6191913B", // BMT — can view all, edit RPO only
+// ];
 
-// Orgs that have FULL edit override on assessment detail (separate from list access)
-export const ORG_GROUP_WHITELIST_FULL_OVERRIDE: string[] = [
-  "8922E4AD-8183-B61B-34D1-CF629361D", // ADMINISTRATOR (D440)
-  "F4233FE8-7788-C0DC-99F5-9D17EB679", // IAG
-  // Add orgGroupIds here that can fully override/audit assessments
-];
+// export const ORG_GROUP_WHITELIST_FULL_OVERRIDE: string[] = [
+//   "8922E4AD-8183-B61B-34D1-CF629361D", // ADMINISTRATOR (D440)
+//   "F4233FE8-7788-C0DC-99F5-9D17EB679", // IAG
+// ];
 
-// Orgs that can edit RTO Suggestion field on assessment
-export const ORG_GROUP_WHITELIST_ASSESMENT_RTO_SUGGESTIONS: string[] = [
-  // Add orgGroupIds here that can edit RTO Suggestion
-  "8922E4AD-8183-B61B-34D1-CF629361D", // ADMINISTRATOR (D440)
-  "F4233FE8-7788-C0DC-99F5-9D17EB679", // IAG
-];
+// export const ORG_GROUP_WHITELIST_ASSESMENT_RTO_SUGGESTIONS: string[] = [
+//   "8922E4AD-8183-B61B-34D1-CF629361D", // ADMINISTRATOR (D440)
+//   "F4233FE8-7788-C0DC-99F5-9D17EB679", // IAG
+// ];
 
-// Orgs that can edit RPO field on assessment
-export const ORG_GROUP_WHITELIST_ASSESMENT_RPO: string[] = [
-  // Add orgGroupIds here that can edit RPO only
-  "8922E4AD-8183-B61B-34D1-CF629361D", // ADMINISTRATOR (D440)
-  "1C15B798-2ABD-B74C-C8DB-F6191913B", // BMT
-];
+// export const ORG_GROUP_WHITELIST_ASSESMENT_RPO: string[] = [
+//   "8922E4AD-8183-B61B-34D1-CF629361D", // ADMINISTRATOR (D440)
+//   "1C15B798-2ABD-B74C-C8DB-F6191913B", // BMT
+// ];
 
 export const DIVISION_ID_CODE_BJB: string = "D440";
 export const SELECTED_OPTION_DIRECTORATE: OptionListProps = {
@@ -131,13 +123,13 @@ export const BASE_PORT_MAIN: string = "5555";
 // export const BASE_PORT_MAIN: string = "8998";
 
 // Base Url Endpoint API
-export const ENDPOINT_API_BASEURL: string = "http://192.168.239.117";
-// export const ENDPOINT_API_BASEURL: string = "https://localhost";
+// export const ENDPOINT_API_BASEURL: string = "http://192.168.239.117";
+export const ENDPOINT_API_BASEURL: string = "https://localhost";
 export const ENDPOINT_PORT_BASIC: string = "2332";
 
 // Base Url Endpoint API
-export const ENDPOINT_API_BASEURL_OBJECT: string = "http://192.168.239.117";
-// export const ENDPOINT_API_BASEURL_OBJECT: string = "https://localhost";
+// export const ENDPOINT_API_BASEURL_OBJECT: string = "http://192.168.239.117";
+export const ENDPOINT_API_BASEURL_OBJECT: string = "https://localhost";
 export const ENDPOINT_PORT_BASIC_OBJECT: string = "2332";
 
 // http://192.168.239.117:5000

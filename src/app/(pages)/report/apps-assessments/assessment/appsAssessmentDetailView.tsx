@@ -8,10 +8,6 @@ import {
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
   CRITERIA_VALUE_OPERATORS,
-  ORG_GROUP_WHITELIST_ALL_ACCESS,
-  ORG_GROUP_WHITELIST_FULL_OVERRIDE,
-  ORG_GROUP_WHITELIST_ASSESMENT_RTO_SUGGESTIONS,
-  ORG_GROUP_WHITELIST_ASSESMENT_RPO,
   DIVISION_ID_IT_BJB,
   ORG_CATEGORY_KEY_GROUP,
 } from "@/app/constants/applicationConstants";
@@ -23,6 +19,7 @@ import useAppsCriticalReport, {
   UpdateAssessmentDetailRequest,
   UpdateAssessmentRequest,
 } from "@/app/services/useAppsCriticalReport";
+import useSysModuleGroup from "@/app/services/useSysModuleGroup";
 import useMstAppsCriteriaCategory, {
   MstAppsCriteriaCategoryResponse,
 } from "@/app/services/useMstAppsCriteriaCategory";
@@ -150,6 +147,7 @@ export default function AppsAssessmentDetailView() {
   } = useAppsCriticalReport();
   const { List: ListCategory } = useMstAppsCriteriaCategory();
   const { List: ListCriteria } = useMstAppsCriteria();
+  const { GetFeatures } = useSysModuleGroup();
 
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState("");
@@ -163,6 +161,13 @@ export default function AppsAssessmentDetailView() {
   const [approving, setApproving] = useState(false);
   const [isSaveConfirmOpen, setIsSaveConfirmOpen] = useState(false);
   const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
+
+  // Dynamic feature access states
+  const [isWhitelisted, setIsWhitelisted] = useState(false);
+  const [canEditRtoSuggestion, setCanEditRtoSuggestion] = useState(false);
+  const [canEditRpo, setCanEditRpo] = useState(false);
+  const [hasAllAccess, setHasAllAccess] = useState(false);
+  const [hasRpoOnly, setHasRpoOnly] = useState(false);
 
   const [categories, setCategories] = useState<
     MstAppsCriteriaCategoryResponse[]
@@ -234,29 +239,55 @@ export default function AppsAssessmentDetailView() {
     ? DataAuth.team.orgGroupId
     : null;
 
-  // Full override access (audit/edit all fields, WA2 override, no submit restriction)
-  const isWhitelisted = userOrgGroupId
-    ? ORG_GROUP_WHITELIST_FULL_OVERRIDE.includes(userOrgGroupId)
-    : false;
+  // Dynamic feature access verification from Sys Module
+  useEffect(() => {
+    if (!tokenData || !DataAuth) return;
+    const orgGroupId =
+      DataAuth.team?.orgGroupId && DataAuth.team.orgGroupId !== "-"
+        ? DataAuth.team.orgGroupId
+        : null;
 
-  // Cannot submit to approval:
-  // - User is in ALL_ACCESS (list-only/executive access) 
-  // - BUT NOT in FULL_OVERRIDE (admin/IAG)
-  // - AND NOT an RPO group user who owns this assessment (they can submit for their own apps)
-  // NOTE: defined after rpoUserOwnsAssessment below
-  const isSubmitBlockedBase = userOrgGroupId
-    ? ORG_GROUP_WHITELIST_ALL_ACCESS.includes(userOrgGroupId) && !isWhitelisted
-    : false;
+    if (!orgGroupId) {
+      setIsWhitelisted(true);
+      setCanEditRtoSuggestion(true);
+      setCanEditRpo(true);
+      setHasAllAccess(true);
+      setHasRpoOnly(false);
+      return;
+    }
 
-  // Per-field RTO/RPO edit access
-  const canEditRtoSuggestion = userOrgGroupId
-    ? ORG_GROUP_WHITELIST_ASSESMENT_RTO_SUGGESTIONS.includes(userOrgGroupId)
-    : false;
+    GetFeatures("sys_apps_assessment", tokenData).then((res) => {
+      if (res?.statusCode === RES_CODE_OK && res.data) {
+        const features = res.data;
+        const isFeatureAllowed = (featCode: string) => {
+          const feat = features.find(
+            (f) => f.featureCode.toUpperCase() === featCode.toUpperCase(),
+          );
+          if (!feat || !feat.whitelists) return false;
+          return feat.whitelists.some(
+            (w) =>
+              (w.principalType === "USER" && w.userSysId === DataAuth.id) ||
+              (w.principalType === "ORG_GROUP" && w.orgGroupId === orgGroupId),
+          );
+        };
 
-  const canEditRpo = userOrgGroupId
-    ? ORG_GROUP_WHITELIST_ASSESMENT_RPO.includes(userOrgGroupId) ||
-      ORG_GROUP_WHITELIST_ASSESMENT_RTO_SUGGESTIONS.includes(userOrgGroupId)
-    : false;
+        const override = isFeatureAllowed("FULL_OVERRIDE");
+        const rtoSugg = isFeatureAllowed("RTO_SUGGESTIONS_EDIT") || override;
+        const rpoEdit = isFeatureAllowed("RPO_EDIT") || rtoSugg || override;
+        const allAcc = isFeatureAllowed("ALL_ACCESS") || override;
+        const isRpoOnly =
+          isFeatureAllowed("RPO_EDIT") &&
+          !isFeatureAllowed("RTO_SUGGESTIONS_EDIT") &&
+          !override;
+
+        setIsWhitelisted(override);
+        setCanEditRtoSuggestion(rtoSugg);
+        setCanEditRpo(rpoEdit);
+        setHasAllAccess(allAcc);
+        setHasRpoOnly(isRpoOnly);
+      }
+    });
+  }, [tokenData, DataAuth?.id, DataAuth?.team?.orgGroupId]);
 
   // RTO/RPO completeness check for submit:
   // RTO IT: operator required + minutes > 0 (committed by app owner)
@@ -370,13 +401,8 @@ export default function AppsAssessmentDetailView() {
   // Extended: WA2 + ALL_ACCESS can fully override; WA2 + RPO group can edit RPO only
   const canOverrideWA2 = isWaitingApproval2 && isWhitelisted;
 
-  // RPO-only user: in RPO whitelist but NOT in RTO_SUGGESTIONS and NOT in ALL_ACCESS
-  // Only compute after auth is loaded — prevents false-positive on initial render
-  const isRpoOnlyUser = (DataAuth && userOrgGroupId)
-    ? ORG_GROUP_WHITELIST_ASSESMENT_RPO.includes(userOrgGroupId) &&
-      !ORG_GROUP_WHITELIST_ASSESMENT_RTO_SUGGESTIONS.includes(userOrgGroupId) &&
-      !isWhitelisted
-    : false;
+  // RPO-only user: has RPO permission, but NOT RTO suggestion and NOT full override
+  const isRpoOnlyUser = hasRpoOnly;
 
   // RPO-only user OWNS this assessment if their orgGroupId matches appManageByGroupId
   // In that case they get full access like a normal group user
@@ -385,12 +411,15 @@ export default function AppsAssessmentDetailView() {
     !!data?.appManageByGroupId &&
     data.appManageByGroupId === userOrgGroupId;
 
+  // Cannot submit to approval if user only has ALL_ACCESS without FULL_OVERRIDE (unless they own the assessment)
+  const isSubmitBlockedBase = hasAllAccess && !isWhitelisted;
+
   // Final submit blocked check — RPO user who owns the assessment CAN submit
   const isSubmitBlocked = isSubmitBlockedBase && !rpoUserOwnsAssessment;
 
-  // RTO IT: anyone except RPO group — UNLESS RPO group user owns this assessment
+  // RTO IT: anyone except RPO-only group — UNLESS RPO group user owns this assessment
   const canEditRtoIt = userOrgGroupId
-    ? !ORG_GROUP_WHITELIST_ASSESMENT_RPO.includes(userOrgGroupId) || rpoUserOwnsAssessment
+    ? !hasRpoOnly || rpoUserOwnsAssessment
     : true;
 
   // WA2 + RPO group can edit RPO only (when they don't own the assessment)
@@ -403,10 +432,8 @@ export default function AppsAssessmentDetailView() {
   const isEditable = (isDraft || isDeclined || canOverrideWA2) &&
     (!isRpoOnlyUser || rpoUserOwnsAssessment);
 
-  // Manage Group can only be changed by users in ORG_GROUP_WHITELIST_FULL_OVERRIDE when form is editable
-  const canEditManageGroup = isEditable && userOrgGroupId
-    ? ORG_GROUP_WHITELIST_FULL_OVERRIDE.includes(userOrgGroupId)
-    : false;
+  // Manage Group can only be changed by users in FULL_OVERRIDE when form is editable
+  const canEditManageGroup = isEditable && isWhitelisted;
 
   // RTO Suggestion filled = prerequisite for RTO IT in DRAFT
   const isRtoSuggestionFilled =
