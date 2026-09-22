@@ -234,6 +234,55 @@ function SysModuleGroupDetailView() {
   const [isSavingWhitelist, setIsSavingWhitelist] = useState(false);
   const [organizationsList, setOrganizationsList] = useState<OrganizationResponse[]>([]);
   const [orgSearchQuery, setOrgSearchQuery] = useState("");
+
+  // Find Division IT (Parent Lock matching Application Management pattern)
+  const itDivision = useMemo(() => {
+    if (!organizationsList.length) return null;
+    return organizationsList.find((org) => {
+      const isDiv =
+        org.orgType?.toUpperCase() === "DIVISION" ||
+        org.orgType?.toUpperCase() === "DIV";
+      if (!isDiv) return false;
+      const code = org.orgCode?.toUpperCase() || "";
+      const name = org.orgName?.toUpperCase() || "";
+      return (
+        code === "IT" ||
+        code === "DIV_IT" ||
+        code === "DIV-IT" ||
+        code === "DIT" ||
+        code === "D440" ||
+        name.includes("TEKNOLOGI INFORMASI") ||
+        name.includes("INFORMATION TECHNOLOGY") ||
+        name === "DIVISI IT" ||
+        name === "IT"
+      );
+    });
+  }, [organizationsList]);
+
+  // Extract Groups under Division IT
+  const itGroupOptions = useMemo(() => {
+    if (!organizationsList.length) return [];
+    return organizationsList.filter((org) => {
+      const isGroup =
+        org.orgType?.toUpperCase() === "GROUP" ||
+        org.orgType?.toUpperCase() === "GRP";
+      if (!isGroup) return false;
+      if (itDivision) {
+        return (
+          org.parentId === itDivision.id ||
+          org.orgParentCode?.toUpperCase() === itDivision.orgCode?.toUpperCase()
+        );
+      }
+      const name = org.orgName?.toUpperCase() || "";
+      const code = org.orgCode?.toUpperCase() || "";
+      return (
+        name.includes("IT") ||
+        name.includes("TEKNOLOGI") ||
+        code.includes("IT")
+      );
+    });
+  }, [organizationsList, itDivision]);
+
   const [wlUserSearchQuery, setWlUserSearchQuery] = useState("");
   const [wlUserSearchResults, setWlUserSearchResults] = useState<UsersResponse[]>([]);
   const [isSearchingWlUsers, setIsSearchingWlUsers] = useState(false);
@@ -3268,22 +3317,22 @@ function SysModuleGroupDetailView() {
                {whitelistForm.principalType === "ORG_GROUP" && (
                  <FormControl isRequired>
                    <FormLabel fontSize="sm" fontWeight="semibold">
-                     Select Organization Group
+                     Select Organization Group (Group IT)
                    </FormLabel>
                    <Input
                      mb={2}
                      size="sm"
-                     placeholder="Filter organizations by code or name..."
+                     placeholder="Filter group IT by code or name..."
                      value={orgSearchQuery}
                      onChange={(e) => setOrgSearchQuery(e.target.value)}
                    />
                    <Select
                      value={whitelistForm.orgGroupId}
                      onChange={(e) => setWhitelistForm({ ...whitelistForm, orgGroupId: e.target.value })}
-                     placeholder="-- Choose Organization --"
+                     placeholder="-- Choose Group IT --"
                      size="md"
                    >
-                     {organizationsList
+                     {itGroupOptions
                        .filter((org) => {
                          if (!orgSearchQuery) return true;
                          const q = orgSearchQuery.toLowerCase();
@@ -3294,10 +3343,13 @@ function SysModuleGroupDetailView() {
                        })
                        .map((org) => (
                          <option key={org.id} value={org.id}>
-                           {org.orgCode} - {org.orgName} ({org.orgType || "ORG"})
+                           {org.orgCode} - {org.orgName} ({org.orgType || "GROUP"})
                          </option>
                        ))}
                    </Select>
+                   <Text fontSize="2xs" color="gray.500" mt={1}>
+                     * Menampilkan unit kerja Group di bawah naungan Divisi Teknologi Informasi (IT).
+                   </Text>
                  </FormControl>
                )}
 

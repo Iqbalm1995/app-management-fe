@@ -140,6 +140,7 @@ export default function MasterDataAplikasiPage() {
   const [statsData, setStatsData] = useState({
     total: 0,
     active: 0,
+    onDev: 0,
     critical: 0,
   });
 
@@ -195,19 +196,21 @@ export default function MasterDataAplikasiPage() {
     }
   };
 
-  // Fetch Stats Summary (Total, Active, Critical)
+  // Fetch Stats Summary (Total, Active, On Dev, Critical)
   const fetchStatsSummary = useCallback(async (token: string) => {
     if (!token) return;
     try {
-      const [totalRes, activeRes, criticalRes] = await Promise.all([
+      const [totalRes, activeRes, onDevRes, criticalRes] = await Promise.all([
         List({ search: "", limit: 1, page: 0, fieldOrder: ["createdAt"], orderDir: "desc", filterWhere: [] } as any, token),
         List({ search: "", limit: 1, page: 0, fieldOrder: ["createdAt"], orderDir: "desc", filterWhere: [{ field: "appsStatus", operator: "=", value: "ACTIVE" }] } as any, token),
+        List({ search: "", limit: 1, page: 0, fieldOrder: ["createdAt"], orderDir: "desc", filterWhere: [{ field: "appsStatus", operator: "=", value: "ON DEVELOPMENT" }] } as any, token),
         List({ search: "", limit: 1, page: 0, fieldOrder: ["createdAt"], orderDir: "desc", filterWhere: [{ field: "appIsCritical", operator: "=", value: "true" }] } as any, token),
       ]);
 
       setStatsData({
         total: totalRes?.countTotal || 0,
         active: activeRes?.countTotal || 0,
+        onDev: onDevRes?.countTotal || 0,
         critical: criticalRes?.countTotal || 0,
       });
     } catch (err) {
@@ -818,6 +821,7 @@ export default function MasterDataAplikasiPage() {
                   _focus={{ borderColor: "secondary.500" }}
                 >
                   <option value="ALL">All Statuses</option>
+                  <option value="ON DEVELOPMENT">ON DEVELOPMENT</option>
                   <option value="ACTIVE">ACTIVE</option>
                   <option value="INACTIVE">INACTIVE</option>
                 </ChakraSelect>
@@ -867,7 +871,14 @@ export default function MasterDataAplikasiPage() {
                   </Badge>
                 )}
                 {selectedStatus && selectedStatus !== "ALL" && (
-                  <Badge colorScheme={selectedStatus === "ACTIVE" ? "green" : "red"} variant="subtle" px={2.5} py={1} rounded="full" fontSize="xs">
+                  <Badge
+                    colorScheme={selectedStatus === "ACTIVE" ? "green" : selectedStatus === "ON DEVELOPMENT" ? "purple" : "red"}
+                    variant="subtle"
+                    px={2.5}
+                    py={1}
+                    rounded="full"
+                    fontSize="xs"
+                  >
                     Status: {selectedStatus}
                     <Icon as={FiX} ml={1.5} cursor="pointer" onClick={() => setSelectedStatus("ALL")} />
                   </Badge>
@@ -1772,7 +1783,7 @@ export default function MasterDataAplikasiPage() {
               </CardHeader>
               <CardBody px={4} pb={4} pt={2}>
                 <VStack spacing={3.5} align="stretch">
-                  {/* Active vs Inactive Ratio */}
+                  {/* Active Operations */}
                   <Box>
                     <Flex justify="space-between" fontSize="2xs" mb={1}>
                       <Text fontWeight="semibold">Active Operations</Text>
@@ -1784,6 +1795,22 @@ export default function MasterDataAplikasiPage() {
                       value={statsData.total > 0 ? (statsData.active / statsData.total) * 100 : 0}
                       size="xs"
                       colorScheme="green"
+                      rounded="full"
+                    />
+                  </Box>
+
+                  {/* On Development */}
+                  <Box>
+                    <Flex justify="space-between" fontSize="2xs" mb={1}>
+                      <Text fontWeight="semibold">On Development</Text>
+                      <Text color="purple.500" fontWeight="bold">
+                        {statsData.total > 0 ? Math.round((statsData.onDev / statsData.total) * 100) : 0}% ({statsData.onDev})
+                      </Text>
+                    </Flex>
+                    <Progress
+                      value={statsData.total > 0 ? (statsData.onDev / statsData.total) * 100 : 0}
+                      size="xs"
+                      colorScheme="purple"
                       rounded="full"
                     />
                   </Box>

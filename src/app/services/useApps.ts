@@ -104,6 +104,7 @@ export interface ApplicationMasterShortResponse {
 export interface ApplicationMasterInsertDataPayload {
   appShortName: string;
   appName: string;
+  appsStatus?: string | null;
   appsDesc?: string | null;
   note?: string | null;
   appOwnerDivisionId?: string | null;
@@ -151,6 +152,7 @@ export interface ApplicationMasterUpdateDataPayload {
   id: string;
   appShortName: string;
   appName: string;
+  appsStatus?: string | null;
   appsDesc?: string | null;
   note?: string | null;
   appOwnerDivisionId?: string | null;

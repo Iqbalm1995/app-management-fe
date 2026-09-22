@@ -76,6 +76,11 @@ export interface CabRequestItem {
   rekomendasiMigrasi?: "YA" | "TIDAK" | "Y" | "N" | boolean | string;
   buktiImplementasi?: BuktiImplementasiItem[];
   implementationStatus?: "SUCCESS" | "FAILED" | "PARTIAL" | null;
+  jenisCab?: CabJenisCab | "";
+  jenisCabEmergencyAlasan?: string;
+  alasanEmergency?: string;
+  unitKerja?: string;
+  applicationName?: string;
 }
 
 // ─── Detail (untuk halaman detail) ───────────────────────────────────────────

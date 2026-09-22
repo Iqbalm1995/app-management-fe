@@ -167,6 +167,7 @@ export default function ApplicationDetail() {
   const [formData, setFormData] = useState({
     appName: "",
     appShortName: "",
+    appsStatus: "ACTIVE",
     appsDesc: "",
     note: "",
     appTargetUsers: "INTERNAL",
@@ -302,6 +303,7 @@ export default function ApplicationDetail() {
       setFormData({
         appName: data.appName || "",
         appShortName: data.appShortName || "",
+        appsStatus: data.appsStatus || "ACTIVE",
         appsDesc: data.appsDesc || "",
         note: data.note || "",
         appTargetUsers: data.appTargetUsers || "INTERNAL",
@@ -604,6 +606,7 @@ export default function ApplicationDetail() {
         id: appId,
         appName: formData.appName,
         appShortName: formData.appShortName,
+        appsStatus: formData.appsStatus || "ACTIVE",
         appsDesc: formData.appsDesc,
         note: formData.note,
         appTargetUsers: formData.appTargetUsers.trim().replace(/,\s*$/, ""),
@@ -930,7 +933,13 @@ export default function ApplicationDetail() {
 
                     {/* Status Badge */}
                     <Badge
-                      colorScheme={DataApplication?.appsStatus === "ACTIVE" ? "green" : "red"}
+                      colorScheme={
+                        DataApplication?.appsStatus === "ACTIVE"
+                          ? "green"
+                          : DataApplication?.appsStatus === "ON DEVELOPMENT"
+                          ? "purple"
+                          : "red"
+                      }
                       variant="solid"
                       px={2.5}
                       py={0.5}
@@ -1618,6 +1627,42 @@ export default function ApplicationDetail() {
                               </Box>
                             ) : (
                               <Text fontSize="sm" fontWeight="semibold">{DataApplication?.appShortName || "-"}</Text>
+                            )}
+                          </FormControl>
+
+                          <FormControl isRequired={IsEditMode}>
+                            <FormLabel fontSize="xs" fontWeight="bold">Operational Status</FormLabel>
+                            {IsEditMode ? (
+                              <ChakraSelect
+                                size="md"
+                                rounded="xl"
+                                value={formData.appsStatus}
+                                onChange={(e) => setFormData({ ...formData, appsStatus: e.target.value })}
+                              >
+                                <option value="ON DEVELOPMENT">ON DEVELOPMENT (Dalam Pengembangan)</option>
+                                <option value="ACTIVE">ACTIVE (Operasional Aktif)</option>
+                                <option value="INACTIVE">INACTIVE (Non-Aktif)</option>
+                              </ChakraSelect>
+                            ) : (
+                              <Box mt={1}>
+                                <Badge
+                                  colorScheme={
+                                    DataApplication?.appsStatus === "ACTIVE"
+                                      ? "green"
+                                      : DataApplication?.appsStatus === "ON DEVELOPMENT"
+                                      ? "purple"
+                                      : "red"
+                                  }
+                                  variant="subtle"
+                                  px={2.5}
+                                  py={1}
+                                  rounded="md"
+                                  fontSize="xs"
+                                  fontWeight="bold"
+                                >
+                                  {DataApplication?.appsStatus || "ACTIVE"}
+                                </Badge>
+                              </Box>
                             )}
                           </FormControl>
 
@@ -2795,7 +2840,17 @@ export default function ApplicationDetail() {
                       </Flex>
                       <Flex justify="space-between">
                         <Text color="gray.500">Data Status:</Text>
-                        <Badge colorScheme={DataApplication?.appsStatus === "ACTIVE" ? "green" : "red"} fontSize="3xs" rounded="md">
+                        <Badge
+                          colorScheme={
+                            DataApplication?.appsStatus === "ACTIVE"
+                              ? "green"
+                              : DataApplication?.appsStatus === "ON DEVELOPMENT"
+                              ? "purple"
+                              : "red"
+                          }
+                          fontSize="3xs"
+                          rounded="md"
+                        >
                           {DataApplication?.appsStatus || "ACTIVE"}
                         </Badge>
                       </Flex>
