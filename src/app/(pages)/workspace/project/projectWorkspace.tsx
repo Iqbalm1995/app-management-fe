@@ -50,6 +50,8 @@ import useTasks, {
   AssignUsersTaskPayload,
   GenerateTaskBoardPayload,
   TaskRelatedPayload,
+  TasksBulkCreatePayload,
+  TaskBulkItemPayload,
 } from "@/app/services/useTasks";
 import {
   PaggingListPayload,
@@ -124,6 +126,11 @@ import {
   DrawerContent,
   DrawerHeader,
   DrawerOverlay,
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  AccordionPanel,
+  AccordionIcon,
 } from "@chakra-ui/react";
 import { setIn } from "formik";
 import {
@@ -138,24 +145,36 @@ import { FaSync, FaEdit, FaArchive, FaCog, FaPills } from "react-icons/fa";
 import {
   FiActivity,
   FiAlertCircle,
+  FiAlertTriangle,
   FiArchive,
   FiArrowLeft,
+  FiArrowRight,
   FiCalendar,
+  FiCheck,
   FiCheckCircle,
   FiCheckSquare,
+  FiChevronDown,
+  FiChevronRight,
   FiCircle,
   FiClock,
+  FiCode,
+  FiCopy,
   FiCornerDownLeft,
+  FiDownload,
+  FiEdit2,
   FiEye,
   FiFilter,
   FiFlag,
+  FiFolder,
   FiHash,
   FiInbox,
   FiLink,
   FiLoader,
   FiList,
+  FiLock,
   FiMessageSquare,
   FiNavigation,
+  FiPackage,
   FiPaperclip,
   FiPlay,
   FiPlus,
@@ -167,8 +186,12 @@ import {
   FiSearch,
   FiSettings,
   FiShare2,
+  FiSquare,
+  FiTrash2,
   FiTrello,
+  FiUpload,
   FiUser,
+  FiUsers,
   FiX,
 } from "react-icons/fi";
 import { HorizontalFadeDivider } from "@/app/components/divider";
@@ -4387,11 +4410,46 @@ function ProjectWorkspaceView({
     ListTasksPaged,
     CreateSimpleTask,
     CreateTask,
+    CreateBulkTasks,
+    CreateTaskItem,
+    UpdateTaskItem,
+    AssignUsersTask,
     MoveTask,
     UpdateTask,
     GenerateKanbanBoard,
   } = useTasks();
   const { List: ListUsers } = useUsers();
+
+  // Bulk JSON Import Modal states & 3-Step Wizard
+  const {
+    isOpen: isJsonImportOpen,
+    onOpen: onJsonImportOpen,
+    onClose: onJsonImportClose,
+  } = useDisclosure();
+  const {
+    isOpen: isConfirmBulkOpen,
+    onOpen: onConfirmBulkOpen,
+    onClose: onConfirmBulkClose,
+  } = useDisclosure();
+  const [wizardStep, setWizardStep] = useState<"input" | "preview" | "summary">("input");
+  const [jsonImportText, setJsonImportText] = useState<string>("");
+  const [jsonImportError, setJsonImportError] = useState<string>("");
+  const [isImportingJson, setIsImportingJson] = useState<boolean>(false);
+  const [jsonImportResult, setJsonImportResult] = useState<{
+    total?: number;
+    success: number;
+    failed: number;
+  } | null>(null);
+  const [stagedTasks, setStagedTasks] = useState<any[]>([]);
+  const [previewFilter, setPreviewFilter] = useState<"all" | "duplicates" | "excluded">("all");
+  const [previewSearch, setPreviewSearch] = useState<string>("");
+  const [editingStagedTaskId, setEditingStagedTaskId] = useState<string | null>(null);
+  const [editingTaskDraft, setEditingTaskDraft] = useState<any>({});
+  const [assignOption, setAssignOption] = useState<"currentUser" | "custom" | "original">("currentUser");
+  const [customAssigneeIds, setCustomAssigneeIds] = useState<string[]>([]);
+  const jsonGutterRef = useRef<HTMLDivElement>(null);
+  const jsonHighlightRef = useRef<HTMLPreElement>(null);
+  const jsonFileInputRef = useRef<HTMLInputElement>(null);
 
   // Users data for assignment
   const [DataUsers, setDataUsers] = useState<UsersResponse[]>([]);
@@ -5157,6 +5215,829 @@ function ProjectWorkspaceView({
       statusToast: "warning",
     });
   };
+
+  interface BulkImportTaskEntry {
+    boardName: string;
+    taskName: string;
+    taskDesc?: string;
+    taskPriority?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+    startDate?: string;
+    endDate?: string;
+    backlogId?: string;
+    backlogName?: string;
+    taskItems?: (
+      | string
+      | {
+          taskItemName?: string;
+          name?: string;
+          title?: string;
+          text?: string;
+          isChecked?: boolean | string;
+          isDone?: boolean | string;
+          checked?: boolean;
+          done?: boolean;
+          completed?: boolean;
+        }
+    )[];
+    subtasks?: (
+      | string
+      | {
+          taskItemName?: string;
+          name?: string;
+          title?: string;
+          text?: string;
+          isChecked?: boolean | string;
+          isDone?: boolean | string;
+          checked?: boolean;
+          done?: boolean;
+          completed?: boolean;
+        }
+    )[];
+    checklist?: (
+      | string
+      | {
+          taskItemName?: string;
+          name?: string;
+          title?: string;
+          text?: string;
+          isChecked?: boolean | string;
+          isDone?: boolean | string;
+          checked?: boolean;
+          done?: boolean;
+          completed?: boolean;
+        }
+    )[];
+    assignedTask?: string[];
+    team?: string[];
+    assignees?: string[];
+  }
+
+  const handleExecuteBulkImport = async () => {
+    setJsonImportError("");
+    setJsonImportResult(null);
+
+    const activeTasks = stagedTasks.filter((t) => !t.isExcluded);
+    if (activeTasks.length === 0) {
+      showToast({
+        description: "Please include at least one task to proceed.",
+        statusToast: "warning",
+      });
+      return;
+    }
+
+    if (!projectId || !tokenData) {
+      setJsonImportError("No project or authentication session available.");
+      showToast({
+        description: "Authentication or project context missing.",
+        statusToast: "error",
+      });
+      return;
+    }
+
+    setIsImportingJson(true);
+
+    const normalizeDateTime = (val?: string) => {
+      if (!val?.trim()) return undefined;
+      const trimmed = val.trim();
+      return trimmed.includes("T") ? trimmed : `${trimmed}T00:00:00`;
+    };
+
+    const effectiveBacklogId = filterBacklog || DataBacklogs[0]?.id || null;
+    const defaultBoardId = DataBoard[0]?.id || null;
+
+    const payload: TasksBulkCreatePayload = {
+      projectId: projectId,
+      defaultBacklogId: effectiveBacklogId,
+      defaultBoardId: defaultBoardId,
+      globalAssignOption: assignOption,
+      globalCustomUserIds: assignOption === "custom" ? customAssigneeIds : undefined,
+      tasks: activeTasks.map((t) => {
+        const targetBoard = DataBoard.find(
+          (b) => b.boardName.toLowerCase() === (t.boardName || "").toLowerCase()
+        );
+        return {
+          backlogId: t.backlogId || null,
+          boardId: targetBoard?.id || null,
+          boardName: t.boardName || null,
+          taskName: t.taskName.trim(),
+          taskDesc: t.taskDesc?.trim() || null,
+          taskPriority: t.taskPriority || "MEDIUM",
+          startDate: normalizeDateTime(t.startDate),
+          endDate: normalizeDateTime(t.endDate),
+          taskPoint: t.taskPoint || 0,
+          taskItems:
+            t.taskItems
+              ?.map((ti: any) =>
+                typeof ti === "string" ? ti.trim() : (ti.taskItemName || ti.name || "").trim()
+              )
+              .filter(Boolean) || [],
+          assigneeUserIds:
+            assignOption === "original"
+              ? Array.isArray(t.assignedTask)
+                ? t.assignedTask
+                : t.assignedTask
+                ? [t.assignedTask]
+                : undefined
+              : undefined,
+        };
+      }),
+    };
+
+    try {
+      const res = await CreateBulkTasks(payload, tokenData);
+      if (res?.statusCode === RES_CODE_OK && res?.data) {
+        const createdCount = res.data.totalTasksCreated || activeTasks.length;
+        const subtasksCount = res.data.totalSubtasksCreated || 0;
+        setJsonImportResult({ success: createdCount, failed: 0 });
+        showToast({
+          description:
+            res.message ||
+            `Successfully imported ${createdCount} task(s) and ${subtasksCount} checklist item(s)!`,
+          statusToast: "success",
+        });
+        onConfirmBulkClose();
+        onJsonImportClose();
+        setJsonImportText("");
+        setWizardStep("input");
+        setStagedTasks([]);
+        setRefreshData((prev) => prev + 1);
+      } else {
+        const errMsg = res?.message || "Failed to bulk create tasks";
+        setJsonImportError(errMsg);
+        showToast({
+          description: errMsg,
+          statusToast: "error",
+        });
+        onConfirmBulkClose();
+      }
+    } catch (err: any) {
+      console.error("Bulk JSON import error:", err);
+      const errMsg = err?.message || "An error occurred while executing bulk task import.";
+      setJsonImportError(errMsg);
+      showToast({
+        description: errMsg,
+        statusToast: "error",
+      });
+      onConfirmBulkClose();
+    } finally {
+      setIsImportingJson(false);
+    }
+  };
+
+  const currentBacklog = useMemo(() => {
+    return (
+      DataBacklogs.find((b) => b.id === filterBacklog) ||
+      DataBacklogs[0] ||
+      null
+    );
+  }, [DataBacklogs, filterBacklog]);
+
+  const jsonImportExample = useMemo(() => {
+    const exampleBoardName = DataBoard[0]?.boardName || "TO DO";
+    const exampleSecondBoardName = DataBoard[1]?.boardName || exampleBoardName;
+
+    const allProjectBacklogs =
+      DataBacklogs.length > 0
+        ? DataBacklogs.map((b) => ({
+            backlogId: b.id,
+            backlogName: b.backlogName,
+          }))
+        : [
+            {
+              backlogId: filterBacklog || "bkl-default",
+              backlogName: currentBacklog?.backlogName || "Sprint Backlog",
+            },
+          ];
+
+    const examplePayload = {
+      header: {
+        projectId: projectId || "",
+        projectName: DataProject?.projectName || "",
+        backlogs: allProjectBacklogs,
+      },
+      tasks: [
+        {
+          boardName: exampleBoardName,
+          backlogId: allProjectBacklogs[0]?.backlogId || filterBacklog || "",
+          taskName: "Implement Hard Token OTP Validation Service",
+          taskDesc:
+            "Integrate challenge-response OTP service with authentication gateway following security standards and PCI-DSS requirements.",
+          taskPriority: "HIGH",
+          startDate: "2026-10-01T09:00:00",
+          endDate: "2026-10-05T18:00:00",
+          taskItems: [
+            {
+              taskItemName: "Define OTP challenge-response DTO schema",
+              isChecked: true,
+            },
+            {
+              taskItemName:
+                "Implement token validation logic in AuthService",
+              isChecked: false,
+            },
+            {
+              taskItemName:
+                "Add rate limiting (max 3 failed attempts in 5 mins)",
+              isChecked: false,
+            },
+            {
+              taskItemName: "Write unit and integration tests",
+              isChecked: false,
+            },
+          ],
+        },
+        {
+          boardName: exampleSecondBoardName,
+          backlogId:
+            allProjectBacklogs[1]?.backlogId ||
+            allProjectBacklogs[0]?.backlogId ||
+            filterBacklog ||
+            "",
+          taskName: "Biometric Authentication Fallback Mechanism",
+          taskDesc:
+            "Provide PIN fallback when biometric authentication fails or is disabled by user settings.",
+          taskPriority: "MEDIUM",
+          startDate: "2026-10-06T09:00:00",
+          endDate: "2026-10-08T18:00:00",
+          taskItems: [
+            {
+              taskItemName: "Handle FaceID / Fingerprint failure callbacks",
+              isChecked: true,
+            },
+            {
+              taskItemName: "Create 6-digit MPIN input keypad UI",
+              isChecked: true,
+            },
+            {
+              taskItemName: "Verify fallback flow end-to-end",
+              isChecked: false,
+            },
+          ],
+        },
+      ],
+    };
+
+    return JSON.stringify(examplePayload, null, 2);
+  }, [
+    DataBoard,
+    DataProject,
+    projectId,
+    currentBacklog,
+    filterBacklog,
+    DataBacklogs,
+  ]);
+
+  const jsonImportTasksOnlyExample = useMemo(() => {
+    const exampleBoardName = DataBoard[0]?.boardName || "TO DO";
+    const exampleSecondBoardName = DataBoard[1]?.boardName || exampleBoardName;
+    const targetBacklogId =
+      currentBacklog?.id || filterBacklog || DataBacklogs[0]?.id || "";
+
+    const exampleTasks = [
+      {
+        boardName: exampleBoardName,
+        backlogId: targetBacklogId,
+        taskName: "Implement Hard Token OTP Validation Service",
+        taskDesc:
+          "Integrate challenge-response OTP service with authentication gateway following security standards and PCI-DSS requirements.",
+        taskPriority: "HIGH",
+        startDate: "2026-10-01T09:00:00",
+        endDate: "2026-10-05T18:00:00",
+        taskItems: [
+          {
+            taskItemName: "Define OTP challenge-response DTO schema",
+            isChecked: true,
+          },
+          {
+            taskItemName: "Implement token validation logic in AuthService",
+            isChecked: false,
+          },
+          {
+            taskItemName:
+              "Add rate limiting (max 3 failed attempts in 5 mins)",
+            isChecked: false,
+          },
+          {
+            taskItemName: "Write unit and integration tests",
+            isChecked: false,
+          },
+        ],
+      },
+      {
+        boardName: exampleSecondBoardName,
+        backlogId: DataBacklogs[1]?.id || targetBacklogId,
+        taskName: "Biometric Authentication Fallback Mechanism",
+        taskDesc:
+          "Provide PIN fallback when biometric authentication fails or is disabled by user settings.",
+        taskPriority: "MEDIUM",
+        startDate: "2026-10-06T09:00:00",
+        endDate: "2026-10-08T18:00:00",
+        taskItems: [
+          {
+            taskItemName: "Handle FaceID / Fingerprint failure callbacks",
+            isChecked: true,
+          },
+          {
+            taskItemName: "Create 6-digit MPIN input keypad UI",
+            isChecked: true,
+          },
+          {
+            taskItemName: "Verify fallback flow end-to-end",
+            isChecked: false,
+          },
+        ],
+      },
+    ];
+
+    return JSON.stringify(exampleTasks, null, 2);
+  }, [DataBoard, currentBacklog, filterBacklog, DataBacklogs]);
+
+  const handleJsonFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      if (content) {
+        setJsonImportText(content);
+        setJsonImportError("");
+        showToast({
+          description: `Loaded file: ${file.name}`,
+          statusToast: "info",
+        });
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
+  const handleCopyTemplate = () => {
+    navigator.clipboard.writeText(jsonImportExample);
+    showToast({
+      description: "JSON template copied to clipboard",
+      statusToast: "success",
+    });
+  };
+
+  const handleDownloadTemplate = () => {
+    const blob = new Blob([jsonImportExample], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const safeProjectNo = (DataProject?.projectNo || "project").replace(/[/\\?%*:|"<>]/g, "-");
+    link.download = `kanban-template-${safeProjectNo}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast({
+      description: "JSON template downloaded",
+      statusToast: "success",
+    });
+  };
+
+  const renderHighlightedJson = (line: string, keyIdx: React.Key) => {
+    const isDark = colorMode === "dark";
+    const tokenRegex =
+      /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+\.?\d*(e[+-]?\d+)?|[{}\[\],])/g;
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    let partIdx = 0;
+
+    while ((match = tokenRegex.exec(line)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(line.slice(lastIndex, match.index));
+      }
+      const token = match[0];
+      let color = isDark ? "#c9d1d9" : "#24292f";
+      if (/^"/.test(token)) {
+        color = /:\s*$/.test(token)
+          ? isDark
+            ? "#79c0ff"
+            : "#0550ae"
+          : isDark
+          ? "#a5d6ff"
+          : "#0a3069";
+      } else if (/^(true|false|null)$/.test(token)) {
+        color = isDark ? "#ff7b72" : "#cf222e";
+      } else if (/^-?\d/.test(token)) {
+        color = isDark ? "#79c0ff" : "#0550ae";
+      } else if (/^[{}\[\],]$/.test(token)) {
+        color = isDark ? "#e3b341" : "#953800";
+      }
+      parts.push(
+        <Text as="span" key={`${keyIdx}-${partIdx++}`} color={color}>
+          {token}
+        </Text>
+      );
+      lastIndex = tokenRegex.lastIndex;
+    }
+    if (lastIndex < line.length) {
+      parts.push(line.slice(lastIndex));
+    }
+    return parts.length > 0 ? parts : line;
+  };
+
+  const computeStringSimilarity = (s1: string, s2: string): number => {
+    const norm1 = s1.toLowerCase().trim().replace(/[^a-z0-9]/g, "");
+    const norm2 = s2.toLowerCase().trim().replace(/[^a-z0-9]/g, "");
+    if (!norm1 || !norm2) return 0;
+    if (norm1 === norm2) return 1;
+    if (norm1.includes(norm2) || norm2.includes(norm1)) {
+      return (Math.min(norm1.length, norm2.length) / Math.max(norm1.length, norm2.length)) * 0.95;
+    }
+
+    const getBigrams = (str: string) => {
+      const map = new Map<string, number>();
+      for (let i = 0; i < str.length - 1; i++) {
+        const bg = str.substring(i, i + 2);
+        map.set(bg, (map.get(bg) || 0) + 1);
+      }
+      return map;
+    };
+
+    const b1 = getBigrams(norm1);
+    const b2 = getBigrams(norm2);
+    let intersection = 0;
+    let total = 0;
+
+    b1.forEach((count, bg) => {
+      total += count;
+      if (b2.has(bg)) {
+        intersection += Math.min(count, b2.get(bg)!);
+      }
+    });
+    b2.forEach((count) => {
+      total += count;
+    });
+
+    return total > 0 ? (2 * intersection) / total : 0;
+  };
+
+  const handleProceedToPreview = () => {
+    setJsonImportError("");
+    setJsonImportResult(null);
+
+    const effectiveBacklogId = filterBacklog || DataBacklogs[0]?.id;
+    if (!projectId) {
+      setJsonImportError("No project session available.");
+      return;
+    }
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(jsonImportText);
+    } catch {
+      setJsonImportError(
+        "Invalid JSON format. Please verify missing quotes, brackets, or trailing commas."
+      );
+      return;
+    }
+
+    let entries: BulkImportTaskEntry[] = [];
+    if (Array.isArray(parsed)) {
+      entries = parsed.filter(
+        (item): item is BulkImportTaskEntry =>
+          !!item &&
+          typeof item === "object" &&
+          (typeof (item as any).taskName === "string" ||
+            typeof (item as any).boardName === "string")
+      );
+    } else if (parsed && typeof parsed === "object") {
+      const obj = parsed as Record<string, any>;
+      const candidateList =
+        obj.tasks || obj.items || (Array.isArray(obj.data) ? obj.data : null);
+
+      if (Array.isArray(candidateList)) {
+        entries = candidateList.filter(
+          (item): item is BulkImportTaskEntry =>
+            !!item &&
+            typeof item === "object" &&
+            (typeof (item as any).taskName === "string" ||
+              typeof (item as any).boardName === "string")
+        );
+      }
+    }
+
+    if (!Array.isArray(entries) || entries.length === 0) {
+      setJsonImportError(
+        'JSON must contain a "tasks" array or an array of task objects with "boardName" and "taskName".'
+      );
+      return;
+    }
+
+    const headerBacklogs: Array<{ backlogId?: string; id?: string; backlogName?: string; name?: string }> =
+      parsed && typeof parsed === "object" && Array.isArray((parsed as any).header?.backlogs)
+        ? (parsed as any).header.backlogs
+        : [];
+
+    const stagedList: any[] = [];
+
+    entries.forEach((entry, idx) => {
+      if (!entry.taskName?.trim() || !entry.boardName?.trim()) return;
+
+      const targetBoard = DataBoard.find(
+        (b) => b.boardName.toLowerCase() === entry.boardName.trim().toLowerCase()
+      );
+
+      let taskBacklogId = entry.backlogId?.trim() || "";
+      let matchedBacklogName = entry.backlogName?.trim() || "";
+
+      if (taskBacklogId) {
+        const inProject = DataBacklogs.find((b) => b.id === taskBacklogId);
+        const inHeader = headerBacklogs.find((b) => (b.backlogId || b.id) === taskBacklogId);
+        matchedBacklogName = inProject?.backlogName || inHeader?.backlogName || inHeader?.name || matchedBacklogName || "Backlog";
+      } else if (matchedBacklogName) {
+        const inProject = DataBacklogs.find((b) => b.backlogName.toLowerCase() === matchedBacklogName.toLowerCase());
+        const inHeader = headerBacklogs.find((b) => (b.backlogName || b.name || "").toLowerCase() === matchedBacklogName.toLowerCase());
+        if (inProject) {
+          taskBacklogId = inProject.id;
+          matchedBacklogName = inProject.backlogName;
+        } else if (inHeader) {
+          taskBacklogId = inHeader.backlogId || inHeader.id || "";
+          matchedBacklogName = inHeader.backlogName || inHeader.name || matchedBacklogName;
+        }
+      }
+
+      if (!taskBacklogId) {
+        taskBacklogId = effectiveBacklogId || "";
+        matchedBacklogName = DataBacklogs.find((b) => b.id === taskBacklogId)?.backlogName || currentBacklog?.backlogName || "General Backlog";
+      }
+
+      // Parse subtasks / checklists
+      const subtasks: { taskItemName: string; isChecked: boolean }[] = [];
+      const rawSubtasks = entry.taskItems || entry.subtasks || entry.checklist;
+      if (Array.isArray(rawSubtasks)) {
+        for (const rawItem of rawSubtasks) {
+          let itemName = "";
+          let isItemChecked = false;
+
+          if (typeof rawItem === "string") {
+            const trimmed = rawItem.trim();
+            const mdCheckedMatch = trimmed.match(/^(?:-\s*)?\[([xX ])\]\s*(.*)$/);
+            if (mdCheckedMatch) {
+              isItemChecked = mdCheckedMatch[1].toLowerCase() === "x";
+              itemName = mdCheckedMatch[2].trim();
+            } else {
+              itemName = trimmed;
+            }
+          } else if (rawItem && typeof rawItem === "object") {
+            itemName = (
+              rawItem.taskItemName ||
+              rawItem.name ||
+              rawItem.title ||
+              rawItem.text ||
+              ""
+            ).trim();
+
+            isItemChecked =
+              rawItem.isChecked === true ||
+              rawItem.isChecked === "true" ||
+              rawItem.isChecked === "Y" ||
+              rawItem.isDone === "Y" ||
+              rawItem.isDone === true ||
+              rawItem.checked === true ||
+              rawItem.done === true ||
+              rawItem.completed === true;
+          }
+
+          if (itemName) {
+            subtasks.push({ taskItemName: itemName, isChecked: isItemChecked });
+          }
+        }
+      }
+
+      // Duplicate detection against existing board tasks and batch items
+      let highestSim = 0;
+      let bestMatchName = "";
+      let matchSource: "board" | "batch" = "board";
+
+      for (const existing of DataTasks) {
+        const sim = computeStringSimilarity(entry.taskName, existing.taskName);
+        if (sim > highestSim) {
+          highestSim = sim;
+          bestMatchName = existing.taskName;
+          matchSource = "board";
+        }
+      }
+
+      for (const prior of stagedList) {
+        const sim = computeStringSimilarity(entry.taskName, prior.taskName);
+        if (sim > highestSim) {
+          highestSim = sim;
+          bestMatchName = prior.taskName;
+          matchSource = "batch";
+        }
+      }
+
+      const duplicateInfo =
+        highestSim >= 0.70
+          ? {
+              isDuplicate: true,
+              similarityScore: Math.round(highestSim * 100),
+              matchedName: bestMatchName,
+              source: matchSource,
+            }
+          : undefined;
+
+      stagedList.push({
+        stagedId: `staged-${Date.now()}-${idx}-${Math.random().toString(36).substring(2, 7)}`,
+        taskName: entry.taskName.trim(),
+        boardName: targetBoard ? targetBoard.boardName : entry.boardName.trim(),
+        boardId: targetBoard?.id,
+        backlogId: taskBacklogId,
+        backlogName: matchedBacklogName,
+        taskDesc: entry.taskDesc?.trim() || "",
+        taskPriority: entry.taskPriority || "MEDIUM",
+        startDate: entry.startDate,
+        endDate: entry.endDate,
+        taskItems: subtasks,
+        assignedTask: entry.assignedTask || entry.team || entry.assignees,
+        isExcluded: false,
+        duplicateInfo,
+      });
+    });
+
+    if (stagedList.length === 0) {
+      setJsonImportError("No valid task entries found in JSON.");
+      return;
+    }
+
+    setStagedTasks(stagedList);
+    setWizardStep("preview");
+  };
+
+  const handleToggleExclude = (stagedId: string) => {
+    setStagedTasks((prev) =>
+      prev.map((t) =>
+        t.stagedId === stagedId ? { ...t, isExcluded: !t.isExcluded } : t
+      )
+    );
+  };
+
+  const handleRenameWithSuffix = (stagedId: string) => {
+    setStagedTasks((prev) =>
+      prev.map((t) => {
+        if (t.stagedId === stagedId) {
+          return {
+            ...t,
+            taskName: `${t.taskName} (Rev ${Date.now().toString().slice(-3)})`,
+            duplicateInfo: undefined,
+          };
+        }
+        return t;
+      })
+    );
+  };
+
+  const handleStartEdit = (task: any) => {
+    setEditingStagedTaskId(task.stagedId);
+    setEditingTaskDraft({ ...task });
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingStagedTaskId) return;
+    setStagedTasks((prev) =>
+      prev.map((t) =>
+        t.stagedId === editingStagedTaskId
+          ? {
+              ...t,
+              taskName: editingTaskDraft.taskName || t.taskName,
+              boardName: editingTaskDraft.boardName || t.boardName,
+              taskPriority: editingTaskDraft.taskPriority || t.taskPriority,
+              taskDesc: editingTaskDraft.taskDesc,
+            }
+          : t
+      )
+    );
+    setEditingStagedTaskId(null);
+    setEditingTaskDraft({});
+  };
+
+  const handleCancelEdit = () => {
+    setEditingStagedTaskId(null);
+    setEditingTaskDraft({});
+  };
+
+  const handleProceedToSummary = () => {
+    const activeTasks = stagedTasks.filter((t) => !t.isExcluded);
+    if (activeTasks.length === 0) {
+      showToast({
+        description: "Please include at least one task to proceed.",
+        statusToast: "warning",
+      });
+      return;
+    }
+
+    if (assignOption === "custom" && customAssigneeIds.length === 0) {
+      showToast({
+        description: "Please select at least one custom project member to assign.",
+        statusToast: "warning",
+      });
+      return;
+    }
+
+    setWizardStep("summary");
+  };
+
+  const availableProjectMembers = useMemo(() => {
+    if (DataProject?.userAssignment && DataProject.userAssignment.length > 0) {
+      return DataProject.userAssignment;
+    }
+    if (DataUsers && DataUsers.length > 0) {
+      return DataUsers;
+    }
+    if (DataAuth) {
+      return [{ id: DataAuth.id, userData: DataAuth }];
+    }
+    return [];
+  }, [DataProject?.userAssignment, DataUsers, DataAuth]);
+
+  const currentLoggedInUserName = DataAuth?.nama || DataAuth?.email || "Current User";
+
+  const getEffectiveAssignees = useCallback(
+    (task: any) => {
+      if (assignOption === "currentUser") {
+        return [currentLoggedInUserName];
+      }
+      if (assignOption === "custom") {
+        return customAssigneeIds.length > 0
+          ? customAssigneeIds
+          : ["(No custom member selected)"];
+      }
+      if (
+        task.assignedTask &&
+        Array.isArray(task.assignedTask) &&
+        task.assignedTask.length > 0
+      ) {
+        return task.assignedTask;
+      }
+      if (typeof task.assignedTask === "string" && task.assignedTask.trim()) {
+        return [task.assignedTask.trim()];
+      }
+      return ["Unassigned"];
+    },
+    [assignOption, customAssigneeIds, currentLoggedInUserName]
+  );
+
+  const groupedStagedTasks = useMemo(() => {
+    const filtered = stagedTasks
+      .filter((task) => {
+        if (previewFilter === "duplicates") return !!task.duplicateInfo?.isDuplicate;
+        if (previewFilter === "excluded") return !!task.isExcluded;
+        return true;
+      })
+      .filter((task) =>
+        previewSearch
+          ? task.taskName.toLowerCase().includes(previewSearch.toLowerCase()) ||
+            task.boardName.toLowerCase().includes(previewSearch.toLowerCase()) ||
+            task.backlogName.toLowerCase().includes(previewSearch.toLowerCase())
+          : true
+      );
+
+    const map = new Map<string, { backlogId: string; backlogName: string; tasks: any[] }>();
+
+    filtered.forEach((task) => {
+      const key = task.backlogId || task.backlogName || "unassigned";
+      if (!map.has(key)) {
+        map.set(key, {
+          backlogId: task.backlogId || "",
+          backlogName: task.backlogName || "General Backlog",
+          tasks: [],
+        });
+      }
+      map.get(key)!.tasks.push(task);
+    });
+
+    return Array.from(map.values());
+  }, [stagedTasks, previewFilter, previewSearch]);
+
+  const allBacklogSummary = useMemo(() => {
+    const map = new Map<string, { backlogId: string; backlogName: string; taskCount: number; subtaskCount: number; duplicateCount: number }>();
+
+    stagedTasks.forEach((task) => {
+      if (task.isExcluded) return;
+      const key = task.backlogId || task.backlogName || "unassigned";
+      if (!map.has(key)) {
+        map.set(key, {
+          backlogId: task.backlogId || "",
+          backlogName: task.backlogName || "General Backlog",
+          taskCount: 0,
+          subtaskCount: 0,
+          duplicateCount: 0,
+        });
+      }
+      const curr = map.get(key)!;
+      curr.taskCount += 1;
+      curr.subtaskCount += task.taskItems?.length || 0;
+      if (task.duplicateInfo?.isDuplicate) {
+        curr.duplicateCount += 1;
+      }
+    });
+
+    return Array.from(map.values());
+  }, [stagedTasks]);
 
   // Get tasks for specific board with filtering - memoized for performance
   const filteredTasksByBoard = useMemo(() => {
@@ -6048,12 +6929,25 @@ function ProjectWorkspaceView({
                   </HStack>
                 )}
                 <Button
+                  leftIcon={<FiCode />}
+                  colorScheme="secondary"
+                  variant="outline"
+                  size="sm"
+                  onClick={onJsonImportOpen}
+                  isDisabled={DataBoard.length === 0}
+                  rounded={radiusStyle}
+                  fontSize="sm"
+                >
+                  Import JSON
+                </Button>
+                <Button
                   leftIcon={<FiPlusCircle />}
                   colorScheme="blue"
                   size="sm"
                   onClick={() => handleAddTask(DataBoard[0]?.boardName || "")}
                   isDisabled={DataBoard.length === 0}
                   rounded={radiusStyle}
+                  fontSize="sm"
                 >
                   Add Task
                 </Button>
@@ -6303,6 +7197,1696 @@ function ProjectWorkspaceView({
                     isLoading={IsLoadingProcess}
                   >
                     {selectedTask ? "Update" : "Create"} Task
+                  </Button>
+                </ModalFooter>
+              </ModalContent>
+            </Modal>
+
+            {/* Bulk JSON Import Modal — bulk-create tasks, checklists, and assign members */}
+            <Modal
+              isOpen={isJsonImportOpen}
+              onClose={() => {
+                onJsonImportClose();
+                setJsonImportError("");
+                setJsonImportResult(null);
+              }}
+              size="6xl"
+              isCentered
+              scrollBehavior="inside"
+            >
+              <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(3px)" />
+              <ModalContent
+                bg={colorMode === "dark" ? "gray.800" : "white"}
+                borderRadius={radiusStyle}
+                border="1px solid"
+                borderColor={colorMode === "dark" ? "whiteAlpha.200" : "gray.200"}
+                boxShadow="2xl"
+                maxW={{ base: "98vw", lg: "92vw", xl: "1450px" }}
+                maxH={{ base: "94vh", lg: "90vh" }}
+                w="full"
+                display="flex"
+                flexDirection="column"
+                my="auto"
+              >
+                <ModalHeader
+                  color={colorMode === "dark" ? "white" : "gray.800"}
+                  borderBottom="1px solid"
+                  borderColor={colorMode === "dark" ? "whiteAlpha.100" : "gray.100"}
+                  py={4}
+                  px={6}
+                >
+                  <VStack spacing={3.5} align="stretch">
+                    <Flex justify="space-between" align="center" pr={8} flexWrap="wrap" gap={3}>
+                      <HStack spacing={3} align="center">
+                        <Icon as={FiCode} color={colorMode === "dark" ? "secondary.400" : "secondary.500"} boxSize={6} />
+                        <VStack align="start" spacing={0}>
+                          <Text fontSize="lg" fontWeight="bold">
+                            Bulk Import Tasks via JSON
+                          </Text>
+                          <Text fontSize="md" color={colorMode === "dark" ? "gray.400" : "gray.500"}>
+                            {DataProject?.projectName || "Project Kanban"} • {DataProject?.projectNo || ""}
+                          </Text>
+                        </VStack>
+                      </HStack>
+                    </Flex>
+
+                    {/* Connected Flow Stepper */}
+                    <Box
+                      p={3}
+                      borderRadius={radiusStyle}
+                      bg={colorMode === "dark" ? "rgba(255, 255, 255, 0.03)" : "gray.50"}
+                      border="1px solid"
+                      borderColor={colorMode === "dark" ? "whiteAlpha.100" : "gray.200"}
+                    >
+                      <Flex align="center" justify="space-between" maxW="720px" mx="auto" position="relative">
+                        {/* Step 1 */}
+                        <Flex
+                          align="center"
+                          cursor="pointer"
+                          onClick={() => setWizardStep("input")}
+                          role="group"
+                        >
+                          <Flex
+                            w="36px"
+                            h="36px"
+                            rounded="full"
+                            align="center"
+                            justify="center"
+                            bg={
+                              wizardStep === "input"
+                                ? "secondary.500"
+                                : stagedTasks.length > 0
+                                ? "green.500"
+                                : colorMode === "dark"
+                                ? "gray.700"
+                                : "gray.300"
+                            }
+                            color="white"
+                            fontWeight="bold"
+                            fontSize="md"
+                            transition="all 0.2s"
+                            boxShadow={wizardStep === "input" ? "0 0 0 4px var(--chakra-colors-secondary-200)" : undefined}
+                          >
+                            {stagedTasks.length > 0 && wizardStep !== "input" ? (
+                              <Icon as={FiCheck} boxSize={5} />
+                            ) : (
+                              "1"
+                            )}
+                          </Flex>
+                          <Box ml={3}>
+                            <Text
+                              fontSize="md"
+                              fontWeight={wizardStep === "input" ? "bold" : "semibold"}
+                              color={
+                                wizardStep === "input"
+                                  ? colorMode === "dark"
+                                    ? "white"
+                                    : "secondary.700"
+                                  : colorMode === "dark"
+                                  ? "gray.300"
+                                  : "gray.600"
+                              }
+                            >
+                              1. Input & Upload
+                            </Text>
+                            <Text fontSize="md" color={colorMode === "dark" ? "gray.400" : "gray.500"}>
+                              JSON Payload
+                            </Text>
+                          </Box>
+                        </Flex>
+
+                        {/* Connector Line 1-2 */}
+                        <Box
+                          flex={1}
+                          h="2px"
+                          mx={4}
+                          bg={
+                            wizardStep === "preview" || wizardStep === "summary"
+                              ? "secondary.500"
+                              : colorMode === "dark"
+                              ? "whiteAlpha.200"
+                              : "gray.200"
+                          }
+                          transition="all 0.3s"
+                        />
+
+                        {/* Step 2 */}
+                        <Flex
+                          align="center"
+                          cursor={stagedTasks.length > 0 ? "pointer" : "not-allowed"}
+                          onClick={() => {
+                            if (stagedTasks.length > 0) setWizardStep("preview");
+                          }}
+                          role="group"
+                          opacity={stagedTasks.length > 0 ? 1 : 0.6}
+                        >
+                          <Flex
+                            w="36px"
+                            h="36px"
+                            rounded="full"
+                            align="center"
+                            justify="center"
+                            bg={
+                              wizardStep === "preview"
+                                ? "secondary.500"
+                                : wizardStep === "summary"
+                                ? "green.500"
+                                : colorMode === "dark"
+                                ? "gray.700"
+                                : "gray.300"
+                            }
+                            color="white"
+                            fontWeight="bold"
+                            fontSize="md"
+                            transition="all 0.2s"
+                            boxShadow={wizardStep === "preview" ? "0 0 0 4px var(--chakra-colors-secondary-200)" : undefined}
+                          >
+                            {wizardStep === "summary" ? (
+                              <Icon as={FiCheck} boxSize={5} />
+                            ) : (
+                              "2"
+                            )}
+                          </Flex>
+                          <Box ml={3}>
+                            <Text
+                              fontSize="md"
+                              fontWeight={wizardStep === "preview" ? "bold" : "semibold"}
+                              color={
+                                wizardStep === "preview"
+                                  ? colorMode === "dark"
+                                    ? "white"
+                                    : "secondary.700"
+                                  : colorMode === "dark"
+                                  ? "gray.300"
+                                  : "gray.600"
+                              }
+                            >
+                              2. Preview & Assign
+                            </Text>
+                            <Text fontSize="md" color={colorMode === "dark" ? "gray.400" : "gray.500"}>
+                              Review & Config
+                            </Text>
+                          </Box>
+                        </Flex>
+
+                        {/* Connector Line 2-3 */}
+                        <Box
+                          flex={1}
+                          h="2px"
+                          mx={4}
+                          bg={
+                            wizardStep === "summary"
+                              ? "secondary.500"
+                              : colorMode === "dark"
+                              ? "whiteAlpha.200"
+                              : "gray.200"
+                          }
+                          transition="all 0.3s"
+                        />
+
+                        {/* Step 3 */}
+                        <Flex
+                          align="center"
+                          cursor={stagedTasks.length > 0 && wizardStep === "summary" ? "pointer" : "not-allowed"}
+                          role="group"
+                          opacity={wizardStep === "summary" ? 1 : 0.6}
+                        >
+                          <Flex
+                            w="36px"
+                            h="36px"
+                            rounded="full"
+                            align="center"
+                            justify="center"
+                            bg={
+                              wizardStep === "summary"
+                                ? "secondary.500"
+                                : colorMode === "dark"
+                                ? "gray.700"
+                                : "gray.300"
+                            }
+                            color="white"
+                            fontWeight="bold"
+                            fontSize="md"
+                            transition="all 0.2s"
+                            boxShadow={wizardStep === "summary" ? "0 0 0 4px var(--chakra-colors-secondary-200)" : undefined}
+                          >
+                            3
+                          </Flex>
+                          <Box ml={3}>
+                            <Text
+                              fontSize="md"
+                              fontWeight={wizardStep === "summary" ? "bold" : "semibold"}
+                              color={
+                                wizardStep === "summary"
+                                  ? colorMode === "dark"
+                                    ? "white"
+                                    : "secondary.700"
+                                  : colorMode === "dark"
+                                  ? "gray.300"
+                                  : "gray.600"
+                              }
+                            >
+                              3. Manifest Summary
+                            </Text>
+                            <Text fontSize="md" color={colorMode === "dark" ? "gray.400" : "gray.500"}>
+                              Final Validation
+                            </Text>
+                          </Box>
+                        </Flex>
+                      </Flex>
+                    </Box>
+                  </VStack>
+                </ModalHeader>
+                <ModalCloseButton />
+                <ModalBody py={4} px={6} overflowY="auto" flex={1}>
+                  <VStack spacing={4} align="stretch">
+                    {/* STEP 1: JSON INPUT & FILE UPLOAD */}
+                    {wizardStep === "input" && (
+                      <>
+                        <Text fontSize="md" color={colorMode === "dark" ? "gray.300" : "gray.700"}>
+                          Paste a JSON payload below containing a <strong>tasks</strong> array or an array of tasks. Each task needs a <strong>boardName</strong> matching
+                          an existing board on this backlog and a <strong>taskName</strong>. Optional{" "}
+                          <strong>taskItems</strong> creates checklist items (accepts strings or objects with <code>&quot;isChecked&quot;: true/false</code>), and{" "}
+                          <strong>assignedTask</strong> / <strong>team</strong> assigns members by name or email.
+                        </Text>
+
+                        {/* Read-Only Target Context Card */}
+                        <Box
+                          p={4}
+                          borderRadius={radiusStyle}
+                          bg={colorMode === "dark" ? "rgba(15, 23, 42, 0.6)" : "secondary.50"}
+                          border="1px solid"
+                          borderColor={colorMode === "dark" ? "secondary.900" : "secondary.200"}
+                        >
+                          <HStack justify="space-between" mb={3} align="center">
+                            <HStack spacing={2} align="center">
+                              <Icon as={FiLock} color="secondary.400" boxSize={4} />
+                              <Text
+                                fontSize="md"
+                                fontWeight={700}
+                                textTransform="uppercase"
+                                letterSpacing="0.05em"
+                                color={colorMode === "dark" ? "secondary.300" : "secondary.700"}
+                              >
+                                Project Context
+                              </Text>
+                            </HStack>
+                          </HStack>
+
+                          <Grid
+                            templateColumns={{
+                              base: "1fr",
+                              md: "repeat(2, 1fr)",
+                              lg: "repeat(3, 1fr)",
+                            }}
+                            gap={3}
+                          >
+                            <Box
+                              p={3}
+                              borderRadius={radiusStyle}
+                              bg={colorMode === "dark" ? "rgba(255, 255, 255, 0.04)" : "white"}
+                              border="1px solid"
+                              borderColor={colorMode === "dark" ? "whiteAlpha.100" : "secondary.100"}
+                            >
+                              <Text
+                                fontSize="md"
+                                fontWeight={600}
+                                color={colorMode === "dark" ? "gray.400" : "gray.500"}
+                                mb={1}
+                              >
+                                Project Number
+                              </Text>
+                              <Text
+                                fontSize="md"
+                                fontFamily="mono"
+                                fontWeight={700}
+                                color={colorMode === "dark" ? "white" : "gray.800"}
+                                isTruncated
+                                title={DataProject?.projectNo || "-"}
+                              >
+                                {DataProject?.projectNo || "-"}
+                              </Text>
+                            </Box>
+
+                            <Box
+                              p={3}
+                              borderRadius={radiusStyle}
+                              bg={colorMode === "dark" ? "rgba(255, 255, 255, 0.04)" : "white"}
+                              border="1px solid"
+                              borderColor={colorMode === "dark" ? "whiteAlpha.100" : "secondary.100"}
+                            >
+                              <Text
+                                fontSize="md"
+                                fontWeight={600}
+                                color={colorMode === "dark" ? "gray.400" : "gray.500"}
+                                mb={1}
+                              >
+                                Project Name
+                              </Text>
+                              <Text
+                                fontSize="md"
+                                fontWeight={700}
+                                color={colorMode === "dark" ? "white" : "gray.800"}
+                                isTruncated
+                                title={DataProject?.projectName || "-"}
+                              >
+                                {DataProject?.projectName || "-"}
+                              </Text>
+                            </Box>
+
+                            <Box
+                              p={3}
+                              borderRadius={radiusStyle}
+                              bg={colorMode === "dark" ? "rgba(255, 255, 255, 0.04)" : "white"}
+                              border="1px solid"
+                              borderColor={colorMode === "dark" ? "whiteAlpha.100" : "secondary.100"}
+                            >
+                              <Text
+                                fontSize="md"
+                                fontWeight={600}
+                                color={colorMode === "dark" ? "gray.400" : "gray.500"}
+                                mb={1}
+                              >
+                                Active Backlog
+                              </Text>
+                              <Text
+                                fontSize="md"
+                                fontWeight={700}
+                                color={colorMode === "dark" ? "white" : "gray.800"}
+                                isTruncated
+                                title={currentBacklog?.backlogName || "-"}
+                              >
+                                {currentBacklog?.backlogName || "-"}
+                              </Text>
+                            </Box>
+                          </Grid>
+                        </Box>
+
+                        <Grid
+                          templateColumns={{ base: "1fr", lg: "repeat(2, minmax(0, 1fr))" }}
+                          gap={4}
+                          alignItems="stretch"
+                          w="full"
+                        >
+                          {/* Left: JSON Input */}
+                          <GridItem display="flex" flexDirection="column" minW={0} w="full">
+                            <HStack justify="space-between" mb={2} align="center" minH="36px" flexWrap="wrap" gap={2}>
+                              <Text
+                                fontSize="md"
+                                fontWeight="bold"
+                                color={colorMode === "dark" ? "white" : "gray.900"}
+                              >
+                                JSON Input *
+                              </Text>
+                              <HStack spacing={2}>
+                                <input
+                                  type="file"
+                                  ref={jsonFileInputRef}
+                                  accept=".json,application/json"
+                                  style={{ display: "none" }}
+                                  onChange={handleJsonFileUpload}
+                                />
+                                <Button
+                                  size="md"
+                                  variant="outline"
+                                  colorScheme="secondary"
+                                  leftIcon={<FiUpload />}
+                                  rounded={radiusStyle}
+                                  fontSize="md"
+                                  onClick={() => jsonFileInputRef.current?.click()}
+                                  title="Upload .json file"
+                                >
+                                  Upload JSON
+                                </Button>
+                                {jsonImportText && (
+                                  <Button
+                                    size="md"
+                                    variant="ghost"
+                                    colorScheme="gray"
+                                    fontSize="md"
+                                    rounded={radiusStyle}
+                                    onClick={() => setJsonImportText("")}
+                                  >
+                                    Clear
+                                  </Button>
+                                )}
+                              </HStack>
+                            </HStack>
+
+                            <Box
+                              flex={1}
+                              borderRadius={radiusStyle}
+                              border="1px solid"
+                              borderColor={colorMode === "dark" ? "whiteAlpha.100" : "gray.200"}
+                              overflow="hidden"
+                              bg={colorMode === "dark" ? "#0d1117" : "#f6f8fa"}
+                              _focusWithin={{
+                                borderColor: "secondary.400",
+                                boxShadow: "0 0 0 1px var(--chakra-colors-secondary-400)",
+                              }}
+                              display="flex"
+                              flexDirection="column"
+                            >
+                              <HStack
+                                px={4}
+                                py={2.5}
+                                justify="space-between"
+                                bg={colorMode === "dark" ? "#161b22" : "#eaeef2"}
+                                borderBottom="1px solid"
+                                borderColor={colorMode === "dark" ? "whiteAlpha.100" : "gray.200"}
+                              >
+                                <HStack spacing={2} align="center">
+                                  <Icon as={FiCode} color={colorMode === "dark" ? "secondary.400" : "secondary.500"} boxSize={4} />
+                                  <Text
+                                    fontSize="md"
+                                    fontFamily="mono"
+                                    fontWeight="medium"
+                                    color={colorMode === "dark" ? "gray.200" : "gray.700"}
+                                  >
+                                    tasks-import.json
+                                  </Text>
+                                </HStack>
+                                <Text fontSize="md" color={colorMode === "dark" ? "gray.400" : "gray.500"}>
+                                  Type, paste, or upload JSON
+                                </Text>
+                              </HStack>
+
+                              <HStack spacing={0} align="stretch" h={{ base: "320px", lg: "360px", xl: "400px" }} flex={1}>
+                                <VStack
+                                  ref={jsonGutterRef}
+                                  spacing={0}
+                                  align="end"
+                                  py={3}
+                                  px={3}
+                                  bg={
+                                    colorMode === "dark"
+                                      ? "rgba(255, 255, 255, 0.02)"
+                                      : "rgba(0, 0, 0, 0.02)"
+                                  }
+                                  borderRight="1px solid"
+                                  borderColor={colorMode === "dark" ? "whiteAlpha.50" : "gray.200"}
+                                  flexShrink={0}
+                                  overflow="hidden"
+                                >
+                                  {Array.from({
+                                    length: Math.max(
+                                      jsonImportText.split("\n").length,
+                                      20
+                                    ),
+                                  }).map((_, i) => (
+                                    <Text
+                                      key={i}
+                                      fontFamily="mono"
+                                      fontSize="md"
+                                      lineHeight="1.7"
+                                      color={colorMode === "dark" ? "whiteAlpha.400" : "gray.400"}
+                                      userSelect="none"
+                                    >
+                                      {i + 1}
+                                    </Text>
+                                  ))}
+                                </VStack>
+
+                                <Box position="relative" flex={1} h="full" overflow="hidden">
+                                  <Box
+                                    ref={jsonHighlightRef}
+                                    as="pre"
+                                    position="absolute"
+                                    inset={0}
+                                    fontFamily="mono"
+                                    fontSize="md"
+                                    lineHeight="1.7"
+                                    py={3}
+                                    px={4}
+                                    m={0}
+                                    overflow="hidden"
+                                    whiteSpace="pre-wrap"
+                                    wordBreak="break-word"
+                                    pointerEvents="none"
+                                  >
+                                    {jsonImportText
+                                      ? jsonImportText.split("\n").map((line, i) => (
+                                          <Box as="div" key={i}>
+                                            {renderHighlightedJson(line, i)}
+                                            {"\n"}
+                                          </Box>
+                                        ))
+                                      : null}
+                                  </Box>
+
+                                  <Textarea
+                                    value={jsonImportText}
+                                    onChange={(e) => setJsonImportText(e.target.value)}
+                                    placeholder="// Paste your JSON task array here, click 'Upload JSON', or use template on right"
+                                    position="relative"
+                                    h="full"
+                                    fontFamily="mono"
+                                    fontSize="md"
+                                    lineHeight="1.7"
+                                    border="none"
+                                    borderRadius={0}
+                                    bg="transparent"
+                                    color="transparent"
+                                    sx={{
+                                      caretColor: colorMode === "dark" ? "#c9d1d9" : "#24292f",
+                                    }}
+                                    _placeholder={{
+                                      color: colorMode === "dark" ? "whiteAlpha.300" : "gray.400",
+                                    }}
+                                    _focus={{ boxShadow: "none" }}
+                                    resize="none"
+                                    spellCheck={false}
+                                    py={3}
+                                    px={4}
+                                    whiteSpace="pre-wrap"
+                                    wordBreak="break-word"
+                                    overflowY="auto"
+                                    onScroll={(e) => {
+                                      const target = e.currentTarget;
+                                      if (jsonHighlightRef.current) {
+                                        jsonHighlightRef.current.scrollTop = target.scrollTop;
+                                        jsonHighlightRef.current.scrollLeft = target.scrollLeft;
+                                      }
+                                      if (jsonGutterRef.current) {
+                                        jsonGutterRef.current.scrollTop = target.scrollTop;
+                                      }
+                                    }}
+                                  />
+                                </Box>
+                              </HStack>
+                            </Box>
+                          </GridItem>
+
+                          {/* Right: Example / Template Code Panel */}
+                          <GridItem display="flex" flexDirection="column" minW={0} w="full">
+                            <HStack justify="space-between" mb={2} align="center" minH="36px" flexWrap="wrap" gap={2}>
+                              <Text
+                                fontSize="md"
+                                fontWeight="bold"
+                                color={colorMode === "dark" ? "white" : "gray.900"}
+                              >
+                                Template & Reference
+                              </Text>
+                              <HStack spacing={2}>
+                                <Button
+                                  size="md"
+                                  variant="outline"
+                                  colorScheme="secondary"
+                                  leftIcon={<FiCopy />}
+                                  rounded={radiusStyle}
+                                  fontSize="md"
+                                  onClick={handleCopyTemplate}
+                                  title="Copy full JSON template to clipboard"
+                                >
+                                  Copy JSON
+                                </Button>
+                                <Button
+                                  size="md"
+                                  variant="outline"
+                                  colorScheme="secondary"
+                                  leftIcon={<FiDownload />}
+                                  rounded={radiusStyle}
+                                  fontSize="md"
+                                  onClick={handleDownloadTemplate}
+                                  title="Download JSON template file"
+                                >
+                                  Download
+                                </Button>
+                                <Button
+                                  size="md"
+                                  variant="solid"
+                                  colorScheme="secondary"
+                                  leftIcon={<FiCornerDownLeft />}
+                                  rounded={radiusStyle}
+                                  fontSize="md"
+                                  onClick={() => setJsonImportText(jsonImportTasksOnlyExample)}
+                                >
+                                  Use template
+                                </Button>
+                              </HStack>
+                            </HStack>
+
+                            <Box
+                              flex={1}
+                              borderRadius={radiusStyle}
+                              border="1px solid"
+                              borderColor={colorMode === "dark" ? "whiteAlpha.100" : "gray.200"}
+                              overflow="hidden"
+                              bg={colorMode === "dark" ? "#0d1117" : "#f6f8fa"}
+                              display="flex"
+                              flexDirection="column"
+                            >
+                              <HStack
+                                px={4}
+                                py={2.5}
+                                justify="space-between"
+                                bg={colorMode === "dark" ? "#161b22" : "#eaeef2"}
+                                borderBottom="1px solid"
+                                borderColor={colorMode === "dark" ? "whiteAlpha.100" : "gray.200"}
+                              >
+                                <HStack spacing={2} align="center">
+                                  <Icon as={FiLock} color={colorMode === "dark" ? "secondary.400" : "secondary.500"} boxSize={4} />
+                                  <Text
+                                    fontSize="md"
+                                    fontFamily="mono"
+                                    fontWeight="medium"
+                                    color={colorMode === "dark" ? "gray.200" : "gray.700"}
+                                  >
+                                    example-payload.json
+                                  </Text>
+                                </HStack>
+                                <Text fontSize="md" color={colorMode === "dark" ? "gray.400" : "gray.500"}>
+                                  Read-only schema
+                                </Text>
+                              </HStack>
+
+                              <HStack spacing={0} align="stretch" h={{ base: "320px", lg: "360px", xl: "400px" }} flex={1}>
+                                <VStack
+                                  spacing={0}
+                                  align="end"
+                                  py={3}
+                                  px={3}
+                                  bg={
+                                    colorMode === "dark"
+                                      ? "rgba(255, 255, 255, 0.02)"
+                                      : "rgba(0, 0, 0, 0.02)"
+                                  }
+                                  borderRight="1px solid"
+                                  borderColor={colorMode === "dark" ? "whiteAlpha.50" : "gray.200"}
+                                  flexShrink={0}
+                                  overflow="hidden"
+                                >
+                                  {jsonImportExample.split("\n").map((_, i) => (
+                                    <Text
+                                      key={i}
+                                      fontFamily="mono"
+                                      fontSize="md"
+                                      lineHeight="1.7"
+                                      color={colorMode === "dark" ? "whiteAlpha.400" : "gray.400"}
+                                      userSelect="none"
+                                    >
+                                      {i + 1}
+                                    </Text>
+                                  ))}
+                                </VStack>
+                                <Box
+                                  as="pre"
+                                  fontFamily="mono"
+                                  fontSize="md"
+                                  lineHeight="1.7"
+                                  py={3}
+                                  px={4}
+                                  m={0}
+                                  overflow="auto"
+                                  whiteSpace="pre"
+                                  flex={1}
+                                >
+                                  {jsonImportExample.split("\n").map((line, i) => (
+                                    <Box as="div" key={i}>
+                                      {renderHighlightedJson(line, i)}
+                                    </Box>
+                                  ))}
+                                </Box>
+                              </HStack>
+                            </Box>
+                          </GridItem>
+                        </Grid>
+                      </>
+                    )}
+
+                    {/* STEP 2: GIT-COMMIT-STYLE PREVIEW & DEDUPLICATION (MAPPED BY BACKLOG PARENT) */}
+                    {wizardStep === "preview" && (
+                      <VStack spacing={4} align="stretch">
+                        {/* Task Assignment Configuration Card (Required) */}
+                        <Box
+                          p={4}
+                          borderRadius={radiusStyle}
+                          bg={colorMode === "dark" ? "rgba(15, 23, 42, 0.6)" : "secondary.50"}
+                          border="1px solid"
+                          borderColor={colorMode === "dark" ? "secondary.900" : "secondary.200"}
+                        >
+                          <VStack spacing={3} align="stretch">
+                            <Flex justify="space-between" align="center" flexWrap="wrap" gap={2}>
+                              <HStack spacing={2} align="center">
+                                <Icon as={FiUser} color="secondary.400" boxSize={5} />
+                                <Text fontSize="md" fontWeight="bold" color={colorMode === "dark" ? "white" : "gray.900"}>
+                                  Task Assignment Strategy *
+                                </Text>
+                                <Badge colorScheme="secondary" fontSize="md" px={2} py={0.5} borderRadius="md">
+                                  Required Configuration
+                                </Badge>
+                              </HStack>
+                            </Flex>
+
+                            <Grid templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }} gap={3}>
+                              {/* Option 1: Current User (Default) */}
+                              <Box
+                                p={3.5}
+                                borderRadius={radiusStyle}
+                                cursor="pointer"
+                                border="2px solid"
+                                borderColor={assignOption === "currentUser" ? "secondary.500" : colorMode === "dark" ? "whiteAlpha.100" : "gray.200"}
+                                bg={assignOption === "currentUser" ? (colorMode === "dark" ? "rgba(0, 101, 215, 0.15)" : "blue.50") : (colorMode === "dark" ? "gray.800" : "white")}
+                                onClick={() => setAssignOption("currentUser")}
+                                transition="all 0.2s ease"
+                              >
+                                <VStack align="start" spacing={1.5}>
+                                  <HStack justify="space-between" w="full">
+                                    <HStack spacing={2}>
+                                      <Icon as={FiUser} color={assignOption === "currentUser" ? "secondary.400" : "gray.400"} boxSize={4} />
+                                      <Text fontSize="md" fontWeight="bold" color={assignOption === "currentUser" ? "secondary.400" : undefined}>
+                                        Assign to Me (Default)
+                                      </Text>
+                                    </HStack>
+                                    {assignOption === "currentUser" && <Icon as={FiCheckCircle} color="secondary.400" boxSize={4} />}
+                                  </HStack>
+                                  <Text fontSize="md" color={colorMode === "dark" ? "gray.300" : "gray.600"}>
+                                    Assign all tasks to <strong>{currentLoggedInUserName}</strong>
+                                  </Text>
+                                </VStack>
+                              </Box>
+
+                              {/* Option 2: Custom Project Assignee(s) */}
+                              <Box
+                                p={3.5}
+                                borderRadius={radiusStyle}
+                                cursor="pointer"
+                                border="2px solid"
+                                borderColor={assignOption === "custom" ? "secondary.500" : colorMode === "dark" ? "whiteAlpha.100" : "gray.200"}
+                                bg={assignOption === "custom" ? (colorMode === "dark" ? "rgba(0, 101, 215, 0.15)" : "blue.50") : (colorMode === "dark" ? "gray.800" : "white")}
+                                onClick={() => setAssignOption("custom")}
+                                transition="all 0.2s ease"
+                              >
+                                <VStack align="start" spacing={1.5}>
+                                  <HStack justify="space-between" w="full">
+                                    <HStack spacing={2}>
+                                      <Icon as={FiUsers} color={assignOption === "custom" ? "secondary.400" : "gray.400"} boxSize={4} />
+                                      <Text fontSize="md" fontWeight="bold" color={assignOption === "custom" ? "secondary.400" : undefined}>
+                                        Custom Assignee(s)
+                                      </Text>
+                                    </HStack>
+                                    {assignOption === "custom" && <Icon as={FiCheckCircle} color="secondary.400" boxSize={4} />}
+                                  </HStack>
+                                  <Text fontSize="md" color={colorMode === "dark" ? "gray.300" : "gray.600"}>
+                                    Select specific member(s) from this project
+                                  </Text>
+                                </VStack>
+                              </Box>
+
+                              {/* Option 3: Original JSON / Unassigned */}
+                              <Box
+                                p={3.5}
+                                borderRadius={radiusStyle}
+                                cursor="pointer"
+                                border="2px solid"
+                                borderColor={assignOption === "original" ? "secondary.500" : colorMode === "dark" ? "whiteAlpha.100" : "gray.200"}
+                                bg={assignOption === "original" ? (colorMode === "dark" ? "rgba(0, 101, 215, 0.15)" : "blue.50") : (colorMode === "dark" ? "gray.800" : "white")}
+                                onClick={() => setAssignOption("original")}
+                                transition="all 0.2s ease"
+                              >
+                                <VStack align="start" spacing={1.5}>
+                                  <HStack justify="space-between" w="full">
+                                    <HStack spacing={2}>
+                                      <Icon as={FiPackage} color={assignOption === "original" ? "secondary.400" : "gray.400"} boxSize={4} />
+                                      <Text fontSize="md" fontWeight="bold" color={assignOption === "original" ? "secondary.400" : undefined}>
+                                        Original JSON / None
+                                      </Text>
+                                    </HStack>
+                                    {assignOption === "original" && <Icon as={FiCheckCircle} color="secondary.400" boxSize={4} />}
+                                  </HStack>
+                                  <Text fontSize="md" color={colorMode === "dark" ? "gray.300" : "gray.600"}>
+                                    Keep assignees defined in JSON payload
+                                  </Text>
+                                </VStack>
+                              </Box>
+                            </Grid>
+
+                            {/* Custom Assignee Selector when Option 2 is Active */}
+                            {assignOption === "custom" && (
+                              <Box
+                                p={3.5}
+                                borderRadius={radiusStyle}
+                                bg={colorMode === "dark" ? "gray.800" : "white"}
+                                border="1px solid"
+                                borderColor={colorMode === "dark" ? "whiteAlpha.200" : "gray.300"}
+                              >
+                                <VStack spacing={2.5} align="stretch">
+                                  <Text fontSize="md" fontWeight="semibold" color={colorMode === "dark" ? "gray.200" : "gray.700"}>
+                                    Select Project Member(s) to Assign:
+                                  </Text>
+                                  <Wrap spacing={2}>
+                                    {availableProjectMembers.map((member: any) => {
+                                      const memberName = member.userData?.nama || member.nama || member.name || member.email || "Member";
+                                      const isSelected = customAssigneeIds.includes(memberName);
+                                      return (
+                                        <Button
+                                          key={member.id || member.userData?.id || memberName}
+                                          size="md"
+                                          variant={isSelected ? "solid" : "outline"}
+                                          colorScheme={isSelected ? "secondary" : "gray"}
+                                          leftIcon={isSelected ? <FiCheck /> : <FiUser />}
+                                          onClick={() => {
+                                            setCustomAssigneeIds((prev) =>
+                                              prev.includes(memberName)
+                                                ? prev.filter((n) => n !== memberName)
+                                                : [...prev, memberName]
+                                            );
+                                          }}
+                                          fontSize="md"
+                                        >
+                                          {memberName}
+                                        </Button>
+                                      );
+                                    })}
+                                  </Wrap>
+                                  {customAssigneeIds.length === 0 && (
+                                    <Text fontSize="md" color="orange.400">
+                                      * Please select at least one team member above to apply custom assignment.
+                                    </Text>
+                                  )}
+                                </VStack>
+                              </Box>
+                            )}
+                          </VStack>
+                        </Box>
+
+                        {/* Staging Summary Bar */}
+                        <Flex
+                          p={3.5}
+                          borderRadius={radiusStyle}
+                          bg={colorMode === "dark" ? "rgba(15, 23, 42, 0.6)" : "secondary.50"}
+                          border="1px solid"
+                          borderColor={colorMode === "dark" ? "secondary.900" : "secondary.200"}
+                          justify="space-between"
+                          align="center"
+                          flexWrap="wrap"
+                          gap={3}
+                        >
+                          <HStack spacing={3} align="center">
+                            <Badge colorScheme="secondary" fontSize="md" px={3} py={1} borderRadius="md">
+                              <HStack spacing={1.5} align="center">
+                                <Icon as={FiPackage} boxSize={4} />
+                                <Text>{stagedTasks.filter((t) => !t.isExcluded).length} Staged Tasks</Text>
+                              </HStack>
+                            </Badge>
+                            <Badge colorScheme="purple" fontSize="md" px={3} py={1} borderRadius="md">
+                              <HStack spacing={1.5} align="center">
+                                <Icon as={FiCheckSquare} boxSize={4} />
+                                <Text>{stagedTasks.filter((t) => !t.isExcluded).reduce((acc, t) => acc + (t.taskItems?.length || 0), 0)} Subtasks</Text>
+                              </HStack>
+                            </Badge>
+                            <Badge colorScheme="teal" fontSize="md" px={3} py={1} borderRadius="md">
+                              <HStack spacing={1.5} align="center">
+                                <Icon as={FiFolder} boxSize={4} />
+                                <Text>{groupedStagedTasks.length} Backlogs Mapped</Text>
+                              </HStack>
+                            </Badge>
+                            {stagedTasks.some((t) => t.duplicateInfo?.isDuplicate) && (
+                              <Badge colorScheme="orange" fontSize="md" px={3} py={1} borderRadius="md">
+                                <HStack spacing={1.5} align="center">
+                                  <Icon as={FiAlertTriangle} boxSize={4} />
+                                  <Text>{stagedTasks.filter((t) => t.duplicateInfo?.isDuplicate).length} Potential Duplicates</Text>
+                                </HStack>
+                              </Badge>
+                            )}
+                          </HStack>
+
+                          {/* Filter Tabs & Search */}
+                          <HStack spacing={2}>
+                            <InputGroup size="md" maxW="260px">
+                              <InputLeftElement pointerEvents="none">
+                                <Icon as={FiSearch} color="gray.400" />
+                              </InputLeftElement>
+                              <Input
+                                placeholder="Search staged tasks..."
+                                value={previewSearch}
+                                onChange={(e) => setPreviewSearch(e.target.value)}
+                                borderRadius={radiusStyle}
+                                bg={colorMode === "dark" ? "gray.700" : "white"}
+                                fontSize="md"
+                              />
+                            </InputGroup>
+
+                            <ButtonGroup size="md" isAttached variant="outline">
+                              <Button
+                                colorScheme={previewFilter === "all" ? "secondary" : "gray"}
+                                variant={previewFilter === "all" ? "solid" : "outline"}
+                                onClick={() => setPreviewFilter("all")}
+                                fontSize="md"
+                              >
+                                All ({stagedTasks.length})
+                              </Button>
+                              <Button
+                                colorScheme={previewFilter === "duplicates" ? "orange" : "gray"}
+                                variant={previewFilter === "duplicates" ? "solid" : "outline"}
+                                onClick={() => setPreviewFilter("duplicates")}
+                                fontSize="md"
+                                leftIcon={<FiAlertTriangle />}
+                              >
+                                Duplicates ({stagedTasks.filter((t) => t.duplicateInfo?.isDuplicate).length})
+                              </Button>
+                              <Button
+                                colorScheme={previewFilter === "excluded" ? "red" : "gray"}
+                                variant={previewFilter === "excluded" ? "solid" : "outline"}
+                                onClick={() => setPreviewFilter("excluded")}
+                                fontSize="md"
+                              >
+                                Excluded ({stagedTasks.filter((t) => t.isExcluded).length})
+                              </Button>
+                            </ButtonGroup>
+                          </HStack>
+                        </Flex>
+
+                        {/* Staged Tasks Grouped by Backlog Parent */}
+                        <Box maxH="460px" overflowY="auto" pr={1}>
+                          <VStack spacing={4} align="stretch">
+                            {groupedStagedTasks.length === 0 ? (
+                              <Box p={6} textAlign="center" borderRadius={radiusStyle} bg={colorMode === "dark" ? "gray.800" : "gray.50"}>
+                                <Text fontSize="md" color="gray.500">
+                                  No tasks match the active filters.
+                                </Text>
+                              </Box>
+                            ) : (
+                              groupedStagedTasks.map((group) => {
+                                const activeCount = group.tasks.filter((t: any) => !t.isExcluded).length;
+                                const subtaskCount = group.tasks
+                                  .filter((t: any) => !t.isExcluded)
+                                  .reduce((acc: number, t: any) => acc + (t.taskItems?.length || 0), 0);
+
+                                return (
+                                  <Box
+                                    key={group.backlogId || group.backlogName}
+                                    borderRadius={radiusStyle}
+                                    border="1px solid"
+                                    borderColor={colorMode === "dark" ? "purple.900" : "purple.200"}
+                                    overflow="hidden"
+                                    bg={colorMode === "dark" ? "rgba(30, 27, 75, 0.25)" : "purple.50"}
+                                  >
+                                    {/* Backlog Parent Group Header */}
+                                    <Flex
+                                      px={4}
+                                      py={3}
+                                      justify="space-between"
+                                      align="center"
+                                      bg={colorMode === "dark" ? "rgba(88, 28, 135, 0.25)" : "purple.100"}
+                                      borderBottom="1px solid"
+                                      borderColor={colorMode === "dark" ? "purple.800" : "purple.200"}
+                                      flexWrap="wrap"
+                                      gap={2}
+                                    >
+                                      <HStack spacing={2.5} align="center">
+                                        <Icon as={FiFolder} color="purple.400" boxSize={5} />
+                                        <Text fontSize="md" fontWeight="bold" color={colorMode === "dark" ? "white" : "purple.950"}>
+                                          {group.backlogName}
+                                        </Text>
+                                        {group.backlogId && (
+                                          <Badge colorScheme="purple" fontSize="md" px={2} py={0.5} borderRadius="md" fontFamily="mono">
+                                            {group.backlogId}
+                                          </Badge>
+                                        )}
+                                      </HStack>
+
+                                      <HStack spacing={2}>
+                                        <Badge colorScheme="secondary" fontSize="md" px={2.5} py={0.5} borderRadius="md">
+                                          {activeCount} Active Tasks
+                                        </Badge>
+                                        <Badge colorScheme="teal" fontSize="md" px={2.5} py={0.5} borderRadius="md">
+                                          {subtaskCount} Subtasks
+                                        </Badge>
+                                      </HStack>
+                                    </Flex>
+
+                                    {/* Tasks under this Backlog */}
+                                    <VStack p={3.5} spacing={3} align="stretch">
+                                      {group.tasks.map((task: any, idx: number) => {
+                                        const isEditing = editingStagedTaskId === task.stagedId;
+                                        const hasDuplicate = task.duplicateInfo?.isDuplicate;
+                                        const effectiveAssignees = getEffectiveAssignees(task);
+
+                                        return (
+                                          <Box
+                                            key={task.stagedId || idx}
+                                            p={3.5}
+                                            borderRadius={radiusStyle}
+                                            bg={
+                                              task.isExcluded
+                                                ? colorMode === "dark"
+                                                  ? "rgba(255, 255, 255, 0.02)"
+                                                  : "gray.100"
+                                                : colorMode === "dark"
+                                                ? "#161b22"
+                                                : "white"
+                                            }
+                                            border="1px solid"
+                                            borderColor={
+                                              task.isExcluded
+                                                ? colorMode === "dark"
+                                                  ? "whiteAlpha.100"
+                                                  : "gray.300"
+                                                : hasDuplicate
+                                                ? "orange.400"
+                                                : colorMode === "dark"
+                                                ? "whiteAlpha.200"
+                                                : "secondary.200"
+                                            }
+                                            opacity={task.isExcluded ? 0.6 : 1}
+                                            transition="all 0.2s ease"
+                                          >
+                                            {isEditing ? (
+                                              <VStack spacing={3} align="stretch">
+                                                <Text fontSize="md" fontWeight="bold" color="secondary.400">
+                                                  Edit Staged Task
+                                                </Text>
+                                                <Grid templateColumns={{ base: "1fr", md: "2fr 1fr 1fr" }} gap={3}>
+                                                  <Input
+                                                    size="md"
+                                                    value={editingTaskDraft.taskName || ""}
+                                                    onChange={(e) =>
+                                                      setEditingTaskDraft((prev: any) => ({ ...prev, taskName: e.target.value }))
+                                                    }
+                                                    placeholder="Task Name"
+                                                    borderRadius={radiusStyle}
+                                                    fontSize="md"
+                                                  />
+                                                  <Select
+                                                    size="md"
+                                                    value={editingTaskDraft.boardName || ""}
+                                                    onChange={(e) =>
+                                                      setEditingTaskDraft((prev: any) => ({ ...prev, boardName: e.target.value }))
+                                                    }
+                                                    borderRadius={radiusStyle}
+                                                    fontSize="md"
+                                                  >
+                                                    {DataBoard.map((b) => (
+                                                      <option key={b.id} value={b.boardName}>
+                                                        {b.boardName}
+                                                      </option>
+                                                    ))}
+                                                  </Select>
+                                                  <Select
+                                                    size="md"
+                                                    value={editingTaskDraft.taskPriority || "MEDIUM"}
+                                                    onChange={(e) =>
+                                                      setEditingTaskDraft((prev: any) => ({ ...prev, taskPriority: e.target.value }))
+                                                    }
+                                                    borderRadius={radiusStyle}
+                                                    fontSize="md"
+                                                  >
+                                                    <option value="LOW">LOW</option>
+                                                    <option value="MEDIUM">MEDIUM</option>
+                                                    <option value="HIGH">HIGH</option>
+                                                    <option value="URGENT">URGENT</option>
+                                                  </Select>
+                                                </Grid>
+                                                <Textarea
+                                                  size="md"
+                                                  value={editingTaskDraft.taskDesc || ""}
+                                                  onChange={(e) =>
+                                                    setEditingTaskDraft((prev: any) => ({ ...prev, taskDesc: e.target.value }))
+                                                  }
+                                                  placeholder="Task Description"
+                                                  borderRadius={radiusStyle}
+                                                  rows={2}
+                                                  fontSize="md"
+                                                />
+                                                <HStack justify="flex-end" spacing={2}>
+                                                  <Button size="md" variant="ghost" onClick={handleCancelEdit} fontSize="md">
+                                                    Cancel
+                                                  </Button>
+                                                  <Button size="md" colorScheme="secondary" onClick={handleSaveEdit} fontSize="md">
+                                                    Save Changes
+                                                  </Button>
+                                                </HStack>
+                                              </VStack>
+                                            ) : (
+                                              <VStack spacing={2.5} align="stretch">
+                                                {/* Task Staged Header */}
+                                                <Flex justify="space-between" align="center" flexWrap="wrap" gap={2}>
+                                                  <HStack spacing={2.5} align="center" flex={1}>
+                                                    <Badge
+                                                      colorScheme={hasDuplicate ? "orange" : task.isExcluded ? "gray" : "green"}
+                                                      variant="subtle"
+                                                      fontSize="md"
+                                                      px={2}
+                                                      py={0.5}
+                                                      borderRadius="md"
+                                                      fontFamily="mono"
+                                                      fontWeight="bold"
+                                                    >
+                                                      {task.isExcluded ? "[EXCLUDED]" : hasDuplicate ? "[! DIFF]" : "[+ STAGED]"}
+                                                    </Badge>
+                                                    <Text
+                                                      fontSize="md"
+                                                      fontWeight="bold"
+                                                      color={colorMode === "dark" ? "white" : "gray.800"}
+                                                      textDecoration={task.isExcluded ? "line-through" : "none"}
+                                                    >
+                                                      {task.taskName}
+                                                    </Text>
+                                                  </HStack>
+
+                                                  <HStack spacing={2}>
+                                                    <Badge colorScheme="blue" fontSize="md" px={2.5} py={0.5} borderRadius="md">
+                                                      {task.boardName}
+                                                    </Badge>
+                                                    <Badge
+                                                      colorScheme={
+                                                        task.taskPriority === "HIGH" || task.taskPriority === "URGENT"
+                                                          ? "red"
+                                                          : task.taskPriority === "MEDIUM"
+                                                          ? "orange"
+                                                          : "gray"
+                                                      }
+                                                      fontSize="md"
+                                                      px={2.5}
+                                                      py={0.5}
+                                                      borderRadius="md"
+                                                      fontWeight="semibold"
+                                                    >
+                                                      {task.taskPriority}
+                                                    </Badge>
+                                                    <IconButton
+                                                      aria-label="Edit Staged Task"
+                                                      icon={<FiEdit2 />}
+                                                      size="md"
+                                                      variant="ghost"
+                                                      onClick={() => handleStartEdit(task)}
+                                                      title="Edit task parameters"
+                                                    />
+                                                    <IconButton
+                                                      aria-label={task.isExcluded ? "Include task" : "Exclude task"}
+                                                      icon={task.isExcluded ? <FiPlus /> : <FiTrash2 />}
+                                                      size="md"
+                                                      colorScheme={task.isExcluded ? "green" : "red"}
+                                                      variant="ghost"
+                                                      onClick={() => handleToggleExclude(task.stagedId)}
+                                                      title={task.isExcluded ? "Include in import" : "Exclude from import"}
+                                                    />
+                                                  </HStack>
+                                                </Flex>
+
+                                                {/* Duplicate Warning Alert */}
+                                                {hasDuplicate && !task.isExcluded && (
+                                                  <Box
+                                                    p={3}
+                                                    borderRadius={radiusStyle}
+                                                    bg={colorMode === "dark" ? "rgba(237, 137, 54, 0.12)" : "orange.50"}
+                                                    border="1px dashed"
+                                                    borderColor="orange.400"
+                                                  >
+                                                    <Flex justify="space-between" align="center" flexWrap="wrap" gap={2}>
+                                                      <HStack spacing={2} align="center">
+                                                        <Icon as={FiAlertTriangle} color="orange.400" boxSize={5} />
+                                                        <Text fontSize="md" color={colorMode === "dark" ? "orange.200" : "orange.800"}>
+                                                          <strong>Potential Duplicate ({task.duplicateInfo?.similarityScore}% match)</strong>: Similar to{" "}
+                                                          {task.duplicateInfo?.source === "board" ? "existing task on board" : "another task in this batch"}{" "}
+                                                          <em>"{task.duplicateInfo?.matchedName}"</em>
+                                                        </Text>
+                                                      </HStack>
+                                                      <HStack spacing={2}>
+                                                        <Button
+                                                          size="sm"
+                                                          variant="outline"
+                                                          colorScheme="orange"
+                                                          fontSize="md"
+                                                          onClick={() => handleRenameWithSuffix(task.stagedId)}
+                                                        >
+                                                          Auto-Rename
+                                                        </Button>
+                                                        <Button
+                                                          size="sm"
+                                                          variant="ghost"
+                                                          colorScheme="red"
+                                                          fontSize="md"
+                                                          onClick={() => handleToggleExclude(task.stagedId)}
+                                                        >
+                                                          Exclude
+                                                        </Button>
+                                                      </HStack>
+                                                    </Flex>
+                                                  </Box>
+                                                )}
+
+                                                {/* Task Assignment Badge */}
+                                                {!task.isExcluded && (
+                                                  <HStack spacing={2} align="center">
+                                                    <Icon as={FiUser} color="secondary.400" boxSize={4} />
+                                                    <Text fontSize="md" color={colorMode === "dark" ? "gray.300" : "gray.600"}>
+                                                      <strong>Assignee:</strong> {effectiveAssignees.join(", ")}
+                                                    </Text>
+                                                  </HStack>
+                                                )}
+
+                                                {/* Task Description */}
+                                                {task.taskDesc && (
+                                                  <Text fontSize="md" color={colorMode === "dark" ? "gray.300" : "gray.600"} noOfLines={2}>
+                                                    {task.taskDesc}
+                                                  </Text>
+                                                )}
+
+                                                {/* Subtasks Git Tree */}
+                                                {task.taskItems && task.taskItems.length > 0 && (
+                                                  <Box
+                                                    pl={3.5}
+                                                    py={2}
+                                                    borderLeft="2px solid"
+                                                    borderColor={colorMode === "dark" ? "whiteAlpha.200" : "gray.200"}
+                                                  >
+                                                    <VStack spacing={1.5} align="stretch">
+                                                      {task.taskItems.map((item: any, sIdx: number) => (
+                                                        <HStack key={sIdx} spacing={2.5} align="center">
+                                                          <Icon
+                                                            as={item.isChecked ? FiCheckSquare : FiSquare}
+                                                            color={item.isChecked ? "green.400" : "gray.400"}
+                                                            boxSize={4}
+                                                          />
+                                                          <Text
+                                                            fontSize="md"
+                                                            color={
+                                                              item.isChecked
+                                                                ? colorMode === "dark"
+                                                                  ? "gray.300"
+                                                                  : "gray.700"
+                                                                : "gray.500"
+                                                            }
+                                                          >
+                                                            {item.taskItemName}
+                                                          </Text>
+                                                          {item.isChecked && (
+                                                            <Badge colorScheme="green" variant="outline" fontSize="md" px={1.5}>
+                                                              Done
+                                                            </Badge>
+                                                          )}
+                                                        </HStack>
+                                                      ))}
+                                                    </VStack>
+                                                  </Box>
+                                                )}
+                                              </VStack>
+                                            )}
+                                          </Box>
+                                        );
+                                      })}
+                                    </VStack>
+                                  </Box>
+                                );
+                              })
+                            )}
+                          </VStack>
+                        </Box>
+                      </VStack>
+                    )}
+
+                    {/* STEP 3: SUMMARY MANIFEST (MAPPED BY BACKLOG PARENT) */}
+                    {wizardStep === "summary" && (
+                      <VStack spacing={4} align="stretch">
+                        <Alert status="info" borderRadius={radiusStyle} fontSize="md">
+                          <AlertIcon />
+                          <AlertDescription fontSize="md">
+                            <strong>Preview Manifest Mode</strong>: All staged tasks and subtasks are verified and mapped to their respective project backlog parents. (Safe mode: backend save is decoupled).
+                          </AlertDescription>
+                        </Alert>
+
+                        <Box
+                          p={4}
+                          borderRadius={radiusStyle}
+                          bg={colorMode === "dark" ? "rgba(15, 23, 42, 0.6)" : "secondary.50"}
+                          border="1px solid"
+                          borderColor={colorMode === "dark" ? "secondary.900" : "secondary.200"}
+                        >
+                          <VStack spacing={4} align="stretch">
+                            <Flex justify="space-between" align="center">
+                              <Text fontSize="md" fontWeight="bold" color={colorMode === "dark" ? "white" : "gray.900"}>
+                                Staged Import Manifest
+                              </Text>
+                              <Badge colorScheme="secondary" fontSize="md" px={3} py={1} borderRadius="md">
+                                {stagedTasks.filter((t) => !t.isExcluded).length} Validated Tasks Ready
+                              </Badge>
+                            </Flex>
+
+                            <Divider borderColor={colorMode === "dark" ? "whiteAlpha.100" : "gray.200"} />
+
+                            <Grid templateColumns={{ base: "1fr", md: "repeat(4, 1fr)" }} gap={3}>
+                              <Box p={3} borderRadius={radiusStyle} bg={colorMode === "dark" ? "gray.700" : "white"}>
+                                <Text fontSize="md" color="gray.500" mb={1}>
+                                  Target Project
+                                </Text>
+                                <Text fontSize="md" fontWeight="bold" isTruncated>
+                                  {DataProject?.projectName || "-"}
+                                </Text>
+                              </Box>
+
+                              <Box p={3} borderRadius={radiusStyle} bg={colorMode === "dark" ? "gray.700" : "white"}>
+                                <Text fontSize="md" color="gray.500" mb={1}>
+                                  Assignment Strategy
+                                </Text>
+                                <Text fontSize="md" fontWeight="bold" color="secondary.400" isTruncated>
+                                  {assignOption === "currentUser"
+                                    ? `Assigned to Me (${currentLoggedInUserName})`
+                                    : assignOption === "custom"
+                                    ? `Custom (${customAssigneeIds.join(", ")})`
+                                    : "Original JSON / Unassigned"}
+                                </Text>
+                              </Box>
+
+                              <Box p={3} borderRadius={radiusStyle} bg={colorMode === "dark" ? "gray.700" : "white"}>
+                                <Text fontSize="md" color="gray.500" mb={1}>
+                                  Total Subtasks (Checklists)
+                                </Text>
+                                <Text fontSize="md" fontWeight="bold" color="green.400">
+                                  {stagedTasks.filter((t) => !t.isExcluded).reduce((acc, t) => acc + (t.taskItems?.length || 0), 0)} Items
+                                </Text>
+                              </Box>
+
+                              <Box p={3} borderRadius={radiusStyle} bg={colorMode === "dark" ? "gray.700" : "white"}>
+                                <Text fontSize="md" color="gray.500" mb={1}>
+                                  Duplicates Retained
+                                </Text>
+                                <Text fontSize="md" fontWeight="bold" color="orange.400">
+                                  {stagedTasks.filter((t) => t.duplicateInfo?.isDuplicate && !t.isExcluded).length} Tasks
+                                </Text>
+                              </Box>
+                            </Grid>
+
+                            {/* Backlog Breakdown Mapping Section */}
+                            <Box mt={2}>
+                              <Text fontSize="md" fontWeight="bold" mb={2.5} color={colorMode === "dark" ? "gray.200" : "gray.800"}>
+                                Backlog Parent Mapping Breakdown ({allBacklogSummary.length} Backlogs)
+                              </Text>
+                              <VStack spacing={2.5} align="stretch">
+                                {allBacklogSummary.map((b) => (
+                                  <Flex
+                                    key={b.backlogId || b.backlogName}
+                                    p={3}
+                                    borderRadius={radiusStyle}
+                                    bg={colorMode === "dark" ? "gray.800" : "white"}
+                                    border="1px solid"
+                                    borderColor={colorMode === "dark" ? "whiteAlpha.100" : "gray.200"}
+                                    justify="space-between"
+                                    align="center"
+                                  >
+                                    <HStack spacing={2.5}>
+                                      <Icon as={FiFolder} color="purple.400" boxSize={5} />
+                                      <Text fontSize="md" fontWeight="semibold">
+                                        {b.backlogName}
+                                      </Text>
+                                      {b.backlogId && (
+                                        <Badge colorScheme="purple" fontSize="md" px={2} py={0.5} borderRadius="md" fontFamily="mono">
+                                          {b.backlogId}
+                                        </Badge>
+                                      )}
+                                    </HStack>
+                                    <HStack spacing={2}>
+                                      <Badge colorScheme="secondary" fontSize="md" px={2.5} py={0.5} borderRadius="md">
+                                        {b.taskCount} Tasks
+                                      </Badge>
+                                      <Badge colorScheme="teal" fontSize="md" px={2.5} py={0.5} borderRadius="md">
+                                        {b.subtaskCount} Subtasks
+                                      </Badge>
+                                    </HStack>
+                                  </Flex>
+                                ))}
+                              </VStack>
+                            </Box>
+                          </VStack>
+                        </Box>
+                      </VStack>
+                    )}
+
+                    {jsonImportError && (
+                      <Alert status="error" borderRadius={radiusStyle} fontSize="md">
+                        <AlertIcon />
+                        <AlertDescription fontSize="md">{jsonImportError}</AlertDescription>
+                      </Alert>
+                    )}
+
+                    {jsonImportResult && (
+                      <Alert
+                        status={jsonImportResult.failed === 0 ? "success" : "warning"}
+                        borderRadius={radiusStyle}
+                        fontSize="md"
+                      >
+                        <AlertIcon />
+                        <AlertDescription fontSize="md">
+                          {jsonImportResult.success} task(s) imported successfully
+                          {jsonImportResult.failed > 0
+                            ? `, ${jsonImportResult.failed} failed (check board names match available stages)`
+                            : ""}
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </VStack>
+                </ModalBody>
+                <ModalFooter
+                  borderTop="1px solid"
+                  borderColor={colorMode === "dark" ? "whiteAlpha.100" : "gray.100"}
+                  py={3.5}
+                  justifyContent="space-between"
+                >
+                  <HStack spacing={2}>
+                    {wizardStep === "preview" && (
+                      <Button
+                        size="md"
+                        variant="outline"
+                        leftIcon={<FiArrowLeft />}
+                        onClick={() => setWizardStep("input")}
+                        rounded={radiusStyle}
+                        fontSize="md"
+                      >
+                        Back to JSON
+                      </Button>
+                    )}
+                    {wizardStep === "summary" && (
+                      <Button
+                        size="md"
+                        variant="outline"
+                        leftIcon={<FiArrowLeft />}
+                        onClick={() => setWizardStep("preview")}
+                        rounded={radiusStyle}
+                        fontSize="md"
+                      >
+                        Back to Preview
+                      </Button>
+                    )}
+                  </HStack>
+
+                  <HStack spacing={3}>
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        onJsonImportClose();
+                        setJsonImportError("");
+                        setJsonImportResult(null);
+                        setWizardStep("input");
+                      }}
+                      rounded={radiusStyle}
+                      fontSize="md"
+                    >
+                      {wizardStep === "summary" ? "Close" : "Cancel"}
+                    </Button>
+
+                    {wizardStep === "input" && (
+                      <Button
+                        colorScheme="secondary"
+                        onClick={handleProceedToPreview}
+                        isDisabled={!jsonImportText.trim()}
+                        rounded={radiusStyle}
+                        fontSize="md"
+                        rightIcon={<FiChevronRight />}
+                      >
+                        Proceed to Preview
+                      </Button>
+                    )}
+
+                    {wizardStep === "preview" && (
+                      <Button
+                        colorScheme="secondary"
+                        onClick={handleProceedToSummary}
+                        isDisabled={stagedTasks.filter((t) => !t.isExcluded).length === 0}
+                        rounded={radiusStyle}
+                        fontSize="md"
+                        rightIcon={<FiChevronRight />}
+                      >
+                        Proceed to Summary ({stagedTasks.filter((t) => !t.isExcluded).length})
+                      </Button>
+                    )}
+
+                    {wizardStep === "summary" && (
+                      <Button
+                        colorScheme="secondary"
+                        onClick={onConfirmBulkOpen}
+                        isLoading={isImportingJson}
+                        rounded={radiusStyle}
+                        fontSize="md"
+                        leftIcon={<FiCheckSquare />}
+                      >
+                        Confirm & Save Bulk Tasks ({stagedTasks.filter((t) => !t.isExcluded).length})
+                      </Button>
+                    )}
+                  </HStack>
+                </ModalFooter>
+              </ModalContent>
+            </Modal>
+
+            {/* CONFIRMATION ACTION MODAL BEFORE BULK SUBMIT */}
+            <Modal
+              isOpen={isConfirmBulkOpen}
+              onClose={() => {
+                if (!isImportingJson) onConfirmBulkClose();
+              }}
+              isCentered
+              size="xl"
+              closeOnOverlayClick={!isImportingJson}
+            >
+              <ModalOverlay bg="blackAlpha.700" backdropFilter="blur(5px)" />
+              <ModalContent
+                bg={colorMode === "dark" ? "gray.800" : "white"}
+                borderRadius={radiusStyle}
+                boxShadow="2xl"
+                border="1px solid"
+                borderColor={colorMode === "dark" ? "whiteAlpha.200" : "gray.200"}
+              >
+                <ModalHeader
+                  borderBottom="1px solid"
+                  borderColor={colorMode === "dark" ? "whiteAlpha.100" : "gray.100"}
+                  py={4}
+                >
+                  <HStack spacing={3} align="center">
+                    <Icon as={FiAlertCircle} color="secondary.400" boxSize={6} />
+                    <VStack align="start" spacing={0}>
+                      <Text fontSize="lg" fontWeight="bold" color={colorMode === "dark" ? "white" : "gray.800"}>
+                        Confirm Bulk Task Creation
+                      </Text>
+                      <Text fontSize="md" color={colorMode === "dark" ? "gray.400" : "gray.500"}>
+                        Verify import scope before committing to project database
+                      </Text>
+                    </VStack>
+                  </HStack>
+                </ModalHeader>
+                <ModalCloseButton isDisabled={isImportingJson} top={4} right={4} />
+
+                <ModalBody py={5}>
+                  <VStack spacing={4} align="stretch">
+                    <Alert status="info" borderRadius={radiusStyle} fontSize="md">
+                      <AlertIcon />
+                      <AlertDescription fontSize="md">
+                        You are about to create <strong>{stagedTasks.filter((t) => !t.isExcluded).length} tasks</strong> and{" "}
+                        <strong>{stagedTasks.filter((t) => !t.isExcluded).reduce((acc, t) => acc + (t.taskItems?.length || 0), 0)} subtasks</strong>{" "}
+                        in project <strong>{DataProject?.projectName || "-"}</strong>. This will update the project Kanban board and mark parent backlogs as in-progress.
+                      </AlertDescription>
+                    </Alert>
+
+                    <Box
+                      p={4}
+                      borderRadius={radiusStyle}
+                      bg={colorMode === "dark" ? "gray.900" : "gray.50"}
+                      border="1px solid"
+                      borderColor={colorMode === "dark" ? "whiteAlpha.100" : "gray.200"}
+                    >
+                      <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={3.5}>
+                        <Box>
+                          <Text fontSize="md" color="gray.500">
+                            Target Project:
+                          </Text>
+                          <Text fontSize="md" fontWeight="bold" color={colorMode === "dark" ? "white" : "gray.800"}>
+                            {DataProject?.projectName || "-"}
+                          </Text>
+                        </Box>
+
+                        <Box>
+                          <Text fontSize="md" color="gray.500">
+                            Assignment Mode:
+                          </Text>
+                          <Text fontSize="md" fontWeight="bold" color="secondary.400">
+                            {assignOption === "currentUser"
+                              ? `Assigned to Me (${currentLoggedInUserName})`
+                              : assignOption === "custom"
+                              ? `Custom Assignees (${customAssigneeIds.join(", ")})`
+                              : "Original JSON / Unassigned"}
+                          </Text>
+                        </Box>
+
+                        <Box>
+                          <Text fontSize="md" color="gray.500">
+                            Total New Tasks:
+                          </Text>
+                          <Text fontSize="md" fontWeight="bold" color="green.400">
+                            {stagedTasks.filter((t) => !t.isExcluded).length} Tasks
+                          </Text>
+                        </Box>
+
+                        <Box>
+                          <Text fontSize="md" color="gray.500">
+                            Total Subtask Checklists:
+                          </Text>
+                          <Text fontSize="md" fontWeight="bold" color="teal.400">
+                            {stagedTasks.filter((t) => !t.isExcluded).reduce((acc, t) => acc + (t.taskItems?.length || 0), 0)} Items
+                          </Text>
+                        </Box>
+                      </Grid>
+
+                      <Divider my={3} borderColor={colorMode === "dark" ? "whiteAlpha.100" : "gray.200"} />
+
+                      <Text fontSize="md" fontWeight="semibold" mb={2} color={colorMode === "dark" ? "gray.300" : "gray.700"}>
+                        Backlog Parent Distribution ({allBacklogSummary.length} Backlogs):
+                      </Text>
+                      <VStack spacing={2} align="stretch">
+                        {allBacklogSummary.map((b) => (
+                          <Flex
+                            key={b.backlogId || b.backlogName}
+                            p={2.5}
+                            borderRadius={radiusStyle}
+                            bg={colorMode === "dark" ? "gray.800" : "white"}
+                            justify="space-between"
+                            align="center"
+                            border="1px solid"
+                            borderColor={colorMode === "dark" ? "whiteAlpha.100" : "gray.200"}
+                          >
+                            <HStack spacing={2}>
+                              <Icon as={FiFolder} color="purple.400" boxSize={4} />
+                              <Text fontSize="md" fontWeight="medium">
+                                {b.backlogName}
+                              </Text>
+                            </HStack>
+                            <HStack spacing={2}>
+                              <Badge colorScheme="secondary" fontSize="md" px={2} py={0.5} borderRadius="md">
+                                {b.taskCount} tasks
+                              </Badge>
+                              <Badge colorScheme="teal" fontSize="md" px={2} py={0.5} borderRadius="md">
+                                {b.subtaskCount} subtasks
+                              </Badge>
+                            </HStack>
+                          </Flex>
+                        ))}
+                      </VStack>
+                    </Box>
+                  </VStack>
+                </ModalBody>
+
+                <ModalFooter
+                  borderTop="1px solid"
+                  borderColor={colorMode === "dark" ? "whiteAlpha.100" : "gray.100"}
+                  py={3.5}
+                  justifyContent="space-between"
+                >
+                  <Button
+                    variant="ghost"
+                    onClick={onConfirmBulkClose}
+                    isDisabled={isImportingJson}
+                    fontSize="md"
+                    rounded={radiusStyle}
+                  >
+                    Cancel / Review Again
+                  </Button>
+                  <Button
+                    colorScheme="secondary"
+                    onClick={handleExecuteBulkImport}
+                    isLoading={isImportingJson}
+                    leftIcon={<FiCheck />}
+                    fontSize="md"
+                    rounded={radiusStyle}
+                  >
+                    Yes, Execute & Save Tasks
                   </Button>
                 </ModalFooter>
               </ModalContent>

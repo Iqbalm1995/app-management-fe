@@ -132,6 +132,38 @@ export interface TaskCreatePayload {
   endDate?: string;
 }
 
+export interface TaskBulkItemPayload {
+  backlogId?: string | null;
+  boardId?: string | null;
+  boardName?: string | null;
+  taskName: string;
+  taskDesc?: string | null;
+  taskPriority?: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  taskPoint?: number;
+  taskItems?: string[];
+  assigneeUserIds?: string[];
+}
+
+export interface TasksBulkCreatePayload {
+  projectId: string;
+  defaultBacklogId?: string | null;
+  defaultBoardId?: string | null;
+  globalAssignOption?: string | null;
+  globalCustomUserIds?: string[];
+  tasks: TaskBulkItemPayload[];
+}
+
+export interface TaskBulkCreateResultResponse {
+  projectId: string;
+  totalTasksCreated: number;
+  totalSubtasksCreated: number;
+  totalAssignmentsCreated: number;
+  createdTaskIds: string[];
+  affectedBacklogIds: string[];
+}
+
 export interface TaskUpdatePayload {
   id: string;
   boardId: string;
@@ -279,6 +311,10 @@ interface useTasks {
     payload: TaskCreatePayload,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
+  CreateBulkTasks: (
+    payload: TasksBulkCreatePayload,
+    token: string
+  ) => Promise<ApiGenericResponse<TaskBulkCreateResultResponse | null> | null>;
   CreateTaskItem: (
     payload: TaskItemCreatePayload,
     token: string
@@ -1027,6 +1063,48 @@ const useTasks = (): useTasks => {
     }
   };
 
+  const CreateBulkTasks = async (
+    payload: TasksBulkCreatePayload,
+    token: string
+  ): Promise<ApiGenericResponse<TaskBulkCreateResultResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Task/create-bulk-tasks`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<TaskBulkCreateResultResponse | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message ||
+            "An error occurred while bulk creating tasks."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   const CreateTaskItem = async (
     payload: TaskItemCreatePayload,
     token: string
@@ -1504,6 +1582,7 @@ const useTasks = (): useTasks => {
     GetTaskDetail,
     CreateSimpleTask,
     CreateTask,
+    CreateBulkTasks,
     CreateTaskItem,
     UpdateTask,
     UpdateTaskItem,
