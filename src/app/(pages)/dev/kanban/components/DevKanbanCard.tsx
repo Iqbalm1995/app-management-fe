@@ -1,20 +1,15 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useMemo } from "react";
 import {
   Box,
   VStack,
   HStack,
   Text,
-  Badge,
   Avatar,
   AvatarGroup,
   Icon,
   Tooltip,
-  Card,
-  CardBody,
-  CardFooter,
-  Flex,
   useColorMode,
 } from "@chakra-ui/react";
 import { useDrag } from "react-dnd";
@@ -24,15 +19,12 @@ import {
   FiCheckSquare,
   FiMessageSquare,
   FiPaperclip,
-  FiList,
   FiClock,
-  FiPlay,
-  FiFlag,
-  FiRefreshCcw,
   FiAlertCircle,
+  FiCalendar,
 } from "react-icons/fi";
 import { radiusStyle } from "@/app/constants/applicationConstants";
-import { convertToCustomDateFormat } from "@/app/helper/MasterHelper";
+import { normalizeStageName } from "../kanbanUtils";
 
 interface DevKanbanCardProps {
   task: TaskViewModel;
@@ -42,28 +34,129 @@ interface DevKanbanCardProps {
   dataBacklogs?: BacklogDataResponse[];
 }
 
-const formatDateDDMMYYYY = (dateString?: string): string => {
-  if (!dateString) return "-";
-  const date = new Date(dateString);
-  if (isNaN(date.getTime())) return dateString;
+interface PriorityConfig {
+  label: string;
+  accentColor: string;
+  bgLight: string;
+  bgDark: string;
+  borderLight: string;
+  borderDark: string;
+  textColor: string;
+}
+
+const getPriorityConfig = (priority?: string): PriorityConfig => {
+  const p = priority?.toUpperCase();
+  switch (p) {
+    case "URGENT":
+    case "CRITICAL":
+      return {
+        label: "Critical",
+        accentColor: "#ef4444",
+        bgLight: "rgba(239, 68, 68, 0.08)",
+        bgDark: "rgba(239, 68, 68, 0.15)",
+        borderLight: "rgba(239, 68, 68, 0.25)",
+        borderDark: "rgba(239, 68, 68, 0.35)",
+        textColor: "red.400",
+      };
+    case "HIGH":
+      return {
+        label: "High",
+        accentColor: "#f97316",
+        bgLight: "rgba(249, 115, 22, 0.08)",
+        bgDark: "rgba(249, 115, 22, 0.15)",
+        borderLight: "rgba(249, 115, 22, 0.25)",
+        borderDark: "rgba(249, 115, 22, 0.35)",
+        textColor: "orange.400",
+      };
+    case "MEDIUM":
+      return {
+        label: "Medium",
+        accentColor: "#eab308",
+        bgLight: "rgba(234, 179, 8, 0.08)",
+        bgDark: "rgba(234, 179, 8, 0.15)",
+        borderLight: "rgba(234, 179, 8, 0.25)",
+        borderDark: "rgba(234, 179, 8, 0.35)",
+        textColor: "yellow.500",
+      };
+    case "LOW":
+      return {
+        label: "Low",
+        accentColor: "#3b82f6",
+        bgLight: "rgba(59, 130, 246, 0.08)",
+        bgDark: "rgba(59, 130, 246, 0.15)",
+        borderLight: "rgba(59, 130, 246, 0.22)",
+        borderDark: "rgba(59, 130, 246, 0.3)",
+        textColor: "blue.400",
+      };
+    default:
+      return {
+        label: p || "Normal",
+        accentColor: "#94a3b8",
+        bgLight: "rgba(148, 163, 184, 0.08)",
+        bgDark: "rgba(148, 163, 184, 0.12)",
+        borderLight: "rgba(148, 163, 184, 0.2)",
+        borderDark: "rgba(148, 163, 184, 0.25)",
+        textColor: "gray.400",
+      };
+  }
+};
+
+const getDeadlineInfo = (endDateString?: string | null) => {
+  if (!endDateString) return null;
+  const date = new Date(endDateString);
+  if (isNaN(date.getTime())) return null;
+
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const target = new Date(date);
+  target.setHours(0, 0, 0, 0);
+
+  const diffTime = target.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
   const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
-};
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const formatted = `${day} ${monthNames[date.getMonth()]}`;
 
-const getPriorityColorScheme = (priority?: string): string => {
-  const p = priority?.toUpperCase();
-  if (p === "HIGH" || p === "CRITICAL" || p === "URGENT") return "red";
-  if (p === "MEDIUM") return "orange";
-  return "green";
-};
-
-const getPriorityBarColor = (priority?: string): string => {
-  const p = priority?.toUpperCase();
-  if (p === "HIGH" || p === "CRITICAL" || p === "URGENT") return "red.400";
-  if (p === "MEDIUM") return "orange.400";
-  return "green.400";
+  if (diffDays < 0) {
+    return {
+      label: `${formatted} (${Math.abs(diffDays)}d overdue)`,
+      isOverdue: true,
+      isUpcoming: false,
+    };
+  }
+  if (diffDays === 0) {
+    return {
+      label: "Due today",
+      isOverdue: false,
+      isUpcoming: true,
+    };
+  }
+  if (diffDays <= 3) {
+    return {
+      label: `${formatted} (${diffDays}d left)`,
+      isOverdue: false,
+      isUpcoming: true,
+    };
+  }
+  return {
+    label: formatted,
+    isOverdue: false,
+    isUpcoming: false,
+  };
 };
 
 export const DevKanbanCard: React.FC<DevKanbanCardProps> = ({
@@ -82,6 +175,7 @@ export const DevKanbanCard: React.FC<DevKanbanCardProps> = ({
     item: {
       id: task.id,
       boardId: task.boardId,
+      boardName: task.boardName,
       taskCode: task.taskCode,
     },
     collect: (monitor) => ({
@@ -91,305 +185,402 @@ export const DevKanbanCard: React.FC<DevKanbanCardProps> = ({
 
   dragRef(cardRef);
 
-  const priorityScheme = getPriorityColorScheme(task.taskPriority);
-  const priorityBarColor = getPriorityBarColor(task.taskPriority);
+  const priority = useMemo(
+    () => getPriorityConfig(task.taskPriority),
+    [task.taskPriority]
+  );
+  const deadline = useMemo(
+    () => getDeadlineInfo(task.endDate),
+    [task.endDate]
+  );
+  const backlog = useMemo(
+    () => dataBacklogs.find((b) => b.id === task.backlogId),
+    [dataBacklogs, task.backlogId]
+  );
+  const isDoneStage = normalizeStageName(task.boardName) === "DONE";
 
-  const backlog = dataBacklogs.find((b) => b.id === task.backlogId);
-  const isDoneStage =
-    task.boardCodeStage === "DONE" ||
-    task.boardName?.toUpperCase() === "DONE";
+  const taskCodeDisplay = task.taskCode || task.id.slice(0, 8).toUpperCase();
 
   return (
-    <div
+    <Box
       ref={cardRef}
-      style={{
-        opacity: isDragging ? 0.4 : 1,
-        cursor: "grab",
-        width: "100%",
-      }}
+      role="group"
+      position="relative"
+      w="full"
+      cursor="grab"
+      _active={{ cursor: "grabbing" }}
+      opacity={isDragging ? 0.35 : 1}
+      transform={isDragging ? "scale(0.98)" : "none"}
+      transition="all 0.18s cubic-bezier(0.16, 1, 0.3, 1)"
       onClick={() => onTaskClick(task)}
+      mb={3}
     >
-      <Card
-        size="sm"
-        variant="outline"
-        borderRadius={radiusStyle}
+      <Box
+        position="relative"
         bg={
           isRecentlyMoved
             ? isDark
-              ? "rgba(59, 130, 246, 0.2)"
+              ? "rgba(59, 130, 246, 0.18)"
               : "blue.50"
             : isDark
-            ? "rgba(26, 32, 44, 0.85)"
+            ? "rgba(15, 23, 42, 0.78)"
             : "white"
         }
-        backdropFilter="blur(12px)"
+        backdropFilter="blur(16px)"
+        borderRadius={radiusStyle}
         border="1px solid"
         borderColor={
           isRecentlyMoved
             ? "blue.400"
             : isDark
             ? "rgba(255, 255, 255, 0.08)"
-            : "gray.200"
+            : "rgba(226, 232, 240, 0.9)"
         }
-        boxShadow={isRecentlyMoved ? "md" : "sm"}
+        boxShadow={
+          isRecentlyMoved
+            ? isDark
+              ? "0 0 0 1px rgba(96, 165, 250, 0.5), 0 8px 24px -4px rgba(0, 0, 0, 0.5)"
+              : "0 0 0 1px rgba(59, 130, 246, 0.4), 0 6px 20px -2px rgba(59, 130, 246, 0.2)"
+            : isDark
+            ? "0 2px 6px -1px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.2)"
+            : "0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02)"
+        }
+        pl={4}
+        pr={3.5}
+        py={isCompactView ? 2.5 : 3.5}
         transition="all 0.2s cubic-bezier(0.16, 1, 0.3, 1)"
         _hover={{
-          borderColor: "blue.400",
           transform: "translateY(-2px)",
-          boxShadow: "md",
+          borderColor: isDark
+            ? "rgba(168, 85, 247, 0.45)"
+            : "rgba(129, 140, 248, 0.5)",
+          boxShadow: isDark
+            ? "0 12px 28px -6px rgba(0, 0, 0, 0.65), 0 0 14px rgba(168, 85, 247, 0.12)"
+            : "0 10px 24px -4px rgba(99, 102, 241, 0.12), 0 2px 4px rgba(0, 0, 0, 0.04)",
         }}
         overflow="hidden"
-        mb={3}
       >
-        {/* 1. Priority Color Bar */}
-        <Box h="3px" bg={priorityBarColor} />
+        {/* Sleek Vertical Left Accent Pill for Priority */}
+        <Box
+          position="absolute"
+          left="0"
+          top="10px"
+          bottom="10px"
+          w="3px"
+          borderTopRightRadius="full"
+          borderBottomRightRadius="full"
+          bg={priority.accentColor}
+          opacity={0.85}
+          _groupHover={{ opacity: 1, w: "3.5px" }}
+          transition="all 0.2s ease"
+        />
 
-        <CardBody px={4} py={isCompactView ? 2.5 : 3.5}>
-          <VStack align="start" spacing={isCompactView ? 1.5 : 2.5}>
-            {/* 2. Top Header Row: Priority Badge & Task Code/ID */}
-            <HStack w="full" justify="space-between" align="center">
-              <HStack spacing={2}>
-                <Badge
-                  size="sm"
-                  rounded="full"
-                  px={2.5}
-                  py={0.5}
+        <VStack align="stretch" spacing={isCompactView ? 1.5 : 2.5}>
+          {/* Header Row: Backlog context / Task Code & Priority Tag */}
+          <HStack justify="space-between" align="center" spacing={2}>
+            <HStack spacing={1.5} minW={0} overflow="hidden">
+              {/* Backlog mini badge if present */}
+              {backlog?.backlogName && !isCompactView && (
+                <Text
                   fontSize="3xs"
-                  fontWeight={600}
-                  colorScheme={priorityScheme}
-                  variant="subtle"
+                  fontWeight="600"
+                  color={isDark ? "gray.400" : "gray.600"}
+                  bg={isDark ? "whiteAlpha.100" : "gray.100"}
+                  px={1.5}
+                  py={0.5}
+                  borderRadius="sm"
+                  noOfLines={1}
+                  maxW="110px"
+                  title={backlog.backlogName}
                 >
-                  {task.taskPriority || "NORMAL"}
-                </Badge>
-                {isCompactView && (
-                  <Text fontSize="xs" color="gray.500">
-                    #{task.taskCode || task.id.slice(-6)}
-                  </Text>
-                )}
-              </HStack>
+                  {backlog.backlogName}
+                </Text>
+              )}
 
-              <HStack spacing={2}>
-                {isCompactView && task.percentageStatus > 0 && (
-                  <Text fontSize="xs" fontWeight="bold" color="gray.500">
-                    {task.percentageStatus}%
-                  </Text>
-                )}
-                {!isCompactView && (
-                  <Text fontSize="xs" color="gray.500">
-                    #{task.taskCode || task.id.slice(-6)}
-                  </Text>
-                )}
-              </HStack>
+              {/* Task Code */}
+              <Text
+                fontSize="2xs"
+                fontFamily="SFMono-Regular, Menlo, Monaco, Consolas, monospace"
+                fontWeight="600"
+                color={isDark ? "gray.400" : "gray.500"}
+                letterSpacing="-0.02em"
+                noOfLines={1}
+              >
+                #{taskCodeDisplay}
+              </Text>
             </HStack>
 
-            {/* 3. Backlog Info and Deadline (Hidden in compact view) */}
-            {!isCompactView && (
-              <HStack
-                w="full"
-                justify="space-between"
-                align="center"
-                spacing={2}
-              >
-                {task.backlogId && (
-                  <HStack spacing={1.5} noOfLines={1}>
-                    <Icon as={FiList} color="blue.400" boxSize={3} />
-                    <Text
-                      fontSize="xs"
-                      color={isDark ? "gray.300" : "gray.600"}
-                      fontWeight="medium"
-                      noOfLines={1}
-                    >
-                      {backlog?.backlogName || "Backlog"}
-                    </Text>
-                  </HStack>
-                )}
-                {backlog?.backlogEnddate && (
-                  <HStack spacing={1} whiteSpace="nowrap">
-                    <Icon as={FiClock} color="red.400" boxSize={3} />
-                    <Text fontSize="xs" color="red.500" fontWeight="medium">
-                      {formatDateDDMMYYYY(backlog.backlogEnddate)}
-                    </Text>
-                  </HStack>
-                )}
-              </HStack>
-            )}
-
-            {/* 4. Task Title */}
-            <Text
-              fontSize={isCompactView ? "sm" : "md"}
-              fontWeight="600"
-              lineHeight="1.3"
-              color={isDark ? "gray.100" : "gray.800"}
-              noOfLines={isCompactView ? 1 : 2}
-              w="full"
+            {/* Priority Micro Tag with Glow Dot */}
+            <HStack
+              spacing={1.5}
+              px={2}
+              py={0.5}
+              borderRadius="full"
+              bg={isDark ? priority.bgDark : priority.bgLight}
+              border="1px solid"
+              borderColor={isDark ? priority.borderDark : priority.borderLight}
+              flexShrink={0}
             >
-              {task.taskName}
-            </Text>
-
-            {/* 5. Description (Hidden in compact view) */}
-            {!isCompactView && task.taskDesc && (
+              <Box
+                w="5px"
+                h="5px"
+                borderRadius="full"
+                bg={priority.accentColor}
+              />
               <Text
-                fontSize="xs"
-                color={isDark ? "gray.400" : "gray.600"}
-                lineHeight="1.4"
-                noOfLines={2}
+                fontSize="3xs"
+                fontWeight="700"
+                textTransform="uppercase"
+                letterSpacing="0.04em"
+                color={priority.textColor}
               >
-                {task.taskDesc}
+                {priority.label}
               </Text>
-            )}
+            </HStack>
+          </HStack>
 
-            {/* 6. Progress Bar (Hidden in compact view) */}
-            {!isCompactView && task.percentageStatus > 0 && (
-              <Box w="full" pt={0.5}>
-                <HStack justify="space-between" mb={1}>
-                  <Text fontSize="xs" color="gray.500" fontWeight="medium">
-                    Progress
-                  </Text>
-                  <Text fontSize="xs" color="gray.500" fontWeight="bold">
-                    {task.percentageStatus}%
-                  </Text>
-                </HStack>
-                <Box
-                  w="full"
-                  h="6px"
-                  bg={isDark ? "whiteAlpha.100" : "gray.100"}
-                  borderRadius="full"
-                  overflow="hidden"
+          {/* Task Title */}
+          <Text
+            fontSize={isCompactView ? "xs" : "sm"}
+            fontWeight="600"
+            lineHeight="1.4"
+            letterSpacing="-0.01em"
+            color={isDark ? "gray.100" : "gray.850"}
+            noOfLines={isCompactView ? 1 : 2}
+            _groupHover={{
+              color: isDark ? "purple.300" : "purple.600",
+            }}
+            transition="color 0.15s ease"
+          >
+            {task.taskName}
+          </Text>
+
+          {/* Task Description (Full view only) */}
+          {!isCompactView && task.taskDesc && (
+            <Text
+              fontSize="xs"
+              color={isDark ? "gray.400" : "gray.600"}
+              lineHeight="1.45"
+              noOfLines={2}
+            >
+              {task.taskDesc}
+            </Text>
+          )}
+
+          {/* Slim Progress Bar */}
+          {!isCompactView && task.percentageStatus > 0 && (
+            <Box w="full" pt={0.5}>
+              <HStack justify="space-between" align="center" mb={1}>
+                <Text
+                  fontSize="3xs"
+                  fontWeight="600"
+                  textTransform="uppercase"
+                  letterSpacing="0.04em"
+                  color={isDark ? "gray.400" : "gray.500"}
                 >
-                  <Box
-                    h="100%"
-                    w={`${task.percentageStatus}%`}
-                    bg={
-                      task.percentageStatus === 100
-                        ? "green.400"
-                        : "blue.400"
-                    }
-                    borderRadius="full"
-                    transition="width 0.3s ease"
-                  />
-                </Box>
+                  Progress
+                </Text>
+                <Text
+                  fontSize="3xs"
+                  fontFamily="mono"
+                  fontWeight="700"
+                  color={
+                    task.percentageStatus === 100
+                      ? "green.400"
+                      : isDark
+                      ? "purple.300"
+                      : "purple.600"
+                  }
+                >
+                  {task.percentageStatus}%
+                </Text>
+              </HStack>
+              <Box
+                w="full"
+                h="3px"
+                bg={isDark ? "whiteAlpha.100" : "gray.100"}
+                borderRadius="full"
+                overflow="hidden"
+              >
+                <Box
+                  h="100%"
+                  w={`${task.percentageStatus}%`}
+                  bg={
+                    task.percentageStatus === 100
+                      ? "#10b981"
+                      : "linear-gradient(90deg, #8b5cf6 0%, #ec4899 100%)"
+                  }
+                  borderRadius="full"
+                  transition="width 0.3s ease"
+                />
               </Box>
-            )}
+            </Box>
+          )}
 
-            {/* 7. Metadata Row: Counts and Assignees */}
-            <HStack w="full" justify="space-between" align="center" pt={1}>
-              <HStack spacing={3} color={isDark ? "gray.400" : "gray.500"} fontSize="xs">
-                {(task.countCommnetTask || 0) > 0 && (
-                  <HStack spacing={1}>
-                    <Icon as={FiMessageSquare} boxSize={3} />
-                    <Text fontWeight={500}>{task.countCommnetTask}</Text>
+          {/* Bottom Row: Metadata Chips (Checklist, Comments, Attachments, Due Date) & Avatars */}
+          <HStack
+            justify="space-between"
+            align="center"
+            pt={1.5}
+            borderTop="1px solid"
+            borderColor={isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.04)"}
+          >
+            {/* Left: Metadata micro chips */}
+            <HStack
+              spacing={2.5}
+              fontSize="2xs"
+              color={isDark ? "gray.400" : "gray.500"}
+            >
+              {/* Due Date Indicator */}
+              {deadline && !isCompactView && (
+                <Tooltip label={`Deadline: ${task.endDate}`} hasArrow placement="top">
+                  <HStack
+                    spacing={1}
+                    px={1.5}
+                    py={0.5}
+                    borderRadius="sm"
+                    bg={
+                      deadline.isOverdue
+                        ? isDark
+                          ? "rgba(239, 68, 68, 0.15)"
+                          : "red.50"
+                        : deadline.isUpcoming
+                        ? isDark
+                          ? "rgba(245, 158, 11, 0.15)"
+                          : "orange.50"
+                        : "transparent"
+                    }
+                    color={
+                      deadline.isOverdue
+                        ? "red.400"
+                        : deadline.isUpcoming
+                        ? "orange.400"
+                        : isDark
+                        ? "gray.400"
+                        : "gray.500"
+                    }
+                  >
+                    <Icon as={deadline.isOverdue ? FiAlertCircle : FiClock} boxSize={3} />
+                    <Text
+                      fontSize="3xs"
+                      fontWeight={deadline.isOverdue || deadline.isUpcoming ? 700 : 500}
+                    >
+                      {deadline.label}
+                    </Text>
                   </HStack>
-                )}
+                </Tooltip>
+              )}
 
-                {(task.countTaskItem || 0) > 0 && (
-                  <HStack spacing={1}>
+              {/* Sub-tasks / Checklist items */}
+              {(task.countTaskItem || 0) > 0 && (
+                <Tooltip
+                  label={`Checklist: ${task.countTaskItemDone || 0} of ${task.countTaskItem} done`}
+                  hasArrow
+                  placement="top"
+                >
+                  <HStack
+                    spacing={1}
+                    color={
+                      (task.countTaskItemDone || 0) === task.countTaskItem
+                        ? "green.400"
+                        : undefined
+                    }
+                  >
                     <Icon as={FiCheckSquare} boxSize={3} />
-                    <Text fontWeight={500}>
+                    <Text fontWeight={600} fontFamily="mono" fontSize="3xs">
                       {task.countTaskItemDone || 0}/{task.countTaskItem}
                     </Text>
                   </HStack>
-                )}
+                </Tooltip>
+              )}
 
-                {(task.countTaskAttachment || 0) > 0 && (
+              {/* Comments count */}
+              {(task.countCommnetTask || 0) > 0 && (
+                <Tooltip label={`${task.countCommnetTask} comments`} hasArrow placement="top">
                   <HStack spacing={1}>
-                    <Icon as={FiPaperclip} boxSize={3} />
-                    <Text fontWeight={500}>{task.countTaskAttachment}</Text>
+                    <Icon as={FiMessageSquare} boxSize={3} />
+                    <Text fontWeight={600} fontFamily="mono" fontSize="3xs">
+                      {task.countCommnetTask}
+                    </Text>
                   </HStack>
-                )}
-              </HStack>
+                </Tooltip>
+              )}
 
-              {/* Assignees */}
-              {task.assignUsers && task.assignUsers.length > 0 && (
+              {/* Attachments count */}
+              {(task.countTaskAttachment || 0) > 0 && (
                 <Tooltip
+                  label={`${task.countTaskAttachment} attachments`}
                   hasArrow
-                  label={
-                    <VStack spacing={0.5} align="start">
-                      {task.assignUsers.map((u) => (
-                        <Text key={u.id} fontSize="xs">
-                          {u.nama}
-                        </Text>
-                      ))}
-                    </VStack>
-                  }
-                  bg="gray.800"
-                  color="white"
-                  borderRadius="md"
                   placement="top"
                 >
-                  <AvatarGroup size="2xs" max={3} spacing="-0.5">
-                    {task.assignUsers.map((u) => (
-                      <Avatar
-                        key={u.id}
-                        name={u.nama}
-                        src={u.profilePict || undefined}
-                      />
-                    ))}
-                  </AvatarGroup>
+                  <HStack spacing={1}>
+                    <Icon as={FiPaperclip} boxSize={3} />
+                    <Text fontWeight={600} fontFamily="mono" fontSize="3xs">
+                      {task.countTaskAttachment}
+                    </Text>
+                  </HStack>
                 </Tooltip>
               )}
             </HStack>
 
-            {/* 8. Start and End Date (Hidden in compact view) */}
-            {!isCompactView && (task.startDate || task.endDate) && (
-              <HStack spacing={3} w="full" justify="space-between" pt={0.5}>
-                {task.startDate && (
-                  <HStack spacing={1.5} fontSize="3xs" color="green.500">
-                    <Icon as={FiPlay} boxSize="9px" />
-                    <Text fontWeight={500}>
-                      Start : {formatDateDDMMYYYY(task.startDate)}
-                    </Text>
-                  </HStack>
-                )}
-                {task.endDate && (
-                  <HStack spacing={1.5} fontSize="3xs" color="orange.500">
-                    <Icon as={FiFlag} boxSize="9px" />
-                    <Text fontWeight={500}>
-                      End : {formatDateDDMMYYYY(task.endDate)}
-                    </Text>
-                  </HStack>
-                )}
-              </HStack>
+            {/* Right: Overlapping Assignee Avatars */}
+            {task.assignUsers && task.assignUsers.length > 0 && (
+              <Tooltip
+                hasArrow
+                label={
+                  <VStack spacing={0.5} align="start" py={1}>
+                    {task.assignUsers.map((u) => (
+                      <Text key={u.id} fontSize="xs" fontWeight="500">
+                        {u.nama}
+                      </Text>
+                    ))}
+                  </VStack>
+                }
+                bg={isDark ? "gray.800" : "gray.900"}
+                color="white"
+                borderRadius="md"
+                placement="top"
+              >
+                <AvatarGroup size="2xs" max={3} spacing="-1.5">
+                  {task.assignUsers.map((u) => (
+                    <Avatar
+                      key={u.id}
+                      name={u.nama}
+                      src={u.profilePict || undefined}
+                      border="1.5px solid"
+                      borderColor={isDark ? "gray.800" : "white"}
+                      bg={isDark ? "purple.900" : "purple.100"}
+                      color={isDark ? "purple.200" : "purple.700"}
+                      fontWeight="600"
+                    />
+                  ))}
+                </AvatarGroup>
+              </Tooltip>
             )}
+          </HStack>
 
-            {/* 9. Last Updated (Hidden in compact view) */}
-            {!isCompactView && (
-              <HStack spacing={1.5} fontSize="3xs" color="gray.500" pt={0.5}>
-                <Icon as={FiRefreshCcw} boxSize="9px" />
-                <Text>
-                  {task.updatedAt
-                    ? `Updated ${convertToCustomDateFormat(task.updatedAt)}`
-                    : `Created ${convertToCustomDateFormat(task.createdAt)}`}
-                </Text>
-              </HStack>
-            )}
-          </VStack>
-        </CardBody>
-
-        {/* 10. Warning footer if Done but percentage < 100% */}
-        {task.percentageStatus < 100 && isDoneStage && (
-          <CardFooter
-            bg="orange.300"
-            h="20px"
-            p={0}
-            roundedBottom={radiusStyle}
-          >
-            <Flex
-              w="full"
-              color="orange.900"
-              px={3}
-              align="center"
-              justify="center"
-              gap={1}
+          {/* Incomplete Task warning in DONE column */}
+          {task.percentageStatus < 100 && isDoneStage && (
+            <HStack
+              mt={1}
+              px={2.5}
+              py={1}
+              borderRadius="md"
+              bg={isDark ? "rgba(245, 158, 11, 0.12)" : "orange.50"}
+              border="1px solid"
+              borderColor={isDark ? "rgba(245, 158, 11, 0.25)" : "orange.200"}
+              color={isDark ? "orange.300" : "orange.700"}
+              fontSize="3xs"
+              fontWeight={600}
+              spacing={1.5}
             >
               <Icon as={FiAlertCircle} boxSize="11px" />
-              <Text fontSize="3xs" fontWeight={600}>
-                Incomplete Task in Done
-              </Text>
-            </Flex>
-          </CardFooter>
-        )}
-      </Card>
-    </div>
+              <Text noOfLines={1}>Checklist belum selesai</Text>
+            </HStack>
+          )}
+        </VStack>
+      </Box>
+    </Box>
   );
 };
 

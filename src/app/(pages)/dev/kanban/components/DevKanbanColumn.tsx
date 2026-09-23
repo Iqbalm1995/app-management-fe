@@ -21,6 +21,7 @@ import { BacklogDataResponse } from "@/app/services/useRequirements";
 import DevKanbanCard from "./DevKanbanCard";
 import { FiPlus, FiX, FiInbox } from "react-icons/fi";
 import { radiusStyle } from "@/app/constants/applicationConstants";
+import { normalizeStageName } from "../kanbanUtils";
 
 interface DevKanbanColumnProps {
   board: TaskBoardViewModel;
@@ -105,8 +106,11 @@ export const DevKanbanColumn: React.FC<DevKanbanColumnProps> = ({
 
   const [{ isOver }, drop] = useDrop({
     accept: "task",
-    drop: (item: { id: string; boardId: string }) => {
-      if (item.boardId !== board.id) {
+    drop: (item: { id: string; boardId: string; boardName?: string }) => {
+      if (
+        item.boardId !== board.id &&
+        normalizeStageName(item.boardName) !== normalizeStageName(board.boardName)
+      ) {
         onMoveTask(item.id, board.id);
       }
     },
@@ -117,25 +121,18 @@ export const DevKanbanColumn: React.FC<DevKanbanColumnProps> = ({
 
   drop(dropRef);
 
+  const normalizedBoard = normalizeStageName(board.boardName);
   const stageTheme =
-    stageThemeMap[board.boardCodeStage] ||
-    (board.boardName?.toUpperCase().includes("TODO") || board.boardName?.toUpperCase() === "TO DO"
-      ? stageThemeMap.TODO
-      : board.boardName?.toUpperCase().includes("PROGRESS")
-      ? stageThemeMap.INPROGRESS
-      : board.boardName?.toUpperCase().includes("REVIEW")
-      ? stageThemeMap.REVIEW
-      : board.boardName?.toUpperCase().includes("DONE")
-      ? stageThemeMap.DONE
-      : {
-          barColor: "#8b5cf6",
-          badgeScheme: "purple",
-          headerBgDark: "linear-gradient(180deg, rgba(139, 92, 246, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%)",
-          headerBgLight: "linear-gradient(180deg, rgba(139, 92, 246, 0.08) 0%, rgba(250, 245, 255, 0.95) 100%)",
-          borderColorDark: "rgba(139, 92, 246, 0.18)",
-          borderColorLight: "rgba(139, 92, 246, 0.2)",
-          iconColor: "#8b5cf6",
-        });
+    stageThemeMap[normalizedBoard] ||
+    stageThemeMap[board.boardCodeStage] || {
+      barColor: "#8b5cf6",
+      badgeScheme: "purple",
+      headerBgDark: "linear-gradient(180deg, rgba(139, 92, 246, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%)",
+      headerBgLight: "linear-gradient(180deg, rgba(139, 92, 246, 0.08) 0%, rgba(250, 245, 255, 0.95) 100%)",
+      borderColorDark: "rgba(139, 92, 246, 0.18)",
+      borderColorLight: "rgba(139, 92, 246, 0.2)",
+      iconColor: "#8b5cf6",
+    };
 
   const handleCreateTask = async () => {
     if (!newTaskName.trim() || isSubmitting) return;

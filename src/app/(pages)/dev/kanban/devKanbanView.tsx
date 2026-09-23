@@ -136,6 +136,7 @@ import {
 import DevFloatingTopbar from "../components/DevFloatingTopbar";
 import DevKanbanColumn from "./components/DevKanbanColumn";
 import { DEV_THEME } from "../constants/devThemeConstants";
+import { normalizeStageName } from "./kanbanUtils";
 
 interface SelectedProjectStorage {
   id: string;
@@ -646,29 +647,98 @@ export default function DevKanbanView() {
   // Drag and Drop: Move task handler
   const handleMoveTask = async (taskId: string, targetBoardId: string) => {
     const movedTask = tasks.find((t) => t.id === taskId);
-    if (!movedTask || movedTask.boardId === targetBoardId) return;
+    if (!movedTask) return;
+
+    const targetBoard = boards.find((b) => b.id === targetBoardId);
+    const targetStage = normalizeStageName(targetBoard?.boardName);
+    const currentStage = normalizeStageName(movedTask.boardName);
+
+    // If already in target stage and same board, do nothing
+    if (movedTask.boardId === targetBoardId && targetStage === currentStage) return;
+
+    let actualBoardId = targetBoardId;
+    let actualIndexStage = targetBoard?.indexStage ?? 0;
+    let actualBoardName = targetBoard?.boardName ?? movedTask.boardName;
+
+    // If task has its own backlog, resolve target board in that backlog configuration
+    if (movedTask.backlogId && tokenData) {
+      try {
+        const taskBoardRes = await ListTasksBoard(movedTask.backlogId, tokenData);
+        if (taskBoardRes?.statusCode === RES_CODE_OK && Array.isArray(taskBoardRes.data)) {
+          const matchedBoard = taskBoardRes.data.find(
+            (b) => normalizeStageName(b.boardName) === targetStage
+          );
+          if (matchedBoard) {
+            actualBoardId = matchedBoard.id;
+            actualIndexStage = matchedBoard.indexStage;
+            actualBoardName = matchedBoard.boardName;
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch backlog-specific board, falling back to column board ID", err);
+      }
+    }
+
+    const tasksInTarget = tasks.filter(
+      (t) => normalizeStageName(t.boardName) === targetStage
+    );
+    const newIndex =
+      tasksInTarget.length > 0
+        ? Math.max(...tasksInTarget.map((t) => t.indexTask || 0)) + 10
+        : 10;
 
     // Optimistic UI update
     setRecentlyMovedTaskId(taskId);
     setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, boardId: targetBoardId } : t))
+      prev.map((t) =>
+        t.id === taskId
+          ? {
+              ...t,
+              boardId: actualBoardId,
+              boardName: actualBoardName,
+              boardIndexStage: actualIndexStage,
+              indexTask: newIndex,
+            }
+          : t
+      )
     );
+
+    if (activeTask && activeTask.id === taskId) {
+      setActiveTask((prev) =>
+        prev
+          ? {
+              ...prev,
+              boardId: actualBoardId,
+              boardName: actualBoardName,
+              boardIndexStage: actualIndexStage,
+              indexTask: newIndex,
+            }
+          : null
+      );
+    }
 
     try {
       const payload: TaskMovePayload = {
         id: taskId,
-        boardId: targetBoardId,
-        indexTask: 10,
+        boardId: actualBoardId,
+        indexTask: newIndex,
+        indexStage: actualIndexStage,
       };
 
       const res = await MoveTask(payload, tokenData);
-      if (res?.statusCode !== RES_CODE_OK) {
+      if (res?.statusCode === RES_CODE_OK) {
+        showToast({
+          description: `Task moved to ${actualBoardName}`,
+          statusToast: "success",
+        });
+      } else {
         // Rollback on failure
         setTasks((prev) =>
-          prev.map((t) =>
-            t.id === taskId ? { ...t, boardId: movedTask.boardId } : t
-          )
+          prev.map((t) => (t.id === taskId ? movedTask : t))
         );
+        if (activeTask && activeTask.id === taskId) {
+          setActiveTask(movedTask);
+        }
         showToast({
           description: res?.message || "Failed to move task",
           statusToast: "error",
@@ -678,10 +748,15 @@ export default function DevKanbanView() {
       console.error("Task move failed:", err);
       // Rollback
       setTasks((prev) =>
-        prev.map((t) =>
-          t.id === taskId ? { ...t, boardId: movedTask.boardId } : t
-        )
+        prev.map((t) => (t.id === taskId ? movedTask : t))
       );
+      if (activeTask && activeTask.id === taskId) {
+        setActiveTask(movedTask);
+      }
+      showToast({
+        description: "Failed to move task",
+        statusToast: "error",
+      });
     } finally {
       setTimeout(() => setRecentlyMovedTaskId(null), 1200);
     }
@@ -1331,18 +1406,14 @@ export default function DevKanbanView() {
 
   // Move task to board from detail modal
   const handleMoveTaskToBoard = async (targetBoard: TaskBoardViewModel) => {
-    if (!activeTask || activeTask.boardId === targetBoard.id) return;
+    if (!activeTask) return;
+    if (
+      activeTask.boardId === targetBoard.id &&
+      normalizeStageName(activeTask.boardName) === normalizeStageName(targetBoard.boardName)
+    ) {
+      return;
+    }
     await handleMoveTask(activeTask.id, targetBoard.id);
-    setActiveTask((prev) =>
-      prev
-        ? {
-          ...prev,
-          boardId: targetBoard.id,
-          boardName: targetBoard.boardName,
-          boardCodeStage: targetBoard.boardCodeStage,
-        }
-        : null
-    );
   };
 
   // Update task priority from detail modal
@@ -1870,22 +1941,20 @@ export default function DevKanbanView() {
   // Project statistics matching /workspace/project?projectId=
   const projectStats = useMemo(() => {
     const totalTasks = tasks.length;
-    const todoTasks = tasks.filter((t) => {
-      const stage = (t.boardCodeStage || t.boardName || "").toUpperCase();
-      return stage.includes("TODO") || stage === "TO DO";
-    }).length;
-    const inProgressTasks = tasks.filter((t) => {
-      const stage = (t.boardCodeStage || t.boardName || "").toUpperCase();
-      return stage.includes("PROGRESS") || stage === "IN PROGRESS";
-    }).length;
-    const inReviewTasks = tasks.filter((t) => {
-      const stage = (t.boardCodeStage || t.boardName || "").toUpperCase();
-      return stage.includes("REVIEW") || stage === "IN REVIEW";
-    }).length;
-    const completedTasks = tasks.filter((t) => {
-      const stage = (t.boardCodeStage || t.boardName || "").toUpperCase();
-      return stage.includes("DONE") || t.percentageStatus === 100;
-    }).length;
+    const todoTasks = tasks.filter(
+      (t) => normalizeStageName(t.boardName) === "TODO"
+    ).length;
+    const inProgressTasks = tasks.filter(
+      (t) => normalizeStageName(t.boardName) === "INPROGRESS"
+    ).length;
+    const inReviewTasks = tasks.filter(
+      (t) => normalizeStageName(t.boardName) === "REVIEW"
+    ).length;
+    const completedTasks = tasks.filter(
+      (t) =>
+        normalizeStageName(t.boardName) === "DONE" ||
+        t.percentageStatus === 100
+    ).length;
     const completionPercentage =
       totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
@@ -2265,364 +2334,535 @@ export default function DevKanbanView() {
           fullWidth
         />
 
-        {/* Main Content Area - Full Width */}
-        <Box pt={{ base: "88px", md: "96px" }} px={{ base: 4, md: 6 }} w="full">
-          {/* 1. Project Header & Executive Sprint Telemetry */}
+        {/* Main Content Area - Full Width with generous breathing room */}
+        <Box pt={{ base: "88px", md: "96px" }} px={{ base: 4, md: 6, xl: 8 }} w="full">
+          {/* 1. Project Management Command Header */}
           <Box
             w="full"
-            borderRadius={radiusStyle}
+            borderRadius="xl"
             overflow="hidden"
             position="relative"
-            bg={isDark ? "rgba(15, 23, 42, 0.65)" : "white"}
-            backdropFilter="blur(20px)"
+            bg={isDark ? "rgba(15, 23, 42, 0.72)" : "white"}
+            backdropFilter="blur(24px)"
             border="1px solid"
-            borderColor={isDark ? "rgba(255, 255, 255, 0.08)" : "purple.100"}
-            boxShadow={isDark ? "0 4px 20px -2px rgba(0, 0, 0, 0.5)" : "0 1px 3px rgba(139, 92, 246, 0.1)"}
+            borderColor={isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(226, 232, 240, 0.9)"}
+            boxShadow={
+              isDark
+                ? "0 4px 20px -2px rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.06)"
+                : "0 1px 3px rgba(0, 0, 0, 0.03), 0 4px 12px -2px rgba(0, 0, 0, 0.03), inset 0 1px 0 0 rgba(255, 255, 255, 0.9)"
+            }
             mb={4}
           >
-            {/* Dev-scheme background pattern: dot-grid + soft purple/pink wash,
-                purely decorative (pointer-events none), no glow/blur spread */}
+            {/* Architectural Technical Grid Pattern (Anti-slop, strictly no dots) */}
             <Box
               position="absolute"
               inset={0}
               pointerEvents="none"
               zIndex={0}
+              opacity={isDark ? 0.35 : 0.55}
               backgroundImage={
                 isDark
-                  ? "radial-gradient(circle at 100% 0%, rgba(236, 72, 153, 0.16) 0%, transparent 45%), radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px)"
-                  : "radial-gradient(circle at 100% 0%, rgba(139, 92, 246, 0.16) 0%, transparent 50%), radial-gradient(rgba(139, 92, 246, 0.35) 1.2px, transparent 1.2px)"
+                  ? "linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px)"
+                  : "linear-gradient(to right, rgba(139, 92, 246, 0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(139, 92, 246, 0.08) 1px, transparent 1px)"
               }
-              backgroundSize="auto, 16px 16px"
+              backgroundSize="24px 24px"
+              style={{
+                maskImage: "radial-gradient(ellipse 90% 80% at 50% 25%, black 35%, transparent 100%)",
+                WebkitMaskImage: "radial-gradient(ellipse 90% 80% at 50% 25%, black 35%, transparent 100%)",
+              }}
             />
 
-            <Box p={{ base: 4, md: 5 }} position="relative" zIndex={1}>
-              <VStack spacing={4} align="stretch">
-                {/* Top Row: Project Info + Actions */}
+            {/* Ambient Lighting Aura */}
+            <Box
+              position="absolute"
+              top="-30px"
+              right="-30px"
+              w="380px"
+              h="240px"
+              borderRadius="full"
+              pointerEvents="none"
+              zIndex={0}
+              bg={
+                isDark
+                  ? "radial-gradient(circle, rgba(139, 92, 246, 0.16) 0%, rgba(236, 72, 153, 0.07) 45%, transparent 70%)"
+                  : "radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, rgba(236, 72, 153, 0.05) 45%, transparent 70%)"
+              }
+              filter="blur(36px)"
+            />
+
+            {/* Top accent hairline shimmer */}
+            <Box
+              position="absolute"
+              top={0}
+              left={0}
+              right={0}
+              h="1px"
+              bg={
+                isDark
+                  ? "linear-gradient(90deg, transparent 0%, rgba(168, 85, 247, 0.4) 35%, rgba(236, 72, 153, 0.35) 65%, transparent 100%)"
+                  : "linear-gradient(90deg, transparent 0%, rgba(139, 92, 246, 0.3) 35%, rgba(236, 72, 153, 0.25) 65%, transparent 100%)"
+              }
+              pointerEvents="none"
+            />
+
+            <Box p={{ base: 4, md: 4.5, xl: 5 }} position="relative" zIndex={1}>
+              <VStack spacing={3.5} align="stretch">
+                {/* Row 1: Breadcrumb + Project Title & Primary Action Controls */}
                 <HStack justify="space-between" align="start" flexWrap="wrap" gap={3}>
-                  <HStack spacing={3} align="start" flex={1} minW="280px">
-                    <VStack align="start" spacing={1.5}>
-                      <HStack spacing={2} align="center">
-                        <Heading size="md" color={isDark ? "white" : "gray.900"} fontWeight={700}>
+                  {/* Left: Project Monogram + Identity + Metadata Pills */}
+                  <HStack spacing={3.5} align="start" flex={1} minW="280px">
+                    {/* Project Monogram / Squircle Badge */}
+                    <Box
+                      w="42px"
+                      h="42px"
+                      borderRadius="lg"
+                      bg={
+                        isDark
+                          ? "linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(236, 72, 153, 0.15) 100%)"
+                          : "linear-gradient(135deg, #f3e8ff 0%, #fce7f3 100%)"
+                      }
+                      border="1px solid"
+                      borderColor={isDark ? "rgba(168, 85, 247, 0.3)" : "purple.200"}
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                      flexShrink={0}
+                      boxShadow="sm"
+                    >
+                      <Text
+                        fontWeight="800"
+                        fontSize="sm"
+                        fontFamily="mono"
+                        color={isDark ? "purple.300" : "purple.700"}
+                        letterSpacing="0.05em"
+                      >
+                        {(projectData?.projectName || selectedProject?.projectName || "PJ")
+                          .split(" ")
+                          .slice(0, 2)
+                          .map((w) => w[0])
+                          .join("")
+                          .toUpperCase() || "PJ"}
+                      </Text>
+                    </Box>
+
+                    {/* Title & Metadata */}
+                    <VStack align="start" spacing={1.5} flex={1}>
+                      {/* Breadcrumb line */}
+                      <HStack spacing={1.5} fontSize="3xs" fontWeight={600} textTransform="uppercase" letterSpacing="0.06em" color={isDark ? "gray.500" : "gray.400"}>
+                        <Text>Workspace</Text>
+                        <Text color={isDark ? "gray.600" : "gray.300"}>/</Text>
+                        <Text color={isDark ? "purple.300" : "purple.600"}>
+                          {projectData?.appsProject?.appName || "Project"}
+                        </Text>
+                        <Text color={isDark ? "gray.600" : "gray.300"}>/</Text>
+                        <Text color={isDark ? "gray.400" : "gray.600"}>Kanban</Text>
+                      </HStack>
+
+                      {/* Main Title + Status Badge */}
+                      <HStack spacing={2.5} align="center" flexWrap="wrap">
+                        <Heading
+                          size="md"
+                          fontSize={{ base: "md", md: "lg", xl: "xl" }}
+                          color={isDark ? "white" : "gray.900"}
+                          fontWeight={700}
+                          letterSpacing="-0.02em"
+                          lineHeight="1.2"
+                        >
                           {projectData?.projectName || selectedProject?.projectName || "Project Workspace"}
                         </Heading>
+
+                        {/* Status Tag with live status dot */}
                         {selectedProject?.projectStatus && (
-                          <Badge
-                            colorScheme={
-                              selectedProject.projectStatus === "RUNNING"
-                                ? "green"
-                                : selectedProject.projectStatus === "INITIATING"
-                                  ? "purple"
-                                  : "pink"
-                            }
-                            variant="subtle"
-                            fontSize="2xs"
-                            px={2}
+                          <HStack
+                            spacing={1.5}
+                            px={2.5}
                             py={0.5}
-                            rounded="full"
+                            borderRadius="full"
+                            bg={
+                              selectedProject.projectStatus === "RUNNING"
+                                ? isDark ? "rgba(16, 185, 129, 0.12)" : "green.50"
+                                : selectedProject.projectStatus === "INITIATING"
+                                  ? isDark ? "rgba(139, 92, 246, 0.12)" : "purple.50"
+                                  : isDark ? "rgba(236, 72, 153, 0.12)" : "pink.50"
+                            }
+                            border="1px solid"
+                            borderColor={
+                              selectedProject.projectStatus === "RUNNING"
+                                ? isDark ? "rgba(16, 185, 129, 0.3)" : "green.200"
+                                : selectedProject.projectStatus === "INITIATING"
+                                  ? isDark ? "rgba(139, 92, 246, 0.3)" : "purple.200"
+                                  : isDark ? "rgba(236, 72, 153, 0.3)" : "pink.200"
+                            }
                           >
-                            {selectedProject.projectStatus}
-                          </Badge>
+                            <Box
+                              w="5px"
+                              h="5px"
+                              borderRadius="full"
+                              bg={
+                                selectedProject.projectStatus === "RUNNING"
+                                  ? "#10b981"
+                                  : selectedProject.projectStatus === "INITIATING"
+                                    ? "#8b5cf6"
+                                    : "#ec4899"
+                              }
+                            />
+                            <Text
+                              fontSize="3xs"
+                              fontWeight={700}
+                              textTransform="uppercase"
+                              letterSpacing="0.05em"
+                              color={
+                                selectedProject.projectStatus === "RUNNING"
+                                  ? isDark ? "green.300" : "green.700"
+                                  : selectedProject.projectStatus === "INITIATING"
+                                    ? isDark ? "purple.300" : "purple.700"
+                                    : isDark ? "pink.300" : "pink.700"
+                              }
+                            >
+                              {selectedProject.projectStatus}
+                            </Text>
+                          </HStack>
                         )}
                       </HStack>
 
-                      <HStack
-                        spacing={2}
-                        fontSize="xs"
-                        color={isDark ? "gray.400" : "gray.500"}
-                        flexWrap="wrap"
-                        rowGap={1.5}
-                      >
+                      {/* Metadata Chips: Memo, Code, Division */}
+                      <HStack spacing={2} flexWrap="wrap" pt={0.5}>
                         <HStack
-                          spacing={1.5}
+                          spacing={1}
                           px={2}
                           py={0.5}
                           borderRadius="md"
-                          bg={isDark ? "rgba(255, 255, 255, 0.04)" : "purple.50"}
-                          whiteSpace="nowrap"
+                          bg={isDark ? "whiteAlpha.50" : "gray.100"}
+                          fontSize="2xs"
                         >
-                          <Text color={isDark ? "gray.500" : "purple.400"} fontSize="3xs" textTransform="uppercase" fontWeight={600}>Memo</Text>
-                          <Text color={isDark ? "gray.300" : "gray.700"} fontSize="xs" fontWeight={500}>{projectData?.requirementData?.reqNumber || "-"}</Text>
+                          <Text color={isDark ? "gray.500" : "gray.400"} fontWeight={600} fontSize="3xs" textTransform="uppercase">
+                            Memo
+                          </Text>
+                          <Text color={isDark ? "gray.300" : "gray.700"} fontWeight={500}>
+                            {projectData?.requirementData?.reqNumber || "-"}
+                          </Text>
                         </HStack>
 
                         <HStack
-                          spacing={1.5}
+                          spacing={1}
                           px={2}
                           py={0.5}
                           borderRadius="md"
-                          bg={isDark ? "rgba(255, 255, 255, 0.04)" : "purple.50"}
-                          whiteSpace="nowrap"
+                          bg={isDark ? "whiteAlpha.50" : "gray.100"}
+                          fontSize="2xs"
                         >
-                          <Text color={isDark ? "gray.500" : "purple.400"} fontSize="3xs" textTransform="uppercase" fontWeight={600}>Code</Text>
-                          <Text color={isDark ? "gray.300" : "gray.700"} fontSize="xs" fontWeight={500}>{projectData?.projectNo || selectedProject?.projectNo || "-"}</Text>
+                          <Text color={isDark ? "gray.500" : "gray.400"} fontWeight={600} fontSize="3xs" textTransform="uppercase">
+                            Code
+                          </Text>
+                          <Text color={isDark ? "gray.300" : "gray.700"} fontWeight={500} fontFamily="mono">
+                            {projectData?.projectNo || selectedProject?.projectNo || "-"}
+                          </Text>
                         </HStack>
 
                         <HStack
-                          spacing={1.5}
+                          spacing={1}
                           px={2}
                           py={0.5}
                           borderRadius="md"
-                          bg={isDark ? "rgba(255, 255, 255, 0.04)" : "purple.50"}
-                          whiteSpace="nowrap"
+                          bg={isDark ? "whiteAlpha.50" : "gray.100"}
+                          fontSize="2xs"
                         >
-                          <Text color={isDark ? "gray.500" : "purple.400"} fontSize="3xs" textTransform="uppercase" fontWeight={600}>Team</Text>
-                          <Text color={isDark ? "gray.300" : "gray.700"} fontSize="xs" fontWeight={500}>{projectData?.proManageByDivisionName || "-"}</Text>
+                          <Text color={isDark ? "gray.500" : "gray.400"} fontWeight={600} fontSize="3xs" textTransform="uppercase">
+                            Team
+                          </Text>
+                          <Text color={isDark ? "gray.300" : "gray.700"} fontWeight={500} noOfLines={1} maxW="200px">
+                            {projectData?.proManageByDivisionName || "-"}
+                          </Text>
                         </HStack>
                       </HStack>
                     </VStack>
                   </HStack>
 
-                  {/* Right side: Change Project + Application Badge & Refresh */}
-                  <HStack spacing={3} align="center">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      leftIcon={<FiFolder />}
-                      onClick={onChangeProjectOpen}
-                      borderRadius={radiusStyle}
-                      fontSize="xs"
-                      color={isDark ? "purple.300" : "purple.600"}
-                      borderColor={isDark ? "purple.400" : "purple.300"}
-                      _hover={{ bg: isDark ? "rgba(139, 92, 246, 0.12)" : "purple.50" }}
-                    >
-                      Change Project
-                    </Button>
-
+                  {/* Right: Application Context + Action Buttons */}
+                  <HStack spacing={2.5} align="center" flexShrink={0}>
                     {projectData?.appsProject && (
                       <HStack
-                        spacing={3}
-                        bg={isDark ? "rgba(139, 92, 246, 0.12)" : "purple.50"}
+                        spacing={2}
+                        bg={isDark ? "rgba(255, 255, 255, 0.04)" : "gray.50"}
                         border="1px solid"
-                        borderColor={isDark ? "rgba(139, 92, 246, 0.3)" : "purple.200"}
-                        px={3.5}
-                        py={2}
-                        borderRadius={radiusStyle}
+                        borderColor={isDark ? "whiteAlpha.100" : "gray.200"}
+                        px={3}
+                        py={1.5}
+                        borderRadius="lg"
                       >
                         <Box
-                          bg="purple.500"
-                          w="36px"
-                          h="36px"
-                          borderRadius={radiusStyle}
+                          bg={isDark ? "purple.900" : "purple.100"}
+                          color={isDark ? "purple.200" : "purple.700"}
+                          w="24px"
+                          h="24px"
+                          borderRadius="md"
                           display="flex"
                           alignItems="center"
                           justifyContent="center"
-                          fontWeight="bold"
-                          fontSize="sm"
-                          color="white"
+                          fontWeight="700"
+                          fontSize="2xs"
+                          fontFamily="mono"
                         >
-                          {projectData.appsProject.appCode?.substring(0, 2).toUpperCase() ||
-                            projectData.appsProject.appName?.substring(0, 2).toUpperCase() ||
-                            "AP"}
+                          {projectData.appsProject.appCode?.substring(0, 2).toUpperCase() || "AP"}
                         </Box>
                         <VStack align="start" spacing={0}>
-                          <Text
-                            fontSize="3xs"
-                            color={isDark ? "purple.300" : "purple.500"}
-                            fontWeight="semibold"
-                            textTransform="uppercase"
-                            letterSpacing="0.05em"
-                          >
-                            Application
+                          <Text fontSize="3xs" textTransform="uppercase" fontWeight={600} color={isDark ? "gray.500" : "gray.400"}>
+                            App
                           </Text>
-                          <Text
-                            fontSize="xs"
-                            color={isDark ? "white" : "gray.900"}
-                            fontWeight="bold"
-                            noOfLines={1}
-                            maxW="160px"
-                          >
+                          <Text fontSize="xs" fontWeight={600} color={isDark ? "gray.200" : "gray.800"} noOfLines={1} maxW="150px">
                             {projectData.appsProject.appName}
                           </Text>
                         </VStack>
                       </HStack>
                     )}
 
-                    <IconButton
-                      aria-label="Refresh"
-                      icon={<FiRefreshCw />}
+                    <Button
                       size="sm"
                       variant="outline"
-                      onClick={loadKanbanData}
-                      isLoading={isLoadingBoards}
+                      leftIcon={<FiFolder />}
+                      onClick={onChangeProjectOpen}
                       borderRadius="lg"
+                      fontSize="xs"
+                      fontWeight={500}
                       color={isDark ? "gray.200" : "gray.700"}
-                      borderColor={isDark ? "whiteAlpha.300" : "gray.300"}
-                    />
+                      borderColor={isDark ? "whiteAlpha.200" : "gray.300"}
+                      _hover={{
+                        bg: isDark ? "whiteAlpha.100" : "gray.50",
+                        borderColor: isDark ? "purple.400" : "purple.400",
+                      }}
+                      h="34px"
+                    >
+                      Switch Project
+                    </Button>
+
+                    <Tooltip label="Sync board with server" hasArrow placement="bottom">
+                      <IconButton
+                        aria-label="Refresh Kanban"
+                        icon={<FiRefreshCw />}
+                        size="sm"
+                        variant="outline"
+                        onClick={loadKanbanData}
+                        isLoading={isLoadingBoards}
+                        borderRadius="lg"
+                        color={isDark ? "gray.300" : "gray.600"}
+                        borderColor={isDark ? "whiteAlpha.200" : "gray.300"}
+                        _hover={{ bg: isDark ? "whiteAlpha.100" : "gray.50" }}
+                        h="34px"
+                        w="34px"
+                      />
+                    </Tooltip>
                   </HStack>
                 </HStack>
 
-                {/* Executive Sprint Telemetry Bar */}
+                {/* Row 2: Telemetry Strip with Highlighted Progress Bar */}
                 <Box
                   pt={3}
                   borderTop="1px solid"
                   borderColor={isDark ? "rgba(255, 255, 255, 0.06)" : "gray.100"}
                 >
-                  {/* Proportional Segmented Progress Track */}
-                  <Box
-                    w="full"
-                    h="5px"
-                    borderRadius="full"
-                    overflow="hidden"
-                    bg={isDark ? "rgba(255, 255, 255, 0.08)" : "gray.100"}
-                    display="flex"
-                    mb={3}
-                  >
-                    {projectStats.totalTasks > 0 ? (
-                      <>
-                        <Box
-                          w={`${(projectStats.completedTasks / projectStats.totalTasks) * 100}%`}
-                          bg="#10b981"
-                          title={`Done: ${projectStats.completedTasks}`}
-                          transition="width 0.4s ease"
-                        />
-                        <Box
-                          w={`${(projectStats.inReviewTasks / projectStats.totalTasks) * 100}%`}
-                          bg="#8b5cf6"
-                          title={`In Review: ${projectStats.inReviewTasks}`}
-                          transition="width 0.4s ease"
-                        />
-                        <Box
-                          w={`${(projectStats.inProgressTasks / projectStats.totalTasks) * 100}%`}
-                          bg="#f59e0b"
-                          title={`In Progress: ${projectStats.inProgressTasks}`}
-                          transition="width 0.4s ease"
-                        />
-                        <Box
-                          w={`${(projectStats.todoTasks / projectStats.totalTasks) * 100}%`}
-                          bg={isDark ? "#475569" : "#cbd5e1"}
-                          title={`To Do: ${projectStats.todoTasks}`}
-                          transition="width 0.4s ease"
-                        />
-                      </>
-                    ) : (
-                      <Box w="full" bg={isDark ? "rgba(255, 255, 255, 0.04)" : "gray.200"} />
-                    )}
-                  </Box>
-
-                  {/* Telemetry Stage Metrics Row */}
-                  <Flex justify="space-between" align="center" flexWrap="wrap" gap={3}>
-                    <HStack spacing={{ base: 3, md: 5 }} flexWrap="wrap" rowGap={2}>
-                      {/* To Do */}
-                      <HStack spacing={2} align="center">
-                        <Box w="7px" h="7px" borderRadius="full" bg="#94a3b8" />
-                        <Text fontSize="xs" color={isDark ? "gray.400" : "gray.600"}>
-                          To Do
-                        </Text>
-                        <Text
-                          fontSize="xs"
-                          fontWeight={700}
-                          sx={{ fontVariantNumeric: "tabular-nums" }}
-                          color={isDark ? "white" : "gray.900"}
-                        >
-                          {projectStats.todoTasks}
-                        </Text>
-                      </HStack>
-
-                      {/* In Progress */}
-                      <HStack spacing={2} align="center">
-                        <Box w="7px" h="7px" borderRadius="full" bg="#f59e0b" />
-                        <Text fontSize="xs" color={isDark ? "gray.400" : "gray.600"}>
-                          In Progress
-                        </Text>
-                        <Text
-                          fontSize="xs"
-                          fontWeight={700}
-                          sx={{ fontVariantNumeric: "tabular-nums" }}
-                          color={isDark ? "white" : "gray.900"}
-                        >
-                          {projectStats.inProgressTasks}
-                        </Text>
-                      </HStack>
-
-                      {/* In Review */}
-                      <HStack spacing={2} align="center">
-                        <Box w="7px" h="7px" borderRadius="full" bg="#8b5cf6" />
-                        <Text fontSize="xs" color={isDark ? "gray.400" : "gray.600"}>
-                          In Review
-                        </Text>
-                        <Text
-                          fontSize="xs"
-                          fontWeight={700}
-                          sx={{ fontVariantNumeric: "tabular-nums" }}
-                          color={isDark ? "white" : "gray.900"}
-                        >
-                          {projectStats.inReviewTasks}
-                        </Text>
-                      </HStack>
-
-                      {/* Done */}
-                      <HStack spacing={2} align="center">
-                        <Box w="7px" h="7px" borderRadius="full" bg="#10b981" />
-                        <Text fontSize="xs" color={isDark ? "gray.400" : "gray.600"}>
-                          Done
-                        </Text>
-                        <Text
-                          fontSize="xs"
-                          fontWeight={700}
-                          sx={{ fontVariantNumeric: "tabular-nums" }}
-                          color={isDark ? "white" : "gray.900"}
-                        >
-                          {projectStats.completedTasks}
-                        </Text>
-                      </HStack>
-
-                      {/* Total indicator */}
-                      <HStack
-                        spacing={1.5}
-                        px={2}
-                        py={0.5}
-                        borderRadius="md"
-                        bg={isDark ? "rgba(255, 255, 255, 0.04)" : "gray.100"}
-                      >
-                        <Text fontSize="2xs" color={isDark ? "gray.500" : "gray.500"}>
-                          Total:
-                        </Text>
-                        <Text
-                          fontSize="xs"
-                          fontWeight={700}
-                          sx={{ fontVariantNumeric: "tabular-nums" }}
-                          color={isDark ? "gray.200" : "gray.800"}
-                        >
-                          {projectStats.totalTasks}
-                        </Text>
-                      </HStack>
-                    </HStack>
-
-                    {/* Right Telemetry: Completion & Target Date */}
-                    <HStack spacing={3} align="center" flexWrap="wrap">
-                      <HStack
-                        spacing={2}
-                        px={2.5}
-                        py={1}
-                        borderRadius="md"
+                  <VStack spacing={2.5} align="stretch">
+                    {/* Prominently Highlighted Multi-segment Progress Bar Track */}
+                    <Tooltip
+                      label={`Done: ${projectStats.completedTasks} | Review: ${projectStats.inReviewTasks} | Progress: ${projectStats.inProgressTasks} | To Do: ${projectStats.todoTasks}`}
+                      hasArrow
+                      placement="top"
+                    >
+                      <Box
+                        w="full"
+                        p="2px"
+                        borderRadius="full"
+                        bg={isDark ? "rgba(0, 0, 0, 0.45)" : "gray.100"}
                         border="1px solid"
-                        borderColor={isDark ? "rgba(16, 185, 129, 0.3)" : "green.200"}
-                        bg={isDark ? "rgba(16, 185, 129, 0.1)" : "green.50"}
+                        borderColor={
+                          isDark
+                            ? projectStats.completionPercentage > 0
+                              ? "rgba(16, 185, 129, 0.3)"
+                              : "whiteAlpha.100"
+                            : projectStats.completionPercentage > 0
+                            ? "green.200"
+                            : "gray.200"
+                        }
+                        boxShadow={
+                          isDark && projectStats.completionPercentage > 0
+                            ? "0 0 16px rgba(16, 185, 129, 0.12), inset 0 1px 2px rgba(0, 0, 0, 0.35)"
+                            : "inset 0 1px 2px rgba(0, 0, 0, 0.06)"
+                        }
+                        cursor="pointer"
                       >
-                        <Box w="6px" h="6px" borderRadius="full" bg="#10b981" />
-                        <Text fontSize="xs" fontWeight={700} color={isDark ? "green.300" : "green.700"}>
-                          {projectStats.completionPercentage}% Done
-                        </Text>
+                        <Box
+                          w="full"
+                          h="8px"
+                          borderRadius="full"
+                          overflow="hidden"
+                          display="flex"
+                          bg={isDark ? "whiteAlpha.50" : "gray.200"}
+                        >
+                          {projectStats.totalTasks > 0 ? (
+                            <>
+                              <Box
+                                w={`${(projectStats.completedTasks / projectStats.totalTasks) * 100}%`}
+                                bg="linear-gradient(90deg, #10b981 0%, #34d399 100%)"
+                                boxShadow="0 0 10px rgba(16, 185, 129, 0.6)"
+                                transition="width 0.4s ease"
+                              />
+                              <Box
+                                w={`${(projectStats.inReviewTasks / projectStats.totalTasks) * 100}%`}
+                                bg="linear-gradient(90deg, #8b5cf6 0%, #a855f7 100%)"
+                                transition="width 0.4s ease"
+                              />
+                              <Box
+                                w={`${(projectStats.inProgressTasks / projectStats.totalTasks) * 100}%`}
+                                bg="linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%)"
+                                transition="width 0.4s ease"
+                              />
+                              <Box
+                                w={`${(projectStats.todoTasks / projectStats.totalTasks) * 100}%`}
+                                bg={isDark ? "#475569" : "#cbd5e1"}
+                                transition="width 0.4s ease"
+                              />
+                            </>
+                          ) : (
+                            <Box w="full" bg={isDark ? "whiteAlpha.100" : "gray.200"} />
+                          )}
+                        </Box>
+                      </Box>
+                    </Tooltip>
+
+                    {/* Stage Metrics Counters & Completion Info */}
+                    <Flex justify="space-between" align="center" flexWrap="wrap" gap={3}>
+                      {/* Left: Stage Counters */}
+                      <HStack spacing={{ base: 2.5, sm: 3.5, md: 4.5 }} fontSize="xs" flexWrap="wrap">
+                        {/* To Do */}
+                        <HStack spacing={1.5} align="center">
+                          <Box w="6px" h="6px" borderRadius="full" bg="#94a3b8" />
+                          <Text color={isDark ? "gray.400" : "gray.500"} fontSize="2xs" fontWeight={500}>
+                            To Do
+                          </Text>
+                          <Text
+                            fontSize="xs"
+                            fontWeight={700}
+                            color={isDark ? "gray.200" : "gray.800"}
+                            fontFamily="mono"
+                          >
+                            {projectStats.todoTasks}
+                          </Text>
+                        </HStack>
+
+                        {/* In Progress */}
+                        <HStack spacing={1.5} align="center">
+                          <Box w="6px" h="6px" borderRadius="full" bg="#f59e0b" />
+                          <Text color={isDark ? "gray.400" : "gray.500"} fontSize="2xs" fontWeight={500}>
+                            In Progress
+                          </Text>
+                          <Text
+                            fontSize="xs"
+                            fontWeight={700}
+                            color={isDark ? "gray.200" : "gray.800"}
+                            fontFamily="mono"
+                          >
+                            {projectStats.inProgressTasks}
+                          </Text>
+                        </HStack>
+
+                        {/* In Review */}
+                        <HStack spacing={1.5} align="center">
+                          <Box w="6px" h="6px" borderRadius="full" bg="#8b5cf6" />
+                          <Text color={isDark ? "gray.400" : "gray.500"} fontSize="2xs" fontWeight={500}>
+                            In Review
+                          </Text>
+                          <Text
+                            fontSize="xs"
+                            fontWeight={700}
+                            color={isDark ? "gray.200" : "gray.800"}
+                            fontFamily="mono"
+                          >
+                            {projectStats.inReviewTasks}
+                          </Text>
+                        </HStack>
+
+                        {/* Done */}
+                        <HStack spacing={1.5} align="center">
+                          <Box w="6px" h="6px" borderRadius="full" bg="#10b981" />
+                          <Text color={isDark ? "gray.400" : "gray.500"} fontSize="2xs" fontWeight={500}>
+                            Done
+                          </Text>
+                          <Text
+                            fontSize="xs"
+                            fontWeight={700}
+                            color={isDark ? "gray.200" : "gray.800"}
+                            fontFamily="mono"
+                          >
+                            {projectStats.completedTasks}
+                          </Text>
+                        </HStack>
+
+                        {/* Total Count */}
+                        <HStack
+                          spacing={1}
+                          px={2}
+                          py={0.5}
+                          borderRadius="md"
+                          bg={isDark ? "whiteAlpha.100" : "gray.100"}
+                          fontSize="3xs"
+                          color={isDark ? "gray.400" : "gray.600"}
+                          fontWeight={600}
+                        >
+                          <Text>Total:</Text>
+                          <Text fontFamily="mono" fontWeight={700}>
+                            {projectStats.totalTasks}
+                          </Text>
+                        </HStack>
                       </HStack>
 
-                      {projectData?.requirementData?.appLiveTargetDate && (
-                        <HStack spacing={1.5} fontSize="2xs" color={isDark ? "gray.400" : "gray.500"}>
-                          <Text color={isDark ? "gray.500" : "gray.400"}>Target Live:</Text>
-                          <Text fontWeight={600} color={isDark ? "gray.300" : "gray.700"}>
-                            {formatDateDDMMYYYY(projectData.requirementData.appLiveTargetDate)}
+                      {/* Right: Highlighted Completion % + Target Date + Sync Time */}
+                      <HStack spacing={2.5} align="center" fontSize="2xs">
+                        {/* Highlighted Completion Badge */}
+                        <HStack
+                          spacing={1.5}
+                          px={3}
+                          py={1}
+                          borderRadius="full"
+                          bg={
+                            isDark
+                              ? "linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.1) 100%)"
+                              : "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)"
+                          }
+                          border="1px solid"
+                          borderColor={isDark ? "rgba(52, 211, 153, 0.4)" : "green.300"}
+                          boxShadow={
+                            isDark
+                              ? "0 0 14px rgba(16, 185, 129, 0.25)"
+                              : "0 2px 6px rgba(16, 185, 129, 0.15)"
+                          }
+                          color={isDark ? "green.300" : "green.800"}
+                        >
+                          <Icon as={FiCheckCircle} boxSize="13px" />
+                          <Text fontWeight={700} fontFamily="mono" fontSize="2xs">
+                            {projectStats.completionPercentage}% Completed
                           </Text>
                         </HStack>
-                      )}
 
-                      {lastUpdated && (
-                        <HStack spacing={1.5} fontSize="2xs" color={isDark ? "gray.500" : "gray.400"}>
-                          <Text>Synced:</Text>
-                          <Text color={isDark ? "gray.400" : "gray.600"}>
-                            {lastUpdated.toLocaleTimeString()}
-                          </Text>
-                        </HStack>
-                      )}
-                    </HStack>
-                  </Flex>
+                        {projectData?.requirementData?.appLiveTargetDate && (
+                          <HStack spacing={1} color={isDark ? "gray.400" : "gray.500"}>
+                            <Icon as={FiClock} boxSize="11px" color="orange.400" />
+                            <Text color={isDark ? "gray.500" : "gray.400"}>Target:</Text>
+                            <Text fontWeight={600} color={isDark ? "gray.300" : "gray.700"}>
+                              {formatDateDDMMYYYY(projectData.requirementData.appLiveTargetDate)}
+                            </Text>
+                          </HStack>
+                        )}
+
+                        {lastUpdated && (
+                          <HStack spacing={1} color={isDark ? "gray.500" : "gray.400"}>
+                            <Text>Synced:</Text>
+                            <Text fontFamily="mono" color={isDark ? "gray.400" : "gray.600"}>
+                              {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </Text>
+                          </HStack>
+                        )}
+                      </HStack>
+                    </Flex>
+                  </VStack>
                 </Box>
               </VStack>
             </Box>
@@ -3144,12 +3384,14 @@ export default function DevKanbanView() {
                 w="full"
               >
                 {boards.map((board) => {
-                  const boardTasks = filteredTasks.filter(
-                    (t) =>
-                      t.boardId === board.id ||
-                      (t.boardCodeStage && board.boardCodeStage && t.boardCodeStage.toUpperCase() === board.boardCodeStage.toUpperCase()) ||
-                      (t.boardName && board.boardName && t.boardName.trim().toUpperCase() === board.boardName.trim().toUpperCase())
-                  );
+                  const colStage = normalizeStageName(board.boardName);
+                  const boardTasks = filteredTasks.filter((t) => {
+                    const taskStage = normalizeStageName(t.boardName);
+                    if (taskStage && colStage) {
+                      return taskStage === colStage;
+                    }
+                    return t.boardId === board.id;
+                  });
 
                   return (
                     <GridItem key={board.id} w="full">
@@ -3387,8 +3629,7 @@ export default function DevKanbanView() {
                       {/* Compact Task Notices & Status Badges */}
                       <Wrap spacing={2} mb={1}>
                         {activeTask.percentageStatus < 100 &&
-                          (activeTask.boardCodeStage === "DONE" ||
-                            activeTask.boardName?.toUpperCase() === "DONE") && (
+                          normalizeStageName(activeTask.boardName) === "DONE" && (
                             <WrapItem>
                               <HStack
                                 spacing={1.5}
@@ -3449,7 +3690,7 @@ export default function DevKanbanView() {
                         )}
 
                         {activeTask.endDate &&
-                          activeTask.boardCodeStage !== "DONE" &&
+                          normalizeStageName(activeTask.boardName) !== "DONE" &&
                           (() => {
                             const now = new Date();
                             now.setHours(0, 0, 0, 0);
