@@ -2661,9 +2661,41 @@ export default function DevKanbanView() {
                   borderColor={isDark ? "rgba(255, 255, 255, 0.06)" : "gray.100"}
                 >
                   <VStack spacing={2.5} align="stretch">
-                    {/* Prominently Highlighted Multi-segment Progress Bar Track */}
+                    {/* Progress Bar Header Label & Percentage Indicator */}
+                    <Flex justify="space-between" align="center">
+                      <HStack spacing={2} align="center">
+                        <Text
+                          fontSize="2xs"
+                          fontWeight={700}
+                          textTransform="uppercase"
+                          letterSpacing="0.05em"
+                          color={isDark ? "gray.400" : "gray.500"}
+                        >
+                          Progress
+                        </Text>
+                        <Text
+                          fontSize="2xs"
+                          fontFamily="mono"
+                          color={isDark ? "gray.500" : "gray.400"}
+                        >
+                          ({projectStats.completedTasks}/{projectStats.totalTasks} Done)
+                        </Text>
+                      </HStack>
+                      <HStack spacing={1.5} align="center">
+                        <Text
+                          fontSize="xs"
+                          fontWeight={800}
+                          fontFamily="mono"
+                          color={isDark ? "green.300" : "green.600"}
+                        >
+                          {projectStats.completionPercentage}%
+                        </Text>
+                      </HStack>
+                    </Flex>
+
+                    {/* Prominently Highlighted Green Progress Bar Track */}
                     <Tooltip
-                      label={`Done: ${projectStats.completedTasks} | Review: ${projectStats.inReviewTasks} | Progress: ${projectStats.inProgressTasks} | To Do: ${projectStats.todoTasks}`}
+                      label={`Progress: ${projectStats.completionPercentage}% (${projectStats.completedTasks} of ${projectStats.totalTasks} completed)`}
                       hasArrow
                       placement="top"
                     >
@@ -2676,7 +2708,7 @@ export default function DevKanbanView() {
                         borderColor={
                           isDark
                             ? projectStats.completionPercentage > 0
-                              ? "rgba(16, 185, 129, 0.3)"
+                              ? "rgba(16, 185, 129, 0.35)"
                               : "whiteAlpha.100"
                             : projectStats.completionPercentage > 0
                             ? "green.200"
@@ -2684,7 +2716,7 @@ export default function DevKanbanView() {
                         }
                         boxShadow={
                           isDark && projectStats.completionPercentage > 0
-                            ? "0 0 16px rgba(16, 185, 129, 0.12), inset 0 1px 2px rgba(0, 0, 0, 0.35)"
+                            ? "0 0 16px rgba(16, 185, 129, 0.15), inset 0 1px 2px rgba(0, 0, 0, 0.35)"
                             : "inset 0 1px 2px rgba(0, 0, 0, 0.06)"
                         }
                         cursor="pointer"
@@ -2694,36 +2726,16 @@ export default function DevKanbanView() {
                           h="8px"
                           borderRadius="full"
                           overflow="hidden"
-                          display="flex"
                           bg={isDark ? "whiteAlpha.50" : "gray.200"}
                         >
-                          {projectStats.totalTasks > 0 ? (
-                            <>
-                              <Box
-                                w={`${(projectStats.completedTasks / projectStats.totalTasks) * 100}%`}
-                                bg="linear-gradient(90deg, #10b981 0%, #34d399 100%)"
-                                boxShadow="0 0 10px rgba(16, 185, 129, 0.6)"
-                                transition="width 0.4s ease"
-                              />
-                              <Box
-                                w={`${(projectStats.inReviewTasks / projectStats.totalTasks) * 100}%`}
-                                bg="linear-gradient(90deg, #8b5cf6 0%, #a855f7 100%)"
-                                transition="width 0.4s ease"
-                              />
-                              <Box
-                                w={`${(projectStats.inProgressTasks / projectStats.totalTasks) * 100}%`}
-                                bg="linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%)"
-                                transition="width 0.4s ease"
-                              />
-                              <Box
-                                w={`${(projectStats.todoTasks / projectStats.totalTasks) * 100}%`}
-                                bg={isDark ? "#475569" : "#cbd5e1"}
-                                transition="width 0.4s ease"
-                              />
-                            </>
-                          ) : (
-                            <Box w="full" bg={isDark ? "whiteAlpha.100" : "gray.200"} />
-                          )}
+                          <Box
+                            h="full"
+                            w={`${projectStats.completionPercentage}%`}
+                            bg="linear-gradient(90deg, #10b981 0%, #34d399 100%)"
+                            boxShadow="0 0 10px rgba(16, 185, 129, 0.6)"
+                            borderRadius="full"
+                            transition="width 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
+                          />
                         </Box>
                       </Box>
                     </Tooltip>
@@ -4440,7 +4452,7 @@ export default function DevKanbanView() {
                           <Text fontSize="xs" color="gray.500" fontWeight="bold" textTransform="uppercase">
                             Progress
                           </Text>
-                          <Text fontSize="xs" fontWeight="bold" color={isDark ? "blue.300" : "blue.600"}>
+                          <Text fontSize="xs" fontWeight="bold" color={isDark ? "green.300" : "green.600"}>
                             {activeTask.percentageStatus || 0}%
                           </Text>
                         </HStack>
@@ -4448,7 +4460,8 @@ export default function DevKanbanView() {
                           <Box
                             h="100%"
                             w={`${activeTask.percentageStatus || 0}%`}
-                            bgGradient="linear(to-r, #3b82f6, #60a5fa)"
+                            bgGradient="linear(to-r, #10b981, #34d399)"
+                            boxShadow="0 0 8px rgba(16, 185, 129, 0.35)"
                             borderRadius="full"
                             transition="width 0.3s ease"
                           />

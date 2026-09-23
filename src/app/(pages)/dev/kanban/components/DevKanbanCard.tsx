@@ -388,8 +388,8 @@ export const DevKanbanCard: React.FC<DevKanbanCardProps> = ({
                     task.percentageStatus === 100
                       ? "green.400"
                       : isDark
-                      ? "purple.300"
-                      : "purple.600"
+                      ? "green.300"
+                      : "green.600"
                   }
                 >
                   {task.percentageStatus}%
@@ -405,11 +405,8 @@ export const DevKanbanCard: React.FC<DevKanbanCardProps> = ({
                 <Box
                   h="100%"
                   w={`${task.percentageStatus}%`}
-                  bg={
-                    task.percentageStatus === 100
-                      ? "#10b981"
-                      : "linear-gradient(90deg, #8b5cf6 0%, #ec4899 100%)"
-                  }
+                  bg="linear-gradient(90deg, #10b981 0%, #34d399 100%)"
+                  boxShadow="0 0 6px rgba(16, 185, 129, 0.4)"
                   borderRadius="full"
                   transition="width 0.3s ease"
                 />
