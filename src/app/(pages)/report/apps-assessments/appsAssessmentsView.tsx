@@ -7,8 +7,6 @@ import {
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
-  ORG_GROUP_WHITELIST_ALL_ACCESS,
-  ORG_GROUP_WHITELIST_ACCESS_GENERATE_REPORT_ASSESMENT,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
@@ -17,6 +15,7 @@ import useAppsCriticalReport, {
   AppsCriticalReportBatchSummary,
 } from "@/app/services/useAppsCriticalReport";
 import useApps from "@/app/services/useApps";
+import useSysModuleGroup from "@/app/services/useSysModuleGroup";
 import { PaggingListPayload } from "@/app/types/masterTypes";
 import { Search2Icon } from "@chakra-ui/icons";
 import {
@@ -103,6 +102,7 @@ export default function AppsAssessmentsView() {
   }, [searchParams]);
   const { Generate, List } = useAppsCriticalReport();
   const { List: ListApps } = useApps();
+  const { CheckFeatureAccess } = useSysModuleGroup();
 
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState("");
@@ -111,23 +111,42 @@ export default function AppsAssessmentsView() {
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [appCount, setAppCount] = useState<number | null>(null);
+  const [canGenerate, setCanGenerate] = useState(false);
   const {
     isOpen: isConfirmOpen,
     onOpen: onConfirmOpen,
     onClose: onConfirmClose,
   } = useDisclosure();
 
-  // Access flags derived from auth
-  const userOrgGroupId =
-    DataAuth?.team?.orgGroupId && DataAuth.team.orgGroupId !== "-"
-      ? DataAuth.team.orgGroupId
-      : null;
-  const canGenerate = DataAuth
-    ? !userOrgGroupId ||
-      ORG_GROUP_WHITELIST_ACCESS_GENERATE_REPORT_ASSESMENT.includes(
-        userOrgGroupId,
-      )
-    : false;
+  // Dynamic feature access verification from Sys Module
+  useEffect(() => {
+    if (!DataAuth || !tokenData) return;
+    const userOrgGroupId =
+      DataAuth?.team?.orgGroupId && DataAuth.team.orgGroupId !== "-"
+        ? DataAuth.team.orgGroupId
+        : null;
+
+    if (!userOrgGroupId) {
+      setCanGenerate(true);
+      return;
+    }
+
+    CheckFeatureAccess(
+      {
+        moduleCode: "sys_apps_assessment",
+        featureCode: "GENERATE_REPORT",
+        orgGroupId: userOrgGroupId,
+        userSysId: DataAuth?.id || null,
+      },
+      tokenData,
+    ).then((res) => {
+      if (res?.statusCode === RES_CODE_OK && res.data?.hasAccess) {
+        setCanGenerate(true);
+      } else {
+        setCanGenerate(false);
+      }
+    });
+  }, [tokenData, DataAuth?.id, DataAuth?.team?.orgGroupId]);
 
   // Compute current period for confirmation display
   const now = new Date();

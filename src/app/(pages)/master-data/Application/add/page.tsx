@@ -151,6 +151,7 @@ export default function AddApplicationPage() {
   const initialFormState = {
     appName: "",
     appShortName: "",
+    appsStatus: "ON DEVELOPMENT",
     appsDesc: "",
     note: "",
     appInitaiteYear: new Date().getFullYear().toString(),
@@ -500,6 +501,7 @@ export default function AddApplicationPage() {
       const payload: ApplicationMasterInsertDataPayload = {
         appName: formData.appName.trim().toUpperCase(),
         appShortName: formData.appShortName.trim().toUpperCase(),
+        appsStatus: formData.appsStatus || "ON DEVELOPMENT",
         appsDesc: formData.appsDesc.trim() || null,
         note: formData.note.trim() || null,
         appTargetUsers: formData.appTargetUsers || "INTERNAL",
@@ -891,6 +893,25 @@ export default function AddApplicationPage() {
                                 />
                                 <FormHelperText as="i" fontSize="xs">
                                   *Nama singkat dikunci permanen sebagai kode identitas sistem.
+                                </FormHelperText>
+                              </Stack>
+                            </InputLayout>
+                          </FormControl>
+
+                          <FormControl isRequired>
+                            <InputLayout>
+                              <FormLabel mt={2}>Status Operasional</FormLabel>
+                              <Stack spacing={0} w="full">
+                                <ChakraSelect
+                                  value={formData.appsStatus}
+                                  onChange={(e) => setFormData({ ...formData, appsStatus: e.target.value })}
+                                >
+                                  <option value="ON DEVELOPMENT">ON DEVELOPMENT (Dalam Pengembangan)</option>
+                                  <option value="ACTIVE">ACTIVE (Operasional Aktif)</option>
+                                  <option value="INACTIVE">INACTIVE (Non-Aktif)</option>
+                                </ChakraSelect>
+                                <FormHelperText as="i" fontSize="xs">
+                                  Default: ON DEVELOPMENT untuk aplikasi baru yang sedang dikembangkan.
                                 </FormHelperText>
                               </Stack>
                             </InputLayout>

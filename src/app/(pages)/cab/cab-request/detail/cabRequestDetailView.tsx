@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertDialog,
   AlertDialogBody,
@@ -76,6 +76,7 @@ import {
   FiClock,
   FiDownload,
   FiEdit2,
+  FiEdit3,
   FiEye,
   FiFileText,
   FiGrid,
@@ -117,6 +118,8 @@ import useUsers, { UsersResponse } from "@/app/services/useUsers";
 import useApps, { ApplicationMasterResponse } from "@/app/services/useApps";
 import useRequirements, { RequirementsResponse } from "@/app/services/useRequirements";
 import useProjects, { ProjectDataResponse } from "@/app/services/useProjects";
+import useSysModuleGroup from "@/app/services/useSysModuleGroup";
+import { SYS_MODULE_CAB } from "@/app/constants/moduleCodeCOnstants";
 import { MAX_SIZE_TABLE, RES_CODE_OK } from "@/app/constants/applicationConstants";
 import { PaggingListPayload } from "@/app/types/masterTypes";
 import {
@@ -568,6 +571,119 @@ const CabRequestDetailView = () => {
   const canReview = permissions.isReviewer;
   const canApprove = permissions.isApprover;
 
+  // Sys Module Feature Access Check (MANAGE_EDIT_CAB & TAB_EMERGENCY_CAB on sys_cab)
+  const { CheckFeatureAccess } = useSysModuleGroup();
+  const [hasManageEditCabAccess, setHasManageEditCabAccess] = useState<boolean | null>(null);
+  const [hasEmergencyCabAccess, setHasEmergencyCabAccess] = useState<boolean | null>(null);
+  const [isCheckingFeatureAccess, setIsCheckingFeatureAccess] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (!DataAuth || !tokenData) return;
+    const userOrgGroupId =
+      DataAuth?.team?.orgGroupId && DataAuth.team.orgGroupId !== "-"
+        ? DataAuth.team.orgGroupId
+        : null;
+
+    setIsCheckingFeatureAccess(true);
+    CheckFeatureAccess(
+      {
+        moduleCode: SYS_MODULE_CAB,
+        featureCode: "MANAGE_EDIT_CAB",
+        userSysId: DataAuth?.id || null,
+        orgGroupId: userOrgGroupId,
+      },
+      tokenData
+    )
+      .then((res) => {
+        if (res?.statusCode === RES_CODE_OK && res.data?.hasAccess) {
+          setHasManageEditCabAccess(true);
+        } else {
+          setHasManageEditCabAccess(false);
+        }
+      })
+      .catch(() => {
+        setHasManageEditCabAccess(false);
+      })
+      .finally(() => {
+        setIsCheckingFeatureAccess(false);
+      });
+
+    // Check TAB_EMERGENCY_CAB feature access for Emergency CAB Ratification
+    CheckFeatureAccess(
+      {
+        moduleCode: SYS_MODULE_CAB,
+        featureCode: "TAB_EMERGENCY_CAB",
+        userSysId: DataAuth?.id || null,
+        orgGroupId: userOrgGroupId,
+      },
+      tokenData
+    )
+      .then((res) => {
+        if (res?.statusCode === RES_CODE_OK && res.data?.hasAccess) {
+          setHasEmergencyCabAccess(true);
+        } else {
+          setHasEmergencyCabAccess(false);
+        }
+      })
+      .catch(() => {
+        setHasEmergencyCabAccess(false);
+      });
+  }, [tokenData, DataAuth?.id, DataAuth?.team?.orgGroupId]);
+
+  // View Mode & URL Flagging Resolution (Default: View Mode only, unlocks edit mode only if module matrix allows)
+  const modeParam = searchParams.get("mode"); // "view" | "edit" | null
+  const isDocumentCompleted = Boolean(
+    Data &&
+    ["COMPLETED", "REJECTED", "APPROVED"].includes(String(Data.status || "").toUpperCase())
+  );
+  const isUserAuthorizedToEdit = Boolean(
+    Data &&
+    !isDocumentCompleted &&
+    hasManageEditCabAccess === true
+  );
+  const isExplicitView = modeParam === "view";
+  // View mode is the default state; edit mode is only active when feature matrix is verified and document is not completed
+  const isViewMode = isDocumentCompleted || isExplicitView || hasManageEditCabAccess !== true;
+
+  // Emergency CAB Ratification Flags
+  const isEmergencyCab = Boolean(
+    Data && String(Data.jenisCab || "").toUpperCase() === "EMERGENCY"
+  );
+  const isEmergencyPendingRatification = Boolean(
+    isEmergencyCab &&
+    !["COMPLETED", "APPROVED", "REJECTED"].includes(String(Data?.status || "").toUpperCase())
+  );
+  const [emergencyRatifyNote, setEmergencyRatifyNote] = useState<string>(
+    "Ratifikasi Mengetahui Emergency CAB"
+  );
+
+  // Ratification Info (Approver, Role, Date, Note)
+  const ratificationInfo = useMemo(() => {
+    if (!Data) return null;
+    const approvedStep = Data.approvalHistory?.find(
+      (s) => s.status === "APPROVED" || s.status === "COMPLETED"
+    );
+    if (approvedStep) {
+      return {
+        approverName: approvedStep.approverName || Data.approverName || "Approver / Komite CAB",
+        approverRole: approvedStep.approverRole || "Approver CAB",
+        actionDate: approvedStep.actionDate,
+        note: approvedStep.note || "Ratifikasi Mengetahui Emergency CAB",
+        status: approvedStep.status,
+      };
+    }
+    if (!isEmergencyPendingRatification) {
+      return {
+        approverName: Data.approverName || "Approver / Komite CAB",
+        approverRole: "Approver CAB",
+        actionDate: null,
+        note: Data.cabNotes || "Ratifikasi Mengetahui Emergency CAB",
+        status: Data.status,
+      };
+    }
+    return null;
+  }, [Data, isEmergencyPendingRatification]);
+
   // 2-Stepper navigation state (1 = Formulir Permohonan, 2 = Detail & Aksi Tahapan)
   const [activeDetailStep, setActiveDetailStep] = useState<1 | 2>(1);
 
@@ -917,11 +1033,13 @@ const CabRequestDetailView = () => {
 
   const canEditRequest = Boolean(
     Data &&
-    !["COMPLETED", "REJECTED", "APPROVED"].includes(String(Data.status || "").toUpperCase())
+    !isDocumentCompleted &&
+    !isViewMode &&
+    isUserAuthorizedToEdit
   );
 
   const startEditRequest = () => {
-    if (!Data || ["COMPLETED", "REJECTED", "APPROVED"].includes(String(Data.status || "").toUpperCase())) return;
+    if (!canEditRequest || !Data) return;
     const form = mapDetailToEditForm(Data);
     setRequestEditForm(form);
     setIsEditingRequest(true);
@@ -934,6 +1052,10 @@ const CabRequestDetailView = () => {
   };
 
   const handleSaveRequestEdit = async () => {
+    if (isViewMode) {
+      showToast({ description: "Aksi tidak diizinkan dalam Mode Tinjauan (View Mode).", statusToast: "warning" });
+      return;
+    }
     if (!requestEditForm.requestTitle.trim()) {
       showToast({ description: "Judul request wajib diisi", statusToast: "error" });
       return;
@@ -999,6 +1121,10 @@ const CabRequestDetailView = () => {
   const activityPercent = totalActivitiesCount > 0 ? Math.round((completedActivitiesCount / totalActivitiesCount) * 100) : 0;
 
   const handleToggleActivity = async (activityId: string) => {
+    if (isViewMode) {
+      showToast({ description: "Aksi tidak diizinkan dalam Mode Tinjauan (View Mode).", statusToast: "warning" });
+      return;
+    }
     if (!requestId || !Data) return;
     const userDoneBy = DataAuth?.nama || "Scheduler";
     const currentActivity = activities.find((a) => a.id === activityId);
@@ -1062,6 +1188,10 @@ const CabRequestDetailView = () => {
   };
 
   const handleToggleAllActivities = async (shouldSelectAll: boolean) => {
+    if (isViewMode) {
+      showToast({ description: "Aksi tidak diizinkan dalam Mode Tinjauan (View Mode).", statusToast: "warning" });
+      return;
+    }
     if (!requestId || !Data) return;
     const userDoneBy = DataAuth?.nama || "Scheduler";
     const nowIso = new Date().toISOString();
@@ -1097,6 +1227,10 @@ const CabRequestDetailView = () => {
   };
 
   const handleToggleCabDone = async () => {
+    if (isViewMode) {
+      showToast({ description: "Aksi tidak diizinkan dalam Mode Tinjauan (View Mode).", statusToast: "warning" });
+      return;
+    }
     if (!requestId || !Data) return;
     const nextStatus: "Y" | "N" = Data.isCabDone === "Y" ? "N" : "Y";
 
@@ -1171,6 +1305,10 @@ const CabRequestDetailView = () => {
   };
 
   const handleSaveSchedule = async () => {
+    if (isViewMode) {
+      showToast({ description: "Aksi tidak diizinkan dalam Mode Tinjauan (View Mode).", statusToast: "warning" });
+      return;
+    }
     if (!scheduleForm.scheduledDate || !scheduleForm.scheduledEndDate) {
       showToast({ description: "Tanggal mulai dan selesai wajib diisi", statusToast: "error" });
       return;
@@ -1207,6 +1345,10 @@ const CabRequestDetailView = () => {
   };
 
   const handleSaveCommitment = async () => {
+    if (isViewMode) {
+      showToast({ description: "Aksi tidak diizinkan dalam Mode Tinjauan (View Mode).", statusToast: "warning" });
+      return;
+    }
     if (!requestId) return;
     setIsSavingCommitment(true);
     const success = await UpdateCabRequest(tokenData, requestId, {
@@ -1226,6 +1368,10 @@ const CabRequestDetailView = () => {
   };
 
   const handleConfirmMeeting = async () => {
+    if (isViewMode) {
+      showToast({ description: "Aksi tidak diizinkan dalam Mode Tinjauan (View Mode).", statusToast: "warning" });
+      return;
+    }
     if (!requestId) return;
     if (
       commitmentForm.ketersediaanWaktuMigrasiDc ||
@@ -1250,6 +1396,10 @@ const CabRequestDetailView = () => {
   };
 
   const handleSetImplementStatus = async () => {
+    if (isViewMode) {
+      showToast({ description: "Aksi tidak diizinkan dalam Mode Tinjauan (View Mode).", statusToast: "warning" });
+      return;
+    }
     if (!requestId) return;
     if (resultForm.cabResult) {
       await UpdateCabResult(tokenData, requestId, {
@@ -1270,6 +1420,10 @@ const CabRequestDetailView = () => {
   };
 
   const handleSaveResult = async () => {
+    if (isViewMode) {
+      showToast({ description: "Aksi tidak diizinkan dalam Mode Tinjauan (View Mode).", statusToast: "warning" });
+      return;
+    }
     if (!resultForm.cabResult || !resultForm.implementationStatus) {
       showToast({ description: "Hasil dan status implementasi wajib diisi", statusToast: "error" });
       return;
@@ -1284,6 +1438,10 @@ const CabRequestDetailView = () => {
   };
 
   const handleSendToApproval = async () => {
+    if (isViewMode) {
+      showToast({ description: "Aksi tidak diizinkan dalam Mode Tinjauan (View Mode).", statusToast: "warning" });
+      return;
+    }
     if (Data?.status !== "IMPLEMENTASI" && Data?.status !== "IMPLEMENT") {
       showToast({
         description: "Status permohonan harus Implementasi sebelum menyelesaikan permohonan ini.",
@@ -1345,6 +1503,10 @@ const CabRequestDetailView = () => {
   };
 
   const handleApprovalAction = async (action: "APPROVE" | "REJECT") => {
+    if (isViewMode) {
+      showToast({ description: "Aksi tidak diizinkan dalam Mode Tinjauan (View Mode).", statusToast: "warning" });
+      return;
+    }
     if (action === "REJECT" && !approvalNote) {
       showToast({ description: "Catatan wajib diisi untuk reject", statusToast: "error" });
       return;
@@ -1459,6 +1621,36 @@ const CabRequestDetailView = () => {
     });
   };
 
+  const promptRatifyEmergency = () => {
+    if (!Data) return;
+    setConfirmDialog({
+      isOpen: true,
+      title: "Konfirmasi Ratifikasi Emergency CAB (Mengetahui)",
+      message: `Apakah Anda yakin ingin meratifikasi permohonan Emergency CAB ${Data.requestNo} ("${Data.requestTitle}") dengan pernyataan "Mengetahui / As Known By"? Permohonan ini akan disetujui (COMPLETED).`,
+      confirmText: "Ya, Ratifikasi (Mengetahui)",
+      confirmColorScheme: "red",
+      confirmIcon: <FiCheckCircle />,
+      onConfirm: async () => {
+        const success = await ActionCabRequest(tokenData, requestId!, {
+          action: "APPROVE",
+          note: emergencyRatifyNote.trim() || "Ratifikasi Mengetahui Emergency CAB",
+        });
+        if (success) {
+          showToast({
+            description: `Permohonan Emergency CAB ${Data.requestNo} berhasil diratifikasi.`,
+            statusToast: "success",
+          });
+          loadDetail();
+        } else {
+          showToast({
+            description: "Gagal memproses ratifikasi emergency CAB.",
+            statusToast: "error",
+          });
+        }
+      },
+    });
+  };
+
   if (IsLoading) {
     return (
       <LayoutAdmin>
@@ -1497,7 +1689,22 @@ const CabRequestDetailView = () => {
             <Link href="/cab/cab-request">
               <Button leftIcon={<FiArrowLeft />} variant="ghost" size="sm" color="white" bg="whiteAlpha.100" border="1px solid" borderColor="whiteAlpha.200" _hover={{ bg: "whiteAlpha.200" }} rounded="full" px={4}>Back</Button>
             </Link>
-            <HStack spacing={2}>
+            <HStack spacing={2} wrap="wrap">
+              {isEmergencyCab && isEmergencyPendingRatification && hasEmergencyCabAccess === true && (
+                <Button
+                  leftIcon={<FiCheckCircle />}
+                  colorScheme="red"
+                  bg="red.500"
+                  color="white"
+                  _hover={{ bg: "red.600" }}
+                  size="sm"
+                  rounded="full"
+                  px={4}
+                  onClick={promptRatifyEmergency}
+                >
+                  Ratifikasi (Mengetahui)
+                </Button>
+              )}
               <Button
                 leftIcon={<FiDownload />}
                 variant="ghost"
@@ -1523,9 +1730,24 @@ const CabRequestDetailView = () => {
             <VStack align="start" spacing={1} flex={1}>
               <Heading size="md" fontWeight="700">{Data.requestTitle}</Heading>
               <HStack spacing={2} wrap="wrap">
+                {isEmergencyCab && (
+                  <Badge colorScheme="red" variant="solid" px={2.5} py={0.5} rounded="full" fontSize="xs">
+                    EMERGENCY CAB
+                  </Badge>
+                )}
                 <Badge colorScheme="blue" variant="solid" px={2} rounded="full" fontSize="xs">{Data.requestNo}</Badge>
                 <Badge colorScheme="purple" variant="solid" px={2} rounded="full" fontSize="xs">{Data.requestType}</Badge>
                 <StatusBadge status={Data.status} variant="solid" px={2} rounded="full" fontSize="xs" />
+                <Badge
+                  colorScheme={isViewMode ? "teal" : "orange"}
+                  variant="solid"
+                  px={2.5}
+                  py={0.5}
+                  rounded="full"
+                  fontSize="xs"
+                >
+                  {isViewMode ? "Mode Tinjauan (Read-Only)" : "Mode Edit"}
+                </Badge>
                 {Data.status !== "DRAFT" && Data.status !== "REQUEST" && Data.status !== "PENGAJUAN" && (
                   <Badge
                     colorScheme={Data.isCabDone === "Y" ? "green" : "yellow"}
@@ -3840,7 +4062,7 @@ const CabRequestDetailView = () => {
 
                   {/* ─── STAGE 2: Penjadwalan Rapat CAB (Status: REQUEST / PENGAJUAN) ─── */}
                   {(Data.status === "PENGAJUAN" || Data.status === "REQUEST") && (
-                    canMake ? (
+                    canMake && !isViewMode ? (
                       (() => {
                         const isDateDifferent = Boolean(
                           Data.requestedCabDate &&
@@ -4271,7 +4493,7 @@ const CabRequestDetailView = () => {
                                 </Badge>
                               </Flex>
 
-                              {canMake ? (
+                              {canMake && !isViewMode ? (
                                 <VStack spacing={3.5} align="stretch">
                                   <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3.5}>
                                     {/* Keputusan Migrasi (Ya / Tidak) */}
@@ -4381,7 +4603,7 @@ const CabRequestDetailView = () => {
                             </VStack>
                           </Box>
 
-                          {canMake ? (
+                          {canMake && !isViewMode ? (
                             <Flex justify="end" pt={2} gap={3} wrap="wrap">
                               <Button
                                 colorScheme="teal"
@@ -4498,7 +4720,7 @@ const CabRequestDetailView = () => {
                             <VStack spacing={2.5} align="stretch">
                               {activities.map((act) => {
                                 const isFinalStatus = ["COMPLETED", "APPROVED", "REJECTED"].includes(Data.status);
-                                const canToggle = !isFinalStatus;
+                                const canToggle = !isFinalStatus && canMake && !isViewMode;
                                 return (
                                   <Box
                                     key={act.id}
@@ -4599,7 +4821,7 @@ const CabRequestDetailView = () => {
                               </Text>
                             </Box>
 
-                            {canMake ? (
+                            {canMake && !isViewMode ? (
                               <VStack spacing={3.5} align="stretch">
                                 <FormControl isRequired>
                                   <FormLabel fontSize="sm" fontWeight="semibold">Hasil Evaluasi / Catatan Sidang Meeting</FormLabel>
@@ -4633,9 +4855,6 @@ const CabRequestDetailView = () => {
                                       <FormLabel fontSize="sm" fontWeight="semibold" mb={0}>
                                         Bukti Implementasi
                                       </FormLabel>
-                                      {/* <Badge colorScheme="purple" variant="subtle" fontSize="xs" rounded="md" px={2} py={0.5}>
-                                        PNG / JPG / WEBP only
-                                      </Badge> */}
                                     </HStack>
                                     <Text fontSize="xs" color="gray.500">
                                       Maks. 10MB
@@ -4818,18 +5037,115 @@ const CabRequestDetailView = () => {
                                 </FormControl>
                               </VStack>
                             ) : (
-                              <Box p={3} bg={colorMode === "light" ? "white" : "gray.750"} rounded="md" border="1px" borderColor={colorMode === "light" ? "gray.200" : "gray.650"}>
-                                <Text fontSize="xs" color="gray.500">
-                                  ℹ Menunggu Scheduler mengisikan catatan evaluasi migrasi dan status implementasi.
-                                </Text>
-                              </Box>
+                              <VStack spacing={3.5} align="stretch">
+                                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3.5}>
+                                  <Box gridColumn={{ base: "span 1", md: "span 2" }}>
+                                    <InfoItem label="Hasil Evaluasi / Catatan Sidang Meeting" value={resultForm.cabResult || Data.cabResult || "-"} />
+                                  </Box>
+                                  {(resultForm.cabNotes || Data.cabNotes) && (
+                                    <Box gridColumn={{ base: "span 1", md: "span 2" }}>
+                                      <InfoItem label="Catatan Tambahan CAB" value={resultForm.cabNotes || Data.cabNotes || "-"} />
+                                    </Box>
+                                  )}
+                                  <Box>
+                                    <Text fontSize="xs" color="gray.500" mb={1}>Status Implementasi</Text>
+                                    {(resultForm.implementationStatus || Data.implementationStatus) ? (
+                                      <Badge
+                                        colorScheme={
+                                          (resultForm.implementationStatus || Data.implementationStatus) === "SUCCESS"
+                                            ? "green"
+                                            : (resultForm.implementationStatus || Data.implementationStatus) === "PARTIAL"
+                                              ? "orange"
+                                              : "red"
+                                        }
+                                        variant="solid"
+                                        rounded="full"
+                                        px={2.5}
+                                        py={0.5}
+                                        fontSize="xs"
+                                      >
+                                        {resultForm.implementationStatus || Data.implementationStatus}
+                                      </Badge>
+                                    ) : (
+                                      <Text fontSize="sm" fontWeight="600" color="gray.400">-</Text>
+                                    )}
+                                  </Box>
+                                </SimpleGrid>
+
+                                {buktiFiles.length > 0 && (
+                                  <Box mt={2}>
+                                    <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "purple.800" : "purple.200"} mb={2}>
+                                      Bukti Implementasi ({buktiFiles.length}):
+                                    </Text>
+                                    <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={3}>
+                                      {buktiFiles.map((item) => (
+                                        <Box
+                                          key={item.id}
+                                          p={2.5}
+                                          border="1px solid"
+                                          borderColor={colorMode === "light" ? "purple.200" : "gray.600"}
+                                          bg={colorMode === "light" ? "white" : "gray.750"}
+                                          rounded="xl"
+                                          shadow="xs"
+                                          cursor="pointer"
+                                          onClick={() => handleOpenImagePreview(item)}
+                                          transition="all 0.15s ease"
+                                          _hover={{ shadow: "md", borderColor: "purple.400" }}
+                                        >
+                                          <Flex gap={2.5} align="center">
+                                            <Box
+                                              w="50px"
+                                              h="50px"
+                                              rounded="lg"
+                                              overflow="hidden"
+                                              bg="gray.100"
+                                              flexShrink={0}
+                                            >
+                                              <Image
+                                                src={item.url}
+                                                alt={item.name}
+                                                w="full"
+                                                h="full"
+                                                objectFit="cover"
+                                              />
+                                            </Box>
+                                            <VStack align="start" spacing={0.5} flex={1} minW={0}>
+                                              <Text fontSize="xs" fontWeight="semibold" isTruncated maxW="full" title={item.name}>
+                                                {item.name}
+                                              </Text>
+                                              {item.size && (
+                                                <Text fontSize="xs" color="gray.500">
+                                                  {formatFileSize(item.size)}
+                                                </Text>
+                                              )}
+                                            </VStack>
+                                            <Tooltip label="Lihat Gambar Penuh" placement="top">
+                                              <IconButton
+                                                aria-label="Preview image"
+                                                icon={<FiEye />}
+                                                size="xs"
+                                                variant="ghost"
+                                                colorScheme="purple"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleOpenImagePreview(item);
+                                                }}
+                                              />
+                                            </Tooltip>
+                                          </Flex>
+                                        </Box>
+                                      ))}
+                                    </SimpleGrid>
+                                  </Box>
+                                )}
+                              </VStack>
                             )}
                           </VStack>
                         </CardBody>
                       </Card>
 
                       {/* Selesaikan Permohonan CAB Action Card */}
-                      {canMake && (
+                      {canMake && !isViewMode && (
                         <Card rounded={radiusStyle} shadow="sm" border="2px solid" borderColor="green.300" bg={colorMode === "light" ? "green.50" : "gray.800"}>
                           <CardHeader py={3} px={5} borderBottom="1px" borderColor={colorMode === "light" ? "green.100" : "gray.700"}>
                             <Flex justify="space-between" align="center" w="full">
@@ -4948,9 +5264,187 @@ const CabRequestDetailView = () => {
                   <VStack spacing={3} align="stretch">
                     <HStack justify="space-between"><Text fontSize="xs" color="gray.500">Status</Text><StatusBadge status={Data.status} rounded="full" px={2} fontSize="xs" /></HStack>
                     <HStack justify="space-between"><Text fontSize="xs" color="gray.500">Type</Text><Badge colorScheme="purple" variant="subtle" rounded="full" px={2} fontSize="xs">{Data.requestType}</Badge></HStack>
+                    {isEmergencyCab && (
+                      <HStack justify="space-between">
+                        <Text fontSize="xs" color="gray.500">Kategori Khusus</Text>
+                        <Badge colorScheme="red" variant="solid" rounded="full" px={2} fontSize="2xs">
+                          EMERGENCY
+                        </Badge>
+                      </HStack>
+                    )}
                   </VStack>
                 </CardBody>
               </Card>
+
+              {/* ─── Emergency CAB Ratification & Dossier Card ─── */}
+              {isEmergencyCab && (
+                <Card
+                  rounded={radiusStyle}
+                  shadow="sm"
+                  border="2px solid"
+                  borderColor={colorMode === "light" ? "red.300" : "red.700"}
+                  bg={colorMode === "light" ? "red.50" : "gray.800"}
+                >
+                  <CardHeader py={3} px={5} borderBottom="1px" borderColor={colorMode === "light" ? "red.100" : "gray.700"}>
+                    <Flex justify="space-between" align="center" w="full">
+                      <HStack spacing={2}>
+                        <Icon as={FiAlertTriangle} color="red.500" />
+                        <Heading size="sm" color={colorMode === "light" ? "red.700" : "red.300"}>
+                          Ratifikasi Emergency
+                        </Heading>
+                      </HStack>
+                      <Badge colorScheme="red" variant="solid" rounded="full" px={2} py={0.5} fontSize="2xs">
+                        FAST-TRACK
+                      </Badge>
+                    </Flex>
+                  </CardHeader>
+                  <CardBody px={5} py={4}>
+                    <VStack spacing={3.5} align="stretch">
+                      <Box
+                        p={3}
+                        bg={colorMode === "light" ? "white" : "gray.750"}
+                        rounded="md"
+                        borderLeftWidth="4px"
+                        borderLeftColor="red.500"
+                      >
+                        <Text fontSize="2xs" fontWeight="bold" color="red.500" mb={0.5}>
+                          Alasan Urgensi Emergency:
+                        </Text>
+                        <Text fontSize="xs" color={colorMode === "light" ? "gray.800" : "gray.200"}>
+                          {Data.alasanEmergency || Data.jenisCabEmergencyAlasan || "Penanganan insiden mendesak / pemulihan kontinuitas sistem operasional."}
+                        </Text>
+                      </Box>
+
+                      {/* Status Information & Approver Ratification Info */}
+                      {isEmergencyPendingRatification ? (
+                        <Box p={3} bg={colorMode === "light" ? "orange.50" : "gray.750"} rounded="md" border="1px solid" borderColor={colorMode === "light" ? "orange.200" : "orange.800"}>
+                          <HStack spacing={2} mb={1}>
+                            <Icon as={FiClock} color="orange.500" />
+                            <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "orange.900" : "orange.200"}>
+                              Menunggu Ratifikasi (&ldquo;Mengetahui / As Known By&rdquo;)
+                            </Text>
+                          </HStack>
+                          <Text fontSize="2xs" color={colorMode === "light" ? "orange.800" : "orange.300"}>
+                            Permohonan ini telah dijalankan dan menunggu pengesahan ratifikasi formal dari pihak/approver yang berwenang.
+                          </Text>
+                        </Box>
+                      ) : (
+                        <Box
+                          p={3.5}
+                          bg={colorMode === "light" ? "green.50" : "gray.750"}
+                          rounded="md"
+                          border="1px solid"
+                          borderColor={colorMode === "light" ? "green.300" : "green.700"}
+                        >
+                          <HStack spacing={2} mb={2}>
+                            <Icon as={FiCheckCircle} color="green.500" />
+                            <Text fontSize="xs" fontWeight="bold" color={colorMode === "light" ? "green.900" : "green.200"}>
+                              Telah Diratifikasi (Mengetahui)
+                            </Text>
+                          </HStack>
+
+                          {/* Approver Details */}
+                          <VStack
+                            align="stretch"
+                            spacing={2}
+                            bg={colorMode === "light" ? "white" : "gray.800"}
+                            p={2.5}
+                            rounded="md"
+                            border="1px solid"
+                            borderColor={colorMode === "light" ? "green.100" : "gray.700"}
+                          >
+                            <Flex justify="space-between" align="start">
+                              <HStack spacing={2}>
+                                <Avatar
+                                  size="xs"
+                                  name={ratificationInfo?.approverName || "Approver"}
+                                  bg="green.500"
+                                  color="white"
+                                />
+                                <VStack align="start" spacing={0}>
+                                  <Text
+                                    fontSize="xs"
+                                    fontWeight="bold"
+                                    color={colorMode === "light" ? "gray.800" : "white"}
+                                  >
+                                    {ratificationInfo?.approverName || "Approver CAB"}
+                                  </Text>
+                                  <Text fontSize="2xs" color="gray.500">
+                                    {ratificationInfo?.approverRole || "Pejabat Pengesah / Approver"}
+                                  </Text>
+                                </VStack>
+                              </HStack>
+                              <Badge colorScheme="green" variant="subtle" rounded="full" px={2} fontSize="2xs">
+                                ✓ Mengetahui
+                              </Badge>
+                            </Flex>
+
+                            {ratificationInfo?.actionDate && (
+                              <HStack spacing={1} color="gray.500">
+                                <Icon as={FiCalendar} boxSize={3} />
+                                <Text fontSize="2xs">
+                                  Waktu:{" "}
+                                  {new Date(ratificationInfo.actionDate).toLocaleString("id-ID", {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}{" "}
+                                  WIB
+                                </Text>
+                              </HStack>
+                            )}
+
+                            {ratificationInfo?.note && (
+                              <Box p={2} bg={colorMode === "light" ? "gray.50" : "gray.700"} rounded="md">
+                                <Text fontSize="2xs" color="gray.500" fontWeight="semibold" mb={0.5}>
+                                  Catatan Ratifikasi:
+                                </Text>
+                                <Text fontSize="2xs" fontStyle="italic" color={colorMode === "light" ? "gray.700" : "gray.200"}>
+                                  &ldquo;{ratificationInfo.note}&rdquo;
+                                </Text>
+                              </Box>
+                            )}
+                          </VStack>
+                        </Box>
+                      )}
+
+                      {/* Form Catatan & Action (Only if authorized by matrix and still pending) */}
+                      {hasEmergencyCabAccess === true && isEmergencyPendingRatification && (
+                        <VStack spacing={3} align="stretch" pt={1}>
+                          <FormControl>
+                            <FormLabel fontSize="xs" fontWeight="semibold" color={colorMode === "light" ? "gray.700" : "gray.300"}>
+                              Catatan Ratifikasi / Mengetahui:
+                            </FormLabel>
+                            <Textarea
+                              size="sm"
+                              rounded="md"
+                              fontSize="xs"
+                              rows={2}
+                              bg={colorMode === "light" ? "white" : "gray.700"}
+                              value={emergencyRatifyNote}
+                              onChange={(e) => setEmergencyRatifyNote(e.target.value)}
+                              placeholder="Catatan persetujuan ratifikasi..."
+                            />
+                          </FormControl>
+
+                          <Button
+                            colorScheme="red"
+                            size="sm"
+                            leftIcon={<Icon as={FiCheckCircle} />}
+                            onClick={promptRatifyEmergency}
+                            isLoading={loading || isConfirmActionLoading}
+                            w="full"
+                          >
+                            Ratifikasi (Mengetahui)
+                          </Button>
+                        </VStack>
+                      )}
+                    </VStack>
+                  </CardBody>
+                </Card>
+              )}
 
               {/* ─── SECTION: Jadwal Rapat CAB (High Contrast Highlight) ─── */}
               {Data.scheduledDate && ["PENJADWALAN", "SCHEDULED", "PELAKSANAAN", "CONFIRM", "IMPLEMENTASI", "IMPLEMENT", "SUBMITTED", "SEND TO APPROVAL", "SEND_TO_APPROVAL", "WAITING APPROVAL", "WAITING APPROVE", "COMPLETED", "APPROVED", "IN_REVIEW"].includes(Data.status) && (() => {
@@ -5086,12 +5580,20 @@ const CabRequestDetailView = () => {
                               <Text fontSize="sm" fontWeight="semibold">{step.approverName}</Text>
                               <Text fontSize="xs" color="gray.500">{step.approverRole}</Text>
                               <HStack spacing={2} mt={1}>
-                                <Badge colorScheme={stepColor} fontSize="xs" rounded="full" px={2}>{step.status}</Badge>
-                                {step.actionDate && <Text fontSize="xs" color="gray.400">{new Date(step.actionDate).toLocaleDateString("id-ID")}</Text>}
+                                <Badge colorScheme={stepColor} fontSize="2xs" rounded="full" px={2}>
+                                  {isEmergencyCab && step.status === "APPROVED"
+                                    ? "DIRATIFIKASI (MENGETAHUI)"
+                                    : step.status}
+                                </Badge>
+                                {step.actionDate && (
+                                  <Text fontSize="xs" color="gray.400">
+                                    {new Date(step.actionDate).toLocaleDateString("id-ID")}
+                                  </Text>
+                                )}
                               </HStack>
                               {step.note && (
                                 <Box mt={2} p={2} bg={colorMode === "light" ? "gray.50" : "gray.700"} rounded="md" w="full">
-                                  <Text fontSize="xs" color="gray.600" fontStyle="italic">&ldquo;{step.note}&rdquo;</Text>
+                                  <Text fontSize="xs" color={colorMode === "light" ? "gray.600" : "gray.300"} fontStyle="italic">&ldquo;{step.note}&rdquo;</Text>
                                 </Box>
                               )}
                             </VStack>

@@ -2,3 +2,4 @@
 
 export const SYS_MODULE_REQUIREMENTS: string = "sys_requirement";
 export const SYS_MODULE_PROJECTS: string = "sys_projects";
+export const SYS_MODULE_CAB: string = "sys_cab";

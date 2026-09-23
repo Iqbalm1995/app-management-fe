@@ -58,8 +58,9 @@ import {
   useToast,
   VStack,
 } from "@chakra-ui/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
+  FiAlertTriangle,
   FiCalendar,
   FiCheckCircle,
   FiCheckSquare,
@@ -103,13 +104,15 @@ import LoadingMiniSignature from "@/app/components/loadingMini";
 import { TableComponentFull } from "@/app/components/tableComponents";
 import { TableComponentWithFilterCTX } from "@/app/components/tableComponentV2";
 import { StatusBadge } from "@/app/components/StatusBadge";
-import { radiusStyle } from "@/app/constants/applicationConstants";
+import { radiusStyle, RES_CODE_OK } from "@/app/constants/applicationConstants";
 import { AppTabList, AppTabItem } from "@/app/components/TabsCustom";
 import { useDocumentTitle } from "@/app/hooks/useDocumentTitle";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useCabRequest from "@/app/services/useCabRequest";
 import useCabAuthorization from "@/app/services/useCabAuthorization";
+import useSysModuleGroup from "@/app/services/useSysModuleGroup";
+import { SYS_MODULE_CAB } from "@/app/constants/moduleCodeCOnstants";
 import { useDownloadManagerModal } from "@/app/context/DownloadManagerContext";
 import { BulkScheduleCabItemPayload, CabRequestItem } from "@/app/types/cabTypes";
 import {
@@ -119,6 +122,7 @@ import {
   removeParamFilter,
 } from "@/app/types/masterTypes";
 import CabReportsTab from "./components/CabReportsTab";
+import CabEmergencyTab from "./components/CabEmergencyTab";
 import BulkScheduleModal from "./components/BulkScheduleModal";
 import BulkSendToApprovalModal from "./components/BulkSendToApprovalModal";
 
@@ -754,6 +758,88 @@ const CabRequestView = () => {
   const canReview = permissions.isReviewer;
   const canApprove = permissions.isApprover;
 
+  // Sys Module Feature Access Check (TAB_CAB_REPORT, REGISTER_CAB, MANAGE_EDIT_CAB, & TAB_EMERGENCY_CAB on sys_cab)
+  const { CheckFeatureAccess } = useSysModuleGroup();
+  const [canAccessCabReports, setCanAccessCabReports] = useState<boolean>(false);
+  const [canRegisterCab, setCanRegisterCab] = useState<boolean>(false);
+  const [canManageEditCab, setCanManageEditCab] = useState<boolean>(false);
+  const [canAccessEmergencyCab, setCanAccessEmergencyCab] = useState<boolean>(false);
+
+  // Tab URL Parameter Synchronization
+  const searchParams = useSearchParams();
+  const currentTabParam = (searchParams.get("tab") || "").toLowerCase();
+
+  type MainTabKey =
+    | "cab-list"
+    | "cab-request"
+    | "calendar"
+    | "emergency-cab"
+    | "cab-reports";
+
+  const availableTabs = useMemo<MainTabKey[]>(() => {
+    const tabs: MainTabKey[] = ["cab-list"];
+    if (canManageEditCab) {
+      tabs.push("cab-request");
+    }
+    tabs.push("calendar");
+    if (canAccessEmergencyCab) {
+      tabs.push("emergency-cab");
+    }
+    if (canAccessCabReports) {
+      tabs.push("cab-reports");
+    }
+    return tabs;
+  }, [canManageEditCab, canAccessEmergencyCab, canAccessCabReports]);
+
+  const resolvedTabKey = useMemo<MainTabKey>(() => {
+    if (currentTabParam === "cab-request" || currentTabParam === "request") {
+      if (canManageEditCab) return "cab-request";
+    }
+    if (
+      currentTabParam === "calendar" ||
+      currentTabParam === "schedule" ||
+      currentTabParam === "schedule-calendar"
+    ) {
+      return "calendar";
+    }
+    if (currentTabParam === "emergency" || currentTabParam === "emergency-cab") {
+      if (canAccessEmergencyCab) return "emergency-cab";
+    }
+    if (
+      currentTabParam === "reports" ||
+      currentTabParam === "cab-reports" ||
+      currentTabParam === "report"
+    ) {
+      if (canAccessCabReports) return "cab-reports";
+    }
+    return "cab-list";
+  }, [
+    currentTabParam,
+    canManageEditCab,
+    canAccessEmergencyCab,
+    canAccessCabReports,
+  ]);
+
+  const activeTabIndex = useMemo(() => {
+    const idx = availableTabs.indexOf(resolvedTabKey);
+    return idx >= 0 ? idx : 0;
+  }, [availableTabs, resolvedTabKey]);
+
+  const handleTabChange = (index: number) => {
+    const targetKey = availableTabs[index] || "cab-list";
+    const params = new URLSearchParams(searchParams.toString());
+    if (targetKey === "cab-list") {
+      params.delete("tab");
+    } else {
+      params.set("tab", targetKey);
+    }
+    const queryString = params.toString();
+    router.replace(
+      queryString ? `/cab/cab-request?${queryString}` : "/cab/cab-request",
+      { scroll: false }
+    );
+  };
+
   // Data
   const [DataList, setDataList] = useState<CabRequestItem[]>([]);
   const [DataCalendar, setDataCalendar] = useState<CabRequestItem[]>([]);
@@ -1206,6 +1292,99 @@ const CabRequestView = () => {
     }
     if (token) setTokenData(token);
   }, []);
+
+  // Verify feature access for TAB_CAB_REPORT from sys_cab module matrix
+  useEffect(() => {
+    if (!DataAuth || !tokenData) return;
+    const userOrgGroupId =
+      DataAuth?.team?.orgGroupId && DataAuth.team.orgGroupId !== "-"
+        ? DataAuth.team.orgGroupId
+        : null;
+
+    // Verify feature access for TAB_CAB_REPORT from sys_cab module matrix
+    CheckFeatureAccess(
+      {
+        moduleCode: SYS_MODULE_CAB,
+        featureCode: "TAB_CAB_REPORT",
+        userSysId: DataAuth?.id || null,
+        orgGroupId: userOrgGroupId,
+      },
+      tokenData
+    )
+      .then((res) => {
+        if (res?.statusCode === RES_CODE_OK && res.data?.hasAccess) {
+          setCanAccessCabReports(true);
+        } else {
+          setCanAccessCabReports(false);
+        }
+      })
+      .catch(() => {
+        setCanAccessCabReports(false);
+      });
+
+    // Verify feature access for REGISTER_CAB from sys_cab module matrix
+    CheckFeatureAccess(
+      {
+        moduleCode: SYS_MODULE_CAB,
+        featureCode: "REGISTER_CAB",
+        userSysId: DataAuth?.id || null,
+        orgGroupId: userOrgGroupId,
+      },
+      tokenData
+    )
+      .then((res) => {
+        if (res?.statusCode === RES_CODE_OK && res.data?.hasAccess) {
+          setCanRegisterCab(true);
+        } else {
+          setCanRegisterCab(false);
+        }
+      })
+      .catch(() => {
+        setCanRegisterCab(false);
+      });
+
+    // Verify feature access for MANAGE_EDIT_CAB from sys_cab module matrix (controls CAB Request tab access)
+    CheckFeatureAccess(
+      {
+        moduleCode: SYS_MODULE_CAB,
+        featureCode: "MANAGE_EDIT_CAB",
+        userSysId: DataAuth?.id || null,
+        orgGroupId: userOrgGroupId,
+      },
+      tokenData
+    )
+      .then((res) => {
+        if (res?.statusCode === RES_CODE_OK && res.data?.hasAccess) {
+          setCanManageEditCab(true);
+        } else {
+          setCanManageEditCab(false);
+        }
+      })
+      .catch(() => {
+        setCanManageEditCab(false);
+      });
+
+    // Verify feature access for TAB_EMERGENCY_CAB from sys_cab module matrix (controls Emergency CAB tab access)
+    CheckFeatureAccess(
+      {
+        moduleCode: SYS_MODULE_CAB,
+        featureCode: "TAB_EMERGENCY_CAB",
+        userSysId: DataAuth?.id || null,
+        orgGroupId: userOrgGroupId,
+      },
+      tokenData
+    )
+      .then((res) => {
+        if (res?.statusCode === RES_CODE_OK && res.data?.hasAccess) {
+          setCanAccessEmergencyCab(true);
+        } else {
+          setCanAccessEmergencyCab(false);
+        }
+      })
+      .catch(() => {
+        setCanAccessEmergencyCab(false);
+      });
+  }, [tokenData, DataAuth?.id, DataAuth?.team?.orgGroupId]);
 
   // Load data
   useEffect(() => {
@@ -2134,7 +2313,7 @@ const CabRequestView = () => {
                       </MenuItem>
                     </MenuList>
                   </Menu>
-                  {canMake && (
+                  {canRegisterCab && (
                     <Button size="sm" colorScheme="secondary" leftIcon={<FiPlusSquare />} onClick={categoryModal.onOpen}>
                       Request
                     </Button>
@@ -2145,10 +2324,17 @@ const CabRequestView = () => {
               <Divider />
 
               {/* Tabs: Table + Pending Requests + Calendar + Reports */}
-              <Tabs variant="unstyled" w="full" size="sm" isLazy>
+              <Tabs
+                variant="unstyled"
+                w="full"
+                size="sm"
+                isLazy
+                index={activeTabIndex}
+                onChange={handleTabChange}
+              >
                 <AppTabList mb={2}>
                   <AppTabItem icon={FiList} label="CAB List" />
-                  {(canMake || canApprove) && (
+                  {canManageEditCab && (
                     <AppTabItem
                       icon={FiClock}
                       label="CAB Request"
@@ -2157,7 +2343,23 @@ const CabRequestView = () => {
                     />
                   )}
                   <AppTabItem icon={FiCalendar} label="Schedule Calendar" />
-                  {(canMake || canApprove) && (
+                  {canAccessEmergencyCab && (
+                    <AppTabItem
+                      icon={FiAlertTriangle}
+                      label="Emergency CAB"
+                      badge={
+                        DataList.filter(
+                          (i) =>
+                            String(i.jenisCab || "").toUpperCase() === "EMERGENCY" &&
+                            !["COMPLETED", "APPROVED"].includes(
+                              String(i.status || "").toUpperCase()
+                            )
+                        ).length || undefined
+                      }
+                      badgeColorScheme="red"
+                    />
+                  )}
+                  {canAccessCabReports && (
                     <AppTabItem
                       icon={FiFileText}
                       label="CAB Reports"
@@ -2306,7 +2508,7 @@ const CabRequestView = () => {
                   </TabPanel>
 
                   {/* ─── Tab 2: CAB Request Workspace (Status REQUEST & CONFIRM) ─── */}
-                  {(canMake || canApprove) && (
+                  {canManageEditCab && (
                     <TabPanel px={0} pt={4}>
                       {/* Sub-Header: Filter Status Cepat + Search Controls */}
                       <Flex
@@ -2969,8 +3171,19 @@ const CabRequestView = () => {
                     )}
                   </TabPanel>
 
-                  {/* ─── Tab 3: CAB Reports ─── */}
-                  {(canMake || canApprove) && (
+                  {/* ─── Tab: Emergency CAB ─── */}
+                  {canAccessEmergencyCab && (
+                    <TabPanel px={0} pt={4}>
+                      <CabEmergencyTab
+                        items={DataList}
+                        onRefresh={RefreshAction}
+                        tokenData={tokenData}
+                      />
+                    </TabPanel>
+                  )}
+
+                  {/* ─── Tab: CAB Reports ─── */}
+                  {canAccessCabReports && (
                     <TabPanel px={0} pt={4}>
                       <CabReportsTab items={DataList} onRefresh={RefreshAction} />
                     </TabPanel>

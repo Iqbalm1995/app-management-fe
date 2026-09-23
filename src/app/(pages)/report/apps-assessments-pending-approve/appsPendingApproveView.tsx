@@ -3,11 +3,12 @@
 import { HeaderContent } from "@/app/components/headerContent";
 import LayoutAdmin from "@/app/components/layoutAdmin";
 import { TableComponentFull } from "@/app/components/tableComponents";
-import { radiusStyle, RES_CODE_OK, RES_GENERIC_ERROR_MSG, ORG_GROUP_WHITELIST_ALL_ACCESS, ORG_GROUP_WHITELIST_FULL_OVERRIDE, ORG_CATEGORY_KEY_GROUP, DIVISION_ID_IT_BJB } from "@/app/constants/applicationConstants";
+import { radiusStyle, RES_CODE_OK, RES_GENERIC_ERROR_MSG, ORG_CATEGORY_KEY_GROUP, DIVISION_ID_IT_BJB } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import useOrganization, { OrganizationResponse } from "@/app/services/useOrganization";
+import useSysModuleGroup from "@/app/services/useSysModuleGroup";
 import { PaggingListPayload } from "@/app/types/masterTypes";
 import useAppsCriticalReport, {
   AppsCriticalReportAssessmentViewModel,
@@ -72,14 +73,12 @@ export default function AppsPendingApproveView() {
 
   // WA1 filter state
   const { List: ListOrganization } = useOrganization();
+  const { GetFeatures } = useSysModuleGroup();
   const [groupOptions, setGroupOptions] = useState<OrganizationResponse[]>([]);
   const [userOrgGroupId, setUserOrgGroupId] = useState<string | null>(null);
   const [isGroupLocked, setIsGroupLocked] = useState(false);
   const [filterGroup, setFilterGroup] = useState("");
-
-  // WA2 is only accessible to FULL_OVERRIDE users (IAG, ADMIN) — they are the WA2 target approvers
-  // Users with no orgGroupId (executives) can also see WA2
-  const isWA2Approver = !userOrgGroupId || ORG_GROUP_WHITELIST_FULL_OVERRIDE.includes(userOrgGroupId);
+  const [isWA2Approver, setIsWA2Approver] = useState(false);
   const [filterQ, setFilterQ] = useState("");
   const [filterYear, setFilterYear] = useState("");
   const [filterReview, setFilterReview] = useState<"" | "reviewed" | "pending">("");
@@ -298,17 +297,51 @@ export default function AppsPendingApproveView() {
     if (storedData) {
       const parsed = (JSON.parse(storedData) as AuthDataModelInterface).dataLogin as AuthDataResponse;
       setDataAuth(parsed);
-      // Group filter lock — same rule as batch detail page
       const raw = parsed.team?.orgGroupId || null;
       const orgGroupId = (raw && raw !== "-") ? raw : null;
       setUserOrgGroupId(orgGroupId);
-      if (orgGroupId && !ORG_GROUP_WHITELIST_ALL_ACCESS.includes(orgGroupId)) {
-        setIsGroupLocked(true);
-        setFilterGroup(orgGroupId);
-      }
     }
     if (token) setTokenData(token);
   }, []);
+
+  // Fetch dynamic feature permissions from Sys Module
+  useEffect(() => {
+    if (!tokenData || !DataAuth) return;
+    const raw = DataAuth.team?.orgGroupId || null;
+    const orgGroupId = (raw && raw !== "-") ? raw : null;
+
+    if (!orgGroupId) {
+      setIsWA2Approver(true);
+      setIsGroupLocked(false);
+      return;
+    }
+
+    GetFeatures("sys_apps_assessment", tokenData).then((res) => {
+      if (res?.statusCode === RES_CODE_OK && res.data) {
+        const features = res.data;
+        const isFeatureAllowed = (featCode: string) => {
+          const feat = features.find((f) => f.featureCode.toUpperCase() === featCode.toUpperCase());
+          if (!feat || !feat.whitelists) return false;
+          return feat.whitelists.some(
+            (w) =>
+              (w.principalType === "USER" && w.userSysId === DataAuth.id) ||
+              (w.principalType === "ORG_GROUP" && w.orgGroupId === orgGroupId)
+          );
+        };
+
+        const hasOverride = isFeatureAllowed("FULL_OVERRIDE");
+        const hasAllAccess = isFeatureAllowed("ALL_ACCESS") || hasOverride;
+
+        setIsWA2Approver(hasOverride);
+        if (!hasAllAccess) {
+          setIsGroupLocked(true);
+          setFilterGroup(orgGroupId);
+        } else {
+          setIsGroupLocked(false);
+        }
+      }
+    });
+  }, [tokenData, DataAuth?.id, DataAuth?.team?.orgGroupId]);
 
   // Load group options for filter dropdown
   useEffect(() => {

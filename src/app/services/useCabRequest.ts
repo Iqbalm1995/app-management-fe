@@ -10,6 +10,7 @@ import {
   CabCategory,
   CabCommitteeMember,
   CabFormData,
+  CabJenisCab,
   CabPicInternalIT,
   CabRequestDetail,
   CabRequestItem,
@@ -114,6 +115,11 @@ const mapBackendItemToFrontendItem = (item: any): CabRequestItem => {
     cabResult: item.cabResult || item.CabResult || "",
     cabNotes: item.cabNotes || item.CabNotes || "",
     implementationStatus: item.implementationStatus || item.ImplementationStatus || null,
+    jenisCab: (item.jenisCab || item.JenisCab || "NORMAL") as CabJenisCab,
+    jenisCabEmergencyAlasan: item.jenisCabEmergencyAlasan || item.JenisCabEmergencyAlasan || item.alasanEmergency || item.AlasanEmergency || "",
+    alasanEmergency: item.jenisCabEmergencyAlasan || item.JenisCabEmergencyAlasan || item.alasanEmergency || item.AlasanEmergency || "",
+    unitKerja: item.unitKerja || item.UnitKerja || item.divisi || item.Divisi || "",
+    applicationName: item.applicationName || item.ApplicationName || "",
   };
 };
 

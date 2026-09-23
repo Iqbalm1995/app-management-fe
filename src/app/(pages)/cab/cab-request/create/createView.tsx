@@ -29,14 +29,18 @@ import {
 } from "@chakra-ui/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { FiAlertCircle, FiArrowLeft, FiArrowRight, FiCheckCircle, FiSave, FiSend } from "react-icons/fi";
+import { FiAlertCircle, FiArrowLeft, FiArrowRight, FiCheckCircle, FiLock, FiSave, FiSend } from "react-icons/fi";
 
 import { HeaderContent } from "@/app/components/headerContent";
 import LayoutAdmin from "@/app/components/layoutAdmin";
-import { radiusStyle } from "@/app/constants/applicationConstants";
+import LoadingMiniSignature from "@/app/components/loadingMini";
+import { radiusStyle, RES_CODE_OK } from "@/app/constants/applicationConstants";
 import { useDocumentTitle } from "@/app/hooks/useDocumentTitle";
+import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { AuthDataResponse } from "@/app/services/useAuthentications";
+import useSysModuleGroup from "@/app/services/useSysModuleGroup";
+import { SYS_MODULE_CAB } from "@/app/constants/moduleCodeCOnstants";
 import { CabCategory } from "@/app/types/cabTypes";
 
 import useCabCreateForm, { SOFTWARE_STEPS, HARDWARE_STEPS } from "./hooks/useCabCreateForm";
@@ -57,15 +61,59 @@ const CreateView = () => {
   const { colorMode } = useColorMode();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const showToast = useToastHelper();
 
+  const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
+  const [hasRegisterAccess, setHasRegisterAccess] = useState<boolean | null>(null);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const cancelConfirmRef = useRef<any>(null);
 
+  const { CheckFeatureAccess } = useSysModuleGroup();
+
   useEffect(() => {
+    const storedData = localStorage.getItem("authData");
     const token = localStorage.getItem("tokenData") as string;
+    if (storedData) {
+      const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
+      const UserData: AuthDataResponse = StorageAuth.dataLogin as AuthDataResponse;
+      setDataAuth(UserData);
+    }
     if (token) setTokenData(token);
   }, []);
+
+  // Check REGISTER_CAB feature access on sys_cab
+  useEffect(() => {
+    if (!DataAuth || !tokenData) return;
+    const userOrgGroupId =
+      DataAuth?.team?.orgGroupId && DataAuth.team.orgGroupId !== "-"
+        ? DataAuth.team.orgGroupId
+        : null;
+
+    CheckFeatureAccess(
+      {
+        moduleCode: SYS_MODULE_CAB,
+        featureCode: "REGISTER_CAB",
+        userSysId: DataAuth?.id || null,
+        orgGroupId: userOrgGroupId,
+      },
+      tokenData
+    )
+      .then((res) => {
+        if (res?.statusCode === RES_CODE_OK && res.data?.hasAccess) {
+          setHasRegisterAccess(true);
+        } else {
+          setHasRegisterAccess(false);
+          showToast({
+            description: "Anda tidak memiliki hak akses (REGISTER_CAB) untuk membuat permohonan CAB baru.",
+            statusToast: "warning",
+          });
+        }
+      })
+      .catch(() => {
+        setHasRegisterAccess(false);
+      });
+  }, [tokenData, DataAuth?.id, DataAuth?.team?.orgGroupId]);
 
   const form = useCabCreateForm();
 
@@ -85,9 +133,55 @@ const CreateView = () => {
   };
 
   const handleExecuteSubmit = async () => {
+    if (!hasRegisterAccess) {
+      showToast({
+        description: "Aksi tidak diizinkan. Anda tidak memiliki hak akses REGISTER_CAB.",
+        statusToast: "error",
+      });
+      return;
+    }
     setIsConfirmOpen(false);
     await form.handleSubmit(false);
   };
+
+  // While verifying access
+  if (hasRegisterAccess === null) {
+    return (
+      <LayoutAdmin>
+        <HeaderContent titleName="Buat CAB Request" breadCrumb={["CAB", "CAB Request", "Buat Request"]} />
+        <Flex justify="center" align="center" minH="400px">
+          <LoadingMiniSignature />
+        </Flex>
+      </LayoutAdmin>
+    );
+  }
+
+  // Access Denied state
+  if (hasRegisterAccess === false) {
+    return (
+      <LayoutAdmin>
+        <HeaderContent titleName="Buat CAB Request" breadCrumb={["CAB", "CAB Request", "Buat Request"]} />
+        <Box px={{ base: 4, sm: 5, md: 6 }} mt={8} textAlign="center" py={16}>
+          <VStack spacing={4} maxW="500px" mx="auto" p={6} bg={bgCard} rounded={radiusStyle} border="1px" borderColor={borderCol} shadow="sm">
+            <Box p={3} bg="red.50" color="red.500" rounded="full">
+              <FiLock size={32} />
+            </Box>
+            <Heading size="md" color={colorMode === "light" ? "gray.800" : "white"}>
+              Akses Tidak Diizinkan
+            </Heading>
+            <Text fontSize="sm" color="gray.500">
+              Anda tidak memiliki hak akses (<strong>REGISTER_CAB</strong>) untuk mendaftarkan atau membuat permohonan CAB baru.
+            </Text>
+            <Link href="/cab/cab-request">
+              <Button leftIcon={<FiArrowLeft />} colorScheme="blue" size="sm" mt={2}>
+                Kembali ke Daftar CAB
+              </Button>
+            </Link>
+          </VStack>
+        </Box>
+      </LayoutAdmin>
+    );
+  }
 
   // If no category yet (fallback — shouldn't happen if modal is used), redirect back
   if (!form.category) {
