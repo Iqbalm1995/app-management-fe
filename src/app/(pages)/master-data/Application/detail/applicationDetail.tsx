@@ -1,8 +1,13 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  Accordion,
+  AccordionButton,
+  AccordionIcon,
+  AccordionItem,
+  AccordionPanel,
   Alert,
   AlertDescription,
   AlertIcon,
@@ -42,6 +47,13 @@ import {
   TabPanel,
   TabPanels,
   Tabs,
+  Table,
+  TableContainer,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
   Tag,
   TagLabel,
   Text,
@@ -86,6 +98,7 @@ import {
   FiSettings,
   FiShield,
   FiTarget,
+  FiTrash2,
   FiTrendingUp,
   FiUsers,
   FiX,
@@ -136,6 +149,143 @@ import useAppsCriticalReport, { AppsCriticalReportAssessmentViewModel } from "@/
 import { AuthDataResponse } from "@/app/services/useAuthentications";
 import { OptionListProps, PaggingListPayload, ListSearchByParam } from "@/app/types/masterTypes";
 
+export interface AppServerVmDetail {
+  namaVm: string;
+  ipAddress: string;
+  os: string;
+  cpu: string;
+  memory: string;
+  storage: string;
+  note?: string;
+}
+
+export interface AppServerEnvironmentItem {
+  id: string;
+  roleServer: string;
+  roleServerOther?: string;
+  roleDetail: string;
+  status: "Aktif" | "Pasif";
+  ipAddress: string;
+  primary: "DC1" | "DC2" | "-";
+  site: string;
+  siteOther?: string;
+  segment: string;
+  environment: string;
+  environmentOther?: string;
+  joinDomain: "Ya" | "Tidak";
+  hardening: "Ya" | "Tidak";
+  pam: "Ya" | "Tidak";
+  dualDeploy: "Ya" | "Tidak";
+  vmDetail?: AppServerVmDetail;
+}
+
+export interface RelatedAppItem {
+  id: string;
+  appName: string;
+  appShortName: string;
+  appVersion: string;
+  appInitaiteYear: string;
+  appsStatus?: string;
+}
+
+export const STANDARD_ROLE_SERVERS = [
+  "Web Server",
+  "App Server",
+  "DB Server",
+  "Middleware",
+  "API Gateway",
+  "Cache / Redis",
+  "Storage / NAS",
+  "Batch / Worker",
+  "Other",
+] as const;
+
+export const detectDcFromIp = (ip?: string): "DC1" | "DC2" | "-" => {
+  if (!ip) return "-";
+  const parts = ip.trim().split(".");
+  if (parts.length >= 3) {
+    const octet3 = parts[2].trim();
+    if (octet3.startsWith("1")) return "DC1";
+    if (octet3.startsWith("2")) return "DC2";
+  }
+  return "-";
+};
+
+const DEFAULT_SERVER_ENVIRONMENTS: AppServerEnvironmentItem[] = [
+  {
+    id: "srv-1",
+    roleServer: "Web Server",
+    roleDetail: "Reverse Proxy & SSL Termination (Nginx)",
+    status: "Aktif",
+    ipAddress: "10.20.101.15",
+    primary: "DC1",
+    site: "DC Narogong",
+    segment: "DMZ Web Tier",
+    environment: "Production",
+    joinDomain: "Ya",
+    hardening: "Ya",
+    pam: "Ya",
+    dualDeploy: "Ya",
+    vmDetail: {
+      namaVm: "VM-PRD-WEB-01",
+      ipAddress: "10.20.101.15",
+      os: "Red Hat Enterprise Linux 9.2",
+      cpu: "4 vCPU",
+      memory: "16 GB RAM",
+      storage: "150 GB NVMe SSD",
+      note: "Primary Web Reverse Proxy Instance with SSL Offloading",
+    },
+  },
+  {
+    id: "srv-2",
+    roleServer: "App Server",
+    roleDetail: "Core Application Microservices (.NET 8)",
+    status: "Aktif",
+    ipAddress: "10.20.102.24",
+    primary: "DC1",
+    site: "DC Narogong",
+    segment: "Internal App Farm",
+    environment: "Production",
+    joinDomain: "Ya",
+    hardening: "Ya",
+    pam: "Ya",
+    dualDeploy: "Ya",
+    vmDetail: {
+      namaVm: "VM-PRD-APP-01",
+      ipAddress: "10.20.102.24",
+      os: "Ubuntu Server 22.04 LTS",
+      cpu: "8 vCPU",
+      memory: "32 GB RAM",
+      storage: "500 GB NVMe SSD",
+      note: "Core Microservices and Background Workers Instance",
+    },
+  },
+  {
+    id: "srv-3",
+    roleServer: "DB Server",
+    roleDetail: "PostgreSQL Database Cluster Standby Node",
+    status: "Pasif",
+    ipAddress: "10.20.201.32",
+    primary: "DC2",
+    site: "DRC Surabaya",
+    segment: "Database Secure Zone",
+    environment: "DRC",
+    joinDomain: "Ya",
+    hardening: "Ya",
+    pam: "Ya",
+    dualDeploy: "Tidak",
+    vmDetail: {
+      namaVm: "VM-DRC-DB-02",
+      ipAddress: "10.20.201.32",
+      os: "Red Hat Enterprise Linux 9.2",
+      cpu: "16 vCPU",
+      memory: "64 GB RAM",
+      storage: "2 TB Enterprise SSD (RAID 10)",
+      note: "Standby Replication Node at DRC Surabaya",
+    },
+  },
+];
+
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Application Detail",
   breadCrumb: ["Master Data", "Applications", "Detail"],
@@ -160,7 +310,7 @@ export default function ApplicationDetail() {
   const [IsLoadingProcess, setIsLoadingProcess] = useState(false);
   const [IsEditMode, setIsEditMode] = useState(false);
 
-  // Active Tab Index State (0: Overview, 1: Specs, 2: Governance, 3: Projects, 4: Assessment)
+  // Active Tab Index State (0: Overview, 1: Specs, 2: Governance, 3: Projects, 4: Assessment, 5: Environment)
   const [activeTabIndex, setActiveTabIndex] = useState(0);
 
   // Form State
@@ -248,11 +398,234 @@ export default function ApplicationDetail() {
   const [assessmentTotal, setAssessmentTotal] = useState(0);
   const [assessmentRefresh, setAssessmentRefresh] = useState(0);
 
+  // Server Environment State
+  const [serverEnvironments, setServerEnvironments] = useState<AppServerEnvironmentItem[]>(DEFAULT_SERVER_ENVIRONMENTS);
+
+  // Link Akses & Environment Test Parameters State
+  const [linkAksesEnv, setLinkAksesEnv] = useState<"Dev" | "Prod">("Dev");
+  const [linkAksesUrl, setLinkAksesUrl] = useState<string>("");
+  const [testUser, setTestUser] = useState<string>("");
+  const [testData, setTestData] = useState<string>("");
+
+  // Supporting Applications (Aplikasi Pendukung) State
+  const [supportingApps, setSupportingApps] = useState<ApplicationMasterResponse[]>([]);
+  const [isSupportingAppsLoading, setIsSupportingAppsLoading] = useState<boolean>(false);
+  const [supportingAppsSearch, setSupportingAppsSearch] = useState<string>("");
+  const [supportingAppsPageIndex, setSupportingAppsPageIndex] = useState<number>(0);
+  const [supportingAppsPageSize, setSupportingAppsPageSize] = useState<number>(5);
+  const [supportingAppsTotal, setSupportingAppsTotal] = useState<number>(0);
+  const [relatedSupportingApps, setRelatedSupportingApps] = useState<RelatedAppItem[]>([]);
+  const [isCatalogOpen, setIsCatalogOpen] = useState<boolean>(false);
+
+  // Add Server Button Visibility State
+  const [isAddServerHidden, setIsAddServerHidden] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!appId) return;
+    try {
+      const stored = localStorage.getItem(`app_env_servers_${appId}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setServerEnvironments(parsed);
+        }
+      }
+      const storedAccess = localStorage.getItem(`app_env_access_${appId}`);
+      if (storedAccess) {
+        const parsedAccess = JSON.parse(storedAccess);
+        if (parsedAccess.linkAksesEnv) setLinkAksesEnv(parsedAccess.linkAksesEnv);
+        if (parsedAccess.linkAksesUrl !== undefined) setLinkAksesUrl(parsedAccess.linkAksesUrl);
+        if (parsedAccess.testUser !== undefined) setTestUser(parsedAccess.testUser);
+        if (parsedAccess.testData !== undefined) setTestData(parsedAccess.testData);
+      }
+      const storedRelated = localStorage.getItem(`app_related_supporting_${appId}`);
+      if (storedRelated) {
+        const parsedRelated = JSON.parse(storedRelated);
+        if (Array.isArray(parsedRelated)) {
+          setRelatedSupportingApps(parsedRelated);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load server environments and link access from localStorage", e);
+    }
+  }, [appId]);
+
+  const handleUpdateServer = (
+    index: number,
+    field: keyof AppServerEnvironmentItem,
+    value: any
+  ) => {
+    setServerEnvironments((prev) => {
+      const updated = [...prev];
+      const item = { ...updated[index], [field]: value };
+      if (field === "ipAddress") {
+        const detected = detectDcFromIp(value);
+        if (detected !== "-") {
+          item.primary = detected;
+        }
+      }
+      updated[index] = item;
+      return updated;
+    });
+  };
+
+  const handleUpdateServerVm = (
+    index: number,
+    field: keyof AppServerVmDetail,
+    value: string
+  ) => {
+    setServerEnvironments((prev) => {
+      const updated = [...prev];
+      const curVm = updated[index].vmDetail || {
+        namaVm: "",
+        ipAddress: "",
+        os: "",
+        cpu: "",
+        memory: "",
+        storage: "",
+        note: "",
+      };
+      updated[index] = {
+        ...updated[index],
+        vmDetail: {
+          ...curVm,
+          [field]: value,
+        },
+      };
+      return updated;
+    });
+  };
+
+  const handleAddServer = () => {
+    if (!IsEditMode) setIsEditMode(true);
+    setIsAddServerHidden(true);
+    const newServer: AppServerEnvironmentItem = {
+      id: `srv-${Date.now()}`,
+      roleServer: "App Server",
+      roleDetail: "Application Service Node",
+      status: "Aktif",
+      ipAddress: "10.20.101.50",
+      primary: "DC1",
+      site: "DC Narogong",
+      segment: "Internal App Farm",
+      environment: "Production",
+      joinDomain: "Ya",
+      hardening: "Ya",
+      pam: "Ya",
+      dualDeploy: "Ya",
+      vmDetail: {
+        namaVm: `VM-PRD-NODE-${Date.now().toString().slice(-4)}`,
+        ipAddress: "10.20.101.50",
+        os: "Red Hat Enterprise Linux 9",
+        cpu: "4 vCPU",
+        memory: "16 GB RAM",
+        storage: "250 GB SSD",
+        note: "",
+      },
+    };
+    setServerEnvironments((prev) => [...prev, newServer]);
+  };
+
+  const handleDeleteServer = (index: number) => {
+    setServerEnvironments((prev) => prev.filter((_, i) => i !== index));
+  };
+
   // Copy app code helper
   const { hasCopied, onCopy } = useClipboard(DataApplication?.appCode || "");
 
   // API Hooks
-  const { GetDetailById, UpdateData } = useApps();
+  const { GetDetailById, UpdateData, List: ListApplications } = useApps();
+
+  // Fetch Supporting Applications from existing Master Data Application endpoint
+  const fetchSupportingApps = useCallback(
+    async (pageIndex: number, pageSize: number, searchKeyword: string) => {
+      if (!tokenData) return;
+      try {
+        setIsSupportingAppsLoading(true);
+        const payload: PaggingListPayload = {
+          search: searchKeyword,
+          limit: pageSize,
+          page: pageIndex,
+          fieldOrder: ["createdAt"],
+          orderDir: "desc",
+          filterWhere: [],
+        };
+        const res = await ListApplications(payload, tokenData);
+        if (res && res.statusCode === RES_CODE_OK && res.data) {
+          setSupportingApps(res.data);
+          setSupportingAppsTotal(res.countTotal || res.count || res.data.length);
+        } else if (res && res.data) {
+          setSupportingApps(res.data);
+          setSupportingAppsTotal(res.countTotal || res.count || res.data.length);
+        }
+      } catch (err) {
+        console.error("Failed to fetch supporting apps:", err);
+      } finally {
+        setIsSupportingAppsLoading(false);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tokenData]
+  );
+
+  const handleOpenAddCatalog = () => {
+    setIsCatalogOpen(true);
+    fetchSupportingApps(0, supportingAppsPageSize, supportingAppsSearch);
+  };
+
+  const handleAddSupportingApp = (app: ApplicationMasterResponse) => {
+    if (relatedSupportingApps.some((item) => item.id === app.id || item.appName.toLowerCase() === app.appName.toLowerCase())) {
+      showToast({
+        description: "Aplikasi sudah ada dalam daftar aplikasi pendukung",
+        statusToast: "info",
+      });
+      return;
+    }
+    const displayVersion =
+      (app as any).appVersion ||
+      (app as any).version ||
+      app.appStatusProject ||
+      "v1.0.0";
+    const displayYear =
+      app.appInitaiteYear ||
+      (app.createdAt ? new Date(app.createdAt).getFullYear().toString() : "-");
+
+    const newItem: RelatedAppItem = {
+      id: app.id,
+      appName: app.appName,
+      appShortName: app.appShortName || app.appCode || app.appName.slice(0, 4).toUpperCase(),
+      appVersion: displayVersion,
+      appInitaiteYear: displayYear,
+      appsStatus: app.appsStatus || "ACTIVE",
+    };
+
+    const updated = [...relatedSupportingApps, newItem];
+    setRelatedSupportingApps(updated);
+    const namesStr = updated.map((a) => a.appName).join(", ");
+    setFormData((prev) => ({ ...prev, appIntegrationOthersApps: namesStr }));
+    if (appId) {
+      localStorage.setItem(`app_related_supporting_${appId}`, JSON.stringify(updated));
+    }
+    showToast({
+      description: `${app.appName} berhasil ditambahkan ke aplikasi pendukung`,
+      statusToast: "success",
+    });
+  };
+
+  const handleRemoveSupportingApp = (id: string) => {
+    const updated = relatedSupportingApps.filter((item) => item.id !== id);
+    setRelatedSupportingApps(updated);
+    const namesStr = updated.map((a) => a.appName).join(", ");
+    setFormData((prev) => ({ ...prev, appIntegrationOthersApps: namesStr }));
+    if (appId) {
+      localStorage.setItem(`app_related_supporting_${appId}`, JSON.stringify(updated));
+    }
+    showToast({
+      description: "Aplikasi pendukung berhasil dihapus",
+      statusToast: "info",
+    });
+  };
+
   const { List: ListOrganization } = useOrganization();
   const { List: ListUsers } = useUsers();
   const { ListConstantData } = useConstants();
@@ -360,6 +733,31 @@ export default function ApplicationDetail() {
       }
       if (data.appBusinessOwnerPicUserId) {
         setBusinessOwnerPICSearch(data.appBusinessOwnerPicUserId);
+      }
+
+      try {
+        const storedRelated = localStorage.getItem(`app_related_supporting_${appId}`);
+        if (storedRelated) {
+          const parsedRelated = JSON.parse(storedRelated);
+          if (Array.isArray(parsedRelated) && parsedRelated.length > 0) {
+            setRelatedSupportingApps(parsedRelated);
+          }
+        } else if (data.appIntegrationOthersApps) {
+          const names = data.appIntegrationOthersApps.split(",").map((s) => s.trim()).filter(Boolean);
+          if (names.length > 0) {
+            const fallbackApps: RelatedAppItem[] = names.map((name, idx) => ({
+              id: `rel-${idx}-${name.replace(/\s+/g, "_")}`,
+              appName: name,
+              appShortName: name.length > 4 ? name.substring(0, 4).toUpperCase() : name.toUpperCase(),
+              appVersion: "v1.0.0",
+              appInitaiteYear: "-",
+              appsStatus: "ACTIVE",
+            }));
+            setRelatedSupportingApps(fallbackApps);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to parse stored supporting apps", err);
       }
     } catch (error) {
       console.error("Error loading application detail:", error);
@@ -628,7 +1026,10 @@ export default function ApplicationDetail() {
         appEnvLocationsOthers: formData.appEnvLocationsOthers,
         appPrivateAuth: formData.appPrivateAuth,
         appHightAvailability: formData.appHightAvailability,
-        appIntegrationOthersApps: formData.appIntegrationOthersApps,
+        appIntegrationOthersApps:
+          relatedSupportingApps.length > 0
+            ? relatedSupportingApps.map((a) => a.appName).join(", ")
+            : formData.appIntegrationOthersApps,
         appOwnerDivisionId: formData.appOwnerDivisionId || null,
         appOwnerGroupId: formData.appOwnerGroupId || null,
         appManageByDivisionId: formData.appManageByDivisionId || null,
@@ -660,11 +1061,26 @@ export default function ApplicationDetail() {
         return;
       }
 
+      if (appId) {
+        localStorage.setItem(`app_env_servers_${appId}`, JSON.stringify(serverEnvironments));
+        localStorage.setItem(
+          `app_env_access_${appId}`,
+          JSON.stringify({
+            linkAksesEnv,
+            linkAksesUrl,
+            testUser,
+            testData,
+          })
+        );
+        localStorage.setItem(`app_related_supporting_${appId}`, JSON.stringify(relatedSupportingApps));
+      }
+
       showToast({
         description: "Application data successfully updated",
         statusToast: "success",
       });
 
+      setIsAddServerHidden(false);
       setIsEditMode(false);
       LoadApplicationData();
     } catch (error) {
@@ -768,6 +1184,43 @@ export default function ApplicationDetail() {
       }),
     };
   }, [projectTotalCount, projectPageSize, projectPageIndex]);
+
+  // Standard React-Table Adapter for ControlTable (Aplikasi Pendukung)
+  const supportingAppsPageCount = Math.ceil((supportingAppsTotal || 0) / supportingAppsPageSize) || 1;
+
+  const supportingAppsTableAdapter = useMemo(() => {
+    return {
+      getPageCount: () => supportingAppsPageCount,
+      getCanPreviousPage: () => supportingAppsPageIndex > 0,
+      getCanNextPage: () => supportingAppsPageIndex < supportingAppsPageCount - 1,
+      previousPage: () => {
+        const nextIdx = Math.max(0, supportingAppsPageIndex - 1);
+        setSupportingAppsPageIndex(nextIdx);
+        fetchSupportingApps(nextIdx, supportingAppsPageSize, supportingAppsSearch);
+      },
+      nextPage: () => {
+        const nextIdx = Math.min(supportingAppsPageCount - 1, supportingAppsPageIndex + 1);
+        setSupportingAppsPageIndex(nextIdx);
+        fetchSupportingApps(nextIdx, supportingAppsPageSize, supportingAppsSearch);
+      },
+      setPageIndex: (index: number) => {
+        const targetIdx = Math.max(0, Math.min(supportingAppsPageCount - 1, index));
+        setSupportingAppsPageIndex(targetIdx);
+        fetchSupportingApps(targetIdx, supportingAppsPageSize, supportingAppsSearch);
+      },
+      setPageSize: (size: number) => {
+        setSupportingAppsPageSize(size);
+        setSupportingAppsPageIndex(0);
+        fetchSupportingApps(0, size, supportingAppsSearch);
+      },
+      getState: () => ({
+        pagination: {
+          pageIndex: supportingAppsPageIndex,
+          pageSize: supportingAppsPageSize,
+        },
+      }),
+    };
+  }, [supportingAppsPageCount, supportingAppsPageIndex, supportingAppsPageSize, supportingAppsSearch, fetchSupportingApps]);
 
   const getProjectStatusBadge = (status: string) => {
     switch (status?.toUpperCase()) {
@@ -1378,6 +1831,28 @@ export default function ApplicationDetail() {
                       <HStack spacing={2}>
                         <Icon as={FiActivity} />
                         <Text>Assessment Report ({assessmentTotal})</Text>
+                      </HStack>
+                    </Tab>
+
+                    <Tab
+                      fontSize="xs"
+                      fontWeight="bold"
+                      px={4}
+                      py={2.5}
+                      rounded="xl"
+                      color={isDark ? "gray.400" : "gray.600"}
+                      _selected={{
+                        color: "white",
+                        bg: "secondary.500",
+                        shadow: "md",
+                      }}
+                      _hover={{ bg: isDark ? "gray.700" : "gray.200" }}
+                      transition="all 0.2s"
+                      whiteSpace="nowrap"
+                    >
+                      <HStack spacing={2}>
+                        <Icon as={FiServer} />
+                        <Text>Application Environment</Text>
                       </HStack>
                     </Tab>
                   </TabList>
@@ -2668,6 +3143,2006 @@ export default function ApplicationDetail() {
                             ))}
                           </VStack>
                         )}
+                      </VStack>
+                    </TabPanel>
+
+                    {/* ──────────────────────────────────────────────────────────
+                        TAB 6: APPLICATION ENVIRONMENT
+                        ────────────────────────────────────────────────────────── */}
+                    <TabPanel p={{ base: 4, md: 6 }}>
+                      <VStack spacing={6} align="stretch">
+                        {/* Header & Controls */}
+                        <Flex
+                          justify="space-between"
+                          align={{ base: "start", sm: "center" }}
+                          direction={{ base: "column", sm: "row" }}
+                          gap={3}
+                        >
+                          <HStack spacing={3}>
+                            <Box
+                              w={10}
+                              h={10}
+                              bg="secondary.500"
+                              rounded="xl"
+                              display="flex"
+                              alignItems="center"
+                              justifyContent="center"
+                              color="white"
+                              shadow="sm"
+                            >
+                              <Icon as={FiServer} boxSize={5} />
+                            </Box>
+                            <VStack align="start" spacing={0.5}>
+                              <HStack spacing={2}>
+                                <Heading size="xs" color={isDark ? "white" : "gray.800"}>
+                                  Application Environment & Server Topology
+                                </Heading>
+                                <Badge colorScheme="purple" fontSize="3xs" rounded="full" px={2}>
+                                  {serverEnvironments.length} Nodes
+                                </Badge>
+                              </HStack>
+                              <Text fontSize="2xs" color="gray.500">
+                                Server role configurations, site segments, DC1/DC2 primary flags, hardening posture & dual deploy architecture.
+                              </Text>
+                            </VStack>
+                          </HStack>
+
+                          <HStack spacing={2} alignSelf={{ base: "flex-end", sm: "center" }}>
+                            {IsEditMode ? (
+                              <>
+                                <Button
+                                  leftIcon={<FiX />}
+                                  size="sm"
+                                  variant="ghost"
+                                  rounded="xl"
+                                  fontSize="xs"
+                                  onClick={() => {
+                                    setIsEditMode(false);
+                                    setIsAddServerHidden(false);
+                                    const stored = localStorage.getItem(`app_env_servers_${appId}`);
+                                    if (stored) {
+                                      try {
+                                        setServerEnvironments(JSON.parse(stored));
+                                      } catch (e) {
+                                        console.error(e);
+                                      }
+                                    }
+                                    const storedAccess = localStorage.getItem(`app_env_access_${appId}`);
+                                    if (storedAccess) {
+                                      try {
+                                        const parsedAccess = JSON.parse(storedAccess);
+                                        if (parsedAccess.linkAksesEnv) setLinkAksesEnv(parsedAccess.linkAksesEnv);
+                                        if (parsedAccess.linkAksesUrl !== undefined) setLinkAksesUrl(parsedAccess.linkAksesUrl);
+                                        if (parsedAccess.testUser !== undefined) setTestUser(parsedAccess.testUser);
+                                        if (parsedAccess.testData !== undefined) setTestData(parsedAccess.testData);
+                                      } catch (e) {
+                                        console.error(e);
+                                      }
+                                    }
+                                  }}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  leftIcon={<FiSave />}
+                                  colorScheme="secondary"
+                                  size="sm"
+                                  rounded="xl"
+                                  px={4}
+                                  fontSize="xs"
+                                  fontWeight="bold"
+                                  isLoading={IsLoadingProcess}
+                                  onClick={handleSave}
+                                >
+                                  Save
+                                </Button>
+                              </>
+                            ) : (
+                              <Button
+                                leftIcon={<FiEdit />}
+                                size="sm"
+                                colorScheme="secondary"
+                                variant="outline"
+                                rounded="xl"
+                                px={4}
+                                fontSize="xs"
+                                fontWeight="bold"
+                                onClick={() => setIsEditMode(true)}
+                              >
+                                Edit Environment
+                              </Button>
+                            )}
+                          </HStack>
+                        </Flex>
+
+                        {/* Summary Stats Strip */}
+                        <SimpleGrid columns={{ base: 2, sm: 4 }} spacing={3}>
+                          <Box
+                            p={3}
+                            rounded="xl"
+                            bg={isDark ? "gray.850" : "gray.50"}
+                            border="1px solid"
+                            borderColor={isDark ? "gray.700" : "gray.200"}
+                          >
+                            <HStack justify="space-between">
+                              <VStack align="start" spacing={0}>
+                                <Text fontSize="3xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
+                                  Total Servers
+                                </Text>
+                                <Heading size="sm" color={isDark ? "white" : "gray.800"}>
+                                  {serverEnvironments.length}
+                                </Heading>
+                              </VStack>
+                              <Box p={2} rounded="lg" bg={isDark ? "gray.750" : "gray.200"} color="gray.400">
+                                <Icon as={FiServer} boxSize={4} />
+                              </Box>
+                            </HStack>
+                          </Box>
+
+                          <Box
+                            p={3}
+                            rounded="xl"
+                            bg={isDark ? "gray.850" : "gray.50"}
+                            border="1px solid"
+                            borderColor={isDark ? "gray.700" : "gray.200"}
+                          >
+                            <HStack justify="space-between">
+                              <VStack align="start" spacing={0}>
+                                <Text fontSize="3xs" fontWeight="bold" color="green.500" textTransform="uppercase">
+                                  Status Aktif
+                                </Text>
+                                <Heading size="sm" color="green.500">
+                                  {serverEnvironments.filter((s) => s.status === "Aktif").length}
+                                </Heading>
+                              </VStack>
+                              <Box p={2} rounded="lg" bg="green.50" color="green.600">
+                                <Icon as={FiCheckCircle} boxSize={4} />
+                              </Box>
+                            </HStack>
+                          </Box>
+
+                          <Box
+                            p={3}
+                            rounded="xl"
+                            bg={isDark ? "gray.850" : "gray.50"}
+                            border="1px solid"
+                            borderColor={isDark ? "gray.700" : "gray.200"}
+                          >
+                            <HStack justify="space-between">
+                              <VStack align="start" spacing={0}>
+                                <Text fontSize="3xs" fontWeight="bold" color="blue.500" textTransform="uppercase">
+                                  Primary DC1 Nodes
+                                </Text>
+                                <Heading size="sm" color="blue.500">
+                                  {serverEnvironments.filter((s) => s.primary === "DC1").length}
+                                </Heading>
+                              </VStack>
+                              <Box p={2} rounded="lg" bg="blue.50" color="blue.600">
+                                <Icon as={FiGlobe} boxSize={4} />
+                              </Box>
+                            </HStack>
+                          </Box>
+
+                          <Box
+                            p={3}
+                            rounded="xl"
+                            bg={isDark ? "gray.850" : "gray.50"}
+                            border="1px solid"
+                            borderColor={isDark ? "gray.700" : "gray.200"}
+                          >
+                            <HStack justify="space-between">
+                              <VStack align="start" spacing={0}>
+                                <Text fontSize="3xs" fontWeight="bold" color="purple.500" textTransform="uppercase">
+                                  Primary DC2 Nodes
+                                </Text>
+                                <Heading size="sm" color="purple.500">
+                                  {serverEnvironments.filter((s) => s.primary === "DC2").length}
+                                </Heading>
+                              </VStack>
+                              <Box p={2} rounded="lg" bg="purple.50" color="purple.600">
+                                <Icon as={FiLayers} boxSize={4} />
+                              </Box>
+                            </HStack>
+                          </Box>
+                        </SimpleGrid>
+
+                        <Divider borderColor={isDark ? "gray.700" : "gray.200"} />
+
+                        {/* ══════════════════════════════════════════════════════════
+                            1. LINK AKSES & TESTING PARAMETERS CONTAINER
+                            ══════════════════════════════════════════════════════════ */}
+                        {/* ══════════════════════════════════════════════════════════
+                            1. LINK AKSES & TESTING PARAMETERS ACCORDION
+                            ══════════════════════════════════════════════════════════ */}
+                        <Accordion allowToggle defaultIndex={[0]} w="full">
+                          <AccordionItem
+                            rounded="xl"
+                            border="1px solid"
+                            borderColor={isDark ? "gray.700" : "gray.200"}
+                            bg={isDark ? "gray.850" : "white"}
+                            overflow="hidden"
+                            shadow="sm"
+                          >
+                            <h2>
+                              <AccordionButton
+                                p={4}
+                                bg={isDark ? "gray.800" : "gray.50"}
+                                _hover={{ bg: isDark ? "gray.750" : "gray.100" }}
+                              >
+                                <Flex justify="space-between" align="center" w="full" pr={2}>
+                                  <HStack spacing={3}>
+                                    <Box
+                                      p={2}
+                                      rounded="lg"
+                                      bg={linkAksesEnv === "Dev" ? "blue.50" : "green.50"}
+                                      color={linkAksesEnv === "Dev" ? "blue.600" : "green.600"}
+                                    >
+                                      <Icon as={FiGlobe} boxSize={5} />
+                                    </Box>
+                                    <VStack align="start" spacing={0.5}>
+                                      <HStack spacing={2}>
+                                        <Heading size="xs" color={isDark ? "white" : "gray.800"}>
+                                          Link Akses & Parameter Pengujian
+                                        </Heading>
+                                        <Badge
+                                          colorScheme={linkAksesEnv === "Dev" ? "blue" : "green"}
+                                          fontSize="3xs"
+                                          rounded="md"
+                                          px={2}
+                                          fontWeight="bold"
+                                        >
+                                          {linkAksesEnv}
+                                        </Badge>
+                                      </HStack>
+                                      <Text fontSize="2xs" color="gray.500">
+                                        Pilih lingkungan Dev atau Prod untuk konfigurasi URL akses dan kredensial pengujian.
+                                      </Text>
+                                    </VStack>
+                                  </HStack>
+                                </Flex>
+                                <AccordionIcon color="gray.400" />
+                              </AccordionButton>
+                            </h2>
+
+                            <AccordionPanel p={{ base: 4, md: 5 }} bg={isDark ? "gray.850" : "white"}>
+                              <VStack spacing={4} align="stretch">
+                                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                                  {/* Selection: Dev / Prod */}
+                                  <FormControl>
+                                    <FormLabel fontSize="2xs" fontWeight="bold" textTransform="uppercase" color="gray.500">
+                                      Link Akses Lingkungan
+                                    </FormLabel>
+                                    <HStack spacing={2} mt={1}>
+                                      <Button
+                                        size="sm"
+                                        rounded="lg"
+                                        variant={linkAksesEnv === "Dev" ? "solid" : "outline"}
+                                        colorScheme={linkAksesEnv === "Dev" ? "blue" : "gray"}
+                                        onClick={() => setLinkAksesEnv("Dev")}
+                                        px={5}
+                                        fontSize="xs"
+                                        fontWeight="bold"
+                                      >
+                                        Dev
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        rounded="lg"
+                                        variant={linkAksesEnv === "Prod" ? "solid" : "outline"}
+                                        colorScheme={linkAksesEnv === "Prod" ? "green" : "gray"}
+                                        onClick={() => setLinkAksesEnv("Prod")}
+                                        px={5}
+                                        fontSize="xs"
+                                        fontWeight="bold"
+                                      >
+                                        Prod
+                                      </Button>
+                                    </HStack>
+                                  </FormControl>
+
+                                  {/* URL Link Akses */}
+                                  <FormControl>
+                                    <FormLabel fontSize="2xs" fontWeight="bold" textTransform="uppercase" color="gray.500">
+                                      URL Link Akses ({linkAksesEnv})
+                                    </FormLabel>
+                                    {IsEditMode ? (
+                                      <Input
+                                        size="sm"
+                                        rounded="lg"
+                                        placeholder="URL Link Akses"
+                                        value={linkAksesUrl}
+                                        onChange={(e) => setLinkAksesUrl(e.target.value)}
+                                      />
+                                    ) : (
+                                      <HStack
+                                        p={2}
+                                        rounded="lg"
+                                        bg={isDark ? "gray.800" : "white"}
+                                        border="1px solid"
+                                        borderColor={isDark ? "gray.700" : "gray.200"}
+                                        justify="space-between"
+                                      >
+                                        <Text fontSize="xs" fontWeight="bold" color="blue.500" noOfLines={1}>
+                                          {linkAksesUrl ||
+                                            (linkAksesEnv === "Dev"
+                                              ? `https://${DataApplication?.appShortName?.toLowerCase() || "app"}-dev.bankbki.co.id`
+                                              : `https://${DataApplication?.appShortName?.toLowerCase() || "app"}.bankbki.co.id`)}
+                                        </Text>
+                                        {(linkAksesUrl || DataApplication?.appShortName) && (
+                                          <IconButton
+                                            aria-label="Buka URL Akses"
+                                            icon={<FiExternalLink />}
+                                            size="xs"
+                                            variant="ghost"
+                                            colorScheme="blue"
+                                            onClick={() => {
+                                              const target =
+                                                linkAksesUrl ||
+                                                (linkAksesEnv === "Dev"
+                                                  ? `https://${DataApplication?.appShortName?.toLowerCase() || "app"}-dev.bankbki.co.id`
+                                                  : `https://${DataApplication?.appShortName?.toLowerCase() || "app"}.bankbki.co.id`);
+                                              window.open(target.startsWith("http") ? target : `https://${target}`, "_blank");
+                                            }}
+                                          />
+                                        )}
+                                      </HStack>
+                                    )}
+                                  </FormControl>
+                                </SimpleGrid>
+
+                                {/* IF DEV = TRUE: SHOW FIELD TEST USER AND TEST DATA FIELD */}
+                                {linkAksesEnv === "Dev" && (
+                                  <Box
+                                    p={3.5}
+                                    rounded="lg"
+                                    bg={isDark ? "gray.800" : "white"}
+                                    border="1px dashed"
+                                    borderColor="blue.300"
+                                  >
+                                    <HStack mb={2.5} spacing={1.5} color="blue.500">
+                                      <Icon as={FiCheckCircle} boxSize={4} />
+                                      <Text fontSize="2xs" fontWeight="bold" textTransform="uppercase" letterSpacing="wide">
+                                        Parameter Pengujian (Environment Development)
+                                      </Text>
+                                    </HStack>
+
+                                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
+                                      <FormControl>
+                                        <FormLabel fontSize="2xs" fontWeight="bold" color="gray.500">
+                                          Test User
+                                        </FormLabel>
+                                        {IsEditMode ? (
+                                          <Input
+                                            size="sm"
+                                            rounded="lg"
+                                            placeholder="Test User"
+                                            value={testUser}
+                                            onChange={(e) => setTestUser(e.target.value)}
+                                          />
+                                        ) : (
+                                          <Box
+                                            p={2}
+                                            rounded="md"
+                                            bg={isDark ? "gray.750" : "gray.50"}
+                                            border="1px solid"
+                                            borderColor={isDark ? "gray.700" : "gray.200"}
+                                          >
+                                            <Text fontSize="xs" fontFamily="mono" color={isDark ? "white" : "gray.800"}>
+                                              {testUser || "dev_test_user01"}
+                                            </Text>
+                                          </Box>
+                                        )}
+                                      </FormControl>
+
+                                      <FormControl>
+                                        <FormLabel fontSize="2xs" fontWeight="bold" color="gray.500">
+                                          Test Data
+                                        </FormLabel>
+                                        {IsEditMode ? (
+                                          <Input
+                                            size="sm"
+                                            rounded="lg"
+                                            placeholder="Test Data"
+                                            value={testData}
+                                            onChange={(e) => setTestData(e.target.value)}
+                                          />
+                                        ) : (
+                                          <Box
+                                            p={2}
+                                            rounded="md"
+                                            bg={isDark ? "gray.750" : "gray.50"}
+                                            border="1px solid"
+                                            borderColor={isDark ? "gray.700" : "gray.200"}
+                                          >
+                                            <Text fontSize="xs" fontFamily="mono" color={isDark ? "white" : "gray.800"}>
+                                              {testData || "CIF: 902188201 / Rekening: 1029384756"}
+                                            </Text>
+                                          </Box>
+                                        )}
+                                      </FormControl>
+                                    </SimpleGrid>
+                                  </Box>
+                                )}
+                              </VStack>
+                            </AccordionPanel>
+                          </AccordionItem>
+                        </Accordion>
+
+                        {/* ══════════════════════════════════════════════════════════
+                            2. CONTAINERED SECTION: DAFTAR SERVER NODES & VM
+                            ══════════════════════════════════════════════════════════ */}
+                        <Box
+                          p={{ base: 4, md: 5 }}
+                          rounded="xl"
+                          border="1px solid"
+                          borderColor={isDark ? "gray.700" : "gray.200"}
+                          bg={isDark ? "gray.850" : "gray.50"}
+                          shadow="sm"
+                        >
+                          <Flex
+                            justify="space-between"
+                            align={{ base: "start", sm: "center" }}
+                            direction={{ base: "column", sm: "row" }}
+                            gap={3}
+                            mb={4}
+                            pb={3}
+                            borderBottom="1px dashed"
+                            borderColor={isDark ? "gray.700" : "gray.200"}
+                          >
+                            <HStack spacing={3}>
+                              <Box
+                                p={2}
+                                rounded="lg"
+                                bg="purple.50"
+                                color="purple.600"
+                              >
+                                <Icon as={FiServer} boxSize={5} />
+                              </Box>
+                              <VStack align="start" spacing={0.5}>
+                                <HStack spacing={2}>
+                                  <Heading size="xs" color={isDark ? "white" : "gray.800"}>
+                                    Daftar Server Node & Virtual Machine
+                                  </Heading>
+                                  <Badge colorScheme="purple" fontSize="3xs" rounded="full" px={2}>
+                                    {serverEnvironments.length} Nodes
+                                  </Badge>
+                                </HStack>
+                                <Text fontSize="2xs" color="gray.500">
+                                  Konfigurasi server role, site segment, DC1/DC2 primary flag, hardening, PAM, dual deploy & spesifikasi VM.
+                                </Text>
+                              </VStack>
+                            </HStack>
+
+                            {!isAddServerHidden && (
+                              <Button
+                                leftIcon={<FiPlus />}
+                                size="sm"
+                                colorScheme="purple"
+                                variant="outline"
+                                rounded="xl"
+                                px={3.5}
+                                fontSize="xs"
+                                fontWeight="bold"
+                                onClick={handleAddServer}
+                              >
+                                Add Server
+                              </Button>
+                            )}
+                          </Flex>
+
+                          {/* Accordion List */}
+                        {serverEnvironments.length === 0 ? (
+                          <Box
+                            p={8}
+                            textAlign="center"
+                            rounded="xl"
+                            bg={isDark ? "gray.850" : "gray.50"}
+                            border="1.5px dashed"
+                            borderColor={isDark ? "gray.700" : "gray.300"}
+                          >
+                            <Icon as={FiServer} boxSize={10} color="gray.400" mb={3} />
+                            <Heading size="xs" mb={1} color={isDark ? "white" : "gray.700"}>
+                              No Server Nodes Configured
+                            </Heading>
+                            <Text fontSize="xs" color="gray.500" mb={4}>
+                              This application does not have any server nodes in its environment list.
+                            </Text>
+                            <Button
+                              leftIcon={<FiPlus />}
+                              size="sm"
+                              colorScheme="secondary"
+                              rounded="xl"
+                              onClick={handleAddServer}
+                            >
+                              Add First Server Node
+                            </Button>
+                          </Box>
+                        ) : (
+                          <Accordion allowMultiple defaultIndex={[0]} w="full">
+                            {serverEnvironments.map((srv, index) => {
+                              const isDc1 = srv.primary === "DC1";
+                              const isDc2 = srv.primary === "DC2";
+                              const displayRoleServer =
+                                srv.roleServer === "Other" && srv.roleServerOther?.trim()
+                                  ? srv.roleServerOther.trim()
+                                  : srv.roleServer;
+                              const isCustomRole =
+                                srv.roleServer === "Other" ||
+                                !STANDARD_ROLE_SERVERS.includes(srv.roleServer as any);
+                              const displaySite =
+                                (srv.site === "Other Site" || srv.site === "Other") && srv.siteOther?.trim()
+                                  ? srv.siteOther.trim()
+                                  : srv.site;
+                              const displayEnvironment =
+                                srv.environment === "Other" && srv.environmentOther?.trim()
+                                  ? srv.environmentOther.trim()
+                                  : srv.environment;
+
+                              return (
+                                <AccordionItem
+                                  key={srv.id || index}
+                                  mb={4}
+                                  rounded="xl"
+                                  border="1px solid"
+                                  borderColor={isDark ? "gray.700" : "gray.200"}
+                                  overflow="hidden"
+                                  bg={isDark ? "gray.850" : "white"}
+                                  shadow="sm"
+                                  _hover={{ shadow: "md", borderColor: isDark ? "gray.600" : "gray.300" }}
+                                  transition="all 0.2s ease"
+                                >
+                                  {/* ══════════════════════════════════════════
+                                      PARENT ACCORDION (Opener in Grey)
+                                      ══════════════════════════════════════════ */}
+                                  {IsEditMode ? (
+                                    /* Edit Mode: Parent fields as inputs */
+                                    <Box
+                                      p={4}
+                                      bg={isDark ? "gray.800" : "gray.50"}
+                                      borderBottom="1px solid"
+                                      borderColor={isDark ? "gray.700" : "gray.200"}
+                                    >
+                                      <Flex justify="space-between" align="center" mb={3}>
+                                        <HStack spacing={2}>
+                                          <Box p={1.5} rounded="md" bg="secondary.500" color="white">
+                                            <Icon as={FiServer} boxSize={3.5} />
+                                          </Box>
+                                          <Text fontSize="xs" fontWeight="bold">
+                                            Server Node #{index + 1}
+                                          </Text>
+                                          <Badge
+                                            colorScheme={isDc1 ? "blue" : isDc2 ? "purple" : "gray"}
+                                            fontSize="3xs"
+                                            rounded="full"
+                                            px={2}
+                                          >
+                                            Primary: {srv.primary}
+                                          </Badge>
+                                        </HStack>
+                                        <HStack spacing={2}>
+                                          <IconButton
+                                            size="xs"
+                                            colorScheme="red"
+                                            variant="ghost"
+                                            aria-label="Delete Server"
+                                            icon={<FiTrash2 />}
+                                            onClick={() => handleDeleteServer(index)}
+                                          />
+                                        </HStack>
+                                      </Flex>
+
+                                      <SimpleGrid columns={{ base: 1, sm: 2, md: 4 }} spacing={3}>
+                                        {/* Role Server */}
+                                        <FormControl isRequired>
+                                          <FormLabel fontSize="2xs" fontWeight="bold">Role Server</FormLabel>
+                                          <ChakraSelect
+                                            size="sm"
+                                            rounded="lg"
+                                            value={
+                                              STANDARD_ROLE_SERVERS.includes(srv.roleServer as any)
+                                                ? srv.roleServer
+                                                : "Other"
+                                            }
+                                            onChange={(e) => {
+                                              const val = e.target.value;
+                                              handleUpdateServer(index, "roleServer", val);
+                                              if (val !== "Other") {
+                                                handleUpdateServer(index, "roleServerOther", "");
+                                              }
+                                            }}
+                                          >
+                                            <option value="Web Server">Web Server</option>
+                                            <option value="App Server">App Server</option>
+                                            <option value="DB Server">DB Server</option>
+                                            <option value="Middleware">Middleware</option>
+                                            <option value="API Gateway">API Gateway</option>
+                                            <option value="Cache / Redis">Cache / Redis</option>
+                                            <option value="Storage / NAS">Storage / NAS</option>
+                                            <option value="Batch / Worker">Batch / Worker</option>
+                                            <option value="Other">Other</option>
+                                          </ChakraSelect>
+                                          {(srv.roleServer === "Other" ||
+                                            !STANDARD_ROLE_SERVERS.includes(srv.roleServer as any)) && (
+                                            <Input
+                                              mt={1.5}
+                                              size="sm"
+                                              rounded="lg"
+                                              placeholder="Role Server"
+                                              value={
+                                                srv.roleServerOther ||
+                                                (srv.roleServer !== "Other" ? srv.roleServer : "")
+                                              }
+                                              onChange={(e) =>
+                                                handleUpdateServer(index, "roleServerOther", e.target.value)
+                                              }
+                                            />
+                                          )}
+                                        </FormControl>
+
+                                        {/* Role Detail */}
+                                        <FormControl isRequired>
+                                          <FormLabel fontSize="2xs" fontWeight="bold">Role Detail</FormLabel>
+                                          <Input
+                                            size="sm"
+                                            rounded="lg"
+                                            value={srv.roleDetail}
+                                            onChange={(e) => handleUpdateServer(index, "roleDetail", e.target.value)}
+                                            placeholder="Role Detail"
+                                          />
+                                        </FormControl>
+
+                                        {/* Status */}
+                                        <FormControl isRequired>
+                                          <FormLabel fontSize="2xs" fontWeight="bold">Status</FormLabel>
+                                          <ChakraSelect
+                                            size="sm"
+                                            rounded="lg"
+                                            value={srv.status}
+                                            onChange={(e) =>
+                                              handleUpdateServer(index, "status", e.target.value as "Aktif" | "Pasif")
+                                            }
+                                          >
+                                            <option value="Aktif">Aktif</option>
+                                            <option value="Pasif">Pasif</option>
+                                          </ChakraSelect>
+                                        </FormControl>
+
+                                        {/* IP Address & Primary */}
+                                        <FormControl isRequired>
+                                          <HStack justify="space-between" mb={1}>
+                                            <FormLabel fontSize="2xs" fontWeight="bold" mb={0}>
+                                              IP Address
+                                            </FormLabel>
+                                            <Tooltip
+                                              label="Primary flag DC1 / DC2 auto-detected: 3rd octet starts with 1 -> DC1, starts with 2 -> DC2"
+                                              placement="top"
+                                              hasArrow
+                                            >
+                                              <Badge
+                                                colorScheme={isDc1 ? "blue" : isDc2 ? "purple" : "gray"}
+                                                fontSize="3xs"
+                                                rounded="md"
+                                                cursor="help"
+                                              >
+                                                Flag: {srv.primary}
+                                              </Badge>
+                                            </Tooltip>
+                                          </HStack>
+                                          <Input
+                                            size="sm"
+                                            rounded="lg"
+                                            fontFamily="mono"
+                                            value={srv.ipAddress}
+                                            onChange={(e) => handleUpdateServer(index, "ipAddress", e.target.value)}
+                                            placeholder="IP Address"
+                                          />
+                                          <HStack justify="space-between" mt={1}>
+                                            <Text fontSize="3xs" color="gray.500">
+                                              Primary Override:
+                                            </Text>
+                                            <ChakraSelect
+                                              size="xs"
+                                              w="85px"
+                                              rounded="md"
+                                              value={srv.primary}
+                                              onChange={(e) =>
+                                                handleUpdateServer(
+                                                  index,
+                                                  "primary",
+                                                  e.target.value as "DC1" | "DC2" | "-"
+                                                )
+                                              }
+                                            >
+                                              <option value="DC1">DC1</option>
+                                              <option value="DC2">DC2</option>
+                                              <option value="-">-</option>
+                                            </ChakraSelect>
+                                          </HStack>
+                                        </FormControl>
+                                      </SimpleGrid>
+
+                                      <AccordionButton
+                                        py={2}
+                                        px={3}
+                                        mt={3}
+                                        rounded="lg"
+                                        bg={isDark ? "gray.750" : "gray.100"}
+                                        _hover={{ bg: isDark ? "gray.700" : "gray.200" }}
+                                      >
+                                        <HStack spacing={1.5} fontSize="3xs" color={isDark ? "gray.300" : "gray.600"} fontWeight="bold">
+                                          <Icon as={FiLayers} color="gray.500" />
+                                          <Text>Edit Child Parameters (Network, Governance, Dual Deploy & VM Specification)</Text>
+                                        </HStack>
+                                        <AccordionIcon ml="auto" color="gray.500" />
+                                      </AccordionButton>
+                                    </Box>
+                                  ) : (
+                                    /* View Mode: Parent fields as clean grey header */
+                                    <AccordionButton
+                                      py={3.5}
+                                      px={{ base: 4, md: 5 }}
+                                      bg={isDark ? "gray.800" : "gray.50"}
+                                      _hover={{
+                                        bg: isDark ? "gray.750" : "gray.100",
+                                      }}
+                                      _expanded={{
+                                        bg: isDark ? "gray.750" : "gray.100",
+                                        borderBottom: "1px solid",
+                                        borderColor: isDark ? "gray.700" : "gray.200",
+                                      }}
+                                      transition="all 0.2s ease"
+                                    >
+                                      <Flex
+                                        justify="space-between"
+                                        align="center"
+                                        w="full"
+                                        wrap="wrap"
+                                        gap={3}
+                                        textAlign="left"
+                                      >
+                                        {/* Left: Role Server & Role Detail */}
+                                        <HStack spacing={3} flex={1} minW="220px">
+                                          <Box
+                                            p={2}
+                                            rounded="lg"
+                                            bg={
+                                              displayRoleServer.includes("Web")
+                                                ? "blue.500"
+                                                : displayRoleServer.includes("DB")
+                                                ? "orange.500"
+                                                : displayRoleServer.includes("App")
+                                                ? "purple.500"
+                                                : "secondary.500"
+                                            }
+                                            color="white"
+                                            shadow="sm"
+                                          >
+                                            <Icon as={FiServer} boxSize={4} />
+                                          </Box>
+                                          <VStack align="start" spacing={0.5}>
+                                            <HStack spacing={2} wrap="wrap">
+                                              <Text fontSize="3xs" fontWeight="800" color="gray.500" textTransform="uppercase" letterSpacing="wider">
+                                                SERVER #{index + 1}
+                                              </Text>
+                                              <Text fontSize="sm" fontWeight="800" color={isDark ? "white" : "gray.800"}>
+                                                {displayRoleServer}
+                                              </Text>
+                                              {isCustomRole && srv.roleServerOther?.trim() && (
+                                                <Badge colorScheme="purple" variant="outline" fontSize="3xs" rounded="md">
+                                                  Other Role
+                                                </Badge>
+                                              )}
+                                              <Badge
+                                                colorScheme={srv.status === "Aktif" ? "green" : "gray"}
+                                                variant="solid"
+                                                fontSize="3xs"
+                                                rounded="full"
+                                                px={2}
+                                              >
+                                                {srv.status}
+                                              </Badge>
+                                            </HStack>
+                                            <Text fontSize="xs" color="gray.500" noOfLines={1}>
+                                              {srv.roleDetail || "No role detail specified"}
+                                            </Text>
+                                          </VStack>
+                                        </HStack>
+
+                                        {/* Right: IP, Primary (DC1/DC2), Dual Deploy & Expand Icon */}
+                                        <HStack spacing={2.5}>
+                                          {/* IP Address */}
+                                          {srv.ipAddress && (
+                                            <Badge
+                                              variant="subtle"
+                                              colorScheme="blue"
+                                              fontFamily="mono"
+                                              fontSize="2xs"
+                                              px={2}
+                                              py={0.5}
+                                              rounded="md"
+                                            >
+                                              {srv.ipAddress}
+                                            </Badge>
+                                          )}
+
+                                          {/* Dual Deploy quick tag */}
+                                          {srv.dualDeploy === "Ya" && (
+                                            <Badge
+                                              colorScheme="teal"
+                                              variant="subtle"
+                                              fontSize="3xs"
+                                              px={1.5}
+                                              py={0.5}
+                                              rounded="md"
+                                            >
+                                              Dual Deploy
+                                            </Badge>
+                                          )}
+
+                                          {/* Primary DC1/DC2 Flag */}
+                                          <Tooltip
+                                            label={`Primary Site: ${srv.primary} (flagged from IP ${srv.ipAddress || "-"})`}
+                                            placement="top"
+                                            hasArrow
+                                          >
+                                            <Badge
+                                              colorScheme={isDc1 ? "blue" : isDc2 ? "purple" : "gray"}
+                                              variant="solid"
+                                              fontSize="2xs"
+                                              fontWeight="extrabold"
+                                              px={2.5}
+                                              py={0.5}
+                                              rounded="md"
+                                            >
+                                              {srv.primary}
+                                            </Badge>
+                                          </Tooltip>
+
+                                          <AccordionIcon color="gray.500" boxSize={5} />
+                                        </HStack>
+                                      </Flex>
+                                    </AccordionButton>
+                                  )}
+
+                                  {/* ══════════════════════════════════════════
+                                      CHILD ACCORDION (Styled like Network, DNS & Access Environment)
+                                      ══════════════════════════════════════════ */}
+                                  <AccordionPanel p={{ base: 4, md: 5 }} bg={isDark ? "gray.850" : "gray.50"}>
+                                    <VStack spacing={4} align="stretch">
+                                      {/* Section Header */}
+                                      <HStack spacing={2} color="secondary.500">
+                                        <Icon as={FiServer} boxSize={5} />
+                                        <Heading size="xs" fontWeight="800" textTransform="uppercase" letterSpacing="wider">
+                                          Server Environment & Infrastructure Details
+                                        </Heading>
+                                      </HStack>
+
+                                      {/* Side-by-side Two Cards Layout */}
+                                      <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={4}>
+                                        {/* ──────────────────────────────────────────────────────────
+                                            CARD 1: NETWORK, SECURITY & GOVERNANCE ENVIRONMENT
+                                            ────────────────────────────────────────────────────────── */}
+                                        <Box
+                                          p={4}
+                                          rounded="xl"
+                                          bg={isDark ? "gray.800" : "white"}
+                                          border="1px solid"
+                                          borderColor={isDark ? "gray.700" : "gray.200"}
+                                        >
+                                          <HStack
+                                            justify="space-between"
+                                            mb={3}
+                                            pb={2}
+                                            borderBottom="1px solid"
+                                            borderColor={isDark ? "gray.700" : "gray.100"}
+                                          >
+                                            <HStack spacing={2}>
+                                              <Icon as={FiGlobe} color="blue.500" boxSize={4} />
+                                              <Text fontSize="2xs" fontWeight="800" color="blue.500" textTransform="uppercase" letterSpacing="wider">
+                                                Network & Governance Environment
+                                              </Text>
+                                            </HStack>
+                                            <Badge
+                                              colorScheme={
+                                                displayEnvironment === "Production"
+                                                  ? "green"
+                                                  : displayEnvironment === "DRC"
+                                                  ? "orange"
+                                                  : displayEnvironment === "Staging"
+                                                  ? "purple"
+                                                  : displayEnvironment === "UAT" || displayEnvironment === "Development"
+                                                  ? "blue"
+                                                  : "teal"
+                                              }
+                                              fontSize="3xs"
+                                              rounded="md"
+                                              px={2}
+                                              py={0.5}
+                                            >
+                                              {displayEnvironment || "Production"}
+                                            </Badge>
+                                          </HStack>
+
+                                          {IsEditMode ? (
+                                            /* Edit Mode: Network & Governance */
+                                            <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
+                                              <FormControl>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">Site</FormLabel>
+                                                <ChakraSelect
+                                                  size="sm"
+                                                  rounded="lg"
+                                                  value={srv.site}
+                                                  onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    handleUpdateServer(index, "site", val);
+                                                    if (val !== "Other Site" && val !== "Other") {
+                                                      handleUpdateServer(index, "siteOther", "");
+                                                    }
+                                                  }}
+                                                >
+                                                  <option value="DC Narogong">DC Narogong</option>
+                                                  <option value="DRC Surabaya">DRC Surabaya</option>
+                                                  <option value="Head Office">Head Office</option>
+                                                  <option value="AWS Cloud">AWS Cloud</option>
+                                                  <option value="Google Cloud">Google Cloud</option>
+                                                  <option value="Other Site">Other Site</option>
+                                                </ChakraSelect>
+                                                {(srv.site === "Other Site" || srv.site === "Other") && (
+                                                  <Input
+                                                    mt={1.5}
+                                                    size="sm"
+                                                    rounded="lg"
+                                                    placeholder="Site"
+                                                    value={srv.siteOther || ""}
+                                                    onChange={(e) =>
+                                                      handleUpdateServer(index, "siteOther", e.target.value)
+                                                    }
+                                                  />
+                                                )}
+                                              </FormControl>
+
+                                              <FormControl>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">Segment</FormLabel>
+                                                <Input
+                                                  size="sm"
+                                                  rounded="lg"
+                                                  value={srv.segment}
+                                                  onChange={(e) => handleUpdateServer(index, "segment", e.target.value)}
+                                                  placeholder="Segment"
+                                                />
+                                              </FormControl>
+
+                                              <FormControl>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">Environment</FormLabel>
+                                                <ChakraSelect
+                                                  size="sm"
+                                                  rounded="lg"
+                                                  value={srv.environment}
+                                                  onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    handleUpdateServer(index, "environment", val);
+                                                    if (val !== "Other") {
+                                                      handleUpdateServer(index, "environmentOther", "");
+                                                    }
+                                                  }}
+                                                >
+                                                  <option value="Production">Production</option>
+                                                  <option value="DRC">DRC</option>
+                                                  <option value="Staging">Staging</option>
+                                                  <option value="UAT">UAT</option>
+                                                  <option value="Development">Development</option>
+                                                  <option value="Other">Other</option>
+                                                </ChakraSelect>
+                                                {srv.environment === "Other" && (
+                                                  <Input
+                                                    mt={1.5}
+                                                    size="sm"
+                                                    rounded="lg"
+                                                    placeholder="Environment"
+                                                    value={srv.environmentOther || ""}
+                                                    onChange={(e) =>
+                                                      handleUpdateServer(index, "environmentOther", e.target.value)
+                                                    }
+                                                  />
+                                                )}
+                                              </FormControl>
+
+                                              <FormControl>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">Join Domain</FormLabel>
+                                                <RadioGroup
+                                                  value={srv.joinDomain}
+                                                  onChange={(val) =>
+                                                    handleUpdateServer(index, "joinDomain", val as "Ya" | "Tidak")
+                                                  }
+                                                >
+                                                  <HStack spacing={4} mt={1}>
+                                                    <Radio value="Ya" size="sm" colorScheme="green">Ya</Radio>
+                                                    <Radio value="Tidak" size="sm" colorScheme="gray">Tidak</Radio>
+                                                  </HStack>
+                                                </RadioGroup>
+                                              </FormControl>
+
+                                              <FormControl>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">Hardening</FormLabel>
+                                                <RadioGroup
+                                                  value={srv.hardening}
+                                                  onChange={(val) =>
+                                                    handleUpdateServer(index, "hardening", val as "Ya" | "Tidak")
+                                                  }
+                                                >
+                                                  <HStack spacing={4} mt={1}>
+                                                    <Radio value="Ya" size="sm" colorScheme="green">Ya</Radio>
+                                                    <Radio value="Tidak" size="sm" colorScheme="gray">Tidak</Radio>
+                                                  </HStack>
+                                                </RadioGroup>
+                                              </FormControl>
+
+                                              <FormControl>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">PAM (Privileged Access)</FormLabel>
+                                                <RadioGroup
+                                                  value={srv.pam}
+                                                  onChange={(val) =>
+                                                    handleUpdateServer(index, "pam", val as "Ya" | "Tidak")
+                                                  }
+                                                >
+                                                  <HStack spacing={4} mt={1}>
+                                                    <Radio value="Ya" size="sm" colorScheme="green">Ya</Radio>
+                                                    <Radio value="Tidak" size="sm" colorScheme="gray">Tidak</Radio>
+                                                  </HStack>
+                                                </RadioGroup>
+                                              </FormControl>
+
+                                              <FormControl gridColumn={{ base: "1", sm: "1 / -1" }}>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">Dual Deploy Architecture</FormLabel>
+                                                <RadioGroup
+                                                  value={srv.dualDeploy}
+                                                  onChange={(val) =>
+                                                    handleUpdateServer(index, "dualDeploy", val as "Ya" | "Tidak")
+                                                  }
+                                                >
+                                                  <HStack spacing={4} mt={1}>
+                                                    <Radio value="Ya" size="sm" colorScheme="teal" fontWeight="bold">
+                                                      Ya (Dual Deploy)
+                                                    </Radio>
+                                                    <Radio value="Tidak" size="sm" colorScheme="gray">
+                                                      Tidak
+                                                    </Radio>
+                                                  </HStack>
+                                                </RadioGroup>
+                                              </FormControl>
+                                            </SimpleGrid>
+                                          ) : (
+                                            /* View Mode: Clean fields like Executive Summary */
+                                            <VStack align="stretch" spacing={3}>
+                                              <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
+                                                <Box>
+                                                  <Text fontSize="xs" color="gray.500">Site:</Text>
+                                                  <Text fontSize="xs" fontWeight="bold" color={isDark ? "white" : "gray.800"}>
+                                                    {displaySite || "-"}
+                                                  </Text>
+                                                </Box>
+
+                                                <Box>
+                                                  <Text fontSize="xs" color="gray.500">Segment:</Text>
+                                                  <Text fontSize="xs" fontWeight="bold" color={isDark ? "white" : "gray.800"}>
+                                                    {srv.segment || "-"}
+                                                  </Text>
+                                                </Box>
+
+                                                <Box>
+                                                  <Text fontSize="xs" color="gray.500">Environment:</Text>
+                                                  <Box mt={0.5}>
+                                                    <Badge
+                                                      colorScheme={
+                                                        displayEnvironment === "Production"
+                                                          ? "green"
+                                                          : displayEnvironment === "DRC"
+                                                          ? "orange"
+                                                          : displayEnvironment === "Staging"
+                                                          ? "purple"
+                                                          : displayEnvironment === "UAT" || displayEnvironment === "Development"
+                                                          ? "blue"
+                                                          : "teal"
+                                                      }
+                                                      px={2}
+                                                      py={0.5}
+                                                      rounded="md"
+                                                      fontSize="2xs"
+                                                      fontWeight="bold"
+                                                    >
+                                                      {displayEnvironment || "-"}
+                                                    </Badge>
+                                                  </Box>
+                                                </Box>
+
+                                                <Box>
+                                                  <Text fontSize="xs" color="gray.500">Primary Data Center:</Text>
+                                                  <HStack spacing={1.5} mt={0.5}>
+                                                    <Badge
+                                                      colorScheme={isDc1 ? "blue" : isDc2 ? "purple" : "gray"}
+                                                      fontSize="2xs"
+                                                      fontWeight="bold"
+                                                      px={2}
+                                                      py={0.5}
+                                                      rounded="md"
+                                                    >
+                                                      {srv.primary}
+                                                    </Badge>
+                                                    <Text fontSize="3xs" color="gray.400">
+                                                      {isDc1 ? "(DC1 Subnet)" : isDc2 ? "(DC2 Subnet)" : ""}
+                                                    </Text>
+                                                  </HStack>
+                                                </Box>
+
+                                                <Box>
+                                                  <Text fontSize="xs" color="gray.500">Join Domain:</Text>
+                                                  <Box mt={0.5}>
+                                                    <Badge
+                                                      colorScheme={srv.joinDomain === "Ya" ? "green" : "gray"}
+                                                      px={2}
+                                                      py={0.5}
+                                                      rounded="md"
+                                                      fontSize="2xs"
+                                                      fontWeight="bold"
+                                                    >
+                                                      {srv.joinDomain === "Ya" ? "Ya (Domain Joined)" : "Tidak"}
+                                                    </Badge>
+                                                  </Box>
+                                                </Box>
+
+                                                <Box>
+                                                  <Text fontSize="xs" color="gray.500">Hardening:</Text>
+                                                  <Box mt={0.5}>
+                                                    <Badge
+                                                      colorScheme={srv.hardening === "Ya" ? "green" : "orange"}
+                                                      px={2}
+                                                      py={0.5}
+                                                      rounded="md"
+                                                      fontSize="2xs"
+                                                      fontWeight="bold"
+                                                    >
+                                                      {srv.hardening === "Ya" ? "Ya (Hardened)" : "Tidak"}
+                                                    </Badge>
+                                                  </Box>
+                                                </Box>
+
+                                                <Box>
+                                                  <Text fontSize="xs" color="gray.500">PAM Access:</Text>
+                                                  <Box mt={0.5}>
+                                                    <Badge
+                                                      colorScheme={srv.pam === "Ya" ? "green" : "orange"}
+                                                      px={2}
+                                                      py={0.5}
+                                                      rounded="md"
+                                                      fontSize="2xs"
+                                                      fontWeight="bold"
+                                                    >
+                                                      {srv.pam === "Ya" ? "Ya (PAM Managed)" : "Tidak"}
+                                                    </Badge>
+                                                  </Box>
+                                                </Box>
+                                              </SimpleGrid>
+
+                                              {/* Dual Deploy Highlight Row */}
+                                              <Box
+                                                pt={2.5}
+                                                mt={1}
+                                                borderTop="1px dashed"
+                                                borderColor={isDark ? "gray.700" : "gray.200"}
+                                              >
+                                                <Flex justify="space-between" align="center" wrap="wrap" gap={2}>
+                                                  <HStack spacing={1.5}>
+                                                    <Icon
+                                                      as={FiLayers}
+                                                      color={srv.dualDeploy === "Ya" ? "teal.500" : "gray.400"}
+                                                      boxSize={3.5}
+                                                    />
+                                                    <Text fontSize="xs" color="gray.500">Dual Deploy Architecture:</Text>
+                                                  </HStack>
+                                                  <Badge
+                                                    colorScheme={srv.dualDeploy === "Ya" ? "teal" : "gray"}
+                                                    variant={srv.dualDeploy === "Ya" ? "solid" : "subtle"}
+                                                    fontSize="2xs"
+                                                    px={2.5}
+                                                    py={0.5}
+                                                    rounded="full"
+                                                    fontWeight="bold"
+                                                  >
+                                                    {srv.dualDeploy === "Ya"
+                                                      ? "Ya (Dual Active / Redundant)"
+                                                      : "Tidak (Single Deployment)"}
+                                                  </Badge>
+                                                </Flex>
+                                              </Box>
+                                            </VStack>
+                                          )}
+                                        </Box>
+
+                                        {/* ──────────────────────────────────────────────────────────
+                                            CARD 2: VIRTUAL MACHINE (VM) SPECIFICATION
+                                            ────────────────────────────────────────────────────────── */}
+                                        <Box
+                                          p={4}
+                                          rounded="xl"
+                                          bg={isDark ? "gray.800" : "white"}
+                                          border="1px solid"
+                                          borderColor={isDark ? "gray.700" : "gray.200"}
+                                        >
+                                          <HStack
+                                            justify="space-between"
+                                            mb={3}
+                                            pb={2}
+                                            borderBottom="1px solid"
+                                            borderColor={isDark ? "gray.700" : "gray.100"}
+                                          >
+                                            <HStack spacing={2}>
+                                              <Icon as={FiCpu} color="purple.500" boxSize={4} />
+                                              <Text fontSize="2xs" fontWeight="800" color="purple.500" textTransform="uppercase" letterSpacing="wider">
+                                                Virtual Machine (VM) Specification
+                                              </Text>
+                                            </HStack>
+                                            <Badge
+                                              colorScheme="purple"
+                                              fontSize="3xs"
+                                              rounded="md"
+                                              px={2}
+                                              py={0.5}
+                                              fontFamily="mono"
+                                            >
+                                              {srv.vmDetail?.namaVm || "VM Node"}
+                                            </Badge>
+                                          </HStack>
+
+                                          {IsEditMode ? (
+                                            /* Edit Mode: VM Details */
+                                            <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
+                                              <FormControl>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">Nama VM</FormLabel>
+                                                <Input
+                                                  size="sm"
+                                                  rounded="lg"
+                                                  fontFamily="mono"
+                                                  value={srv.vmDetail?.namaVm || ""}
+                                                  onChange={(e) => handleUpdateServerVm(index, "namaVm", e.target.value)}
+                                                  placeholder="Nama VM"
+                                                />
+                                              </FormControl>
+
+                                              <FormControl>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">IP Address</FormLabel>
+                                                <Input
+                                                  size="sm"
+                                                  rounded="lg"
+                                                  fontFamily="mono"
+                                                  value={srv.vmDetail?.ipAddress || ""}
+                                                  onChange={(e) => handleUpdateServerVm(index, "ipAddress", e.target.value)}
+                                                  placeholder="IP Address"
+                                                />
+                                              </FormControl>
+
+                                              <FormControl>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">OS</FormLabel>
+                                                <Input
+                                                  size="sm"
+                                                  rounded="lg"
+                                                  value={srv.vmDetail?.os || ""}
+                                                  onChange={(e) => handleUpdateServerVm(index, "os", e.target.value)}
+                                                  placeholder="OS"
+                                                />
+                                              </FormControl>
+
+                                              <FormControl>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">CPU</FormLabel>
+                                                <Input
+                                                  size="sm"
+                                                  rounded="lg"
+                                                  value={srv.vmDetail?.cpu || ""}
+                                                  onChange={(e) => handleUpdateServerVm(index, "cpu", e.target.value)}
+                                                  placeholder="CPU"
+                                                />
+                                              </FormControl>
+
+                                              <FormControl>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">MEMORY</FormLabel>
+                                                <Input
+                                                  size="sm"
+                                                  rounded="lg"
+                                                  value={srv.vmDetail?.memory || ""}
+                                                  onChange={(e) => handleUpdateServerVm(index, "memory", e.target.value)}
+                                                  placeholder="MEMORY"
+                                                />
+                                              </FormControl>
+
+                                              <FormControl>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">STORAGE</FormLabel>
+                                                <Input
+                                                  size="sm"
+                                                  rounded="lg"
+                                                  value={srv.vmDetail?.storage || ""}
+                                                  onChange={(e) => handleUpdateServerVm(index, "storage", e.target.value)}
+                                                  placeholder="STORAGE"
+                                                />
+                                              </FormControl>
+
+                                              <FormControl gridColumn={{ base: "1", sm: "1 / -1" }}>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">Note (opsional)</FormLabel>
+                                                <Textarea
+                                                  rows={2}
+                                                  size="sm"
+                                                  rounded="lg"
+                                                  value={srv.vmDetail?.note || ""}
+                                                  onChange={(e) => handleUpdateServerVm(index, "note", e.target.value)}
+                                                  placeholder="Note (opsional)"
+                                                />
+                                              </FormControl>
+                                            </SimpleGrid>
+                                          ) : (
+                                            /* View Mode: VM Details */
+                                            <VStack align="stretch" spacing={3}>
+                                              <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
+                                                <Box>
+                                                  <Text fontSize="xs" color="gray.500">Nama VM:</Text>
+                                                  <Text fontSize="xs" fontWeight="bold" fontFamily="mono" color={isDark ? "white" : "gray.800"}>
+                                                    {srv.vmDetail?.namaVm || "-"}
+                                                  </Text>
+                                                </Box>
+
+                                                <Box>
+                                                  <Text fontSize="xs" color="gray.500">IP Address:</Text>
+                                                  <Text fontSize="xs" fontWeight="bold" fontFamily="mono" color="blue.500">
+                                                    {srv.vmDetail?.ipAddress || srv.ipAddress || "-"}
+                                                  </Text>
+                                                </Box>
+
+                                                <Box>
+                                                  <Text fontSize="xs" color="gray.500">OS (Operating System):</Text>
+                                                  <Text fontSize="xs" fontWeight="semibold" color={isDark ? "white" : "gray.800"}>
+                                                    {srv.vmDetail?.os || "-"}
+                                                  </Text>
+                                                </Box>
+
+                                                <Box>
+                                                  <Text fontSize="xs" color="gray.500">CPU Compute:</Text>
+                                                  <Box mt={0.5}>
+                                                    <Badge colorScheme="purple" fontSize="2xs" px={2} py={0.5} rounded="md">
+                                                      {srv.vmDetail?.cpu || "-"}
+                                                    </Badge>
+                                                  </Box>
+                                                </Box>
+
+                                                <Box>
+                                                  <Text fontSize="xs" color="gray.500">Memory (RAM):</Text>
+                                                  <Box mt={0.5}>
+                                                    <Badge colorScheme="teal" fontSize="2xs" px={2} py={0.5} rounded="md">
+                                                      {srv.vmDetail?.memory || "-"}
+                                                    </Badge>
+                                                  </Box>
+                                                </Box>
+
+                                                <Box>
+                                                  <Text fontSize="xs" color="gray.500">Storage Capacity:</Text>
+                                                  <Box mt={0.5}>
+                                                    <Badge colorScheme="cyan" fontSize="2xs" px={2} py={0.5} rounded="md">
+                                                      {srv.vmDetail?.storage || "-"}
+                                                    </Badge>
+                                                  </Box>
+                                                </Box>
+                                              </SimpleGrid>
+
+                                              {srv.vmDetail?.note && (
+                                                <Box
+                                                  pt={2.5}
+                                                  mt={1}
+                                                  borderTop="1px dashed"
+                                                  borderColor={isDark ? "gray.700" : "gray.200"}
+                                                >
+                                                  <Text fontSize="xs" color="gray.500">Note:</Text>
+                                                  <Text fontSize="xs" mt={0.5} color={isDark ? "gray.300" : "gray.700"}>
+                                                    {srv.vmDetail.note}
+                                                  </Text>
+                                                </Box>
+                                              )}
+                                            </VStack>
+                                          )}
+                                        </Box>
+                                      </SimpleGrid>
+                                    </VStack>
+                                  </AccordionPanel>
+                                </AccordionItem>
+                              );
+                            })}
+                          </Accordion>
+                        )}
+
+                        {/* Add Server Button below accordion when in Edit Mode */}
+                        {IsEditMode && (
+                          <Flex
+                            justify={!isAddServerHidden ? "space-between" : "flex-end"}
+                            align="center"
+                            pt={3}
+                            borderTop="1px dashed"
+                            borderColor={isDark ? "gray.700" : "gray.200"}
+                          >
+                            {!isAddServerHidden && (
+                              <Button
+                                leftIcon={<FiPlus />}
+                                size="sm"
+                                variant="outline"
+                                colorScheme="purple"
+                                rounded="xl"
+                                fontWeight="bold"
+                                onClick={handleAddServer}
+                              >
+                                Add Server
+                              </Button>
+                            )}
+                            <Button
+                              leftIcon={<FiSave />}
+                              size="md"
+                              colorScheme="secondary"
+                              rounded="xl"
+                              px={6}
+                              fontWeight="bold"
+                              isLoading={IsLoadingProcess}
+                              onClick={handleSave}
+                            >
+                              Save Environment Changes
+                            </Button>
+                          </Flex>
+                        )}
+                      </Box>
+
+                      {/* ══════════════════════════════════════════════════════════
+                          3. SECTION: APLIKASI PENDUKUNG (DATA TABLE LIST)
+                          ══════════════════════════════════════════════════════════ */}
+                      <Box
+                        p={{ base: 4, md: 5 }}
+                        rounded="xl"
+                        border="1px solid"
+                        borderColor={isDark ? "gray.700" : "gray.200"}
+                        bg={isDark ? "gray.850" : "gray.50"}
+                        shadow="sm"
+                      >
+                        <Flex
+                          justify="space-between"
+                          align={{ base: "start", sm: "center" }}
+                          direction={{ base: "column", sm: "row" }}
+                          gap={3}
+                          mb={4}
+                          pb={3}
+                          borderBottom="1px dashed"
+                          borderColor={isDark ? "gray.700" : "gray.200"}
+                        >
+                          <HStack spacing={3}>
+                            <Box
+                              p={2}
+                              rounded="lg"
+                              bg="teal.50"
+                              color="teal.600"
+                            >
+                              <Icon as={FiLayers} boxSize={5} />
+                            </Box>
+                            <VStack align="start" spacing={0.5}>
+                              <HStack spacing={2}>
+                                <Heading size="xs" color={isDark ? "white" : "gray.800"}>
+                                  Aplikasi Pendukung
+                                </Heading>
+                                <Badge colorScheme="teal" fontSize="3xs" rounded="full" px={2}>
+                                  {relatedSupportingApps.length} Terhubung
+                                </Badge>
+                              </HStack>
+                              <Text fontSize="2xs" color="gray.500">
+                                Daftar aplikasi terhubung dan dependensi dari katalog Master Data Application.
+                              </Text>
+                            </VStack>
+                          </HStack>
+
+                          <Button
+                            size="sm"
+                            colorScheme="teal"
+                            leftIcon={<FiPlus />}
+                            rounded="lg"
+                            fontWeight="semibold"
+                            onClick={handleOpenAddCatalog}
+                          >
+                            Add Aplikasi Pendukung
+                          </Button>
+                        </Flex>
+
+                        {/* Table 1: Related Applications Table */}
+                        <TableContainer
+                          rounded="lg"
+                          border="1px solid"
+                          borderColor={isDark ? "gray.700" : "gray.200"}
+                          bg={isDark ? "gray.800" : "white"}
+                        >
+                          <Table size="sm" variant="simple">
+                            <Thead bg={isDark ? "gray.750" : "gray.50"}>
+                              <Tr>
+                                <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
+                                  Nama
+                                </Th>
+                                <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
+                                  Versi
+                                </Th>
+                                <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
+                                  Tahun
+                                </Th>
+                                <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"} textAlign="center" w="80px">
+                                  Aksi
+                                </Th>
+                              </Tr>
+                            </Thead>
+                            <Tbody>
+                              {relatedSupportingApps.length === 0 ? (
+                                <Tr>
+                                  <Td colSpan={4} textAlign="center" py={8}>
+                                    <VStack spacing={2}>
+                                      <Text fontSize="xs" fontWeight="semibold" color="gray.500">
+                                        Belum ada aplikasi pendukung yang terhubung
+                                      </Text>
+                                      <Text fontSize="2xs" color="gray.400">
+                                        Klik tombol &quot;Add Aplikasi Pendukung&quot; di atas untuk menghubungkan aplikasi dari katalog.
+                                      </Text>
+                                    </VStack>
+                                  </Td>
+                                </Tr>
+                              ) : (
+                                relatedSupportingApps.map((app) => (
+                                  <Tr
+                                    key={app.id}
+                                    _hover={{ bg: isDark ? "gray.750" : "gray.50" }}
+                                    transition="background-color 0.15s"
+                                  >
+                                    {/* Column 1: Nama */}
+                                    <Td py={3}>
+                                      <HStack spacing={2.5}>
+                                        <Avatar
+                                          name={app.appShortName || app.appName}
+                                          size="xs"
+                                          bg="teal.500"
+                                          color="white"
+                                          fontSize="3xs"
+                                        />
+                                        <VStack align="start" spacing={0.5}>
+                                          <Text
+                                            fontSize="xs"
+                                            fontWeight="bold"
+                                            color={isDark ? "white" : "gray.800"}
+                                          >
+                                            {app.appName}
+                                          </Text>
+                                          <HStack spacing={1.5}>
+                                            <Badge colorScheme="blue" fontSize="3xs" rounded="md" px={1.5}>
+                                              {app.appShortName || "APP"}
+                                            </Badge>
+                                            {app.appsStatus && (
+                                              <Badge
+                                                colorScheme={
+                                                  app.appsStatus === "ACTIVE"
+                                                    ? "green"
+                                                    : app.appsStatus === "ON DEVELOPMENT"
+                                                    ? "orange"
+                                                    : "gray"
+                                                }
+                                                fontSize="3xs"
+                                                rounded="md"
+                                                px={1.5}
+                                              >
+                                                {app.appsStatus}
+                                              </Badge>
+                                            )}
+                                          </HStack>
+                                        </VStack>
+                                      </HStack>
+                                    </Td>
+
+                                    {/* Column 2: Versi */}
+                                    <Td py={3}>
+                                      <Badge
+                                        colorScheme="purple"
+                                        variant="subtle"
+                                        fontSize="2xs"
+                                        px={2}
+                                        py={0.5}
+                                        rounded="md"
+                                        fontFamily="mono"
+                                      >
+                                        {app.appVersion || "v1.0.0"}
+                                      </Badge>
+                                    </Td>
+
+                                    {/* Column 3: Tahun */}
+                                    <Td py={3}>
+                                      <Text
+                                        fontSize="xs"
+                                        fontWeight="semibold"
+                                        color={isDark ? "gray.300" : "gray.700"}
+                                      >
+                                        {app.appInitaiteYear || "-"}
+                                      </Text>
+                                    </Td>
+
+                                    {/* Column 4: Aksi */}
+                                    <Td py={3} textAlign="center">
+                                      <IconButton
+                                        aria-label="Hapus aplikasi pendukung"
+                                        icon={<FiTrash2 />}
+                                        size="xs"
+                                        colorScheme="red"
+                                        variant="ghost"
+                                        rounded="md"
+                                        onClick={() => handleRemoveSupportingApp(app.id)}
+                                      />
+                                    </Td>
+                                  </Tr>
+                                ))
+                              )}
+                            </Tbody>
+                          </Table>
+                        </TableContainer>
+
+                        {/* Stage 2: Catalog Data Table (Revealed when "Add Aplikasi Pendukung" is clicked) */}
+                        {isCatalogOpen && (
+                          <Box
+                            mt={5}
+                            p={4}
+                            rounded="lg"
+                            border="1px solid"
+                            borderColor={isDark ? "teal.700" : "teal.200"}
+                            bg={isDark ? "gray.800" : "white"}
+                            shadow="sm"
+                          >
+                            <Flex
+                              justify="space-between"
+                              align={{ base: "start", sm: "center" }}
+                              direction={{ base: "column", sm: "row" }}
+                              gap={3}
+                              mb={3}
+                              pb={2}
+                              borderBottom="1px dashed"
+                              borderColor={isDark ? "gray.700" : "gray.200"}
+                            >
+                              <VStack align="start" spacing={0.5}>
+                                <HStack spacing={2}>
+                                  <Heading size="xs" color={isDark ? "teal.300" : "teal.700"}>
+                                    Katalog Master Data Application
+                                  </Heading>
+                                  <Badge colorScheme="teal" fontSize="3xs" rounded="full" px={2}>
+                                    {supportingAppsTotal} Tersedia
+                                  </Badge>
+                                </HStack>
+                                <Text fontSize="2xs" color="gray.500">
+                                  Pilih aplikasi untuk dihubungkan sebagai aplikasi pendukung.
+                                </Text>
+                              </VStack>
+
+                              <HStack spacing={2} w={{ base: "full", sm: "auto" }}>
+                                <InputGroup size="sm" maxW={{ base: "full", sm: "220px" }}>
+                                  <InputLeftElement pointerEvents="none">
+                                    <Icon as={FiSearch} color="gray.400" />
+                                  </InputLeftElement>
+                                  <Input
+                                    rounded="lg"
+                                    placeholder="Cari nama aplikasi..."
+                                    value={supportingAppsSearch}
+                                    onChange={(e) => setSupportingAppsSearch(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        setSupportingAppsPageIndex(0);
+                                        fetchSupportingApps(0, supportingAppsPageSize, supportingAppsSearch);
+                                      }
+                                    }}
+                                  />
+                                </InputGroup>
+                                <IconButton
+                                  aria-label="Refresh Katalog Aplikasi"
+                                  icon={<FiRefreshCw />}
+                                  size="sm"
+                                  rounded="lg"
+                                  variant="outline"
+                                  isLoading={isSupportingAppsLoading}
+                                  onClick={() => fetchSupportingApps(supportingAppsPageIndex, supportingAppsPageSize, supportingAppsSearch)}
+                                />
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  colorScheme="gray"
+                                  rounded="lg"
+                                  leftIcon={<FiX />}
+                                  onClick={() => setIsCatalogOpen(false)}
+                                >
+                                  Tutup
+                                </Button>
+                              </HStack>
+                            </Flex>
+
+                            {/* Catalog Table */}
+                            <TableContainer
+                              rounded="lg"
+                              border="1px solid"
+                              borderColor={isDark ? "gray.700" : "gray.200"}
+                              bg={isDark ? "gray.850" : "gray.50"}
+                            >
+                              <Table size="sm" variant="simple">
+                                <Thead bg={isDark ? "gray.750" : "gray.100"}>
+                                  <Tr>
+                                    <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
+                                      Nama
+                                    </Th>
+                                    <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
+                                      Versi
+                                    </Th>
+                                    <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
+                                      Tahun
+                                    </Th>
+                                    <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"} textAlign="center" w="110px">
+                                      Aksi
+                                    </Th>
+                                  </Tr>
+                                </Thead>
+                                <Tbody>
+                                  {isSupportingAppsLoading ? (
+                                    <Tr>
+                                      <Td colSpan={4} textAlign="center" py={8}>
+                                        <VStack spacing={2}>
+                                          <Spinner size="sm" color="teal.500" />
+                                          <Text fontSize="xs" color="gray.500">
+                                            Memuat data aplikasi dari katalog...
+                                          </Text>
+                                        </VStack>
+                                      </Td>
+                                    </Tr>
+                                  ) : supportingApps.length === 0 ? (
+                                    <Tr>
+                                      <Td colSpan={4} textAlign="center" py={8}>
+                                        <VStack spacing={1}>
+                                          <Text fontSize="xs" fontWeight="semibold" color="gray.500">
+                                            Tidak ada aplikasi yang ditemukan
+                                          </Text>
+                                          <Text fontSize="2xs" color="gray.400">
+                                            Gunakan kotak pencarian di atas untuk menyaring data aplikasi.
+                                          </Text>
+                                        </VStack>
+                                      </Td>
+                                    </Tr>
+                                  ) : (
+                                    supportingApps.map((app) => {
+                                      const displayVersion =
+                                        (app as any).appVersion ||
+                                        (app as any).version ||
+                                        app.appStatusProject ||
+                                        "v1.0.0";
+                                      const displayYear =
+                                        app.appInitaiteYear ||
+                                        (app.createdAt ? new Date(app.createdAt).getFullYear().toString() : "-");
+                                      const isAlreadyConnected = relatedSupportingApps.some(
+                                        (rel) => rel.id === app.id || rel.appName.toLowerCase() === app.appName.toLowerCase()
+                                      );
+
+                                      return (
+                                        <Tr
+                                          key={app.id}
+                                          _hover={{ bg: isDark ? "gray.700" : "white" }}
+                                          transition="background-color 0.15s"
+                                        >
+                                          {/* Column 1: Nama */}
+                                          <Td py={3}>
+                                            <HStack spacing={2.5}>
+                                              <Avatar
+                                                name={app.appShortName || app.appName}
+                                                size="xs"
+                                                bg="teal.500"
+                                                color="white"
+                                                fontSize="3xs"
+                                              />
+                                              <VStack align="start" spacing={0.5}>
+                                                <Text
+                                                  fontSize="xs"
+                                                  fontWeight="bold"
+                                                  color={isDark ? "white" : "gray.800"}
+                                                >
+                                                  {app.appName}
+                                                </Text>
+                                                <HStack spacing={1.5}>
+                                                  <Badge colorScheme="blue" fontSize="3xs" rounded="md" px={1.5}>
+                                                    {app.appShortName || app.appCode || "APP"}
+                                                  </Badge>
+                                                  {app.appsStatus && (
+                                                    <Badge
+                                                      colorScheme={
+                                                        app.appsStatus === "ACTIVE"
+                                                          ? "green"
+                                                          : app.appsStatus === "ON DEVELOPMENT"
+                                                          ? "orange"
+                                                          : "gray"
+                                                      }
+                                                      fontSize="3xs"
+                                                      rounded="md"
+                                                      px={1.5}
+                                                    >
+                                                      {app.appsStatus}
+                                                    </Badge>
+                                                  )}
+                                                </HStack>
+                                              </VStack>
+                                            </HStack>
+                                          </Td>
+
+                                          {/* Column 2: Versi */}
+                                          <Td py={3}>
+                                            <Badge
+                                              colorScheme="purple"
+                                              variant="subtle"
+                                              fontSize="2xs"
+                                              px={2}
+                                              py={0.5}
+                                              rounded="md"
+                                              fontFamily="mono"
+                                            >
+                                              {displayVersion}
+                                            </Badge>
+                                          </Td>
+
+                                          {/* Column 3: Tahun */}
+                                          <Td py={3}>
+                                            <Text
+                                              fontSize="xs"
+                                              fontWeight="semibold"
+                                              color={isDark ? "gray.300" : "gray.700"}
+                                            >
+                                              {displayYear}
+                                            </Text>
+                                          </Td>
+
+                                          {/* Column 4: Aksi */}
+                                          <Td py={3} textAlign="center">
+                                            {isAlreadyConnected ? (
+                                              <Badge colorScheme="green" variant="solid" fontSize="3xs" px={2} py={1} rounded="md">
+                                                Terhubung
+                                              </Badge>
+                                            ) : (
+                                              <Button
+                                                size="xs"
+                                                colorScheme="teal"
+                                                leftIcon={<FiPlus />}
+                                                rounded="md"
+                                                onClick={() => handleAddSupportingApp(app)}
+                                              >
+                                                Hubungkan
+                                              </Button>
+                                            )}
+                                          </Td>
+                                        </Tr>
+                                      );
+                                    })
+                                  )}
+                                </Tbody>
+                              </Table>
+                            </TableContainer>
+
+                            {/* Compact Section Pagination */}
+                            {supportingAppsTotal > 0 && (
+                              <Flex
+                                direction={{ base: "column", sm: "row" }}
+                                justify="space-between"
+                                align={{ base: "start", sm: "center" }}
+                                gap={2}
+                                pt={3}
+                                px={1}
+                              >
+                                {/* Left: Info & Rows per page */}
+                                <HStack spacing={2} fontSize="2xs" color={isDark ? "gray.400" : "gray.600"}>
+                                  <Text>
+                                    Menampilkan{" "}
+                                    <Text as="span" fontWeight="bold" color={isDark ? "white" : "gray.800"}>
+                                      {supportingAppsPageIndex * supportingAppsPageSize + 1}-
+                                      {Math.min((supportingAppsPageIndex + 1) * supportingAppsPageSize, supportingAppsTotal)}
+                                    </Text>{" "}
+                                    dari{" "}
+                                    <Text as="span" fontWeight="bold" color={isDark ? "white" : "gray.800"}>
+                                      {supportingAppsTotal}
+                                    </Text>
+                                  </Text>
+                                  <Text color="gray.400">|</Text>
+                                  <HStack spacing={1}>
+                                    <Text>Per hal:</Text>
+                                    <ChakraSelect
+                                      size="xs"
+                                      w="65px"
+                                      h="26px"
+                                      rounded="md"
+                                      fontSize="2xs"
+                                      value={supportingAppsPageSize}
+                                      onChange={(e) => supportingAppsTableAdapter.setPageSize(Number(e.target.value))}
+                                    >
+                                      <option value={5}>5</option>
+                                      <option value={10}>10</option>
+                                      <option value={20}>20</option>
+                                    </ChakraSelect>
+                                  </HStack>
+                                </HStack>
+
+                                {/* Right: Compact Page Buttons */}
+                                <HStack spacing={1} alignSelf={{ base: "flex-end", sm: "center" }}>
+                                  <IconButton
+                                    aria-label="Halaman Pertama"
+                                    icon={<FiChevronsLeft />}
+                                    size="xs"
+                                    variant="ghost"
+                                    rounded="md"
+                                    isDisabled={supportingAppsPageIndex === 0}
+                                    onClick={() => supportingAppsTableAdapter.setPageIndex(0)}
+                                  />
+                                  <IconButton
+                                    aria-label="Halaman Sebelumnya"
+                                    icon={<FiChevronLeft />}
+                                    size="xs"
+                                    variant="ghost"
+                                    rounded="md"
+                                    isDisabled={!supportingAppsTableAdapter.getCanPreviousPage()}
+                                    onClick={() => supportingAppsTableAdapter.previousPage()}
+                                  />
+
+                                  {/* Numbered Page Buttons */}
+                                  {(() => {
+                                    const maxVisible = 5;
+                                    let start = Math.max(1, supportingAppsPageIndex + 1 - 2);
+                                    let end = Math.min(supportingAppsPageCount, start + maxVisible - 1);
+                                    if (end - start + 1 < maxVisible) {
+                                      start = Math.max(1, end - maxVisible + 1);
+                                    }
+                                    const pages: number[] = [];
+                                    for (let i = start; i <= end; i++) {
+                                      pages.push(i);
+                                    }
+
+                                    return pages.map((page) => {
+                                      const isCurrent = page === supportingAppsPageIndex + 1;
+                                      return (
+                                        <Button
+                                          key={page}
+                                          size="xs"
+                                          minW="26px"
+                                          h="26px"
+                                          px={1.5}
+                                          rounded="md"
+                                          fontSize="2xs"
+                                          fontWeight={isCurrent ? "bold" : "normal"}
+                                          colorScheme={isCurrent ? "teal" : "gray"}
+                                          variant={isCurrent ? "solid" : "ghost"}
+                                          onClick={() => supportingAppsTableAdapter.setPageIndex(page - 1)}
+                                        >
+                                          {page}
+                                        </Button>
+                                      );
+                                    });
+                                  })()}
+
+                                  <IconButton
+                                    aria-label="Halaman Berikutnya"
+                                    icon={<FiChevronRight />}
+                                    size="xs"
+                                    variant="ghost"
+                                    rounded="md"
+                                    isDisabled={!supportingAppsTableAdapter.getCanNextPage()}
+                                    onClick={() => supportingAppsTableAdapter.nextPage()}
+                                  />
+                                  <IconButton
+                                    aria-label="Halaman Terakhir"
+                                    icon={<FiChevronsRight />}
+                                    size="xs"
+                                    variant="ghost"
+                                    rounded="md"
+                                    isDisabled={supportingAppsPageIndex >= supportingAppsPageCount - 1}
+                                    onClick={() => supportingAppsTableAdapter.setPageIndex(supportingAppsPageCount - 1)}
+                                  />
+                                </HStack>
+                              </Flex>
+                            )}
+                          </Box>
+                        )}
+                      </Box>
                       </VStack>
                     </TabPanel>
                   </TabPanels>
