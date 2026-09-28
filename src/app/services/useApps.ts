@@ -101,6 +101,135 @@ export interface ApplicationMasterShortResponse {
   reqParentId?: string | null;
 }
 
+export interface AppTopologyQuickStatsResponse {
+  totalServers: number;
+  activeServers: number;
+  primaryDc1Nodes: number;
+  primaryDc2Nodes: number;
+  pamCompliantCount: number;
+  hardenedCount: number;
+  dualDeployCount: number;
+}
+
+export interface AppServerVmDetailResponse {
+  namaVm: string;
+  ipAddress: string;
+  os: string;
+  cpu: string;
+  memory: string;
+  storage: string;
+  note?: string;
+}
+
+export interface AppServerItemResponse {
+  id: string;
+  appsId?: string;
+  appsEnvId?: string;
+  roleServer: string;
+  roleServerOther?: string;
+  roleDetail: string;
+  status: "Aktif" | "Pasif";
+  ipAddress: string;
+  primary: "DC1" | "DC2" | "-";
+  site: string;
+  siteOther?: string;
+  segment: string;
+  environment: string;
+  environmentOther?: string;
+  joinDomain: "Ya" | "Tidak";
+  hardening: "Ya" | "Tidak";
+  pam: "Ya" | "Tidak";
+  dualDeploy: "Ya" | "Tidak";
+  vmDetail?: AppServerVmDetailResponse;
+}
+
+export interface AppTopologyOverviewResponse {
+  quickStats: AppTopologyQuickStatsResponse;
+  servers: AppServerItemResponse[];
+}
+
+export interface AppAccessParameterItemResponse {
+  id?: string;
+  appsId?: string;
+  appsEnvId?: string;
+  targetEnvironment: "Dev" | "Prod";
+  paramCategory: string;
+  paramLabel: string;
+  paramKey: string;
+  paramValue?: string | null;
+  fieldType: "text" | "password" | "textarea";
+  isMasked?: "Y" | "N";
+  displayOrder: number;
+}
+
+export interface AppAccessOverviewResponse {
+  devUrl: string;
+  prodUrl: string;
+  parameters: AppAccessParameterItemResponse[];
+}
+
+export interface SyncAppAccessParametersPayload {
+  devUrl: string;
+  prodUrl: string;
+  parameters: AppAccessParameterItemResponse[];
+}
+
+export interface RelatedSupportingAppResponse {
+  id: string;
+  supportingAppId: string;
+  appName: string;
+  appShortName: string;
+  appVersion: string;
+  appInitaiteYear: string;
+  appsStatus: string;
+  dependencyRole?: string | null;
+  description?: string | null;
+}
+
+export interface AddSupportingAppPayload {
+  supportingAppId: string;
+  dependencyRole?: string;
+  description?: string;
+}
+
+export interface ServerSoftwareItemResponse {
+  id: string;
+  softwareName: string;
+  softwareCategory: string;
+  vendor?: string | null;
+  isStandardBank: string;
+  description?: string | null;
+}
+
+export interface AppInstalledSoftwareResponse {
+  id: string;
+  softwareId: string;
+  softwareName: string;
+  softwareCategory: string;
+  vendor?: string | null;
+  installedVersion?: string | null;
+  portNumber?: string | null;
+  serviceStatus: string;
+  isStandardBank: string;
+  notes?: string | null;
+}
+
+export interface AddAppSoftwarePayload {
+  softwareId: string;
+  installedVersion?: string;
+  portNumber?: string;
+  serviceStatus?: string;
+  notes?: string;
+}
+
+export interface CreateServerSoftwarePayload {
+  softwareName: string;
+  softwareCategory: string;
+  vendor?: string;
+  isStandardBank?: string;
+  description?: string;
+}
+
 export interface ApplicationMasterInsertDataPayload {
   appShortName: string;
   appName: string;
@@ -232,6 +361,60 @@ interface useAppsServices {
   ) => Promise<ApiGenericResponse<string | null> | null>;
   UpdateStatus: (
     payload: ApplicationMasterUpdateStatusPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  GetTopologyOverview: (
+    appId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<AppTopologyOverviewResponse | null> | null>;
+  SyncAppServers: (
+    appId: string,
+    servers: AppServerItemResponse[],
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  GetAccessParameters: (
+    appId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<AppAccessOverviewResponse | null> | null>;
+  SyncAccessParameters: (
+    appId: string,
+    payload: SyncAppAccessParametersPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  GetSupportingApps: (
+    appId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<RelatedSupportingAppResponse[]> | null>;
+  AddSupportingApp: (
+    appId: string,
+    payload: AddSupportingAppPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  RemoveSupportingApp: (
+    appId: string,
+    supportingAppId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  GetServerSoftwaresCatalog: (
+    search: string,
+    token: string
+  ) => Promise<ApiGenericResponse<ServerSoftwareItemResponse[]> | null>;
+  CreateServerSoftware: (
+    payload: CreateServerSoftwarePayload,
+    token: string
+  ) => Promise<ApiGenericResponse<ServerSoftwareItemResponse | null> | null>;
+  GetAppSoftwares: (
+    appId: string,
+    token: string
+  ) => Promise<ApiGenericResponse<AppInstalledSoftwareResponse[]> | null>;
+  AddAppSoftware: (
+    appId: string,
+    payload: AddAppSoftwarePayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  RemoveAppSoftware: (
+    appId: string,
+    softwareId: string,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
 
@@ -542,13 +725,541 @@ const useApps = (): useAppsServices => {
         };
       }
     }
-  };  return {
+  };
+
+  const GetTopologyOverview = async (
+    appId: string,
+    token: string
+  ): Promise<ApiGenericResponse<AppTopologyOverviewResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Application/${appId}/topology-overview`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<AppTopologyOverviewResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || err.message);
+        return {
+          statusCode: err.response?.status || 500,
+          message: err.response?.data?.message || err.message,
+          data: null,
+          error: err.response?.data?.error || null,
+        };
+      } else {
+        setError("An unexpected error occurred");
+        return {
+          statusCode: 500,
+          message: "Error connect to api",
+          data: null,
+          error: null,
+        };
+      }
+    }
+  };
+
+  const SyncAppServers = async (
+    appId: string,
+    servers: AppServerItemResponse[],
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Application/${appId}/servers/sync`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string>
+      >(`${UrlEndpoint}${PathEndpoint}`, servers, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || err.message);
+        return {
+          statusCode: err.response?.status || 500,
+          message: err.response?.data?.message || err.message,
+          data: null,
+          error: err.response?.data?.error || null,
+        };
+      } else {
+        setError("An unexpected error occurred");
+        return {
+          statusCode: 500,
+          message: "Error connect to api",
+          data: null,
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetAccessParameters = async (
+    appId: string,
+    token: string
+  ): Promise<ApiGenericResponse<AppAccessOverviewResponse | null> | null> => {
+    setIsLoading(true);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Application/${appId}/access-parameters`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<AppAccessOverviewResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || err.message);
+        return {
+          statusCode: err.response?.status || 500,
+          message: err.response?.data?.message || err.message,
+          data: null,
+          error: err.response?.data?.error || null,
+        };
+      } else {
+        setError("An unexpected error occurred");
+        return {
+          statusCode: 500,
+          message: "Error connect to api",
+          data: null,
+          error: null,
+        };
+      }
+    }
+  };
+
+  const SyncAccessParameters = async (
+    appId: string,
+    payload: SyncAppAccessParametersPayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Application/${appId}/access-parameters/sync`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || err.message);
+        return {
+          statusCode: err.response?.status || 500,
+          message: err.response?.data?.message || err.message,
+          data: null,
+          error: err.response?.data?.error || null,
+        };
+      } else {
+        setError("An unexpected error occurred");
+        return {
+          statusCode: 500,
+          message: "Error connect to api",
+          data: null,
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetSupportingApps = async (
+    appId: string,
+    token: string
+  ): Promise<ApiGenericResponse<RelatedSupportingAppResponse[]> | null> => {
+    setIsLoading(true);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Application/${appId}/supporting-apps`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<RelatedSupportingAppResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || err.message);
+        return {
+          statusCode: err.response?.status || 500,
+          message: err.response?.data?.message || err.message,
+          data: [],
+          error: err.response?.data?.error || null,
+        };
+      } else {
+        setError("An unexpected error occurred");
+        return {
+          statusCode: 500,
+          message: "Error connect to api",
+          data: [],
+          error: null,
+        };
+      }
+    }
+  };
+
+  const AddSupportingApp = async (
+    appId: string,
+    payload: AddSupportingAppPayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Application/${appId}/supporting-apps`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || err.message);
+        return {
+          statusCode: err.response?.status || 500,
+          message: err.response?.data?.message || err.message,
+          data: null,
+          error: err.response?.data?.error || null,
+        };
+      } else {
+        setError("An unexpected error occurred");
+        return {
+          statusCode: 500,
+          message: "Error connect to api",
+          data: null,
+          error: null,
+        };
+      }
+    }
+  };
+
+  const RemoveSupportingApp = async (
+    appId: string,
+    supportingAppId: string,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Application/${appId}/supporting-apps/${supportingAppId}`;
+    try {
+      const response = await axiosInstance.delete<
+        ApiGenericResponse<string>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || err.message);
+        return {
+          statusCode: err.response?.status || 500,
+          message: err.response?.data?.message || err.message,
+          data: null,
+          error: err.response?.data?.error || null,
+        };
+      } else {
+        setError("An unexpected error occurred");
+        return {
+          statusCode: 500,
+          message: "Error connect to api",
+          data: null,
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetServerSoftwaresCatalog = async (
+    search: string = "",
+    token: string
+  ): Promise<ApiGenericResponse<ServerSoftwareItemResponse[]> | null> => {
+    setIsLoading(true);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const queryParam = search ? `?search=${encodeURIComponent(search)}` : "";
+    const PathEndpoint: string = `/v1/Application/server-softwares/catalog${queryParam}`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<ServerSoftwareItemResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || err.message);
+        return {
+          statusCode: err.response?.status || 500,
+          message: err.response?.data?.message || err.message,
+          data: [],
+          error: err.response?.data?.error || null,
+        };
+      } else {
+        setError("An unexpected error occurred");
+        return {
+          statusCode: 500,
+          message: "Error connect to api",
+          data: [],
+          error: null,
+        };
+      }
+    }
+  };
+
+  const CreateServerSoftware = async (
+    payload: CreateServerSoftwarePayload,
+    token: string
+  ): Promise<ApiGenericResponse<ServerSoftwareItemResponse | null> | null> => {
+    setIsLoading(true);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Application/server-softwares/catalog`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<ServerSoftwareItemResponse>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || err.message);
+        return {
+          statusCode: err.response?.status || 500,
+          message: err.response?.data?.message || err.message,
+          data: null,
+          error: err.response?.data?.error || null,
+        };
+      } else {
+        setError("An unexpected error occurred");
+        return {
+          statusCode: 500,
+          message: "Error connect to api",
+          data: null,
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetAppSoftwares = async (
+    appId: string,
+    token: string
+  ): Promise<ApiGenericResponse<AppInstalledSoftwareResponse[]> | null> => {
+    setIsLoading(true);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Application/${appId}/server-softwares`;
+    try {
+      const response = await axiosInstance.get<
+        ApiGenericResponse<AppInstalledSoftwareResponse[]>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || err.message);
+        return {
+          statusCode: err.response?.status || 500,
+          message: err.response?.data?.message || err.message,
+          data: [],
+          error: err.response?.data?.error || null,
+        };
+      } else {
+        setError("An unexpected error occurred");
+        return {
+          statusCode: 500,
+          message: "Error connect to api",
+          data: [],
+          error: null,
+        };
+      }
+    }
+  };
+
+  const AddAppSoftware = async (
+    appId: string,
+    payload: AddAppSoftwarePayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Application/${appId}/server-softwares`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || err.message);
+        return {
+          statusCode: err.response?.status || 500,
+          message: err.response?.data?.message || err.message,
+          data: null,
+          error: err.response?.data?.error || null,
+        };
+      } else {
+        setError("An unexpected error occurred");
+        return {
+          statusCode: 500,
+          message: "Error connect to api",
+          data: null,
+          error: null,
+        };
+      }
+    }
+  };
+
+  const RemoveAppSoftware = async (
+    appId: string,
+    softwareId: string,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Application/${appId}/server-softwares/${softwareId}`;
+    try {
+      const response = await axiosInstance.delete<
+        ApiGenericResponse<string>
+      >(`${UrlEndpoint}${PathEndpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.message || err.message);
+        return {
+          statusCode: err.response?.status || 500,
+          message: err.response?.data?.message || err.message,
+          data: null,
+          error: err.response?.data?.error || null,
+        };
+      } else {
+        setError("An unexpected error occurred");
+        return {
+          statusCode: 500,
+          message: "Error connect to api",
+          data: null,
+          error: null,
+        };
+      }
+    }
+  };
+
+  return {
     List,
-    InsertData,    GetDetailById,
+    InsertData,
+    GetDetailById,
     GetDetailByInitial,
     UpdateData,
     UpdatePict,
     UpdateStatus,
+    GetTopologyOverview,
+    SyncAppServers,
+    GetAccessParameters,
+    SyncAccessParameters,
+    GetSupportingApps,
+    AddSupportingApp,
+    RemoveSupportingApp,
+    GetServerSoftwaresCatalog,
+    CreateServerSoftware,
+    GetAppSoftwares,
+    AddAppSoftware,
+    RemoveAppSoftware,
     isLoading,
     error,
   };
