@@ -19,15 +19,12 @@ import {
   Button,
   Card,
   CardBody,
-  CardHeader,
   Checkbox,
   CheckboxGroup,
   Divider,
   Flex,
   FormControl,
   FormLabel,
-  Grid,
-  GridItem,
   Heading,
   HStack,
   Icon,
@@ -35,6 +32,13 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  Modal,
+  ModalBody,
+  ModalCloseButton,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  ModalOverlay,
   Progress,
   Radio,
   RadioGroup,
@@ -102,7 +106,6 @@ import {
   FiTrendingUp,
   FiUsers,
   FiX,
-  FiZap,
 } from "react-icons/fi";
 import { Select } from "chakra-react-select";
 
@@ -312,6 +315,17 @@ export default function ApplicationDetail() {
 
   // Active Tab Index State (0: Overview, 1: Specs, 2: Governance, 3: Projects, 4: Assessment, 5: Environment)
   const [activeTabIndex, setActiveTabIndex] = useState(0);
+  const [isTabGuardOpen, setIsTabGuardOpen] = useState(false);
+  const [pendingTabIndex, setPendingTabIndex] = useState<number | null>(null);
+
+  const tabNames = [
+    "Executive Summary",
+    "Specs & Architecture",
+    "Governance & Team",
+    "Project Portfolio",
+    "Assessment Report",
+    "Application Environment",
+  ];
 
   // Form State
   const [formData, setFormData] = useState({
@@ -419,6 +433,7 @@ export default function ApplicationDetail() {
 
   // Add Server Button Visibility State
   const [isAddServerHidden, setIsAddServerHidden] = useState<boolean>(false);
+  const [serverAccordionIndices, setServerAccordionIndices] = useState<number[]>([0]);
 
   useEffect(() => {
     if (!appId) return;
@@ -499,8 +514,9 @@ export default function ApplicationDetail() {
   const handleAddServer = () => {
     if (!IsEditMode) setIsEditMode(true);
     setIsAddServerHidden(true);
+    const newId = `srv-${Date.now()}`;
     const newServer: AppServerEnvironmentItem = {
-      id: `srv-${Date.now()}`,
+      id: newId,
       roleServer: "App Server",
       roleDetail: "Application Service Node",
       status: "Aktif",
@@ -523,7 +539,56 @@ export default function ApplicationDetail() {
         note: "",
       },
     };
+    const newIndex = serverEnvironments.length;
     setServerEnvironments((prev) => [...prev, newServer]);
+    setServerAccordionIndices((prev) => Array.from(new Set([...prev, newIndex])));
+
+    // Robust smooth scroll to newly added server card with retries and auto-focus
+    const scrollToNewServer = (id: string, attempts = 0) => {
+      const el =
+        document.getElementById(`server-node-${id}`) ||
+        document.querySelector(`[data-server-node="${id}"]`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        const yOffset = -110;
+        const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+        const firstInput = el.querySelector("select, input") as HTMLElement | null;
+        if (firstInput) {
+          setTimeout(() => firstInput.focus({ preventScroll: true }), 350);
+        }
+      } else if (attempts < 15) {
+        setTimeout(() => scrollToNewServer(id, attempts + 1), 60);
+      }
+    };
+    setTimeout(() => scrollToNewServer(newId), 50);
+  };
+
+  const handleCancelEnvironmentEdit = () => {
+    setIsEditMode(false);
+    setIsAddServerHidden(false);
+    if (appId) {
+      const stored = localStorage.getItem(`app_env_servers_${appId}`);
+      if (stored) {
+        try {
+          setServerEnvironments(JSON.parse(stored));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      const storedAccess = localStorage.getItem(`app_env_access_${appId}`);
+      if (storedAccess) {
+        try {
+          const parsedAccess = JSON.parse(storedAccess);
+          if (parsedAccess.linkAksesEnv) setLinkAksesEnv(parsedAccess.linkAksesEnv);
+          if (parsedAccess.linkAksesUrl !== undefined) setLinkAksesUrl(parsedAccess.linkAksesUrl);
+          if (parsedAccess.testUser !== undefined) setTestUser(parsedAccess.testUser);
+          if (parsedAccess.testData !== undefined) setTestData(parsedAccess.testData);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
   };
 
   const handleDeleteServer = (index: number) => {
@@ -1094,6 +1159,58 @@ export default function ApplicationDetail() {
     }
   };
 
+  // Tab Navigation Guard Handlers
+  const handleTabChange = (nextIndex: number) => {
+    if (nextIndex === activeTabIndex) return;
+    if (IsEditMode) {
+      setPendingTabIndex(nextIndex);
+      setIsTabGuardOpen(true);
+      return;
+    }
+    setActiveTabIndex(nextIndex);
+  };
+
+  const handleConfirmLeaveTab = () => {
+    setIsTabGuardOpen(false);
+    setIsEditMode(false);
+    setIsAddServerHidden(false);
+    LoadApplicationData();
+
+    // Reset environment local changes if applicable
+    if (appId) {
+      const stored = localStorage.getItem(`app_env_servers_${appId}`);
+      if (stored) {
+        try {
+          setServerEnvironments(JSON.parse(stored));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      const storedAccess = localStorage.getItem(`app_env_access_${appId}`);
+      if (storedAccess) {
+        try {
+          const parsedAccess = JSON.parse(storedAccess);
+          if (parsedAccess.linkAksesEnv) setLinkAksesEnv(parsedAccess.linkAksesEnv);
+          if (parsedAccess.linkAksesUrl !== undefined) setLinkAksesUrl(parsedAccess.linkAksesUrl);
+          if (parsedAccess.testUser !== undefined) setTestUser(parsedAccess.testUser);
+          if (parsedAccess.testData !== undefined) setTestData(parsedAccess.testData);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+
+    if (pendingTabIndex !== null) {
+      setActiveTabIndex(pendingTabIndex);
+      setPendingTabIndex(null);
+    }
+  };
+
+  const handleCancelLeaveTab = () => {
+    setIsTabGuardOpen(false);
+    setPendingTabIndex(null);
+  };
+
   // Memoized Calculated Values
   const isCritical = DataApplication?.appIsCritical === "true" || DataApplication?.appIsCritical === "1" || formData.appIsCritical === "Y";
   const initials = (DataApplication?.appShortName || DataApplication?.appName || "APP")
@@ -1365,7 +1482,7 @@ export default function ApplicationDetail() {
                         px={2.5}
                         py={0.5}
                         rounded="md"
-                        fontSize="2xs"
+                        fontSize="xs"
                         fontWeight="bold"
                         cursor="pointer"
                         onClick={onCopy}
@@ -1379,7 +1496,7 @@ export default function ApplicationDetail() {
                     </Tooltip>
 
                     {DataApplication?.appShortName && (
-                      <Badge bg="blackAlpha.400" color="white" px={2.5} py={0.5} rounded="md" fontSize="2xs" fontWeight="semibold">
+                      <Badge bg="blackAlpha.400" color="white" px={2.5} py={0.5} rounded="md" fontSize="xs" fontWeight="semibold">
                         {DataApplication.appShortName}
                       </Badge>
                     )}
@@ -1397,7 +1514,7 @@ export default function ApplicationDetail() {
                       px={2.5}
                       py={0.5}
                       rounded="full"
-                      fontSize="2xs"
+                      fontSize="xs"
                       fontWeight="bold"
                     >
                       {DataApplication?.appsStatus || "ACTIVE"}
@@ -1405,21 +1522,21 @@ export default function ApplicationDetail() {
 
                     {/* Critical Mission Badge */}
                     {isCritical && (
-                      <Badge bg="red.500" color="white" px={2.5} py={0.5} rounded="full" fontSize="2xs" fontWeight="extrabold" shadow="sm">
+                      <Badge bg="red.500" color="white" px={2.5} py={0.5} rounded="full" fontSize="xs" fontWeight="extrabold" shadow="sm">
                         CRITICAL {DataApplication?.appCriticalLevel ? `(L${DataApplication.appCriticalLevel})` : ""}
                       </Badge>
                     )}
 
                     {/* 24/7 SLA Pill */}
                     {DataApplication?.appOperational24hrs === "true" && (
-                      <Badge bg="green.400" color="green.950" px={2} py={0.5} rounded="md" fontSize="3xs" fontWeight="extrabold">
+                      <Badge bg="green.400" color="green.950" px={2} py={0.5} rounded="md" fontSize="xs" fontWeight="extrabold">
                         24/7 SLA
                       </Badge>
                     )}
 
                     {/* Governance Incomplete Warning Tag in Hero */}
                     {hasGovernanceAlert && (
-                      <Badge bg="orange.400" color="orange.950" px={2} py={0.5} rounded="full" fontSize="3xs" fontWeight="extrabold">
+                      <Badge bg="orange.400" color="orange.950" px={2} py={0.5} rounded="full" fontSize="xs" fontWeight="extrabold">
                         GOVERNANCE INCOMPLETE
                       </Badge>
                     )}
@@ -1429,11 +1546,11 @@ export default function ApplicationDetail() {
                     {DataApplication?.appName || "Loading Application..."}
                   </Heading>
 
-                  <HStack spacing={2} fontSize="2xs" color="whiteAlpha.850" wrap="wrap">
+                  <HStack spacing={2} fontSize="xs" color="whiteAlpha.850" wrap="wrap">
                     <HStack spacing={1}>
                       <Text opacity={0.75}>IT Management:</Text>
                       {isITManagementEmpty ? (
-                        <Badge colorScheme="red" variant="solid" fontSize="3xs" px={1.5} py={0} rounded="sm">
+                        <Badge colorScheme="red" variant="solid" fontSize="xs" px={1.5} py={0} rounded="sm">
                           Not Assigned
                         </Badge>
                       ) : (
@@ -1446,7 +1563,7 @@ export default function ApplicationDetail() {
                     <HStack spacing={1}>
                       <Text opacity={0.75}>Business Owner:</Text>
                       {isBusinessOwnerEmpty ? (
-                        <Badge colorScheme="red" variant="solid" fontSize="3xs" px={1.5} py={0} rounded="sm">
+                        <Badge colorScheme="red" variant="solid" fontSize="xs" px={1.5} py={0} rounded="sm">
                           Not Assigned
                         </Badge>
                       ) : (
@@ -1547,7 +1664,7 @@ export default function ApplicationDetail() {
               <Box p={3} rounded="xl" bg="whiteAlpha.150" backdropFilter="blur(8px)" border="1px solid" borderColor="whiteAlpha.200">
                 <HStack justify="space-between" align="center">
                   <VStack align="start" spacing={0}>
-                    <Text fontSize="3xs" textTransform="uppercase" fontWeight="bold" color="whiteAlpha.700">
+                    <Text fontSize="xs" textTransform="uppercase" fontWeight="bold" color="whiteAlpha.700">
                       Operations & SLA
                     </Text>
                     <Text fontSize="xs" fontWeight="extrabold" color="white" noOfLines={1}>
@@ -1561,7 +1678,7 @@ export default function ApplicationDetail() {
               <Box p={3} rounded="xl" bg="whiteAlpha.150" backdropFilter="blur(8px)" border="1px solid" borderColor="whiteAlpha.200">
                 <HStack justify="space-between" align="center">
                   <VStack align="start" spacing={0}>
-                    <Text fontSize="3xs" textTransform="uppercase" fontWeight="bold" color="whiteAlpha.700">
+                    <Text fontSize="xs" textTransform="uppercase" fontWeight="bold" color="whiteAlpha.700">
                       Criticality Level
                     </Text>
                     <Text fontSize="xs" fontWeight="extrabold" color="white" noOfLines={1}>
@@ -1575,7 +1692,7 @@ export default function ApplicationDetail() {
               <Box p={3} rounded="xl" bg="whiteAlpha.150" backdropFilter="blur(8px)" border="1px solid" borderColor="whiteAlpha.200">
                 <HStack justify="space-between" align="center">
                   <VStack align="start" spacing={0}>
-                    <Text fontSize="3xs" textTransform="uppercase" fontWeight="bold" color="whiteAlpha.700">
+                    <Text fontSize="xs" textTransform="uppercase" fontWeight="bold" color="whiteAlpha.700">
                       Project Portfolio
                     </Text>
                     <Text fontSize="xs" fontWeight="extrabold" color="white">
@@ -1589,7 +1706,7 @@ export default function ApplicationDetail() {
               <Box p={3} rounded="xl" bg="whiteAlpha.150" backdropFilter="blur(8px)" border="1px solid" borderColor="whiteAlpha.200">
                 <HStack justify="space-between" align="center">
                   <VStack align="start" spacing={0}>
-                    <Text fontSize="3xs" textTransform="uppercase" fontWeight="bold" color="whiteAlpha.700">
+                    <Text fontSize="xs" textTransform="uppercase" fontWeight="bold" color="whiteAlpha.700">
                       Access & Platform
                     </Text>
                     <Text fontSize="xs" fontWeight="extrabold" color="white" noOfLines={1}>
@@ -1632,7 +1749,7 @@ export default function ApplicationDetail() {
                       <Heading size="xs" fontWeight="800" color={isDark ? "orange.200" : "orange.800"}>
                         Attention: Application Governance Data Incomplete
                       </Heading>
-                      <Badge colorScheme="orange" variant="solid" fontSize="3xs" px={2} py={0.5} rounded="full">
+                      <Badge colorScheme="orange" variant="solid" fontSize="xs" px={2} py={0.5} rounded="full">
                         Organization Structure Incomplete
                       </Badge>
                     </HStack>
@@ -1683,23 +1800,21 @@ export default function ApplicationDetail() {
           )}
 
           {/* ══════════════════════════════════════════════════════════════════
-              80 / 20 RESPONSIVE LAYOUT
+              FULL WIDTH WORKSPACE
               ══════════════════════════════════════════════════════════════════ */}
-          <Grid templateColumns={{ base: "1fr", lg: "repeat(12, 1fr)" }} gap={5}>
-            {/* ── LEFT 80% WORKSPACE (COL-SPAN 9/10) ── */}
-            <GridItem colSpan={{ base: 12, lg: 9, xl: 9 }}>
-              <Card
-                shadow="md"
-                rounded={radiusStyle}
-                border="1px"
-                borderColor={isDark ? "gray.700" : "gray.200"}
-                bg={isDark ? "gray.800" : "white"}
-                overflow="hidden"
-              >
+          <Card
+            w="full"
+            shadow="md"
+            rounded={radiusStyle}
+            border="1px"
+            borderColor={isDark ? "gray.700" : "gray.200"}
+            bg={isDark ? "gray.800" : "white"}
+            overflow="hidden"
+          >
                 <Tabs
                   variant="unstyled"
                   index={activeTabIndex}
-                  onChange={(index) => setActiveTabIndex(index)}
+                  onChange={handleTabChange}
                   colorScheme="secondary"
                   isLazy
                 >
@@ -1722,7 +1837,7 @@ export default function ApplicationDetail() {
                     }}
                   >
                     <Tab
-                      fontSize="xs"
+                      fontSize="md"
                       fontWeight="bold"
                       px={4}
                       py={2.5}
@@ -1744,7 +1859,7 @@ export default function ApplicationDetail() {
                     </Tab>
 
                     <Tab
-                      fontSize="xs"
+                      fontSize="md"
                       fontWeight="bold"
                       px={4}
                       py={2.5}
@@ -1766,7 +1881,7 @@ export default function ApplicationDetail() {
                     </Tab>
 
                     <Tab
-                      fontSize="xs"
+                      fontSize="md"
                       fontWeight="bold"
                       px={4}
                       py={2.5}
@@ -1791,7 +1906,7 @@ export default function ApplicationDetail() {
                     </Tab>
 
                     <Tab
-                      fontSize="xs"
+                      fontSize="md"
                       fontWeight="bold"
                       px={4}
                       py={2.5}
@@ -1813,7 +1928,7 @@ export default function ApplicationDetail() {
                     </Tab>
 
                     <Tab
-                      fontSize="xs"
+                      fontSize="md"
                       fontWeight="bold"
                       px={4}
                       py={2.5}
@@ -1835,7 +1950,7 @@ export default function ApplicationDetail() {
                     </Tab>
 
                     <Tab
-                      fontSize="xs"
+                      fontSize="md"
                       fontWeight="bold"
                       px={4}
                       py={2.5}
@@ -1883,27 +1998,27 @@ export default function ApplicationDetail() {
 
                           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                             <Box>
-                              <Text fontSize="2xs" color="gray.500" fontWeight="bold">FULL APPLICATION NAME</Text>
+                              <Text fontSize="xs" color="gray.500" fontWeight="bold">FULL APPLICATION NAME</Text>
                               <Text fontSize="sm" fontWeight="bold" color={isDark ? "white" : "gray.800"}>
                                 {DataApplication?.appName || "-"}
                               </Text>
                             </Box>
                             <Box>
-                              <Text fontSize="2xs" color="gray.500" fontWeight="bold">SHORT NAME & CODE</Text>
+                              <Text fontSize="xs" color="gray.500" fontWeight="bold">SHORT NAME & CODE</Text>
                               <HStack spacing={2} mt={0.5}>
                                 <Badge colorScheme="purple">{DataApplication?.appShortName || "-"}</Badge>
                                 <Badge colorScheme="blue">{DataApplication?.appCode || "-"}</Badge>
                               </HStack>
                             </Box>
                             <Box gridColumn={{ base: "1", md: "1 / -1" }}>
-                              <Text fontSize="2xs" color="gray.500" fontWeight="bold">APPLICATION DESCRIPTION</Text>
+                              <Text fontSize="xs" color="gray.500" fontWeight="bold">APPLICATION DESCRIPTION</Text>
                               <Text fontSize="xs" color={isDark ? "gray.300" : "gray.700"} mt={1} lineHeight="tall">
                                 {DataApplication?.appsDesc || "No detailed description provided for this application."}
                               </Text>
                             </Box>
                             {DataApplication?.note && (
                               <Box gridColumn={{ base: "1", md: "1 / -1" }}>
-                                <Text fontSize="2xs" color="gray.500" fontWeight="bold">SPECIAL NOTES</Text>
+                                <Text fontSize="xs" color="gray.500" fontWeight="bold">SPECIAL NOTES</Text>
                                 <Text fontSize="xs" color={isDark ? "gray.400" : "gray.600"} mt={1} fontStyle="italic">
                                   {DataApplication.note}
                                 </Text>
@@ -1929,10 +2044,10 @@ export default function ApplicationDetail() {
 
                           <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={4}>
                             <Box>
-                              <Text fontSize="2xs" color="gray.500" fontWeight="bold">PROGRAMMING LANGUAGES</Text>
+                              <Text fontSize="xs" color="gray.500" fontWeight="bold">PROGRAMMING LANGUAGES</Text>
                               <Wrap mt={1}>
                                 {DataApplication?.appProgrammingLanguages?.split(",").map((item, idx) => (
-                                  <Badge key={idx} colorScheme="blue" variant="subtle" fontSize="2xs" rounded="md" px={2} py={0.5}>
+                                  <Badge key={idx} colorScheme="blue" variant="subtle" fontSize="xs" rounded="md" px={2} py={0.5}>
                                     {item.trim()}
                                   </Badge>
                                 )) || <Text fontSize="xs" color="gray.400">-</Text>}
@@ -1940,10 +2055,10 @@ export default function ApplicationDetail() {
                             </Box>
 
                             <Box>
-                              <Text fontSize="2xs" color="gray.500" fontWeight="bold">FRAMEWORKS & RUNTIME</Text>
+                              <Text fontSize="xs" color="gray.500" fontWeight="bold">FRAMEWORKS & RUNTIME</Text>
                               <Wrap mt={1}>
                                 {DataApplication?.appProgrammingFrameworks?.split(",").map((item, idx) => (
-                                  <Badge key={idx} colorScheme="purple" variant="subtle" fontSize="2xs" rounded="md" px={2} py={0.5}>
+                                  <Badge key={idx} colorScheme="purple" variant="subtle" fontSize="xs" rounded="md" px={2} py={0.5}>
                                     {item.trim()}
                                   </Badge>
                                 )) || <Text fontSize="xs" color="gray.400">-</Text>}
@@ -1951,36 +2066,36 @@ export default function ApplicationDetail() {
                             </Box>
 
                             <Box>
-                              <Text fontSize="2xs" color="gray.500" fontWeight="bold">DEVELOPMENT METHOD</Text>
+                              <Text fontSize="xs" color="gray.500" fontWeight="bold">DEVELOPMENT METHOD</Text>
                               <Text fontSize="xs" fontWeight="bold" mt={1}>
                                 {DataApplication?.appDevelopmentMethod || "Agile / Scrum"}
                               </Text>
                             </Box>
 
                             <Box>
-                              <Text fontSize="2xs" color="gray.500" fontWeight="bold">APPLICATION TYPES</Text>
+                              <Text fontSize="xs" color="gray.500" fontWeight="bold">APPLICATION TYPES</Text>
                               <Wrap mt={1}>
                                 {DataApplication?.appTypes?.split(",").map((type, idx) => (
                                   <Tag key={idx} size="sm" colorScheme="teal" rounded="md">
-                                    <TagLabel fontSize="2xs">{type.trim()}</TagLabel>
+                                    <TagLabel fontSize="xs">{type.trim()}</TagLabel>
                                   </Tag>
                                 )) || <Text fontSize="xs" color="gray.400">-</Text>}
                               </Wrap>
                             </Box>
 
                             <Box>
-                              <Text fontSize="2xs" color="gray.500" fontWeight="bold">SERVER & HOSTING LOCATION</Text>
+                              <Text fontSize="xs" color="gray.500" fontWeight="bold">SERVER & HOSTING LOCATION</Text>
                               <Wrap mt={1}>
                                 {DataApplication?.appEnvLocations?.split(",").map((loc, idx) => (
                                   <Tag key={idx} size="sm" colorScheme="orange" rounded="md">
-                                    <TagLabel fontSize="2xs">{loc.trim()}</TagLabel>
+                                    <TagLabel fontSize="xs">{loc.trim()}</TagLabel>
                                   </Tag>
                                 )) || <Text fontSize="xs" color="gray.400">-</Text>}
                               </Wrap>
                             </Box>
 
                             <Box>
-                              <Text fontSize="2xs" color="gray.500" fontWeight="bold">PRIVATE AUTH & HIGH AVAILABILITY</Text>
+                              <Text fontSize="xs" color="gray.500" fontWeight="bold">PRIVATE AUTH & HIGH AVAILABILITY</Text>
                               <HStack spacing={2} mt={1}>
                                 <Badge colorScheme={DataApplication?.appPrivateAuth === "Y" ? "green" : "gray"}>
                                   Auth: {DataApplication?.appPrivateAuth === "Y" ? "Private" : "Public"}
@@ -2011,7 +2126,7 @@ export default function ApplicationDetail() {
                           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                             <Box p={3} rounded="lg" bg={isDark ? "gray.800" : "white"} border="1px solid" borderColor={isDark ? "gray.700" : "gray.200"}>
                               <HStack justify="space-between" mb={1}>
-                                <Text fontSize="2xs" fontWeight="bold" color="blue.500">FRONTSITE (PUBLIC ACCESS)</Text>
+                                <Text fontSize="xs" fontWeight="bold" color="blue.500">FRONTSITE (PUBLIC ACCESS)</Text>
                                 <Icon as={FiGlobe} color="blue.500" />
                               </HStack>
                               <Text fontSize="xs" color="gray.500">DNS:</Text>
@@ -2022,7 +2137,7 @@ export default function ApplicationDetail() {
 
                             <Box p={3} rounded="lg" bg={isDark ? "gray.800" : "white"} border="1px solid" borderColor={isDark ? "gray.700" : "gray.200"}>
                               <HStack justify="space-between" mb={1}>
-                                <Text fontSize="2xs" fontWeight="bold" color="purple.500">BACKSITE (INTERNAL / BACKEND)</Text>
+                                <Text fontSize="xs" fontWeight="bold" color="purple.500">BACKSITE (INTERNAL / BACKEND)</Text>
                                 <Icon as={FiLock} color="purple.500" />
                               </HStack>
                               <Text fontSize="xs" color="gray.500">DNS:</Text>
@@ -2032,6 +2147,106 @@ export default function ApplicationDetail() {
                             </Box>
                           </SimpleGrid>
                         </Box>
+
+                        {/* Section 4: Project SDLC Ratio & Audit & Metadata */}
+                        <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
+                          {/* Project SDLC Ratio */}
+                          <Box
+                            p={5}
+                            rounded="xl"
+                            border="1px solid"
+                            borderColor={isDark ? "gray.700" : "gray.200"}
+                            bg={isDark ? "gray.850" : "gray.50"}
+                          >
+                            <HStack spacing={2} mb={4} color="secondary.500">
+                              <Icon as={FiBriefcase} boxSize={5} />
+                              <Heading size="xs" fontWeight="800" textTransform="uppercase" letterSpacing="wider">
+                                Project SDLC Ratio
+                              </Heading>
+                            </HStack>
+                            <VStack spacing={3} align="stretch">
+                              <Flex justify="space-between" align="center" fontSize="xs">
+                                <Text color="gray.500">Completion Rate</Text>
+                                <Text fontWeight="extrabold" color="secondary.500">{completionRate}%</Text>
+                              </Flex>
+                              <Progress
+                                value={completionRate}
+                                size="sm"
+                                colorScheme={completionRate === 100 ? "green" : "secondary"}
+                                rounded="full"
+                                bg={isDark ? "gray.700" : "gray.100"}
+                              />
+                              <HStack justify="space-between" fontSize="xs" pt={1}>
+                                <VStack align="start" spacing={0}>
+                                  <Text color="gray.500">Total Projects</Text>
+                                  <Text fontWeight="bold">{totalProjects}</Text>
+                                </VStack>
+                                <VStack align="center" spacing={0}>
+                                  <Text color="orange.500">Running</Text>
+                                  <Text fontWeight="bold" color="orange.500">{onGoingProjects}</Text>
+                                </VStack>
+                                <VStack align="end" spacing={0}>
+                                  <Text color="green.500">Completed</Text>
+                                  <Text fontWeight="bold" color="green.500">{completedProjects}</Text>
+                                </VStack>
+                              </HStack>
+                            </VStack>
+                          </Box>
+
+                          {/* Audit & Metadata */}
+                          <Box
+                            p={5}
+                            rounded="xl"
+                            border="1px solid"
+                            borderColor={isDark ? "gray.700" : "gray.200"}
+                            bg={isDark ? "gray.850" : "gray.50"}
+                          >
+                            <HStack spacing={2} mb={4} color="secondary.500">
+                              <Icon as={FiActivity} boxSize={5} />
+                              <Heading size="xs" fontWeight="800" textTransform="uppercase" letterSpacing="wider">
+                                Audit & Metadata
+                              </Heading>
+                            </HStack>
+                            <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={4} fontSize="xs">
+                              <Box>
+                                <Text color="gray.500">Created At:</Text>
+                                <Text fontWeight="semibold" mt={0.5}>
+                                  {DataApplication?.createdAt ? new Date(DataApplication.createdAt).toLocaleDateString("en-US") : "-"}
+                                </Text>
+                              </Box>
+                              <Box>
+                                <Text color="gray.500">Created By:</Text>
+                                <Text fontWeight="semibold" noOfLines={1} mt={0.5}>
+                                  {DataApplication?.createdBy || "-"}
+                                </Text>
+                              </Box>
+                              <Box>
+                                <Text color="gray.500">Updated At:</Text>
+                                <Text fontWeight="semibold" mt={0.5}>
+                                  {DataApplication?.updatedAt ? new Date(DataApplication.updatedAt).toLocaleDateString("en-US") : "-"}
+                                </Text>
+                              </Box>
+                              <Box>
+                                <Text color="gray.500">Data Status:</Text>
+                                <Box mt={0.5}>
+                                  <Badge
+                                    colorScheme={
+                                      DataApplication?.appsStatus === "ACTIVE"
+                                        ? "green"
+                                        : DataApplication?.appsStatus === "ON DEVELOPMENT"
+                                        ? "purple"
+                                        : "red"
+                                    }
+                                    fontSize="xs"
+                                    rounded="md"
+                                  >
+                                    {DataApplication?.appsStatus || "ACTIVE"}
+                                  </Badge>
+                                </Box>
+                              </Box>
+                            </SimpleGrid>
+                          </Box>
+                        </SimpleGrid>
                       </VStack>
                     </TabPanel>
 
@@ -2041,15 +2256,65 @@ export default function ApplicationDetail() {
                     <TabPanel p={{ base: 4, md: 6 }}>
                       <VStack spacing={6} align="stretch">
                         {/* Section Header */}
-                        <Flex justify="space-between" align="center">
+                        <Flex
+                          justify="space-between"
+                          align={{ base: "start", sm: "center" }}
+                          direction={{ base: "column", sm: "row" }}
+                          gap={3}
+                        >
                           <VStack align="start" spacing={0}>
                             <Heading size="xs" color={isDark ? "white" : "gray.800"}>
                               {IsEditMode ? "Edit Application Specifications & Architecture" : "Architecture & Technical Specifications"}
                             </Heading>
-                            <Text fontSize="2xs" color="gray.500">
+                            <Text fontSize="xs" color="gray.500">
                               {IsEditMode ? "Update technical information and system configuration." : "Detailed technical information regarding architecture, programming languages, and environment."}
                             </Text>
                           </VStack>
+
+                          {!IsEditMode ? (
+                            <Button
+                              leftIcon={<FiEdit />}
+                              size="md"
+                              colorScheme="secondary"
+                              variant="outline"
+                              rounded="xl"
+                              px={5}
+                              fontSize="md"
+                              fontWeight="bold"
+                              onClick={() => setIsEditMode(true)}
+                            >
+                              Edit Specifications
+                            </Button>
+                          ) : (
+                            <HStack spacing={2} alignSelf={{ base: "flex-end", sm: "center" }}>
+                              <Button
+                                leftIcon={<FiX />}
+                                size="md"
+                                variant="ghost"
+                                rounded="xl"
+                                fontSize="md"
+                                onClick={() => {
+                                  setIsEditMode(false);
+                                  LoadApplicationData();
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                leftIcon={<FiSave />}
+                                colorScheme="secondary"
+                                size="md"
+                                rounded="xl"
+                                px={5}
+                                fontSize="md"
+                                fontWeight="bold"
+                                isLoading={IsLoadingProcess}
+                                onClick={handleSave}
+                              >
+                                Save Changes
+                              </Button>
+                            </HStack>
+                          )}
                         </Flex>
 
                         <Divider borderColor={isDark ? "gray.700" : "gray.200"} />
@@ -2076,7 +2341,7 @@ export default function ApplicationDetail() {
                             <HStack justify="space-between" align="center" mb={1}>
                               <FormLabel fontSize="xs" fontWeight="bold" mb={0}>Short Name</FormLabel>
                               {IsEditMode && (
-                                <Badge colorScheme="gray" fontSize="3xs" rounded="md">
+                                <Badge colorScheme="gray" fontSize="xs" rounded="md">
                                   Locked (Read Only)
                                 </Badge>
                               )}
@@ -2096,7 +2361,7 @@ export default function ApplicationDetail() {
                                     placeholder="Example: CBS"
                                   />
                                 </Tooltip>
-                                <Text fontSize="3xs" color="gray.500" mt={1}>
+                                <Text fontSize="xs" color="gray.500" mt={1}>
                                   *Application short name is permanent and cannot be edited.
                                 </Text>
                               </Box>
@@ -2342,15 +2607,65 @@ export default function ApplicationDetail() {
                         ────────────────────────────────────────────────────────── */}
                     <TabPanel p={{ base: 4, md: 6 }}>
                       <VStack spacing={6} align="stretch">
-                        <Flex justify="space-between" align="center">
+                        <Flex
+                          justify="space-between"
+                          align={{ base: "start", sm: "center" }}
+                          direction={{ base: "column", sm: "row" }}
+                          gap={3}
+                        >
                           <VStack align="start" spacing={0}>
                             <Heading size="xs" color={isDark ? "white" : "gray.800"}>
                               Governance Structure & Management Team
                             </Heading>
-                            <Text fontSize="2xs" color="gray.500">
+                            <Text fontSize="xs" color="gray.500">
                               Configuration for IT managing division, business owner, assigned PICs, and operational hours.
                             </Text>
                           </VStack>
+
+                          {!IsEditMode ? (
+                            <Button
+                              leftIcon={<FiEdit />}
+                              size="md"
+                              colorScheme="secondary"
+                              variant="outline"
+                              rounded="xl"
+                              px={5}
+                              fontSize="md"
+                              fontWeight="bold"
+                              onClick={() => setIsEditMode(true)}
+                            >
+                              Edit Governance
+                            </Button>
+                          ) : (
+                            <HStack spacing={2} alignSelf={{ base: "flex-end", sm: "center" }}>
+                              <Button
+                                leftIcon={<FiX />}
+                                size="md"
+                                variant="ghost"
+                                rounded="xl"
+                                fontSize="md"
+                                onClick={() => {
+                                  setIsEditMode(false);
+                                  LoadApplicationData();
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                leftIcon={<FiSave />}
+                                colorScheme="secondary"
+                                size="md"
+                                rounded="xl"
+                                px={5}
+                                fontSize="md"
+                                fontWeight="bold"
+                                isLoading={IsLoadingProcess}
+                                onClick={handleSave}
+                              >
+                                Save Changes
+                              </Button>
+                            </HStack>
+                          )}
                         </Flex>
 
                         {/* In-tab Warning Banner if Governance is Incomplete */}
@@ -2393,7 +2708,7 @@ export default function ApplicationDetail() {
                                 <Heading size="xs" fontWeight="bold">IT Management Division</Heading>
                               </HStack>
                               {isITManagementEmpty && (
-                                <Badge colorScheme="red" fontSize="3xs" rounded="md" px={2} py={0.5}>
+                                <Badge colorScheme="red" fontSize="xs" rounded="md" px={2} py={0.5}>
                                   Required
                                 </Badge>
                               )}
@@ -2401,7 +2716,7 @@ export default function ApplicationDetail() {
 
                             <VStack spacing={3} align="stretch">
                               <FormControl isRequired={IsEditMode}>
-                                <FormLabel fontSize="2xs" fontWeight="bold">IT Managing Division</FormLabel>
+                                <FormLabel fontSize="xs" fontWeight="bold">IT Managing Division</FormLabel>
                                 {IsEditMode ? (
                                   <Select
                                     options={divisionOptions}
@@ -2420,7 +2735,7 @@ export default function ApplicationDetail() {
                               </FormControl>
 
                               <FormControl>
-                                <FormLabel fontSize="2xs" fontWeight="bold">IT Managing Group</FormLabel>
+                                <FormLabel fontSize="xs" fontWeight="bold">IT Managing Group</FormLabel>
                                 {IsEditMode ? (
                                   <Select
                                     options={groupOptions.filter((g) => !formData.appManageByDivisionId || g.parentId === formData.appManageByDivisionId)}
@@ -2434,7 +2749,7 @@ export default function ApplicationDetail() {
                               </FormControl>
 
                               <FormControl>
-                                <FormLabel fontSize="2xs" fontWeight="bold">IT Managing PIC</FormLabel>
+                                <FormLabel fontSize="xs" fontWeight="bold">IT Managing PIC</FormLabel>
                                 {IsEditMode ? (
                                   <VStack align="stretch" spacing={2}>
                                     <InputGroup size="sm">
@@ -2461,7 +2776,7 @@ export default function ApplicationDetail() {
                                       editMode={IsEditMode}
                                     />
                                     {formData.appManagePicName && (
-                                      <Text fontSize="2xs" color="green.500" fontWeight="bold">
+                                      <Text fontSize="xs" color="green.500" fontWeight="bold">
                                         Selected: {formData.appManagePicName} ({formData.appManagePicUserId})
                                       </Text>
                                     )}
@@ -2487,7 +2802,7 @@ export default function ApplicationDetail() {
                                 <Heading size="xs" fontWeight="bold">Business Owner Division</Heading>
                               </HStack>
                               {isBusinessOwnerEmpty && (
-                                <Badge colorScheme="red" fontSize="3xs" rounded="md" px={2} py={0.5}>
+                                <Badge colorScheme="red" fontSize="xs" rounded="md" px={2} py={0.5}>
                                   Required
                                 </Badge>
                               )}
@@ -2495,7 +2810,7 @@ export default function ApplicationDetail() {
 
                             <VStack spacing={3} align="stretch">
                               <FormControl isRequired={IsEditMode}>
-                                <FormLabel fontSize="2xs" fontWeight="bold">Business Owner Division</FormLabel>
+                                <FormLabel fontSize="xs" fontWeight="bold">Business Owner Division</FormLabel>
                                 {IsEditMode ? (
                                   <Select
                                     options={divisionOptions}
@@ -2514,7 +2829,7 @@ export default function ApplicationDetail() {
                               </FormControl>
 
                               <FormControl>
-                                <FormLabel fontSize="2xs" fontWeight="bold">Business Owner Group</FormLabel>
+                                <FormLabel fontSize="xs" fontWeight="bold">Business Owner Group</FormLabel>
                                 {IsEditMode ? (
                                   <Select
                                     options={groupOptions.filter((g) => !formData.appBusinessOwnerDivisionId || g.parentId === formData.appBusinessOwnerDivisionId)}
@@ -2528,7 +2843,7 @@ export default function ApplicationDetail() {
                               </FormControl>
 
                               <FormControl>
-                                <FormLabel fontSize="2xs" fontWeight="bold">Business Owner PIC</FormLabel>
+                                <FormLabel fontSize="xs" fontWeight="bold">Business Owner PIC</FormLabel>
                                 {IsEditMode ? (
                                   <VStack align="stretch" spacing={2}>
                                     <InputGroup size="sm">
@@ -2555,7 +2870,7 @@ export default function ApplicationDetail() {
                                       editMode={IsEditMode}
                                     />
                                     {formData.appBusinessOwnerPicName && (
-                                      <Text fontSize="2xs" color="purple.500" fontWeight="bold">
+                                      <Text fontSize="xs" color="purple.500" fontWeight="bold">
                                         Selected: {formData.appBusinessOwnerPicName} ({formData.appBusinessOwnerPicUserId})
                                       </Text>
                                     )}
@@ -2576,7 +2891,7 @@ export default function ApplicationDetail() {
 
                             <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
                               <FormControl>
-                                <FormLabel fontSize="2xs" fontWeight="bold">24/7 Full Service (24/7)</FormLabel>
+                                <FormLabel fontSize="xs" fontWeight="bold">24/7 Full Service (24/7)</FormLabel>
                                 {IsEditMode ? (
                                   <RadioGroup
                                     value={formData.appOperational24hrs}
@@ -2595,7 +2910,7 @@ export default function ApplicationDetail() {
                               </FormControl>
 
                               <FormControl>
-                                <FormLabel fontSize="2xs" fontWeight="bold">Opening Hours</FormLabel>
+                                <FormLabel fontSize="xs" fontWeight="bold">Opening Hours</FormLabel>
                                 {IsEditMode ? (
                                   <Input
                                     size="sm"
@@ -2610,7 +2925,7 @@ export default function ApplicationDetail() {
                               </FormControl>
 
                               <FormControl>
-                                <FormLabel fontSize="2xs" fontWeight="bold">Closing Hours</FormLabel>
+                                <FormLabel fontSize="xs" fontWeight="bold">Closing Hours</FormLabel>
                                 {IsEditMode ? (
                                   <Input
                                     size="sm"
@@ -2664,11 +2979,11 @@ export default function ApplicationDetail() {
                                   <Heading size="xs" color={isDark ? "white" : "gray.800"}>
                                     Connected Projects Portfolio
                                   </Heading>
-                                  <Badge colorScheme="purple" fontSize="3xs" rounded="full" px={2}>
+                                  <Badge colorScheme="purple" fontSize="xs" rounded="full" px={2}>
                                     {projectsTotal} Projects
                                   </Badge>
                                 </HStack>
-                                <Text fontSize="2xs" color="gray.500">
+                                <Text fontSize="xs" color="gray.500">
                                   List of project initiations, SDLC implementations, and system procurements linked to this application.
                                 </Text>
                               </Box>
@@ -2696,7 +3011,7 @@ export default function ApplicationDetail() {
                             <CardBody p={3.5}>
                               <HStack justify="space-between">
                                 <VStack align="start" spacing={0}>
-                                  <Text fontSize="3xs" fontWeight="bold" textTransform="uppercase" color="gray.500" letterSpacing="wider">
+                                  <Text fontSize="xs" fontWeight="bold" textTransform="uppercase" color="gray.500" letterSpacing="wider">
                                     Total Projects
                                   </Text>
                                   <Heading size="md" color={isDark ? "white" : "gray.800"}>
@@ -2714,7 +3029,7 @@ export default function ApplicationDetail() {
                             <CardBody p={3.5}>
                               <HStack justify="space-between">
                                 <VStack align="start" spacing={0}>
-                                  <Text fontSize="3xs" fontWeight="bold" textTransform="uppercase" color="blue.500" letterSpacing="wider">
+                                  <Text fontSize="xs" fontWeight="bold" textTransform="uppercase" color="blue.500" letterSpacing="wider">
                                     Ongoing
                                   </Text>
                                   <Heading size="md" color="blue.500">
@@ -2732,7 +3047,7 @@ export default function ApplicationDetail() {
                             <CardBody p={3.5}>
                               <HStack justify="space-between">
                                 <VStack align="start" spacing={0}>
-                                  <Text fontSize="3xs" fontWeight="bold" textTransform="uppercase" color="green.500" letterSpacing="wider">
+                                  <Text fontSize="xs" fontWeight="bold" textTransform="uppercase" color="green.500" letterSpacing="wider">
                                     Completed (Done)
                                   </Text>
                                   <Heading size="md" color="green.500">
@@ -2750,7 +3065,7 @@ export default function ApplicationDetail() {
                             <CardBody p={3.5}>
                               <HStack justify="space-between">
                                 <VStack align="start" spacing={0}>
-                                  <Text fontSize="3xs" fontWeight="bold" textTransform="uppercase" color="secondary.500" letterSpacing="wider">
+                                  <Text fontSize="xs" fontWeight="bold" textTransform="uppercase" color="secondary.500" letterSpacing="wider">
                                     Average Progress
                                   </Text>
                                   <Heading size="md" color="secondary.500">
@@ -2894,12 +3209,12 @@ export default function ApplicationDetail() {
                                           bg={isDark ? "rgba(147, 51, 234, 0.2)" : "purple.50"}
                                           color={isDark ? "purple.300" : "purple.700"}
                                           fontWeight="bold"
-                                          fontSize="2xs"
+                                          fontSize="xs"
                                         >
                                           {prj.projectNo || prj.projectCode || "PRJ"}
                                         </Badge>
                                         {prj.projectType && (
-                                          <Badge fontSize="3xs" variant="outline" colorScheme="gray" rounded="md">
+                                          <Badge fontSize="xs" variant="outline" colorScheme="gray" rounded="md">
                                             {prj.projectType.replace(/_/g, " ")}
                                           </Badge>
                                         )}
@@ -2912,7 +3227,7 @@ export default function ApplicationDetail() {
                                         bg={statusStyle.bg}
                                         color={statusStyle.color}
                                         fontWeight="semibold"
-                                        fontSize="3xs"
+                                        fontSize="xs"
                                       >
                                         {statusStyle.label}
                                       </Badge>
@@ -2929,7 +3244,7 @@ export default function ApplicationDetail() {
                                       >
                                         {prj.projectName}
                                       </Heading>
-                                      <Text fontSize="2xs" color="gray.500" noOfLines={2} lineHeight="tall">
+                                      <Text fontSize="xs" color="gray.500" noOfLines={2} lineHeight="tall">
                                         {prj.projectDesc || "No detailed project description available."}
                                       </Text>
                                     </Box>
@@ -2939,11 +3254,11 @@ export default function ApplicationDetail() {
                                       <Flex justify="space-between" align="center" mb={1.5}>
                                         <HStack spacing={1.5}>
                                           <Icon as={FiLayers} boxSize={3} color="purple.500" />
-                                          <Text fontSize="3xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.700"}>
+                                          <Text fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.700"}>
                                             Stage: {prj.sdlcStageName || "SDLC Initiation"}
                                           </Text>
                                         </HStack>
-                                        <Text fontSize="3xs" fontWeight="bold" color={progress === 100 ? "green.500" : "purple.500"}>
+                                        <Text fontSize="xs" fontWeight="bold" color={progress === 100 ? "green.500" : "purple.500"}>
                                           {progress}%
                                         </Text>
                                       </Flex>
@@ -2959,12 +3274,12 @@ export default function ApplicationDetail() {
                                     {/* Requirement Ref & PIC/Team */}
                                     <Flex justify="space-between" align="center" pt={1}>
                                       {prj.requirementData?.reqNumber ? (
-                                        <HStack spacing={1} fontSize="3xs" color="gray.500">
+                                        <HStack spacing={1} fontSize="xs" color="gray.500">
                                           <Icon as={FiFileText} />
                                           <Text fontWeight="medium">{prj.requirementData.reqNumber}</Text>
                                         </HStack>
                                       ) : (
-                                        <HStack spacing={1} fontSize="3xs" color="gray.500">
+                                        <HStack spacing={1} fontSize="xs" color="gray.500">
                                           <Icon as={FiCalendar} />
                                           <Text>
                                             {prj.projectRegisterDate
@@ -2980,12 +3295,12 @@ export default function ApplicationDetail() {
 
                                       {/* Assigned Users Avatar Stack */}
                                       {prj.userAssignment && prj.userAssignment.length > 0 ? (
-                                        <AvatarGroup size="2xs" max={3} spacing="-0.75rem">
+                                        <AvatarGroup size="xs" max={3} spacing="-0.75rem">
                                           {prj.userAssignment.map((assign, idx) => (
                                             <Tooltip
                                               key={assign.id || idx}
                                               label={`${assign.userData?.nama || "User"} (${assign.userData?.teamRole?.specName || "Team Member"})`}
-                                              fontSize="3xs"
+                                              fontSize="xs"
                                               rounded="md"
                                             >
                                               <Avatar
@@ -2997,7 +3312,7 @@ export default function ApplicationDetail() {
                                           ))}
                                         </AvatarGroup>
                                       ) : (
-                                        <Text fontSize="3xs" color="gray.400" fontStyle="italic">
+                                        <Text fontSize="xs" color="gray.400" fontStyle="italic">
                                           No PIC assigned
                                         </Text>
                                       )}
@@ -3007,7 +3322,7 @@ export default function ApplicationDetail() {
 
                                     {/* Action Link to Project Detail */}
                                     <Flex justify="space-between" align="center">
-                                      <Text fontSize="3xs" color="gray.400" noOfLines={1} maxW="60%">
+                                      <Text fontSize="xs" color="gray.400" noOfLines={1} maxW="60%">
                                         {prj.proManageByDivisionName || prj.proOwnerDivisionName || "IT Division"}
                                       </Text>
                                       <Button
@@ -3015,7 +3330,7 @@ export default function ApplicationDetail() {
                                         variant="ghost"
                                         colorScheme="purple"
                                         rightIcon={<FiExternalLink />}
-                                        fontSize="3xs"
+                                        fontSize="xs"
                                         onClick={() => router.push(`/project-development/detail?id=${prj.id}`)}
                                       >
                                         Project Details
@@ -3049,7 +3364,7 @@ export default function ApplicationDetail() {
                             </Box>
                             <VStack align="start" spacing={0}>
                               <Heading size="xs" color={isDark ? "white" : "gray.800"}>Assessment Reports</Heading>
-                              <Text fontSize="2xs" color="gray.500">{assessmentTotal} application criticality assessment reports</Text>
+                              <Text fontSize="xs" color="gray.500">{assessmentTotal} application criticality assessment reports</Text>
                             </VStack>
                           </HStack>
 
@@ -3097,10 +3412,10 @@ export default function ApplicationDetail() {
                                 <Flex direction={{ base: "column", sm: "row" }} justify="space-between" align={{ base: "start", sm: "center" }} gap={3}>
                                   <VStack align="start" spacing={1.5} flex={1}>
                                     <HStack spacing={2} wrap="wrap">
-                                      <Badge colorScheme="purple" fontFamily="mono" fontSize="2xs" px={2} rounded="md">
+                                      <Badge colorScheme="purple" fontFamily="mono" fontSize="xs" px={2} rounded="md">
                                         {a.batchCode}
                                       </Badge>
-                                      <Badge colorScheme="blue" variant="outline" fontSize="2xs" px={2} rounded="md">
+                                      <Badge colorScheme="blue" variant="outline" fontSize="xs" px={2} rounded="md">
                                         {a.quartalReport} {a.yearReport}
                                       </Badge>
                                       <Badge
@@ -3109,17 +3424,17 @@ export default function ApplicationDetail() {
                                           a.statusReport === "DECLINE" ? "red" :
                                           a.statusReport?.includes("WAITING") ? "orange" : "gray"
                                         }
-                                        fontSize="2xs"
+                                        fontSize="xs"
                                         rounded="full"
                                       >
                                         {a.statusReport}
                                       </Badge>
                                       {a.isFullyReviewed ? (
-                                        <Badge colorScheme="green" variant="subtle" fontSize="2xs" rounded="full">
+                                        <Badge colorScheme="green" variant="subtle" fontSize="xs" rounded="full">
                                           Reviewed ({a.filledCount}/{a.totalCount})
                                         </Badge>
                                       ) : (
-                                        <Badge colorScheme="orange" variant="subtle" fontSize="2xs" rounded="full">
+                                        <Badge colorScheme="orange" variant="subtle" fontSize="xs" rounded="full">
                                           Pending ({a.filledCount}/{a.totalCount})
                                         </Badge>
                                       )}
@@ -3177,11 +3492,11 @@ export default function ApplicationDetail() {
                                 <Heading size="xs" color={isDark ? "white" : "gray.800"}>
                                   Application Environment & Server Topology
                                 </Heading>
-                                <Badge colorScheme="purple" fontSize="3xs" rounded="full" px={2}>
+                                <Badge colorScheme="purple" fontSize="xs" rounded="full" px={2}>
                                   {serverEnvironments.length} Nodes
                                 </Badge>
                               </HStack>
-                              <Text fontSize="2xs" color="gray.500">
+                              <Text fontSize="xs" color="gray.500">
                                 Server role configurations, site segments, DC1/DC2 primary flags, hardening posture & dual deploy architecture.
                               </Text>
                             </VStack>
@@ -3192,44 +3507,21 @@ export default function ApplicationDetail() {
                               <>
                                 <Button
                                   leftIcon={<FiX />}
-                                  size="sm"
+                                  size="md"
                                   variant="ghost"
                                   rounded="xl"
-                                  fontSize="xs"
-                                  onClick={() => {
-                                    setIsEditMode(false);
-                                    setIsAddServerHidden(false);
-                                    const stored = localStorage.getItem(`app_env_servers_${appId}`);
-                                    if (stored) {
-                                      try {
-                                        setServerEnvironments(JSON.parse(stored));
-                                      } catch (e) {
-                                        console.error(e);
-                                      }
-                                    }
-                                    const storedAccess = localStorage.getItem(`app_env_access_${appId}`);
-                                    if (storedAccess) {
-                                      try {
-                                        const parsedAccess = JSON.parse(storedAccess);
-                                        if (parsedAccess.linkAksesEnv) setLinkAksesEnv(parsedAccess.linkAksesEnv);
-                                        if (parsedAccess.linkAksesUrl !== undefined) setLinkAksesUrl(parsedAccess.linkAksesUrl);
-                                        if (parsedAccess.testUser !== undefined) setTestUser(parsedAccess.testUser);
-                                        if (parsedAccess.testData !== undefined) setTestData(parsedAccess.testData);
-                                      } catch (e) {
-                                        console.error(e);
-                                      }
-                                    }
-                                  }}
+                                  fontSize="md"
+                                  onClick={handleCancelEnvironmentEdit}
                                 >
                                   Cancel
                                 </Button>
                                 <Button
                                   leftIcon={<FiSave />}
                                   colorScheme="secondary"
-                                  size="sm"
+                                  size="md"
                                   rounded="xl"
-                                  px={4}
-                                  fontSize="xs"
+                                  px={5}
+                                  fontSize="md"
                                   fontWeight="bold"
                                   isLoading={IsLoadingProcess}
                                   onClick={handleSave}
@@ -3240,12 +3532,12 @@ export default function ApplicationDetail() {
                             ) : (
                               <Button
                                 leftIcon={<FiEdit />}
-                                size="sm"
+                                size="md"
                                 colorScheme="secondary"
                                 variant="outline"
                                 rounded="xl"
-                                px={4}
-                                fontSize="xs"
+                                px={5}
+                                fontSize="md"
                                 fontWeight="bold"
                                 onClick={() => setIsEditMode(true)}
                               >
@@ -3266,10 +3558,10 @@ export default function ApplicationDetail() {
                           >
                             <HStack justify="space-between">
                               <VStack align="start" spacing={0}>
-                                <Text fontSize="3xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
+                                <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
                                   Total Servers
                                 </Text>
-                                <Heading size="sm" color={isDark ? "white" : "gray.800"}>
+                                <Heading size="md" color={isDark ? "white" : "gray.800"}>
                                   {serverEnvironments.length}
                                 </Heading>
                               </VStack>
@@ -3288,10 +3580,10 @@ export default function ApplicationDetail() {
                           >
                             <HStack justify="space-between">
                               <VStack align="start" spacing={0}>
-                                <Text fontSize="3xs" fontWeight="bold" color="green.500" textTransform="uppercase">
+                                <Text fontSize="xs" fontWeight="bold" color="green.500" textTransform="uppercase">
                                   Status Aktif
                                 </Text>
-                                <Heading size="sm" color="green.500">
+                                <Heading size="md" color="green.500">
                                   {serverEnvironments.filter((s) => s.status === "Aktif").length}
                                 </Heading>
                               </VStack>
@@ -3310,10 +3602,10 @@ export default function ApplicationDetail() {
                           >
                             <HStack justify="space-between">
                               <VStack align="start" spacing={0}>
-                                <Text fontSize="3xs" fontWeight="bold" color="blue.500" textTransform="uppercase">
+                                <Text fontSize="xs" fontWeight="bold" color="blue.500" textTransform="uppercase">
                                   Primary DC1 Nodes
                                 </Text>
-                                <Heading size="sm" color="blue.500">
+                                <Heading size="md" color="blue.500">
                                   {serverEnvironments.filter((s) => s.primary === "DC1").length}
                                 </Heading>
                               </VStack>
@@ -3332,10 +3624,10 @@ export default function ApplicationDetail() {
                           >
                             <HStack justify="space-between">
                               <VStack align="start" spacing={0}>
-                                <Text fontSize="3xs" fontWeight="bold" color="purple.500" textTransform="uppercase">
+                                <Text fontSize="xs" fontWeight="bold" color="purple.500" textTransform="uppercase">
                                   Primary DC2 Nodes
                                 </Text>
-                                <Heading size="sm" color="purple.500">
+                                <Heading size="md" color="purple.500">
                                   {serverEnvironments.filter((s) => s.primary === "DC2").length}
                                 </Heading>
                               </VStack>
@@ -3386,7 +3678,7 @@ export default function ApplicationDetail() {
                                         </Heading>
                                         <Badge
                                           colorScheme={linkAksesEnv === "Dev" ? "blue" : "green"}
-                                          fontSize="3xs"
+                                          fontSize="xs"
                                           rounded="md"
                                           px={2}
                                           fontWeight="bold"
@@ -3394,7 +3686,7 @@ export default function ApplicationDetail() {
                                           {linkAksesEnv}
                                         </Badge>
                                       </HStack>
-                                      <Text fontSize="2xs" color="gray.500">
+                                      <Text fontSize="xs" color="gray.500">
                                         Pilih lingkungan Dev atau Prod untuk konfigurasi URL akses dan kredensial pengujian.
                                       </Text>
                                     </VStack>
@@ -3409,30 +3701,30 @@ export default function ApplicationDetail() {
                                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                                   {/* Selection: Dev / Prod */}
                                   <FormControl>
-                                    <FormLabel fontSize="2xs" fontWeight="bold" textTransform="uppercase" color="gray.500">
+                                    <FormLabel fontSize="xs" fontWeight="bold" textTransform="uppercase" color="gray.500">
                                       Link Akses Lingkungan
                                     </FormLabel>
                                     <HStack spacing={2} mt={1}>
                                       <Button
-                                        size="sm"
+                                        size="md"
                                         rounded="lg"
                                         variant={linkAksesEnv === "Dev" ? "solid" : "outline"}
                                         colorScheme={linkAksesEnv === "Dev" ? "blue" : "gray"}
                                         onClick={() => setLinkAksesEnv("Dev")}
                                         px={5}
-                                        fontSize="xs"
+                                        fontSize="md"
                                         fontWeight="bold"
                                       >
                                         Dev
                                       </Button>
                                       <Button
-                                        size="sm"
+                                        size="md"
                                         rounded="lg"
                                         variant={linkAksesEnv === "Prod" ? "solid" : "outline"}
                                         colorScheme={linkAksesEnv === "Prod" ? "green" : "gray"}
                                         onClick={() => setLinkAksesEnv("Prod")}
                                         px={5}
-                                        fontSize="xs"
+                                        fontSize="md"
                                         fontWeight="bold"
                                       >
                                         Prod
@@ -3442,12 +3734,12 @@ export default function ApplicationDetail() {
 
                                   {/* URL Link Akses */}
                                   <FormControl>
-                                    <FormLabel fontSize="2xs" fontWeight="bold" textTransform="uppercase" color="gray.500">
+                                    <FormLabel fontSize="xs" fontWeight="bold" textTransform="uppercase" color="gray.500">
                                       URL Link Akses ({linkAksesEnv})
                                     </FormLabel>
                                     {IsEditMode ? (
                                       <Input
-                                        size="sm"
+                                        size="md"
                                         rounded="lg"
                                         placeholder="URL Link Akses"
                                         value={linkAksesUrl}
@@ -3501,19 +3793,19 @@ export default function ApplicationDetail() {
                                   >
                                     <HStack mb={2.5} spacing={1.5} color="blue.500">
                                       <Icon as={FiCheckCircle} boxSize={4} />
-                                      <Text fontSize="2xs" fontWeight="bold" textTransform="uppercase" letterSpacing="wide">
+                                      <Text fontSize="xs" fontWeight="bold" textTransform="uppercase" letterSpacing="wide">
                                         Parameter Pengujian (Environment Development)
                                       </Text>
                                     </HStack>
 
                                     <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
                                       <FormControl>
-                                        <FormLabel fontSize="2xs" fontWeight="bold" color="gray.500">
+                                        <FormLabel fontSize="xs" fontWeight="bold" color="gray.500">
                                           Test User
                                         </FormLabel>
                                         {IsEditMode ? (
                                           <Input
-                                            size="sm"
+                                            size="md"
                                             rounded="lg"
                                             placeholder="Test User"
                                             value={testUser}
@@ -3535,12 +3827,12 @@ export default function ApplicationDetail() {
                                       </FormControl>
 
                                       <FormControl>
-                                        <FormLabel fontSize="2xs" fontWeight="bold" color="gray.500">
+                                        <FormLabel fontSize="xs" fontWeight="bold" color="gray.500">
                                           Test Data
                                         </FormLabel>
                                         {IsEditMode ? (
                                           <Input
-                                            size="sm"
+                                            size="md"
                                             rounded="lg"
                                             placeholder="Test Data"
                                             value={testData}
@@ -3603,11 +3895,11 @@ export default function ApplicationDetail() {
                                   <Heading size="xs" color={isDark ? "white" : "gray.800"}>
                                     Daftar Server Node & Virtual Machine
                                   </Heading>
-                                  <Badge colorScheme="purple" fontSize="3xs" rounded="full" px={2}>
+                                  <Badge colorScheme="purple" fontSize="xs" rounded="full" px={2}>
                                     {serverEnvironments.length} Nodes
                                   </Badge>
                                 </HStack>
-                                <Text fontSize="2xs" color="gray.500">
+                                <Text fontSize="xs" color="gray.500">
                                   Konfigurasi server role, site segment, DC1/DC2 primary flag, hardening, PAM, dual deploy & spesifikasi VM.
                                 </Text>
                               </VStack>
@@ -3616,12 +3908,12 @@ export default function ApplicationDetail() {
                             {!isAddServerHidden && (
                               <Button
                                 leftIcon={<FiPlus />}
-                                size="sm"
+                                size="md"
                                 colorScheme="purple"
                                 variant="outline"
                                 rounded="xl"
-                                px={3.5}
-                                fontSize="xs"
+                                px={4}
+                                fontSize="md"
                                 fontWeight="bold"
                                 onClick={handleAddServer}
                               >
@@ -3649,7 +3941,7 @@ export default function ApplicationDetail() {
                             </Text>
                             <Button
                               leftIcon={<FiPlus />}
-                              size="sm"
+                              size="md"
                               colorScheme="secondary"
                               rounded="xl"
                               onClick={handleAddServer}
@@ -3658,7 +3950,12 @@ export default function ApplicationDetail() {
                             </Button>
                           </Box>
                         ) : (
-                          <Accordion allowMultiple defaultIndex={[0]} w="full">
+                          <Accordion
+                            allowMultiple
+                            index={serverAccordionIndices}
+                            onChange={(indices) => setServerAccordionIndices(indices as number[])}
+                            w="full"
+                          >
                             {serverEnvironments.map((srv, index) => {
                               const isDc1 = srv.primary === "DC1";
                               const isDc2 = srv.primary === "DC2";
@@ -3681,6 +3978,9 @@ export default function ApplicationDetail() {
                               return (
                                 <AccordionItem
                                   key={srv.id || index}
+                                  id={`server-node-${srv.id || index}`}
+                                  data-server-node={srv.id || index}
+                                  style={{ scrollMarginTop: "120px" }}
                                   mb={4}
                                   rounded="xl"
                                   border="1px solid"
@@ -3697,6 +3997,9 @@ export default function ApplicationDetail() {
                                   {IsEditMode ? (
                                     /* Edit Mode: Parent fields as inputs */
                                     <Box
+                                      id={`server-node-${srv.id || index}`}
+                                      data-server-node={srv.id || index}
+                                      style={{ scrollMarginTop: "120px" }}
                                       p={4}
                                       bg={isDark ? "gray.800" : "gray.50"}
                                       borderBottom="1px solid"
@@ -3712,7 +4015,7 @@ export default function ApplicationDetail() {
                                           </Text>
                                           <Badge
                                             colorScheme={isDc1 ? "blue" : isDc2 ? "purple" : "gray"}
-                                            fontSize="3xs"
+                                            fontSize="xs"
                                             rounded="full"
                                             px={2}
                                           >
@@ -3734,9 +4037,9 @@ export default function ApplicationDetail() {
                                       <SimpleGrid columns={{ base: 1, sm: 2, md: 4 }} spacing={3}>
                                         {/* Role Server */}
                                         <FormControl isRequired>
-                                          <FormLabel fontSize="2xs" fontWeight="bold">Role Server</FormLabel>
+                                          <FormLabel fontSize="xs" fontWeight="bold">Role Server</FormLabel>
                                           <ChakraSelect
-                                            size="sm"
+                                            size="md"
                                             rounded="lg"
                                             value={
                                               STANDARD_ROLE_SERVERS.includes(srv.roleServer as any)
@@ -3765,7 +4068,7 @@ export default function ApplicationDetail() {
                                             !STANDARD_ROLE_SERVERS.includes(srv.roleServer as any)) && (
                                             <Input
                                               mt={1.5}
-                                              size="sm"
+                                              size="md"
                                               rounded="lg"
                                               placeholder="Role Server"
                                               value={
@@ -3781,9 +4084,9 @@ export default function ApplicationDetail() {
 
                                         {/* Role Detail */}
                                         <FormControl isRequired>
-                                          <FormLabel fontSize="2xs" fontWeight="bold">Role Detail</FormLabel>
+                                          <FormLabel fontSize="xs" fontWeight="bold">Role Detail</FormLabel>
                                           <Input
-                                            size="sm"
+                                            size="md"
                                             rounded="lg"
                                             value={srv.roleDetail}
                                             onChange={(e) => handleUpdateServer(index, "roleDetail", e.target.value)}
@@ -3793,9 +4096,9 @@ export default function ApplicationDetail() {
 
                                         {/* Status */}
                                         <FormControl isRequired>
-                                          <FormLabel fontSize="2xs" fontWeight="bold">Status</FormLabel>
+                                          <FormLabel fontSize="xs" fontWeight="bold">Status</FormLabel>
                                           <ChakraSelect
-                                            size="sm"
+                                            size="md"
                                             rounded="lg"
                                             value={srv.status}
                                             onChange={(e) =>
@@ -3810,7 +4113,7 @@ export default function ApplicationDetail() {
                                         {/* IP Address & Primary */}
                                         <FormControl isRequired>
                                           <HStack justify="space-between" mb={1}>
-                                            <FormLabel fontSize="2xs" fontWeight="bold" mb={0}>
+                                            <FormLabel fontSize="xs" fontWeight="bold" mb={0}>
                                               IP Address
                                             </FormLabel>
                                             <Tooltip
@@ -3820,7 +4123,7 @@ export default function ApplicationDetail() {
                                             >
                                               <Badge
                                                 colorScheme={isDc1 ? "blue" : isDc2 ? "purple" : "gray"}
-                                                fontSize="3xs"
+                                                fontSize="xs"
                                                 rounded="md"
                                                 cursor="help"
                                               >
@@ -3829,7 +4132,7 @@ export default function ApplicationDetail() {
                                             </Tooltip>
                                           </HStack>
                                           <Input
-                                            size="sm"
+                                            size="md"
                                             rounded="lg"
                                             fontFamily="mono"
                                             value={srv.ipAddress}
@@ -3837,7 +4140,7 @@ export default function ApplicationDetail() {
                                             placeholder="IP Address"
                                           />
                                           <HStack justify="space-between" mt={1}>
-                                            <Text fontSize="3xs" color="gray.500">
+                                            <Text fontSize="xs" color="gray.500">
                                               Primary Override:
                                             </Text>
                                             <ChakraSelect
@@ -3869,7 +4172,7 @@ export default function ApplicationDetail() {
                                         bg={isDark ? "gray.750" : "gray.100"}
                                         _hover={{ bg: isDark ? "gray.700" : "gray.200" }}
                                       >
-                                        <HStack spacing={1.5} fontSize="3xs" color={isDark ? "gray.300" : "gray.600"} fontWeight="bold">
+                                        <HStack spacing={1.5} fontSize="xs" color={isDark ? "gray.300" : "gray.600"} fontWeight="bold">
                                           <Icon as={FiLayers} color="gray.500" />
                                           <Text>Edit Child Parameters (Network, Governance, Dual Deploy & VM Specification)</Text>
                                         </HStack>
@@ -3879,6 +4182,9 @@ export default function ApplicationDetail() {
                                   ) : (
                                     /* View Mode: Parent fields as clean grey header */
                                     <AccordionButton
+                                      id={`server-node-${srv.id || index}`}
+                                      data-server-node={srv.id || index}
+                                      style={{ scrollMarginTop: "120px" }}
                                       py={3.5}
                                       px={{ base: 4, md: 5 }}
                                       bg={isDark ? "gray.800" : "gray.50"}
@@ -3921,21 +4227,21 @@ export default function ApplicationDetail() {
                                           </Box>
                                           <VStack align="start" spacing={0.5}>
                                             <HStack spacing={2} wrap="wrap">
-                                              <Text fontSize="3xs" fontWeight="800" color="gray.500" textTransform="uppercase" letterSpacing="wider">
+                                              <Text fontSize="xs" fontWeight="800" color="gray.500" textTransform="uppercase" letterSpacing="wider">
                                                 SERVER #{index + 1}
                                               </Text>
-                                              <Text fontSize="sm" fontWeight="800" color={isDark ? "white" : "gray.800"}>
+                                              <Text fontSize="md" fontWeight="800" color={isDark ? "white" : "gray.800"}>
                                                 {displayRoleServer}
                                               </Text>
                                               {isCustomRole && srv.roleServerOther?.trim() && (
-                                                <Badge colorScheme="purple" variant="outline" fontSize="3xs" rounded="md">
+                                                <Badge colorScheme="purple" variant="outline" fontSize="xs" rounded="md">
                                                   Other Role
                                                 </Badge>
                                               )}
                                               <Badge
                                                 colorScheme={srv.status === "Aktif" ? "green" : "gray"}
                                                 variant="solid"
-                                                fontSize="3xs"
+                                                fontSize="xs"
                                                 rounded="full"
                                                 px={2}
                                               >
@@ -3956,7 +4262,7 @@ export default function ApplicationDetail() {
                                               variant="subtle"
                                               colorScheme="blue"
                                               fontFamily="mono"
-                                              fontSize="2xs"
+                                              fontSize="xs"
                                               px={2}
                                               py={0.5}
                                               rounded="md"
@@ -3970,7 +4276,7 @@ export default function ApplicationDetail() {
                                             <Badge
                                               colorScheme="teal"
                                               variant="subtle"
-                                              fontSize="3xs"
+                                              fontSize="xs"
                                               px={1.5}
                                               py={0.5}
                                               rounded="md"
@@ -3988,7 +4294,7 @@ export default function ApplicationDetail() {
                                             <Badge
                                               colorScheme={isDc1 ? "blue" : isDc2 ? "purple" : "gray"}
                                               variant="solid"
-                                              fontSize="2xs"
+                                              fontSize="xs"
                                               fontWeight="extrabold"
                                               px={2.5}
                                               py={0.5}
@@ -4038,7 +4344,7 @@ export default function ApplicationDetail() {
                                           >
                                             <HStack spacing={2}>
                                               <Icon as={FiGlobe} color="blue.500" boxSize={4} />
-                                              <Text fontSize="2xs" fontWeight="800" color="blue.500" textTransform="uppercase" letterSpacing="wider">
+                                              <Text fontSize="xs" fontWeight="800" color="blue.500" textTransform="uppercase" letterSpacing="wider">
                                                 Network & Governance Environment
                                               </Text>
                                             </HStack>
@@ -4054,7 +4360,7 @@ export default function ApplicationDetail() {
                                                   ? "blue"
                                                   : "teal"
                                               }
-                                              fontSize="3xs"
+                                              fontSize="xs"
                                               rounded="md"
                                               px={2}
                                               py={0.5}
@@ -4067,9 +4373,9 @@ export default function ApplicationDetail() {
                                             /* Edit Mode: Network & Governance */
                                             <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
                                               <FormControl>
-                                                <FormLabel fontSize="2xs" fontWeight="bold">Site</FormLabel>
+                                                <FormLabel fontSize="xs" fontWeight="bold">Site</FormLabel>
                                                 <ChakraSelect
-                                                  size="sm"
+                                                  size="md"
                                                   rounded="lg"
                                                   value={srv.site}
                                                   onChange={(e) => {
@@ -4090,7 +4396,7 @@ export default function ApplicationDetail() {
                                                 {(srv.site === "Other Site" || srv.site === "Other") && (
                                                   <Input
                                                     mt={1.5}
-                                                    size="sm"
+                                                    size="md"
                                                     rounded="lg"
                                                     placeholder="Site"
                                                     value={srv.siteOther || ""}
@@ -4102,9 +4408,9 @@ export default function ApplicationDetail() {
                                               </FormControl>
 
                                               <FormControl>
-                                                <FormLabel fontSize="2xs" fontWeight="bold">Segment</FormLabel>
+                                                <FormLabel fontSize="xs" fontWeight="bold">Segment</FormLabel>
                                                 <Input
-                                                  size="sm"
+                                                  size="md"
                                                   rounded="lg"
                                                   value={srv.segment}
                                                   onChange={(e) => handleUpdateServer(index, "segment", e.target.value)}
@@ -4113,9 +4419,9 @@ export default function ApplicationDetail() {
                                               </FormControl>
 
                                               <FormControl>
-                                                <FormLabel fontSize="2xs" fontWeight="bold">Environment</FormLabel>
+                                                <FormLabel fontSize="xs" fontWeight="bold">Environment</FormLabel>
                                                 <ChakraSelect
-                                                  size="sm"
+                                                  size="md"
                                                   rounded="lg"
                                                   value={srv.environment}
                                                   onChange={(e) => {
@@ -4136,7 +4442,7 @@ export default function ApplicationDetail() {
                                                 {srv.environment === "Other" && (
                                                   <Input
                                                     mt={1.5}
-                                                    size="sm"
+                                                    size="md"
                                                     rounded="lg"
                                                     placeholder="Environment"
                                                     value={srv.environmentOther || ""}
@@ -4148,7 +4454,7 @@ export default function ApplicationDetail() {
                                               </FormControl>
 
                                               <FormControl>
-                                                <FormLabel fontSize="2xs" fontWeight="bold">Join Domain</FormLabel>
+                                                <FormLabel fontSize="xs" fontWeight="bold">Join Domain</FormLabel>
                                                 <RadioGroup
                                                   value={srv.joinDomain}
                                                   onChange={(val) =>
@@ -4156,14 +4462,14 @@ export default function ApplicationDetail() {
                                                   }
                                                 >
                                                   <HStack spacing={4} mt={1}>
-                                                    <Radio value="Ya" size="sm" colorScheme="green">Ya</Radio>
-                                                    <Radio value="Tidak" size="sm" colorScheme="gray">Tidak</Radio>
+                                                    <Radio value="Ya" size="md" colorScheme="green">Ya</Radio>
+                                                    <Radio value="Tidak" size="md" colorScheme="gray">Tidak</Radio>
                                                   </HStack>
                                                 </RadioGroup>
                                               </FormControl>
 
                                               <FormControl>
-                                                <FormLabel fontSize="2xs" fontWeight="bold">Hardening</FormLabel>
+                                                <FormLabel fontSize="xs" fontWeight="bold">Hardening</FormLabel>
                                                 <RadioGroup
                                                   value={srv.hardening}
                                                   onChange={(val) =>
@@ -4171,14 +4477,14 @@ export default function ApplicationDetail() {
                                                   }
                                                 >
                                                   <HStack spacing={4} mt={1}>
-                                                    <Radio value="Ya" size="sm" colorScheme="green">Ya</Radio>
-                                                    <Radio value="Tidak" size="sm" colorScheme="gray">Tidak</Radio>
+                                                    <Radio value="Ya" size="md" colorScheme="green">Ya</Radio>
+                                                    <Radio value="Tidak" size="md" colorScheme="gray">Tidak</Radio>
                                                   </HStack>
                                                 </RadioGroup>
                                               </FormControl>
 
                                               <FormControl>
-                                                <FormLabel fontSize="2xs" fontWeight="bold">PAM (Privileged Access)</FormLabel>
+                                                <FormLabel fontSize="xs" fontWeight="bold">PAM (Privileged Access)</FormLabel>
                                                 <RadioGroup
                                                   value={srv.pam}
                                                   onChange={(val) =>
@@ -4186,14 +4492,14 @@ export default function ApplicationDetail() {
                                                   }
                                                 >
                                                   <HStack spacing={4} mt={1}>
-                                                    <Radio value="Ya" size="sm" colorScheme="green">Ya</Radio>
-                                                    <Radio value="Tidak" size="sm" colorScheme="gray">Tidak</Radio>
+                                                    <Radio value="Ya" size="md" colorScheme="green">Ya</Radio>
+                                                    <Radio value="Tidak" size="md" colorScheme="gray">Tidak</Radio>
                                                   </HStack>
                                                 </RadioGroup>
                                               </FormControl>
 
                                               <FormControl gridColumn={{ base: "1", sm: "1 / -1" }}>
-                                                <FormLabel fontSize="2xs" fontWeight="bold">Dual Deploy Architecture</FormLabel>
+                                                <FormLabel fontSize="xs" fontWeight="bold">Dual Deploy Architecture</FormLabel>
                                                 <RadioGroup
                                                   value={srv.dualDeploy}
                                                   onChange={(val) =>
@@ -4201,10 +4507,10 @@ export default function ApplicationDetail() {
                                                   }
                                                 >
                                                   <HStack spacing={4} mt={1}>
-                                                    <Radio value="Ya" size="sm" colorScheme="teal" fontWeight="bold">
+                                                    <Radio value="Ya" size="md" colorScheme="teal" fontWeight="bold">
                                                       Ya (Dual Deploy)
                                                     </Radio>
-                                                    <Radio value="Tidak" size="sm" colorScheme="gray">
+                                                    <Radio value="Tidak" size="md" colorScheme="gray">
                                                       Tidak
                                                     </Radio>
                                                   </HStack>
@@ -4247,7 +4553,7 @@ export default function ApplicationDetail() {
                                                       px={2}
                                                       py={0.5}
                                                       rounded="md"
-                                                      fontSize="2xs"
+                                                      fontSize="xs"
                                                       fontWeight="bold"
                                                     >
                                                       {displayEnvironment || "-"}
@@ -4260,7 +4566,7 @@ export default function ApplicationDetail() {
                                                   <HStack spacing={1.5} mt={0.5}>
                                                     <Badge
                                                       colorScheme={isDc1 ? "blue" : isDc2 ? "purple" : "gray"}
-                                                      fontSize="2xs"
+                                                      fontSize="xs"
                                                       fontWeight="bold"
                                                       px={2}
                                                       py={0.5}
@@ -4268,7 +4574,7 @@ export default function ApplicationDetail() {
                                                     >
                                                       {srv.primary}
                                                     </Badge>
-                                                    <Text fontSize="3xs" color="gray.400">
+                                                    <Text fontSize="xs" color="gray.400">
                                                       {isDc1 ? "(DC1 Subnet)" : isDc2 ? "(DC2 Subnet)" : ""}
                                                     </Text>
                                                   </HStack>
@@ -4282,7 +4588,7 @@ export default function ApplicationDetail() {
                                                       px={2}
                                                       py={0.5}
                                                       rounded="md"
-                                                      fontSize="2xs"
+                                                      fontSize="xs"
                                                       fontWeight="bold"
                                                     >
                                                       {srv.joinDomain === "Ya" ? "Ya (Domain Joined)" : "Tidak"}
@@ -4298,7 +4604,7 @@ export default function ApplicationDetail() {
                                                       px={2}
                                                       py={0.5}
                                                       rounded="md"
-                                                      fontSize="2xs"
+                                                      fontSize="xs"
                                                       fontWeight="bold"
                                                     >
                                                       {srv.hardening === "Ya" ? "Ya (Hardened)" : "Tidak"}
@@ -4314,7 +4620,7 @@ export default function ApplicationDetail() {
                                                       px={2}
                                                       py={0.5}
                                                       rounded="md"
-                                                      fontSize="2xs"
+                                                      fontSize="xs"
                                                       fontWeight="bold"
                                                     >
                                                       {srv.pam === "Ya" ? "Ya (PAM Managed)" : "Tidak"}
@@ -4342,7 +4648,7 @@ export default function ApplicationDetail() {
                                                   <Badge
                                                     colorScheme={srv.dualDeploy === "Ya" ? "teal" : "gray"}
                                                     variant={srv.dualDeploy === "Ya" ? "solid" : "subtle"}
-                                                    fontSize="2xs"
+                                                    fontSize="xs"
                                                     px={2.5}
                                                     py={0.5}
                                                     rounded="full"
@@ -4377,13 +4683,13 @@ export default function ApplicationDetail() {
                                           >
                                             <HStack spacing={2}>
                                               <Icon as={FiCpu} color="purple.500" boxSize={4} />
-                                              <Text fontSize="2xs" fontWeight="800" color="purple.500" textTransform="uppercase" letterSpacing="wider">
+                                              <Text fontSize="xs" fontWeight="800" color="purple.500" textTransform="uppercase" letterSpacing="wider">
                                                 Virtual Machine (VM) Specification
                                               </Text>
                                             </HStack>
                                             <Badge
                                               colorScheme="purple"
-                                              fontSize="3xs"
+                                              fontSize="xs"
                                               rounded="md"
                                               px={2}
                                               py={0.5}
@@ -4397,9 +4703,9 @@ export default function ApplicationDetail() {
                                             /* Edit Mode: VM Details */
                                             <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
                                               <FormControl>
-                                                <FormLabel fontSize="2xs" fontWeight="bold">Nama VM</FormLabel>
+                                                <FormLabel fontSize="xs" fontWeight="bold">Nama VM</FormLabel>
                                                 <Input
-                                                  size="sm"
+                                                  size="md"
                                                   rounded="lg"
                                                   fontFamily="mono"
                                                   value={srv.vmDetail?.namaVm || ""}
@@ -4409,9 +4715,9 @@ export default function ApplicationDetail() {
                                               </FormControl>
 
                                               <FormControl>
-                                                <FormLabel fontSize="2xs" fontWeight="bold">IP Address</FormLabel>
+                                                <FormLabel fontSize="xs" fontWeight="bold">IP Address</FormLabel>
                                                 <Input
-                                                  size="sm"
+                                                  size="md"
                                                   rounded="lg"
                                                   fontFamily="mono"
                                                   value={srv.vmDetail?.ipAddress || ""}
@@ -4421,9 +4727,9 @@ export default function ApplicationDetail() {
                                               </FormControl>
 
                                               <FormControl>
-                                                <FormLabel fontSize="2xs" fontWeight="bold">OS</FormLabel>
+                                                <FormLabel fontSize="xs" fontWeight="bold">OS</FormLabel>
                                                 <Input
-                                                  size="sm"
+                                                  size="md"
                                                   rounded="lg"
                                                   value={srv.vmDetail?.os || ""}
                                                   onChange={(e) => handleUpdateServerVm(index, "os", e.target.value)}
@@ -4432,9 +4738,9 @@ export default function ApplicationDetail() {
                                               </FormControl>
 
                                               <FormControl>
-                                                <FormLabel fontSize="2xs" fontWeight="bold">CPU</FormLabel>
+                                                <FormLabel fontSize="xs" fontWeight="bold">CPU</FormLabel>
                                                 <Input
-                                                  size="sm"
+                                                  size="md"
                                                   rounded="lg"
                                                   value={srv.vmDetail?.cpu || ""}
                                                   onChange={(e) => handleUpdateServerVm(index, "cpu", e.target.value)}
@@ -4443,9 +4749,9 @@ export default function ApplicationDetail() {
                                               </FormControl>
 
                                               <FormControl>
-                                                <FormLabel fontSize="2xs" fontWeight="bold">MEMORY</FormLabel>
+                                                <FormLabel fontSize="xs" fontWeight="bold">MEMORY</FormLabel>
                                                 <Input
-                                                  size="sm"
+                                                  size="md"
                                                   rounded="lg"
                                                   value={srv.vmDetail?.memory || ""}
                                                   onChange={(e) => handleUpdateServerVm(index, "memory", e.target.value)}
@@ -4454,9 +4760,9 @@ export default function ApplicationDetail() {
                                               </FormControl>
 
                                               <FormControl>
-                                                <FormLabel fontSize="2xs" fontWeight="bold">STORAGE</FormLabel>
+                                                <FormLabel fontSize="xs" fontWeight="bold">STORAGE</FormLabel>
                                                 <Input
-                                                  size="sm"
+                                                  size="md"
                                                   rounded="lg"
                                                   value={srv.vmDetail?.storage || ""}
                                                   onChange={(e) => handleUpdateServerVm(index, "storage", e.target.value)}
@@ -4465,10 +4771,10 @@ export default function ApplicationDetail() {
                                               </FormControl>
 
                                               <FormControl gridColumn={{ base: "1", sm: "1 / -1" }}>
-                                                <FormLabel fontSize="2xs" fontWeight="bold">Note (opsional)</FormLabel>
+                                                <FormLabel fontSize="xs" fontWeight="bold">Note (opsional)</FormLabel>
                                                 <Textarea
                                                   rows={2}
-                                                  size="sm"
+                                                  size="md"
                                                   rounded="lg"
                                                   value={srv.vmDetail?.note || ""}
                                                   onChange={(e) => handleUpdateServerVm(index, "note", e.target.value)}
@@ -4504,7 +4810,7 @@ export default function ApplicationDetail() {
                                                 <Box>
                                                   <Text fontSize="xs" color="gray.500">CPU Compute:</Text>
                                                   <Box mt={0.5}>
-                                                    <Badge colorScheme="purple" fontSize="2xs" px={2} py={0.5} rounded="md">
+                                                    <Badge colorScheme="purple" fontSize="xs" px={2} py={0.5} rounded="md">
                                                       {srv.vmDetail?.cpu || "-"}
                                                     </Badge>
                                                   </Box>
@@ -4513,7 +4819,7 @@ export default function ApplicationDetail() {
                                                 <Box>
                                                   <Text fontSize="xs" color="gray.500">Memory (RAM):</Text>
                                                   <Box mt={0.5}>
-                                                    <Badge colorScheme="teal" fontSize="2xs" px={2} py={0.5} rounded="md">
+                                                    <Badge colorScheme="teal" fontSize="xs" px={2} py={0.5} rounded="md">
                                                       {srv.vmDetail?.memory || "-"}
                                                     </Badge>
                                                   </Box>
@@ -4522,7 +4828,7 @@ export default function ApplicationDetail() {
                                                 <Box>
                                                   <Text fontSize="xs" color="gray.500">Storage Capacity:</Text>
                                                   <Box mt={0.5}>
-                                                    <Badge colorScheme="cyan" fontSize="2xs" px={2} py={0.5} rounded="md">
+                                                    <Badge colorScheme="cyan" fontSize="xs" px={2} py={0.5} rounded="md">
                                                       {srv.vmDetail?.storage || "-"}
                                                     </Badge>
                                                   </Box>
@@ -4566,7 +4872,7 @@ export default function ApplicationDetail() {
                             {!isAddServerHidden && (
                               <Button
                                 leftIcon={<FiPlus />}
-                                size="sm"
+                                size="md"
                                 variant="outline"
                                 colorScheme="purple"
                                 rounded="xl"
@@ -4576,18 +4882,30 @@ export default function ApplicationDetail() {
                                 Add Server
                               </Button>
                             )}
-                            <Button
-                              leftIcon={<FiSave />}
-                              size="md"
-                              colorScheme="secondary"
-                              rounded="xl"
-                              px={6}
-                              fontWeight="bold"
-                              isLoading={IsLoadingProcess}
-                              onClick={handleSave}
-                            >
-                              Save Environment Changes
-                            </Button>
+                            <HStack spacing={3}>
+                              <Button
+                                leftIcon={<FiX />}
+                                size="md"
+                                variant="ghost"
+                                rounded="xl"
+                                fontSize="md"
+                                onClick={handleCancelEnvironmentEdit}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                leftIcon={<FiSave />}
+                                size="md"
+                                colorScheme="secondary"
+                                rounded="xl"
+                                px={6}
+                                fontWeight="bold"
+                                isLoading={IsLoadingProcess}
+                                onClick={handleSave}
+                              >
+                                Save Environment Changes
+                              </Button>
+                            </HStack>
                           </Flex>
                         )}
                       </Box>
@@ -4627,18 +4945,18 @@ export default function ApplicationDetail() {
                                 <Heading size="xs" color={isDark ? "white" : "gray.800"}>
                                   Aplikasi Pendukung
                                 </Heading>
-                                <Badge colorScheme="teal" fontSize="3xs" rounded="full" px={2}>
+                                <Badge colorScheme="teal" fontSize="xs" rounded="full" px={2}>
                                   {relatedSupportingApps.length} Terhubung
                                 </Badge>
                               </HStack>
-                              <Text fontSize="2xs" color="gray.500">
+                              <Text fontSize="xs" color="gray.500">
                                 Daftar aplikasi terhubung dan dependensi dari katalog Master Data Application.
                               </Text>
                             </VStack>
                           </HStack>
 
                           <Button
-                            size="sm"
+                            size="md"
                             colorScheme="teal"
                             leftIcon={<FiPlus />}
                             rounded="lg"
@@ -4656,19 +4974,19 @@ export default function ApplicationDetail() {
                           borderColor={isDark ? "gray.700" : "gray.200"}
                           bg={isDark ? "gray.800" : "white"}
                         >
-                          <Table size="sm" variant="simple">
+                          <Table size="md" variant="simple">
                             <Thead bg={isDark ? "gray.750" : "gray.50"}>
                               <Tr>
-                                <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
+                                <Th py={3} fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
                                   Nama
                                 </Th>
-                                <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
+                                <Th py={3} fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
                                   Versi
                                 </Th>
-                                <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
+                                <Th py={3} fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
                                   Tahun
                                 </Th>
-                                <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"} textAlign="center" w="80px">
+                                <Th py={3} fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"} textAlign="center" w="80px">
                                   Aksi
                                 </Th>
                               </Tr>
@@ -4681,7 +4999,7 @@ export default function ApplicationDetail() {
                                       <Text fontSize="xs" fontWeight="semibold" color="gray.500">
                                         Belum ada aplikasi pendukung yang terhubung
                                       </Text>
-                                      <Text fontSize="2xs" color="gray.400">
+                                      <Text fontSize="xs" color="gray.400">
                                         Klik tombol &quot;Add Aplikasi Pendukung&quot; di atas untuk menghubungkan aplikasi dari katalog.
                                       </Text>
                                     </VStack>
@@ -4702,7 +5020,7 @@ export default function ApplicationDetail() {
                                           size="xs"
                                           bg="teal.500"
                                           color="white"
-                                          fontSize="3xs"
+                                          fontSize="xs"
                                         />
                                         <VStack align="start" spacing={0.5}>
                                           <Text
@@ -4713,7 +5031,7 @@ export default function ApplicationDetail() {
                                             {app.appName}
                                           </Text>
                                           <HStack spacing={1.5}>
-                                            <Badge colorScheme="blue" fontSize="3xs" rounded="md" px={1.5}>
+                                            <Badge colorScheme="blue" fontSize="xs" rounded="md" px={1.5}>
                                               {app.appShortName || "APP"}
                                             </Badge>
                                             {app.appsStatus && (
@@ -4725,7 +5043,7 @@ export default function ApplicationDetail() {
                                                     ? "orange"
                                                     : "gray"
                                                 }
-                                                fontSize="3xs"
+                                                fontSize="xs"
                                                 rounded="md"
                                                 px={1.5}
                                               >
@@ -4742,7 +5060,7 @@ export default function ApplicationDetail() {
                                       <Badge
                                         colorScheme="purple"
                                         variant="subtle"
-                                        fontSize="2xs"
+                                        fontSize="xs"
                                         px={2}
                                         py={0.5}
                                         rounded="md"
@@ -4808,17 +5126,17 @@ export default function ApplicationDetail() {
                                   <Heading size="xs" color={isDark ? "teal.300" : "teal.700"}>
                                     Katalog Master Data Application
                                   </Heading>
-                                  <Badge colorScheme="teal" fontSize="3xs" rounded="full" px={2}>
+                                  <Badge colorScheme="teal" fontSize="xs" rounded="full" px={2}>
                                     {supportingAppsTotal} Tersedia
                                   </Badge>
                                 </HStack>
-                                <Text fontSize="2xs" color="gray.500">
+                                <Text fontSize="xs" color="gray.500">
                                   Pilih aplikasi untuk dihubungkan sebagai aplikasi pendukung.
                                 </Text>
                               </VStack>
 
                               <HStack spacing={2} w={{ base: "full", sm: "auto" }}>
-                                <InputGroup size="sm" maxW={{ base: "full", sm: "220px" }}>
+                                <InputGroup size="md" maxW={{ base: "full", sm: "260px" }}>
                                   <InputLeftElement pointerEvents="none">
                                     <Icon as={FiSearch} color="gray.400" />
                                   </InputLeftElement>
@@ -4838,14 +5156,14 @@ export default function ApplicationDetail() {
                                 <IconButton
                                   aria-label="Refresh Katalog Aplikasi"
                                   icon={<FiRefreshCw />}
-                                  size="sm"
+                                  size="md"
                                   rounded="lg"
                                   variant="outline"
                                   isLoading={isSupportingAppsLoading}
                                   onClick={() => fetchSupportingApps(supportingAppsPageIndex, supportingAppsPageSize, supportingAppsSearch)}
                                 />
                                 <Button
-                                  size="sm"
+                                  size="md"
                                   variant="ghost"
                                   colorScheme="gray"
                                   rounded="lg"
@@ -4864,19 +5182,19 @@ export default function ApplicationDetail() {
                               borderColor={isDark ? "gray.700" : "gray.200"}
                               bg={isDark ? "gray.850" : "gray.50"}
                             >
-                              <Table size="sm" variant="simple">
+                              <Table size="md" variant="simple">
                                 <Thead bg={isDark ? "gray.750" : "gray.100"}>
                                   <Tr>
-                                    <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
+                                    <Th py={3} fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
                                       Nama
                                     </Th>
-                                    <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
+                                    <Th py={3} fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
                                       Versi
                                     </Th>
-                                    <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
+                                    <Th py={3} fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
                                       Tahun
                                     </Th>
-                                    <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"} textAlign="center" w="110px">
+                                    <Th py={3} fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"} textAlign="center" w="110px">
                                       Aksi
                                     </Th>
                                   </Tr>
@@ -4886,7 +5204,7 @@ export default function ApplicationDetail() {
                                     <Tr>
                                       <Td colSpan={4} textAlign="center" py={8}>
                                         <VStack spacing={2}>
-                                          <Spinner size="sm" color="teal.500" />
+                                          <Spinner size="md" color="teal.500" />
                                           <Text fontSize="xs" color="gray.500">
                                             Memuat data aplikasi dari katalog...
                                           </Text>
@@ -4900,7 +5218,7 @@ export default function ApplicationDetail() {
                                           <Text fontSize="xs" fontWeight="semibold" color="gray.500">
                                             Tidak ada aplikasi yang ditemukan
                                           </Text>
-                                          <Text fontSize="2xs" color="gray.400">
+                                          <Text fontSize="xs" color="gray.400">
                                             Gunakan kotak pencarian di atas untuk menyaring data aplikasi.
                                           </Text>
                                         </VStack>
@@ -4934,7 +5252,7 @@ export default function ApplicationDetail() {
                                                 size="xs"
                                                 bg="teal.500"
                                                 color="white"
-                                                fontSize="3xs"
+                                                fontSize="xs"
                                               />
                                               <VStack align="start" spacing={0.5}>
                                                 <Text
@@ -4945,7 +5263,7 @@ export default function ApplicationDetail() {
                                                   {app.appName}
                                                 </Text>
                                                 <HStack spacing={1.5}>
-                                                  <Badge colorScheme="blue" fontSize="3xs" rounded="md" px={1.5}>
+                                                  <Badge colorScheme="blue" fontSize="xs" rounded="md" px={1.5}>
                                                     {app.appShortName || app.appCode || "APP"}
                                                   </Badge>
                                                   {app.appsStatus && (
@@ -4957,7 +5275,7 @@ export default function ApplicationDetail() {
                                                           ? "orange"
                                                           : "gray"
                                                       }
-                                                      fontSize="3xs"
+                                                      fontSize="xs"
                                                       rounded="md"
                                                       px={1.5}
                                                     >
@@ -4974,7 +5292,7 @@ export default function ApplicationDetail() {
                                             <Badge
                                               colorScheme="purple"
                                               variant="subtle"
-                                              fontSize="2xs"
+                                              fontSize="xs"
                                               px={2}
                                               py={0.5}
                                               rounded="md"
@@ -4998,7 +5316,7 @@ export default function ApplicationDetail() {
                                           {/* Column 4: Aksi */}
                                           <Td py={3} textAlign="center">
                                             {isAlreadyConnected ? (
-                                              <Badge colorScheme="green" variant="solid" fontSize="3xs" px={2} py={1} rounded="md">
+                                              <Badge colorScheme="green" variant="solid" fontSize="xs" px={2} py={1} rounded="md">
                                                 Terhubung
                                               </Badge>
                                             ) : (
@@ -5032,7 +5350,7 @@ export default function ApplicationDetail() {
                                 px={1}
                               >
                                 {/* Left: Info & Rows per page */}
-                                <HStack spacing={2} fontSize="2xs" color={isDark ? "gray.400" : "gray.600"}>
+                                <HStack spacing={2} fontSize="xs" color={isDark ? "gray.400" : "gray.600"}>
                                   <Text>
                                     Menampilkan{" "}
                                     <Text as="span" fontWeight="bold" color={isDark ? "white" : "gray.800"}>
@@ -5052,7 +5370,7 @@ export default function ApplicationDetail() {
                                       w="65px"
                                       h="26px"
                                       rounded="md"
-                                      fontSize="2xs"
+                                      fontSize="xs"
                                       value={supportingAppsPageSize}
                                       onChange={(e) => supportingAppsTableAdapter.setPageSize(Number(e.target.value))}
                                     >
@@ -5107,7 +5425,7 @@ export default function ApplicationDetail() {
                                           h="26px"
                                           px={1.5}
                                           rounded="md"
-                                          fontSize="2xs"
+                                          fontSize="xs"
                                           fontWeight={isCurrent ? "bold" : "normal"}
                                           colorScheme={isCurrent ? "teal" : "gray"}
                                           variant={isCurrent ? "solid" : "ghost"}
@@ -5148,193 +5466,109 @@ export default function ApplicationDetail() {
                   </TabPanels>
                 </Tabs>
               </Card>
-            </GridItem>
 
-            {/* ── RIGHT 20% STICKY SIDEBAR (COL-SPAN 3) ── */}
-            <GridItem colSpan={{ base: 12, lg: 3, xl: 3 }}>
-              <VStack spacing={4} align="stretch" position="sticky" top="85px">
-                {/* 1. Card Aksi Cepat */}
-                <Card
-                  shadow="md"
-                  rounded={radiusStyle}
-                  border="1px"
+              {/* ──────────────────────────────────────────────────────────
+                  TAB SWITCH CONFIRMATION GUARD MODAL
+                  ────────────────────────────────────────────────────────── */}
+              <Modal
+                isOpen={isTabGuardOpen}
+                onClose={handleCancelLeaveTab}
+                isCentered
+                size="md"
+                motionPreset="slideInBottom"
+              >
+                <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(5px)" />
+                <ModalContent
+                  rounded="2xl"
+                  bg={isDark ? "gray.850" : "white"}
+                  border="1px solid"
                   borderColor={isDark ? "gray.700" : "gray.200"}
-                  bg={isDark ? "gray.800" : "white"}
+                  shadow="2xl"
+                  p={2}
                 >
-                  <CardHeader pb={2} pt={4} px={4}>
-                    <HStack spacing={2}>
-                      <Icon as={FiZap} color="secondary.500" />
-                      <Heading size="xs" color={isDark ? "white" : "gray.800"}>
-                        Actions & Operations
-                      </Heading>
-                    </HStack>
-                  </CardHeader>
-                  <CardBody px={4} pb={4} pt={2}>
-                    <VStack spacing={2.5} align="stretch">
-                      {IsEditMode ? (
-                        <>
-                          <Button
-                            leftIcon={<FiSave />}
-                            size="md"
-                            h="42px"
-                            colorScheme="green"
-                            w="full"
-                            rounded="xl"
-                            fontWeight="bold"
-                            isLoading={IsLoadingProcess}
-                            onClick={handleSave}
-                          >
-                            Save Changes
-                          </Button>
-                          <Button
-                            leftIcon={<FiX />}
-                            size="sm"
-                            variant="outline"
-                            w="full"
-                            rounded="xl"
-                            onClick={() => {
-                              setIsEditMode(false);
-                              LoadApplicationData();
-                            }}
-                          >
-                            Cancel Edit
-                          </Button>
-                        </>
-                      ) : (
-                        <Button
-                          leftIcon={<FiEdit />}
-                          size="md"
-                          h="42px"
-                          colorScheme="secondary"
-                          w="full"
-                          rounded="xl"
-                          fontWeight="bold"
-                          shadow="sm"
-                          onClick={() => setIsEditMode(true)}
-                        >
-                          Edit Mode
-                        </Button>
-                      )}
-
-                      <Button
-                        leftIcon={<FiCopy />}
-                        size="sm"
-                        variant="outline"
-                        w="full"
+                  <ModalHeader pt={4} pb={2}>
+                    <HStack spacing={3} align="center">
+                      <Box
+                        w={10}
+                        h={10}
                         rounded="xl"
-                        onClick={onCopy}
+                        bg="orange.50"
+                        color="orange.500"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
                       >
-                        {hasCopied ? "Copied!" : "Copy App Code"}
-                      </Button>
-                    </VStack>
-                  </CardBody>
-                </Card>
-
-                {/* 2. Card Status Portofolio Proyek */}
-                <Card
-                  shadow="md"
-                  rounded={radiusStyle}
-                  border="1px"
-                  borderColor={isDark ? "gray.700" : "gray.200"}
-                  bg={isDark ? "gray.800" : "white"}
-                >
-                  <CardHeader pb={2} pt={4} px={4}>
-                    <HStack spacing={2}>
-                      <Icon as={FiBriefcase} color="secondary.500" />
-                      <Heading size="xs" color={isDark ? "white" : "gray.800"}>
-                        Project SDLC Ratio
-                      </Heading>
+                        <Icon as={FiAlertTriangle} boxSize={5} />
+                      </Box>
+                      <VStack align="start" spacing={0}>
+                        <Heading size="sm" color={isDark ? "white" : "gray.800"}>
+                          Peringatan Perubahan Belum Disimpan
+                        </Heading>
+                        <Text fontSize="xs" color="gray.500" fontWeight="normal">
+                          Mode edit masih aktif di tab {tabNames[activeTabIndex] || "ini"}
+                        </Text>
+                      </VStack>
                     </HStack>
-                  </CardHeader>
-                  <CardBody px={4} pb={4} pt={2}>
-                    <VStack spacing={3} align="stretch">
-                      <Flex justify="space-between" align="center" fontSize="2xs">
-                        <Text color="gray.500">Completion Rate</Text>
-                        <Text fontWeight="extrabold" color="secondary.500">{completionRate}%</Text>
-                      </Flex>
-                      <Progress
-                        value={completionRate}
-                        size="sm"
-                        colorScheme={completionRate === 100 ? "green" : "secondary"}
-                        rounded="full"
-                        bg={isDark ? "gray.700" : "gray.100"}
-                      />
-                      <HStack justify="space-between" fontSize="2xs" pt={1}>
-                        <VStack align="start" spacing={0}>
-                          <Text color="gray.500">Total Projects</Text>
-                          <Text fontWeight="bold">{totalProjects}</Text>
-                        </VStack>
-                        <VStack align="center" spacing={0}>
-                          <Text color="orange.500">Running</Text>
-                          <Text fontWeight="bold" color="orange.500">{onGoingProjects}</Text>
-                        </VStack>
-                        <VStack align="end" spacing={0}>
-                          <Text color="green.500">Completed</Text>
-                          <Text fontWeight="bold" color="green.500">{completedProjects}</Text>
-                        </VStack>
-                      </HStack>
-                    </VStack>
-                  </CardBody>
-                </Card>
+                  </ModalHeader>
+                  <ModalCloseButton top={4} right={4} rounded="lg" />
 
-                {/* 3. Card Metadata & Audit Log */}
-                <Card
-                  shadow="md"
-                  rounded={radiusStyle}
-                  border="1px"
-                  borderColor={isDark ? "gray.700" : "gray.200"}
-                  bg={isDark ? "gray.800" : "white"}
-                >
-                  <CardHeader pb={2} pt={4} px={4}>
-                    <HStack spacing={2}>
-                      <Icon as={FiActivity} color="secondary.500" />
-                      <Heading size="xs" color={isDark ? "white" : "gray.800"}>
-                        Audit & Metadata
-                      </Heading>
-                    </HStack>
-                  </CardHeader>
-                  <CardBody px={4} pb={4} pt={2}>
-                    <VStack spacing={2.5} align="stretch" fontSize="2xs">
-                      <Flex justify="space-between">
-                        <Text color="gray.500">Created At:</Text>
-                        <Text fontWeight="semibold">
-                          {DataApplication?.createdAt ? new Date(DataApplication.createdAt).toLocaleDateString("en-US") : "-"}
+                  <ModalBody py={4}>
+                    <VStack align="stretch" spacing={3}>
+                      <Text fontSize="sm" color={isDark ? "gray.300" : "gray.600"} lineHeight="tall">
+                        Anda sedang dalam mode pengeditan di tab{" "}
+                        <Text as="span" fontWeight="bold" color={isDark ? "white" : "gray.800"}>
+                          {tabNames[activeTabIndex] || "saat ini"}
                         </Text>
-                      </Flex>
-                      <Flex justify="space-between">
-                        <Text color="gray.500">Created By:</Text>
-                        <Text fontWeight="semibold" noOfLines={1} maxW="120px">
-                          {DataApplication?.createdBy || "-"}
+                        . Jika Anda berpindah ke tab{" "}
+                        <Text as="span" fontWeight="bold" color="secondary.500">
+                          {pendingTabIndex !== null ? tabNames[pendingTabIndex] : "lain"}
                         </Text>
-                      </Flex>
-                      <Flex justify="space-between">
-                        <Text color="gray.500">Updated At:</Text>
-                        <Text fontWeight="semibold">
-                          {DataApplication?.updatedAt ? new Date(DataApplication.updatedAt).toLocaleDateString("en-US") : "-"}
+                        , semua perubahan yang belum disimpan akan{" "}
+                        <Text as="span" fontWeight="bold" color="red.500">
+                          dibatalkan
                         </Text>
-                      </Flex>
-                      <Flex justify="space-between">
-                        <Text color="gray.500">Data Status:</Text>
-                        <Badge
-                          colorScheme={
-                            DataApplication?.appsStatus === "ACTIVE"
-                              ? "green"
-                              : DataApplication?.appsStatus === "ON DEVELOPMENT"
-                              ? "purple"
-                              : "red"
-                          }
-                          fontSize="3xs"
-                          rounded="md"
-                        >
-                          {DataApplication?.appsStatus || "ACTIVE"}
-                        </Badge>
-                      </Flex>
+                        .
+                      </Text>
+
+                      <Box
+                        p={3}
+                        rounded="xl"
+                        bg={isDark ? "whiteAlpha.50" : "gray.50"}
+                        border="1px dashed"
+                        borderColor={isDark ? "gray.700" : "gray.200"}
+                      >
+                        <HStack spacing={2} fontSize="xs" color="gray.500">
+                          <Icon as={FiInfo} color="secondary.500" />
+                          <Text>
+                            Pastikan Anda telah menyimpan data sebelum berpindah tab jika ingin mempertahankan perubahan.
+                          </Text>
+                        </HStack>
+                      </Box>
                     </VStack>
-                  </CardBody>
-                </Card>
-              </VStack>
-            </GridItem>
-          </Grid>
+                  </ModalBody>
+
+                  <ModalFooter pb={4} pt={2} gap={2}>
+                    <Button
+                      variant="outline"
+                      colorScheme="gray"
+                      rounded="xl"
+                      size="md"
+                      onClick={handleCancelLeaveTab}
+                    >
+                      Tetap di Sini
+                    </Button>
+                    <Button
+                      colorScheme="red"
+                      rounded="xl"
+                      size="md"
+                      fontWeight="bold"
+                      onClick={handleConfirmLeaveTab}
+                    >
+                      Ya, Pindah Tab
+                    </Button>
+                  </ModalFooter>
+                </ModalContent>
+              </Modal>
         </Box>
       )}
     </LayoutAdmin>
