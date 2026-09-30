@@ -421,6 +421,122 @@ export const APP_ENV_LOCATION_OPTIONS = [
   "OTHER",
 ];
 
+// ── SERVER NODE & TOPOLOGY CONSTANTS ──
+export const SERVER_PRIMARY_DC_OPTIONS = ["DC1", "DC2", "-"] as const;
+
+export const SERVER_SITE_OPTIONS = [
+  "Data Center 1 (DC1)",
+  "Data Center 2 (DC2)",
+  "DC Narogong",
+  "DRC Surabaya",
+  "Head Office",
+  "AWS Cloud",
+  "Google Cloud",
+  "Other Site",
+] as const;
+
+export const SERVER_ROLE_OPTIONS = [
+  "Web Server",
+  "App Server",
+  "DB Server",
+  "Middleware",
+  "API Gateway",
+  "Cache / Redis",
+  "Storage / NAS",
+  "Batch / Worker",
+  "Other",
+] as const;
+
+export const SERVER_STATUS_OPTIONS = ["Aktif", "Pasif"] as const;
+
+export const SERVER_ENVIRONMENT_OPTIONS = [
+  "Production",
+  "DRC",
+  "Staging",
+  "UAT",
+  "Development",
+  "Other",
+] as const;
+
+export const SERVER_SEGMENT_OPTIONS = [
+  "Web Tier",
+  "App Tier",
+  "DB Tier",
+  "DMZ",
+  "Internal",
+  "Integration",
+  "Other",
+] as const;
+
+// ── VM HARDWARE SPECIFICATION CONSTANTS ──
+export const VM_CPU_OPTIONS = [
+  "1 vCPU",
+  "2 vCPU",
+  "4 vCPU",
+  "8 vCPU",
+  "12 vCPU",
+  "16 vCPU",
+  "24 vCPU",
+  "32 vCPU",
+  "48 vCPU",
+  "64 vCPU",
+  "Custom",
+] as const;
+
+export const VM_MEMORY_OPTIONS = [
+  "2 GB RAM",
+  "4 GB RAM",
+  "8 GB RAM",
+  "16 GB RAM",
+  "24 GB RAM",
+  "32 GB RAM",
+  "48 GB RAM",
+  "64 GB RAM",
+  "96 GB RAM",
+  "128 GB RAM",
+  "256 GB RAM",
+  "512 GB RAM",
+  "Custom",
+] as const;
+
+export const VM_STORAGE_OPTIONS = [
+  "50 GB SSD",
+  "100 GB SSD",
+  "150 GB SSD",
+  "200 GB SSD",
+  "250 GB SSD",
+  "300 GB SSD",
+  "500 GB SSD",
+  "1 TB SSD",
+  "2 TB SSD",
+  "500 GB HDD",
+  "1 TB HDD",
+  "2 TB HDD",
+  "Custom",
+] as const;
+
+export const VM_STORAGE_UNIT_OPTIONS = [
+  "GB SSD",
+  "TB SSD",
+  "GB HDD",
+  "TB HDD",
+  "GB NVMe",
+  "TB NVMe",
+] as const;
+
+export const VM_OS_OPTIONS = [
+  "Red Hat Enterprise Linux 9",
+  "Red Hat Enterprise Linux 8",
+  "Oracle Linux 9",
+  "Oracle Linux 8",
+  "Ubuntu Server 24.04 LTS",
+  "Ubuntu Server 22.04 LTS",
+  "Windows Server 2022",
+  "Windows Server 2019",
+  "Rocky Linux 9",
+  "Other",
+] as const;
+
 export const APP_INTEGRATED_OTHER_APPS = [
   "CORE BANKING",
   "SWITCHING",

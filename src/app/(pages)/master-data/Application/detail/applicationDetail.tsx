@@ -19,12 +19,15 @@ import {
   Button,
   Card,
   CardBody,
+  CardHeader,
   Checkbox,
   CheckboxGroup,
   Divider,
   Flex,
   FormControl,
   FormLabel,
+  Grid,
+  GridItem,
   Heading,
   HStack,
   Icon,
@@ -32,6 +35,7 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  InputRightAddon,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -44,6 +48,7 @@ import {
   RadioGroup,
   Select as ChakraSelect,
   SimpleGrid,
+  Skeleton,
   Spinner,
   Stack,
   Tab,
@@ -87,6 +92,7 @@ import {
   FiEdit,
   FiExternalLink,
   FiEye,
+  FiEyeOff,
   FiFileText,
   FiFolder,
   FiGlobe,
@@ -106,6 +112,7 @@ import {
   FiTrendingUp,
   FiUsers,
   FiX,
+  FiZap,
 } from "react-icons/fi";
 import { Select } from "chakra-react-select";
 
@@ -136,13 +143,30 @@ import {
   ORG_CATEGORY_KEY_DIVISION,
   ORG_CATEGORY_KEY_GROUP,
   MAX_SIZE_TABLE,
+  SERVER_PRIMARY_DC_OPTIONS,
+  SERVER_SITE_OPTIONS,
+  SERVER_ROLE_OPTIONS,
+  SERVER_STATUS_OPTIONS,
+  SERVER_ENVIRONMENT_OPTIONS,
+  SERVER_SEGMENT_OPTIONS,
+  VM_CPU_OPTIONS,
+  VM_MEMORY_OPTIONS,
+  VM_STORAGE_OPTIONS,
+  VM_STORAGE_UNIT_OPTIONS,
+  VM_OS_OPTIONS,
 } from "@/app/constants/applicationConstants";
 import { AuthDataModelInterface } from "@/app/context/AuthContext";
 import { useToastHelper } from "@/app/helper/ToastMessagesHelper";
 import { useDocumentTitle } from "@/app/hooks/useDocumentTitle";
 
 // Services & Types
-import useApps, { ApplicationMasterResponse } from "@/app/services/useApps";
+import useApps, {
+  ApplicationMasterResponse,
+  ServerSoftwareItemResponse,
+  AppInstalledSoftwareResponse,
+  AddAppSoftwarePayload,
+  CreateServerSoftwarePayload,
+} from "@/app/services/useApps";
 import useOrganization, { OrganizationResponse } from "@/app/services/useOrganization";
 import useUsers, { UsersResponse } from "@/app/services/useUsers";
 import useConstants, { ConstantDataResponse } from "@/app/services/useConstants";
@@ -191,17 +215,21 @@ export interface RelatedAppItem {
   appsStatus?: string;
 }
 
-export const STANDARD_ROLE_SERVERS = [
-  "Web Server",
-  "App Server",
-  "DB Server",
-  "Middleware",
-  "API Gateway",
-  "Cache / Redis",
-  "Storage / NAS",
-  "Batch / Worker",
-  "Other",
-] as const;
+export interface AppAccessParameterItem {
+  id?: string;
+  appsId?: string;
+  appsEnvId?: string;
+  targetEnvironment: "Dev" | "Prod";
+  paramCategory: string;
+  paramLabel: string;
+  paramKey: string;
+  paramValue: string;
+  fieldType: "text" | "password" | "textarea";
+  isMasked?: "Y" | "N";
+  displayOrder: number;
+}
+
+export const STANDARD_ROLE_SERVERS = SERVER_ROLE_OPTIONS;
 
 export const detectDcFromIp = (ip?: string): "DC1" | "DC2" | "-" => {
   if (!ip) return "-";
@@ -213,81 +241,6 @@ export const detectDcFromIp = (ip?: string): "DC1" | "DC2" | "-" => {
   }
   return "-";
 };
-
-const DEFAULT_SERVER_ENVIRONMENTS: AppServerEnvironmentItem[] = [
-  {
-    id: "srv-1",
-    roleServer: "Web Server",
-    roleDetail: "Reverse Proxy & SSL Termination (Nginx)",
-    status: "Aktif",
-    ipAddress: "10.20.101.15",
-    primary: "DC1",
-    site: "DC Narogong",
-    segment: "DMZ Web Tier",
-    environment: "Production",
-    joinDomain: "Ya",
-    hardening: "Ya",
-    pam: "Ya",
-    dualDeploy: "Ya",
-    vmDetail: {
-      namaVm: "VM-PRD-WEB-01",
-      ipAddress: "10.20.101.15",
-      os: "Red Hat Enterprise Linux 9.2",
-      cpu: "4 vCPU",
-      memory: "16 GB RAM",
-      storage: "150 GB NVMe SSD",
-      note: "Primary Web Reverse Proxy Instance with SSL Offloading",
-    },
-  },
-  {
-    id: "srv-2",
-    roleServer: "App Server",
-    roleDetail: "Core Application Microservices (.NET 8)",
-    status: "Aktif",
-    ipAddress: "10.20.102.24",
-    primary: "DC1",
-    site: "DC Narogong",
-    segment: "Internal App Farm",
-    environment: "Production",
-    joinDomain: "Ya",
-    hardening: "Ya",
-    pam: "Ya",
-    dualDeploy: "Ya",
-    vmDetail: {
-      namaVm: "VM-PRD-APP-01",
-      ipAddress: "10.20.102.24",
-      os: "Ubuntu Server 22.04 LTS",
-      cpu: "8 vCPU",
-      memory: "32 GB RAM",
-      storage: "500 GB NVMe SSD",
-      note: "Core Microservices and Background Workers Instance",
-    },
-  },
-  {
-    id: "srv-3",
-    roleServer: "DB Server",
-    roleDetail: "PostgreSQL Database Cluster Standby Node",
-    status: "Pasif",
-    ipAddress: "10.20.201.32",
-    primary: "DC2",
-    site: "DRC Surabaya",
-    segment: "Database Secure Zone",
-    environment: "DRC",
-    joinDomain: "Ya",
-    hardening: "Ya",
-    pam: "Ya",
-    dualDeploy: "Tidak",
-    vmDetail: {
-      namaVm: "VM-DRC-DB-02",
-      ipAddress: "10.20.201.32",
-      os: "Red Hat Enterprise Linux 9.2",
-      cpu: "16 vCPU",
-      memory: "64 GB RAM",
-      storage: "2 TB Enterprise SSD (RAID 10)",
-      note: "Standby Replication Node at DRC Surabaya",
-    },
-  },
-];
 
 const HeaderDataContent: HeaderContentProps = {
   titleName: "Application Detail",
@@ -315,17 +268,6 @@ export default function ApplicationDetail() {
 
   // Active Tab Index State (0: Overview, 1: Specs, 2: Governance, 3: Projects, 4: Assessment, 5: Environment)
   const [activeTabIndex, setActiveTabIndex] = useState(0);
-  const [isTabGuardOpen, setIsTabGuardOpen] = useState(false);
-  const [pendingTabIndex, setPendingTabIndex] = useState<number | null>(null);
-
-  const tabNames = [
-    "Executive Summary",
-    "Specs & Architecture",
-    "Governance & Team",
-    "Project Portfolio",
-    "Assessment Report",
-    "Application Environment",
-  ];
 
   // Form State
   const [formData, setFormData] = useState({
@@ -413,57 +355,78 @@ export default function ApplicationDetail() {
   const [assessmentRefresh, setAssessmentRefresh] = useState(0);
 
   // Server Environment State
-  const [serverEnvironments, setServerEnvironments] = useState<AppServerEnvironmentItem[]>(DEFAULT_SERVER_ENVIRONMENTS);
+  const [serverEnvironments, setServerEnvironments] = useState<AppServerEnvironmentItem[]>([]);
+  const [isTopologyLoading, setIsTopologyLoading] = useState<boolean>(false);
 
   // Link Akses & Environment Test Parameters State
   const [linkAksesEnv, setLinkAksesEnv] = useState<"Dev" | "Prod">("Dev");
-  const [linkAksesUrl, setLinkAksesUrl] = useState<string>("");
-  const [testUser, setTestUser] = useState<string>("");
-  const [testData, setTestData] = useState<string>("");
+  const [linkAksesDevUrl, setLinkAksesDevUrl] = useState<string>("");
+  const [linkAksesProdUrl, setLinkAksesProdUrl] = useState<string>("");
+  const [testingParameters, setTestingParameters] = useState<AppAccessParameterItem[]>([]);
+  const [isAccessLoading, setIsAccessLoading] = useState<boolean>(false);
+  const [maskedVisibility, setMaskedVisibility] = useState<{ [key: string]: boolean }>({});
 
-  // Supporting Applications (Aplikasi Pendukung) State
-  const [supportingApps, setSupportingApps] = useState<ApplicationMasterResponse[]>([]);
-  const [isSupportingAppsLoading, setIsSupportingAppsLoading] = useState<boolean>(false);
-  const [supportingAppsSearch, setSupportingAppsSearch] = useState<string>("");
-  const [supportingAppsPageIndex, setSupportingAppsPageIndex] = useState<number>(0);
-  const [supportingAppsPageSize, setSupportingAppsPageSize] = useState<number>(5);
-  const [supportingAppsTotal, setSupportingAppsTotal] = useState<number>(0);
-  const [relatedSupportingApps, setRelatedSupportingApps] = useState<RelatedAppItem[]>([]);
-  const [isCatalogOpen, setIsCatalogOpen] = useState<boolean>(false);
+  // Software, Runtime & Middleware Pendukung State (Option B)
+  const [installedSoftwares, setInstalledSoftwares] = useState<AppInstalledSoftwareResponse[]>([]);
+  const [isInstalledSoftwaresLoading, setIsInstalledSoftwaresLoading] = useState<boolean>(false);
+  const [connectedSoftwaresSearch, setConnectedSoftwaresSearch] = useState<string>("");
+  const [isSoftwareCatalogOpen, setIsSoftwareCatalogOpen] = useState<boolean>(false);
+  const [softwareCatalog, setSoftwareCatalog] = useState<ServerSoftwareItemResponse[]>([]);
+  const [isSoftwareCatalogLoading, setIsSoftwareCatalogLoading] = useState<boolean>(false);
+  const [softwareCatalogSearch, setSoftwareCatalogSearch] = useState<string>("");
+  const [softwareCategoryFilter, setSoftwareCategoryFilter] = useState<string>("ALL");
+  const [isAddingSoftwareId, setIsAddingSoftwareId] = useState<string | null>(null);
+  const [isRemovingSoftwareId, setIsRemovingSoftwareId] = useState<string | null>(null);
 
-  // Add Server Button Visibility State
-  const [isAddServerHidden, setIsAddServerHidden] = useState<boolean>(false);
-  const [serverAccordionIndices, setServerAccordionIndices] = useState<number[]>([0]);
+  // Create New Master Software Modal State
+  const [isCreateSoftwareModalOpen, setIsCreateSoftwareModalOpen] = useState<boolean>(false);
+  const [newSoftwareName, setNewSoftwareName] = useState<string>("");
+  const [newSoftwareCategory, setNewSoftwareCategory] = useState<string>("LANGUAGE_RUNTIME");
+  const [newSoftwareVendor, setNewSoftwareVendor] = useState<string>("");
+  const [newSoftwareIsStandardBank, setNewSoftwareIsStandardBank] = useState<string>("Y");
+  const [newSoftwareDescription, setNewSoftwareDescription] = useState<string>("");
+  const [autoConnectNewSoftware, setAutoConnectNewSoftware] = useState<boolean>(true);
+  const [isSubmittingNewSoftware, setIsSubmittingNewSoftware] = useState<boolean>(false);
 
-  useEffect(() => {
-    if (!appId) return;
-    try {
-      const stored = localStorage.getItem(`app_env_servers_${appId}`);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setServerEnvironments(parsed);
-        }
+  // Testing Parameter Dynamic Form Handlers
+  const handleAddTestingParameter = () => {
+    setTestingParameters((prev) => [
+      ...prev,
+      {
+        targetEnvironment: "Dev",
+        paramCategory: "TESTING",
+        paramLabel: `Parameter ${prev.length + 1}`,
+        paramKey: `param_${prev.length + 1}`,
+        paramValue: "",
+        fieldType: "text",
+        isMasked: "N",
+        displayOrder: prev.length + 1,
+      },
+    ]);
+  };
+
+  const handleUpdateTestingParameter = (
+    index: number,
+    field: keyof AppAccessParameterItem,
+    value: any
+  ) => {
+    setTestingParameters((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      if (field === "paramLabel") {
+        updated[index].paramKey = (value || "").toLowerCase().trim().replace(/\s+/g, "_");
       }
-      const storedAccess = localStorage.getItem(`app_env_access_${appId}`);
-      if (storedAccess) {
-        const parsedAccess = JSON.parse(storedAccess);
-        if (parsedAccess.linkAksesEnv) setLinkAksesEnv(parsedAccess.linkAksesEnv);
-        if (parsedAccess.linkAksesUrl !== undefined) setLinkAksesUrl(parsedAccess.linkAksesUrl);
-        if (parsedAccess.testUser !== undefined) setTestUser(parsedAccess.testUser);
-        if (parsedAccess.testData !== undefined) setTestData(parsedAccess.testData);
-      }
-      const storedRelated = localStorage.getItem(`app_related_supporting_${appId}`);
-      if (storedRelated) {
-        const parsedRelated = JSON.parse(storedRelated);
-        if (Array.isArray(parsedRelated)) {
-          setRelatedSupportingApps(parsedRelated);
-        }
-      }
-    } catch (e) {
-      console.error("Failed to load server environments and link access from localStorage", e);
-    }
-  }, [appId]);
+      return updated;
+    });
+  };
+
+  const handleDeleteTestingParameter = (index: number) => {
+    setTestingParameters((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const toggleMaskVisibility = (key: string) => {
+    setMaskedVisibility((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const handleUpdateServer = (
     index: number,
@@ -513,82 +476,31 @@ export default function ApplicationDetail() {
 
   const handleAddServer = () => {
     if (!IsEditMode) setIsEditMode(true);
-    setIsAddServerHidden(true);
-    const newId = `srv-${Date.now()}`;
     const newServer: AppServerEnvironmentItem = {
-      id: newId,
+      id: `srv-${Date.now()}`,
       roleServer: "App Server",
-      roleDetail: "Application Service Node",
+      roleDetail: "",
       status: "Aktif",
-      ipAddress: "10.20.101.50",
-      primary: "DC1",
+      ipAddress: "",
+      primary: "-",
       site: "DC Narogong",
-      segment: "Internal App Farm",
+      segment: "",
       environment: "Production",
       joinDomain: "Ya",
       hardening: "Ya",
       pam: "Ya",
-      dualDeploy: "Ya",
+      dualDeploy: "Tidak",
       vmDetail: {
-        namaVm: `VM-PRD-NODE-${Date.now().toString().slice(-4)}`,
-        ipAddress: "10.20.101.50",
-        os: "Red Hat Enterprise Linux 9",
-        cpu: "4 vCPU",
-        memory: "16 GB RAM",
-        storage: "250 GB SSD",
+        namaVm: "",
+        ipAddress: "",
+        os: "",
+        cpu: "",
+        memory: "",
+        storage: "",
         note: "",
       },
     };
-    const newIndex = serverEnvironments.length;
     setServerEnvironments((prev) => [...prev, newServer]);
-    setServerAccordionIndices((prev) => Array.from(new Set([...prev, newIndex])));
-
-    // Robust smooth scroll to newly added server card with retries and auto-focus
-    const scrollToNewServer = (id: string, attempts = 0) => {
-      const el =
-        document.getElementById(`server-node-${id}`) ||
-        document.querySelector(`[data-server-node="${id}"]`);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-        const yOffset = -110;
-        const y = el.getBoundingClientRect().top + window.pageYOffset + yOffset;
-        window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
-        const firstInput = el.querySelector("select, input") as HTMLElement | null;
-        if (firstInput) {
-          setTimeout(() => firstInput.focus({ preventScroll: true }), 350);
-        }
-      } else if (attempts < 15) {
-        setTimeout(() => scrollToNewServer(id, attempts + 1), 60);
-      }
-    };
-    setTimeout(() => scrollToNewServer(newId), 50);
-  };
-
-  const handleCancelEnvironmentEdit = () => {
-    setIsEditMode(false);
-    setIsAddServerHidden(false);
-    if (appId) {
-      const stored = localStorage.getItem(`app_env_servers_${appId}`);
-      if (stored) {
-        try {
-          setServerEnvironments(JSON.parse(stored));
-        } catch (e) {
-          console.error(e);
-        }
-      }
-      const storedAccess = localStorage.getItem(`app_env_access_${appId}`);
-      if (storedAccess) {
-        try {
-          const parsedAccess = JSON.parse(storedAccess);
-          if (parsedAccess.linkAksesEnv) setLinkAksesEnv(parsedAccess.linkAksesEnv);
-          if (parsedAccess.linkAksesUrl !== undefined) setLinkAksesUrl(parsedAccess.linkAksesUrl);
-          if (parsedAccess.testUser !== undefined) setTestUser(parsedAccess.testUser);
-          if (parsedAccess.testData !== undefined) setTestData(parsedAccess.testData);
-        } catch (e) {
-          console.error(e);
-        }
-      }
-    }
   };
 
   const handleDeleteServer = (index: number) => {
@@ -599,96 +511,227 @@ export default function ApplicationDetail() {
   const { hasCopied, onCopy } = useClipboard(DataApplication?.appCode || "");
 
   // API Hooks
-  const { GetDetailById, UpdateData, List: ListApplications } = useApps();
+  const {
+    GetDetailById,
+    UpdateData,
+    List: ListApplications,
+    GetTopologyOverview,
+    SyncAppServers,
+    GetAccessParameters,
+    SyncAccessParameters,
+    GetServerSoftwaresCatalog,
+    CreateServerSoftware,
+    GetAppSoftwares,
+    AddAppSoftware,
+    RemoveAppSoftware,
+  } = useApps();
 
-  // Fetch Supporting Applications from existing Master Data Application endpoint
-  const fetchSupportingApps = useCallback(
-    async (pageIndex: number, pageSize: number, searchKeyword: string) => {
+  // Load Installed Softwares from Database
+  const LoadInstalledSoftwaresData = useCallback(async () => {
+    if (!appId || !tokenData) return;
+    try {
+      setIsInstalledSoftwaresLoading(true);
+      const res = await GetAppSoftwares(appId, tokenData);
+      if (res && res.data && Array.isArray(res.data)) {
+        setInstalledSoftwares(res.data);
+      } else {
+        setInstalledSoftwares([]);
+      }
+    } catch (err) {
+      console.error("Failed to load installed softwares from database:", err);
+      setInstalledSoftwares([]);
+    } finally {
+      setIsInstalledSoftwaresLoading(false);
+    }
+  }, [appId, tokenData, GetAppSoftwares]);
+
+  // Fetch Software Catalog from Master Data
+  const fetchSoftwareCatalog = useCallback(
+    async (searchKeyword: string = "") => {
       if (!tokenData) return;
       try {
-        setIsSupportingAppsLoading(true);
-        const payload: PaggingListPayload = {
-          search: searchKeyword,
-          limit: pageSize,
-          page: pageIndex,
-          fieldOrder: ["createdAt"],
-          orderDir: "desc",
-          filterWhere: [],
-        };
-        const res = await ListApplications(payload, tokenData);
-        if (res && res.statusCode === RES_CODE_OK && res.data) {
-          setSupportingApps(res.data);
-          setSupportingAppsTotal(res.countTotal || res.count || res.data.length);
-        } else if (res && res.data) {
-          setSupportingApps(res.data);
-          setSupportingAppsTotal(res.countTotal || res.count || res.data.length);
+        setIsSoftwareCatalogLoading(true);
+        const res = await GetServerSoftwaresCatalog(searchKeyword, tokenData);
+        if (res && res.data && Array.isArray(res.data)) {
+          setSoftwareCatalog(res.data);
+        } else {
+          setSoftwareCatalog([]);
         }
       } catch (err) {
-        console.error("Failed to fetch supporting apps:", err);
+        console.error("Failed to fetch software catalog:", err);
+        setSoftwareCatalog([]);
       } finally {
-        setIsSupportingAppsLoading(false);
+        setIsSoftwareCatalogLoading(false);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tokenData]
+    [tokenData, GetServerSoftwaresCatalog]
   );
 
   const handleOpenAddCatalog = () => {
-    setIsCatalogOpen(true);
-    fetchSupportingApps(0, supportingAppsPageSize, supportingAppsSearch);
+    const nextState = !isSoftwareCatalogOpen;
+    setIsSoftwareCatalogOpen(nextState);
+    if (nextState) {
+      fetchSoftwareCatalog(softwareCatalogSearch);
+    }
   };
 
-  const handleAddSupportingApp = (app: ApplicationMasterResponse) => {
-    if (relatedSupportingApps.some((item) => item.id === app.id || item.appName.toLowerCase() === app.appName.toLowerCase())) {
+  const handleAddSoftware = async (software: ServerSoftwareItemResponse) => {
+    if (
+      installedSoftwares.some(
+        (item) =>
+          item.softwareId === software.id ||
+          item.softwareName.toLowerCase() === software.softwareName.toLowerCase()
+      )
+    ) {
       showToast({
-        description: "Aplikasi sudah ada dalam daftar aplikasi pendukung",
+        description: `${software.softwareName} sudah terhubung ke aplikasi ini`,
         statusToast: "info",
       });
       return;
     }
-    const displayVersion =
-      (app as any).appVersion ||
-      (app as any).version ||
-      app.appStatusProject ||
-      "v1.0.0";
-    const displayYear =
-      app.appInitaiteYear ||
-      (app.createdAt ? new Date(app.createdAt).getFullYear().toString() : "-");
 
-    const newItem: RelatedAppItem = {
-      id: app.id,
-      appName: app.appName,
-      appShortName: app.appShortName || app.appCode || app.appName.slice(0, 4).toUpperCase(),
-      appVersion: displayVersion,
-      appInitaiteYear: displayYear,
-      appsStatus: app.appsStatus || "ACTIVE",
-    };
+    if (!appId || !tokenData) return;
 
-    const updated = [...relatedSupportingApps, newItem];
-    setRelatedSupportingApps(updated);
-    const namesStr = updated.map((a) => a.appName).join(", ");
-    setFormData((prev) => ({ ...prev, appIntegrationOthersApps: namesStr }));
-    if (appId) {
-      localStorage.setItem(`app_related_supporting_${appId}`, JSON.stringify(updated));
+    try {
+      setIsAddingSoftwareId(software.id);
+      const payload: AddAppSoftwarePayload = {
+        softwareId: software.id,
+        installedVersion: "Latest",
+        portNumber: software.softwareCategory === "WEB_SERVER" ? "8080" : undefined,
+        serviceStatus: "Running",
+        notes: `Standar Bank: ${software.isStandardBank}`,
+      };
+      const res = await AddAppSoftware(appId, payload, tokenData);
+
+      if (res && (res.statusCode === RES_CODE_OK || res.statusCode === 200)) {
+        showToast({
+          description: `${software.softwareName} berhasil ditambahkan ke topology aplikasi`,
+          statusToast: "success",
+        });
+        await LoadInstalledSoftwaresData();
+      } else {
+        showToast({
+          description: res?.message || "Gagal menambahkan software pendukung",
+          statusToast: "error",
+        });
+      }
+    } catch (err) {
+      console.error("Failed to add software:", err);
+      showToast({
+        description: "Terjadi kesalahan saat menambahkan software pendukung",
+        statusToast: "error",
+      });
+    } finally {
+      setIsAddingSoftwareId(null);
     }
-    showToast({
-      description: `${app.appName} berhasil ditambahkan ke aplikasi pendukung`,
-      statusToast: "success",
-    });
   };
 
-  const handleRemoveSupportingApp = (id: string) => {
-    const updated = relatedSupportingApps.filter((item) => item.id !== id);
-    setRelatedSupportingApps(updated);
-    const namesStr = updated.map((a) => a.appName).join(", ");
-    setFormData((prev) => ({ ...prev, appIntegrationOthersApps: namesStr }));
-    if (appId) {
-      localStorage.setItem(`app_related_supporting_${appId}`, JSON.stringify(updated));
+  const handleRemoveSoftware = async (softwareId: string, softwareName: string) => {
+    if (!appId || !tokenData) return;
+
+    try {
+      setIsRemovingSoftwareId(softwareId);
+      const res = await RemoveAppSoftware(appId, softwareId, tokenData);
+
+      if (res && (res.statusCode === RES_CODE_OK || res.statusCode === 200)) {
+        showToast({
+          description: `${softwareName} berhasil dihapus dari topology aplikasi`,
+          statusToast: "info",
+        });
+        await LoadInstalledSoftwaresData();
+      } else {
+        showToast({
+          description: res?.message || "Gagal menghapus software",
+          statusToast: "error",
+        });
+      }
+    } catch (err) {
+      console.error("Failed to remove software:", err);
+      showToast({
+        description: "Terjadi kesalahan saat menghapus software",
+        statusToast: "error",
+      });
+    } finally {
+      setIsRemovingSoftwareId(null);
     }
-    showToast({
-      description: "Aplikasi pendukung berhasil dihapus",
-      statusToast: "info",
-    });
+  };
+
+  const handleOpenCreateModal = () => {
+    setNewSoftwareName("");
+    setNewSoftwareCategory("LANGUAGE_RUNTIME");
+    setNewSoftwareVendor("");
+    setNewSoftwareIsStandardBank("Y");
+    setNewSoftwareDescription("");
+    setAutoConnectNewSoftware(true);
+    setIsCreateSoftwareModalOpen(true);
+  };
+
+  const handleCreateNewSoftware = async () => {
+    const trimmedName = newSoftwareName.trim();
+    if (!trimmedName) {
+      showToast({
+        description: "Nama Software / Runtime wajib diisi",
+        statusToast: "error",
+      });
+      return;
+    }
+
+    // Client-side duplicate check (case-insensitive)
+    const isDuplicate = softwareCatalog.some(
+      (s) => s.softwareName.trim().toLowerCase() === trimmedName.toLowerCase()
+    );
+    if (isDuplicate) {
+      showToast({
+        description: `Software/Runtime "${trimmedName}" sudah terdaftar dalam katalog master`,
+        statusToast: "error",
+      });
+      return;
+    }
+
+    if (!tokenData) return;
+
+    try {
+      setIsSubmittingNewSoftware(true);
+      const payload: CreateServerSoftwarePayload = {
+        softwareName: trimmedName,
+        softwareCategory: newSoftwareCategory,
+        vendor: newSoftwareVendor.trim() || undefined,
+        isStandardBank: newSoftwareIsStandardBank,
+        description: newSoftwareDescription.trim() || undefined,
+      };
+
+      const res = await CreateServerSoftware(payload, tokenData);
+      if (res && (res.statusCode === RES_CODE_OK || res.statusCode === 200) && res.data) {
+        showToast({
+          description: `Software ${trimmedName} berhasil ditambahkan ke katalog master`,
+          statusToast: "success",
+        });
+
+        const createdItem = res.data;
+        setIsCreateSoftwareModalOpen(false);
+
+        // Refresh catalog list
+        await fetchSoftwareCatalog(softwareCatalogSearch);
+
+        // If autoConnect is selected, connect it right away to this application
+        if (autoConnectNewSoftware && appId) {
+          await handleAddSoftware(createdItem);
+        }
+      } else {
+        showToast({
+          description: res?.message || "Gagal menambahkan software ke katalog master",
+          statusToast: "error",
+        });
+      }
+    } catch (err) {
+      console.error("Failed to create master software:", err);
+      showToast({
+        description: "Terjadi kesalahan saat menambahkan master software",
+        statusToast: "error",
+      });
+    } finally {
+      setIsSubmittingNewSoftware(false);
+    }
   };
 
   const { List: ListOrganization } = useOrganization();
@@ -708,7 +751,7 @@ export default function ApplicationDetail() {
     const storedData = localStorage.getItem("authData");
     const token = localStorage.getItem("tokenData") as string;
 
-    if (DataAuth == null && storedData) {
+    if (storedData) {
       try {
         const StorageAuth: AuthDataModelInterface = JSON.parse(storedData);
         setDataAuth(StorageAuth.dataLogin as AuthDataResponse);
@@ -717,7 +760,7 @@ export default function ApplicationDetail() {
       }
     }
     if (token) setTokenData(token);
-  }, [DataAuth]);
+  }, []);
 
   // Load Application Detail
   const LoadApplicationData = useCallback(async () => {
@@ -800,30 +843,8 @@ export default function ApplicationDetail() {
         setBusinessOwnerPICSearch(data.appBusinessOwnerPicUserId);
       }
 
-      try {
-        const storedRelated = localStorage.getItem(`app_related_supporting_${appId}`);
-        if (storedRelated) {
-          const parsedRelated = JSON.parse(storedRelated);
-          if (Array.isArray(parsedRelated) && parsedRelated.length > 0) {
-            setRelatedSupportingApps(parsedRelated);
-          }
-        } else if (data.appIntegrationOthersApps) {
-          const names = data.appIntegrationOthersApps.split(",").map((s) => s.trim()).filter(Boolean);
-          if (names.length > 0) {
-            const fallbackApps: RelatedAppItem[] = names.map((name, idx) => ({
-              id: `rel-${idx}-${name.replace(/\s+/g, "_")}`,
-              appName: name,
-              appShortName: name.length > 4 ? name.substring(0, 4).toUpperCase() : name.toUpperCase(),
-              appVersion: "v1.0.0",
-              appInitaiteYear: "-",
-              appsStatus: "ACTIVE",
-            }));
-            setRelatedSupportingApps(fallbackApps);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to parse stored supporting apps", err);
-      }
+      // Load connected software, runtime & middleware from database
+      await LoadInstalledSoftwaresData();
     } catch (error) {
       console.error("Error loading application detail:", error);
       showToast({
@@ -833,7 +854,7 @@ export default function ApplicationDetail() {
     } finally {
       setIsLoadingProcess(false);
     }
-  }, [appId, tokenData]);
+  }, [appId, tokenData, LoadInstalledSoftwaresData]);
 
   // Load Organizations
   const LoadOrganizations = useCallback(async () => {
@@ -955,26 +976,90 @@ export default function ApplicationDetail() {
     }
   }, [appId, tokenData]);
 
-  // Initial Data Fetch
+  // Load Server Topology & Environments
+  const LoadTopologyData = useCallback(async () => {
+    if (!appId || !tokenData) return;
+    try {
+      setIsTopologyLoading(true);
+      const res = await GetTopologyOverview(appId, tokenData);
+      if (res && res.statusCode === RES_CODE_OK && res.data) {
+        setServerEnvironments((res.data.servers || []) as AppServerEnvironmentItem[]);
+      } else {
+        setServerEnvironments([]);
+      }
+    } catch (e) {
+      console.error("Error loading server topology:", e);
+      setServerEnvironments([]);
+    } finally {
+      setIsTopologyLoading(false);
+    }
+  }, [appId, tokenData]);
+
+  // Load Access Links & Testing Parameters
+  const LoadAccessData = useCallback(async () => {
+    if (!appId || !tokenData) return;
+    try {
+      setIsAccessLoading(true);
+      const res = await GetAccessParameters(appId, tokenData);
+      if (res && res.statusCode === RES_CODE_OK && res.data) {
+        setLinkAksesDevUrl(res.data.devUrl || "");
+        setLinkAksesProdUrl(res.data.prodUrl || "");
+        setTestingParameters(
+          (res.data.parameters || []).map((p: any) => ({
+            ...p,
+            paramValue: p.paramValue || "",
+          })) as AppAccessParameterItem[]
+        );
+      } else {
+        setLinkAksesDevUrl("");
+        setLinkAksesProdUrl("");
+        setTestingParameters([]);
+      }
+    } catch (e) {
+      console.error("Error loading access parameters:", e);
+    } finally {
+      setIsAccessLoading(false);
+    }
+  }, [appId, tokenData]);
+
+  // Initial Core Data Fetch (Lightweight)
   useEffect(() => {
     if (tokenData && appId) {
       LoadApplicationData();
       LoadOrganizations();
       LoadProjectStatuses();
-      LoadBacklogs();
-      LoadAssessments();
+      LoadTopologyData();
+      LoadAccessData();
+      LoadInstalledSoftwaresData();
     }
-  }, [tokenData, appId, assessmentRefresh]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tokenData, appId]);
+
+  // Lazy Fetch Tab-Specific Data On-Demand
+  useEffect(() => {
+    if (!tokenData || !appId) return;
+    if (activeTabIndex === 3) {
+      LoadBacklogs();
+      LoadProjects(projectSearchQuery, projectStatusFilter, projectPageIndex, projectPageSize);
+    } else if (activeTabIndex === 4) {
+      LoadAssessments();
+    } else if (activeTabIndex === 5) {
+      LoadTopologyData();
+      LoadAccessData();
+      LoadInstalledSoftwaresData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTabIndex, tokenData, appId]);
 
   // Load Projects on Pagination / Search / Filter Change (Debounced)
   useEffect(() => {
-    if (tokenData && appId) {
+    if (tokenData && appId && activeTabIndex === 3) {
       const timer = setTimeout(() => {
         LoadProjects(projectSearchQuery, projectStatusFilter, projectPageIndex, projectPageSize);
       }, 300);
       return () => clearTimeout(timer);
     }
-  }, [tokenData, appId, projectPageIndex, projectPageSize, projectStatusFilter, projectSearchQuery]);
+  }, [tokenData, appId, activeTabIndex, projectPageIndex, projectPageSize, projectStatusFilter, projectSearchQuery]);
 
   // PIC User Search Handler
   const GetDataUser = async (searchValue: string): Promise<UsersResponse[]> => {
@@ -1091,10 +1176,7 @@ export default function ApplicationDetail() {
         appEnvLocationsOthers: formData.appEnvLocationsOthers,
         appPrivateAuth: formData.appPrivateAuth,
         appHightAvailability: formData.appHightAvailability,
-        appIntegrationOthersApps:
-          relatedSupportingApps.length > 0
-            ? relatedSupportingApps.map((a) => a.appName).join(", ")
-            : formData.appIntegrationOthersApps,
+        appIntegrationOthersApps: formData.appIntegrationOthersApps,
         appOwnerDivisionId: formData.appOwnerDivisionId || null,
         appOwnerGroupId: formData.appOwnerGroupId || null,
         appManageByDivisionId: formData.appManageByDivisionId || null,
@@ -1127,17 +1209,27 @@ export default function ApplicationDetail() {
       }
 
       if (appId) {
-        localStorage.setItem(`app_env_servers_${appId}`, JSON.stringify(serverEnvironments));
-        localStorage.setItem(
-          `app_env_access_${appId}`,
-          JSON.stringify({
-            linkAksesEnv,
-            linkAksesUrl,
-            testUser,
-            testData,
-          })
-        );
-        localStorage.setItem(`app_related_supporting_${appId}`, JSON.stringify(relatedSupportingApps));
+        // Sync server environments to database
+        try {
+          await SyncAppServers(appId, serverEnvironments as any, tokenData);
+        } catch (errSync) {
+          console.error("Failed to sync server topology to database", errSync);
+        }
+
+        // Sync access links and dynamic testing parameters to database
+        try {
+          await SyncAccessParameters(
+            appId,
+            {
+              devUrl: linkAksesDevUrl,
+              prodUrl: linkAksesProdUrl,
+              parameters: testingParameters as any,
+            },
+            tokenData
+          );
+        } catch (errAccess) {
+          console.error("Failed to sync access parameters to database", errAccess);
+        }
       }
 
       showToast({
@@ -1145,9 +1237,9 @@ export default function ApplicationDetail() {
         statusToast: "success",
       });
 
-      setIsAddServerHidden(false);
       setIsEditMode(false);
       LoadApplicationData();
+      LoadTopologyData();
     } catch (error) {
       console.error("Error updating application:", error);
       showToast({
@@ -1157,58 +1249,6 @@ export default function ApplicationDetail() {
     } finally {
       setIsLoadingProcess(false);
     }
-  };
-
-  // Tab Navigation Guard Handlers
-  const handleTabChange = (nextIndex: number) => {
-    if (nextIndex === activeTabIndex) return;
-    if (IsEditMode) {
-      setPendingTabIndex(nextIndex);
-      setIsTabGuardOpen(true);
-      return;
-    }
-    setActiveTabIndex(nextIndex);
-  };
-
-  const handleConfirmLeaveTab = () => {
-    setIsTabGuardOpen(false);
-    setIsEditMode(false);
-    setIsAddServerHidden(false);
-    LoadApplicationData();
-
-    // Reset environment local changes if applicable
-    if (appId) {
-      const stored = localStorage.getItem(`app_env_servers_${appId}`);
-      if (stored) {
-        try {
-          setServerEnvironments(JSON.parse(stored));
-        } catch (e) {
-          console.error(e);
-        }
-      }
-      const storedAccess = localStorage.getItem(`app_env_access_${appId}`);
-      if (storedAccess) {
-        try {
-          const parsedAccess = JSON.parse(storedAccess);
-          if (parsedAccess.linkAksesEnv) setLinkAksesEnv(parsedAccess.linkAksesEnv);
-          if (parsedAccess.linkAksesUrl !== undefined) setLinkAksesUrl(parsedAccess.linkAksesUrl);
-          if (parsedAccess.testUser !== undefined) setTestUser(parsedAccess.testUser);
-          if (parsedAccess.testData !== undefined) setTestData(parsedAccess.testData);
-        } catch (e) {
-          console.error(e);
-        }
-      }
-    }
-
-    if (pendingTabIndex !== null) {
-      setActiveTabIndex(pendingTabIndex);
-      setPendingTabIndex(null);
-    }
-  };
-
-  const handleCancelLeaveTab = () => {
-    setIsTabGuardOpen(false);
-    setPendingTabIndex(null);
   };
 
   // Memoized Calculated Values
@@ -1302,42 +1342,7 @@ export default function ApplicationDetail() {
     };
   }, [projectTotalCount, projectPageSize, projectPageIndex]);
 
-  // Standard React-Table Adapter for ControlTable (Aplikasi Pendukung)
-  const supportingAppsPageCount = Math.ceil((supportingAppsTotal || 0) / supportingAppsPageSize) || 1;
 
-  const supportingAppsTableAdapter = useMemo(() => {
-    return {
-      getPageCount: () => supportingAppsPageCount,
-      getCanPreviousPage: () => supportingAppsPageIndex > 0,
-      getCanNextPage: () => supportingAppsPageIndex < supportingAppsPageCount - 1,
-      previousPage: () => {
-        const nextIdx = Math.max(0, supportingAppsPageIndex - 1);
-        setSupportingAppsPageIndex(nextIdx);
-        fetchSupportingApps(nextIdx, supportingAppsPageSize, supportingAppsSearch);
-      },
-      nextPage: () => {
-        const nextIdx = Math.min(supportingAppsPageCount - 1, supportingAppsPageIndex + 1);
-        setSupportingAppsPageIndex(nextIdx);
-        fetchSupportingApps(nextIdx, supportingAppsPageSize, supportingAppsSearch);
-      },
-      setPageIndex: (index: number) => {
-        const targetIdx = Math.max(0, Math.min(supportingAppsPageCount - 1, index));
-        setSupportingAppsPageIndex(targetIdx);
-        fetchSupportingApps(targetIdx, supportingAppsPageSize, supportingAppsSearch);
-      },
-      setPageSize: (size: number) => {
-        setSupportingAppsPageSize(size);
-        setSupportingAppsPageIndex(0);
-        fetchSupportingApps(0, size, supportingAppsSearch);
-      },
-      getState: () => ({
-        pagination: {
-          pageIndex: supportingAppsPageIndex,
-          pageSize: supportingAppsPageSize,
-        },
-      }),
-    };
-  }, [supportingAppsPageCount, supportingAppsPageIndex, supportingAppsPageSize, supportingAppsSearch, fetchSupportingApps]);
 
   const getProjectStatusBadge = (status: string) => {
     switch (status?.toUpperCase()) {
@@ -1482,7 +1487,7 @@ export default function ApplicationDetail() {
                         px={2.5}
                         py={0.5}
                         rounded="md"
-                        fontSize="xs"
+                        fontSize="2xs"
                         fontWeight="bold"
                         cursor="pointer"
                         onClick={onCopy}
@@ -1496,7 +1501,7 @@ export default function ApplicationDetail() {
                     </Tooltip>
 
                     {DataApplication?.appShortName && (
-                      <Badge bg="blackAlpha.400" color="white" px={2.5} py={0.5} rounded="md" fontSize="xs" fontWeight="semibold">
+                      <Badge bg="blackAlpha.400" color="white" px={2.5} py={0.5} rounded="md" fontSize="2xs" fontWeight="semibold">
                         {DataApplication.appShortName}
                       </Badge>
                     )}
@@ -1514,7 +1519,7 @@ export default function ApplicationDetail() {
                       px={2.5}
                       py={0.5}
                       rounded="full"
-                      fontSize="xs"
+                      fontSize="2xs"
                       fontWeight="bold"
                     >
                       {DataApplication?.appsStatus || "ACTIVE"}
@@ -1522,21 +1527,21 @@ export default function ApplicationDetail() {
 
                     {/* Critical Mission Badge */}
                     {isCritical && (
-                      <Badge bg="red.500" color="white" px={2.5} py={0.5} rounded="full" fontSize="xs" fontWeight="extrabold" shadow="sm">
+                      <Badge bg="red.500" color="white" px={2.5} py={0.5} rounded="full" fontSize="2xs" fontWeight="extrabold" shadow="sm">
                         CRITICAL {DataApplication?.appCriticalLevel ? `(L${DataApplication.appCriticalLevel})` : ""}
                       </Badge>
                     )}
 
                     {/* 24/7 SLA Pill */}
                     {DataApplication?.appOperational24hrs === "true" && (
-                      <Badge bg="green.400" color="green.950" px={2} py={0.5} rounded="md" fontSize="xs" fontWeight="extrabold">
+                      <Badge bg="green.400" color="green.950" px={2} py={0.5} rounded="md" fontSize="3xs" fontWeight="extrabold">
                         24/7 SLA
                       </Badge>
                     )}
 
                     {/* Governance Incomplete Warning Tag in Hero */}
                     {hasGovernanceAlert && (
-                      <Badge bg="orange.400" color="orange.950" px={2} py={0.5} rounded="full" fontSize="xs" fontWeight="extrabold">
+                      <Badge bg="orange.400" color="orange.950" px={2} py={0.5} rounded="full" fontSize="3xs" fontWeight="extrabold">
                         GOVERNANCE INCOMPLETE
                       </Badge>
                     )}
@@ -1546,11 +1551,11 @@ export default function ApplicationDetail() {
                     {DataApplication?.appName || "Loading Application..."}
                   </Heading>
 
-                  <HStack spacing={2} fontSize="xs" color="whiteAlpha.850" wrap="wrap">
+                  <HStack spacing={2} fontSize="2xs" color="whiteAlpha.850" wrap="wrap">
                     <HStack spacing={1}>
                       <Text opacity={0.75}>IT Management:</Text>
                       {isITManagementEmpty ? (
-                        <Badge colorScheme="red" variant="solid" fontSize="xs" px={1.5} py={0} rounded="sm">
+                        <Badge colorScheme="red" variant="solid" fontSize="3xs" px={1.5} py={0} rounded="sm">
                           Not Assigned
                         </Badge>
                       ) : (
@@ -1563,7 +1568,7 @@ export default function ApplicationDetail() {
                     <HStack spacing={1}>
                       <Text opacity={0.75}>Business Owner:</Text>
                       {isBusinessOwnerEmpty ? (
-                        <Badge colorScheme="red" variant="solid" fontSize="xs" px={1.5} py={0} rounded="sm">
+                        <Badge colorScheme="red" variant="solid" fontSize="3xs" px={1.5} py={0} rounded="sm">
                           Not Assigned
                         </Badge>
                       ) : (
@@ -1664,7 +1669,7 @@ export default function ApplicationDetail() {
               <Box p={3} rounded="xl" bg="whiteAlpha.150" backdropFilter="blur(8px)" border="1px solid" borderColor="whiteAlpha.200">
                 <HStack justify="space-between" align="center">
                   <VStack align="start" spacing={0}>
-                    <Text fontSize="xs" textTransform="uppercase" fontWeight="bold" color="whiteAlpha.700">
+                    <Text fontSize="3xs" textTransform="uppercase" fontWeight="bold" color="whiteAlpha.700">
                       Operations & SLA
                     </Text>
                     <Text fontSize="xs" fontWeight="extrabold" color="white" noOfLines={1}>
@@ -1678,7 +1683,7 @@ export default function ApplicationDetail() {
               <Box p={3} rounded="xl" bg="whiteAlpha.150" backdropFilter="blur(8px)" border="1px solid" borderColor="whiteAlpha.200">
                 <HStack justify="space-between" align="center">
                   <VStack align="start" spacing={0}>
-                    <Text fontSize="xs" textTransform="uppercase" fontWeight="bold" color="whiteAlpha.700">
+                    <Text fontSize="3xs" textTransform="uppercase" fontWeight="bold" color="whiteAlpha.700">
                       Criticality Level
                     </Text>
                     <Text fontSize="xs" fontWeight="extrabold" color="white" noOfLines={1}>
@@ -1692,7 +1697,7 @@ export default function ApplicationDetail() {
               <Box p={3} rounded="xl" bg="whiteAlpha.150" backdropFilter="blur(8px)" border="1px solid" borderColor="whiteAlpha.200">
                 <HStack justify="space-between" align="center">
                   <VStack align="start" spacing={0}>
-                    <Text fontSize="xs" textTransform="uppercase" fontWeight="bold" color="whiteAlpha.700">
+                    <Text fontSize="3xs" textTransform="uppercase" fontWeight="bold" color="whiteAlpha.700">
                       Project Portfolio
                     </Text>
                     <Text fontSize="xs" fontWeight="extrabold" color="white">
@@ -1706,7 +1711,7 @@ export default function ApplicationDetail() {
               <Box p={3} rounded="xl" bg="whiteAlpha.150" backdropFilter="blur(8px)" border="1px solid" borderColor="whiteAlpha.200">
                 <HStack justify="space-between" align="center">
                   <VStack align="start" spacing={0}>
-                    <Text fontSize="xs" textTransform="uppercase" fontWeight="bold" color="whiteAlpha.700">
+                    <Text fontSize="3xs" textTransform="uppercase" fontWeight="bold" color="whiteAlpha.700">
                       Access & Platform
                     </Text>
                     <Text fontSize="xs" fontWeight="extrabold" color="white" noOfLines={1}>
@@ -1749,7 +1754,7 @@ export default function ApplicationDetail() {
                       <Heading size="xs" fontWeight="800" color={isDark ? "orange.200" : "orange.800"}>
                         Attention: Application Governance Data Incomplete
                       </Heading>
-                      <Badge colorScheme="orange" variant="solid" fontSize="xs" px={2} py={0.5} rounded="full">
+                      <Badge colorScheme="orange" variant="solid" fontSize="3xs" px={2} py={0.5} rounded="full">
                         Organization Structure Incomplete
                       </Badge>
                     </HStack>
@@ -1800,21 +1805,23 @@ export default function ApplicationDetail() {
           )}
 
           {/* ══════════════════════════════════════════════════════════════════
-              FULL WIDTH WORKSPACE
+              80 / 20 RESPONSIVE LAYOUT
               ══════════════════════════════════════════════════════════════════ */}
-          <Card
-            w="full"
-            shadow="md"
-            rounded={radiusStyle}
-            border="1px"
-            borderColor={isDark ? "gray.700" : "gray.200"}
-            bg={isDark ? "gray.800" : "white"}
-            overflow="hidden"
-          >
+          <Grid templateColumns={{ base: "1fr", lg: "repeat(12, 1fr)" }} gap={5}>
+            {/* ── LEFT 80% WORKSPACE (COL-SPAN 9/10) ── */}
+            <GridItem colSpan={{ base: 12, lg: 9, xl: 9 }}>
+              <Card
+                shadow="md"
+                rounded={radiusStyle}
+                border="1px"
+                borderColor={isDark ? "gray.700" : "gray.200"}
+                bg={isDark ? "gray.800" : "white"}
+                overflow="hidden"
+              >
                 <Tabs
                   variant="unstyled"
                   index={activeTabIndex}
-                  onChange={handleTabChange}
+                  onChange={(index) => setActiveTabIndex(index)}
                   colorScheme="secondary"
                   isLazy
                 >
@@ -1837,7 +1844,7 @@ export default function ApplicationDetail() {
                     }}
                   >
                     <Tab
-                      fontSize="md"
+                      fontSize="xs"
                       fontWeight="bold"
                       px={4}
                       py={2.5}
@@ -1859,7 +1866,7 @@ export default function ApplicationDetail() {
                     </Tab>
 
                     <Tab
-                      fontSize="md"
+                      fontSize="xs"
                       fontWeight="bold"
                       px={4}
                       py={2.5}
@@ -1881,7 +1888,7 @@ export default function ApplicationDetail() {
                     </Tab>
 
                     <Tab
-                      fontSize="md"
+                      fontSize="xs"
                       fontWeight="bold"
                       px={4}
                       py={2.5}
@@ -1906,7 +1913,7 @@ export default function ApplicationDetail() {
                     </Tab>
 
                     <Tab
-                      fontSize="md"
+                      fontSize="xs"
                       fontWeight="bold"
                       px={4}
                       py={2.5}
@@ -1928,7 +1935,7 @@ export default function ApplicationDetail() {
                     </Tab>
 
                     <Tab
-                      fontSize="md"
+                      fontSize="xs"
                       fontWeight="bold"
                       px={4}
                       py={2.5}
@@ -1950,7 +1957,7 @@ export default function ApplicationDetail() {
                     </Tab>
 
                     <Tab
-                      fontSize="md"
+                      fontSize="xs"
                       fontWeight="bold"
                       px={4}
                       py={2.5}
@@ -1967,7 +1974,7 @@ export default function ApplicationDetail() {
                     >
                       <HStack spacing={2}>
                         <Icon as={FiServer} />
-                        <Text>Application Environment</Text>
+                        <Text>Application Environment ({serverEnvironments.length})</Text>
                       </HStack>
                     </Tab>
                   </TabList>
@@ -1998,27 +2005,27 @@ export default function ApplicationDetail() {
 
                           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                             <Box>
-                              <Text fontSize="xs" color="gray.500" fontWeight="bold">FULL APPLICATION NAME</Text>
+                              <Text fontSize="2xs" color="gray.500" fontWeight="bold">FULL APPLICATION NAME</Text>
                               <Text fontSize="sm" fontWeight="bold" color={isDark ? "white" : "gray.800"}>
                                 {DataApplication?.appName || "-"}
                               </Text>
                             </Box>
                             <Box>
-                              <Text fontSize="xs" color="gray.500" fontWeight="bold">SHORT NAME & CODE</Text>
+                              <Text fontSize="2xs" color="gray.500" fontWeight="bold">SHORT NAME & CODE</Text>
                               <HStack spacing={2} mt={0.5}>
                                 <Badge colorScheme="purple">{DataApplication?.appShortName || "-"}</Badge>
                                 <Badge colorScheme="blue">{DataApplication?.appCode || "-"}</Badge>
                               </HStack>
                             </Box>
                             <Box gridColumn={{ base: "1", md: "1 / -1" }}>
-                              <Text fontSize="xs" color="gray.500" fontWeight="bold">APPLICATION DESCRIPTION</Text>
+                              <Text fontSize="2xs" color="gray.500" fontWeight="bold">APPLICATION DESCRIPTION</Text>
                               <Text fontSize="xs" color={isDark ? "gray.300" : "gray.700"} mt={1} lineHeight="tall">
                                 {DataApplication?.appsDesc || "No detailed description provided for this application."}
                               </Text>
                             </Box>
                             {DataApplication?.note && (
                               <Box gridColumn={{ base: "1", md: "1 / -1" }}>
-                                <Text fontSize="xs" color="gray.500" fontWeight="bold">SPECIAL NOTES</Text>
+                                <Text fontSize="2xs" color="gray.500" fontWeight="bold">SPECIAL NOTES</Text>
                                 <Text fontSize="xs" color={isDark ? "gray.400" : "gray.600"} mt={1} fontStyle="italic">
                                   {DataApplication.note}
                                 </Text>
@@ -2044,10 +2051,10 @@ export default function ApplicationDetail() {
 
                           <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={4}>
                             <Box>
-                              <Text fontSize="xs" color="gray.500" fontWeight="bold">PROGRAMMING LANGUAGES</Text>
+                              <Text fontSize="2xs" color="gray.500" fontWeight="bold">PROGRAMMING LANGUAGES</Text>
                               <Wrap mt={1}>
                                 {DataApplication?.appProgrammingLanguages?.split(",").map((item, idx) => (
-                                  <Badge key={idx} colorScheme="blue" variant="subtle" fontSize="xs" rounded="md" px={2} py={0.5}>
+                                  <Badge key={idx} colorScheme="blue" variant="subtle" fontSize="2xs" rounded="md" px={2} py={0.5}>
                                     {item.trim()}
                                   </Badge>
                                 )) || <Text fontSize="xs" color="gray.400">-</Text>}
@@ -2055,10 +2062,10 @@ export default function ApplicationDetail() {
                             </Box>
 
                             <Box>
-                              <Text fontSize="xs" color="gray.500" fontWeight="bold">FRAMEWORKS & RUNTIME</Text>
+                              <Text fontSize="2xs" color="gray.500" fontWeight="bold">FRAMEWORKS & RUNTIME</Text>
                               <Wrap mt={1}>
                                 {DataApplication?.appProgrammingFrameworks?.split(",").map((item, idx) => (
-                                  <Badge key={idx} colorScheme="purple" variant="subtle" fontSize="xs" rounded="md" px={2} py={0.5}>
+                                  <Badge key={idx} colorScheme="purple" variant="subtle" fontSize="2xs" rounded="md" px={2} py={0.5}>
                                     {item.trim()}
                                   </Badge>
                                 )) || <Text fontSize="xs" color="gray.400">-</Text>}
@@ -2066,36 +2073,36 @@ export default function ApplicationDetail() {
                             </Box>
 
                             <Box>
-                              <Text fontSize="xs" color="gray.500" fontWeight="bold">DEVELOPMENT METHOD</Text>
+                              <Text fontSize="2xs" color="gray.500" fontWeight="bold">DEVELOPMENT METHOD</Text>
                               <Text fontSize="xs" fontWeight="bold" mt={1}>
                                 {DataApplication?.appDevelopmentMethod || "Agile / Scrum"}
                               </Text>
                             </Box>
 
                             <Box>
-                              <Text fontSize="xs" color="gray.500" fontWeight="bold">APPLICATION TYPES</Text>
+                              <Text fontSize="2xs" color="gray.500" fontWeight="bold">APPLICATION TYPES</Text>
                               <Wrap mt={1}>
                                 {DataApplication?.appTypes?.split(",").map((type, idx) => (
                                   <Tag key={idx} size="sm" colorScheme="teal" rounded="md">
-                                    <TagLabel fontSize="xs">{type.trim()}</TagLabel>
+                                    <TagLabel fontSize="2xs">{type.trim()}</TagLabel>
                                   </Tag>
                                 )) || <Text fontSize="xs" color="gray.400">-</Text>}
                               </Wrap>
                             </Box>
 
                             <Box>
-                              <Text fontSize="xs" color="gray.500" fontWeight="bold">SERVER & HOSTING LOCATION</Text>
+                              <Text fontSize="2xs" color="gray.500" fontWeight="bold">SERVER & HOSTING LOCATION</Text>
                               <Wrap mt={1}>
                                 {DataApplication?.appEnvLocations?.split(",").map((loc, idx) => (
                                   <Tag key={idx} size="sm" colorScheme="orange" rounded="md">
-                                    <TagLabel fontSize="xs">{loc.trim()}</TagLabel>
+                                    <TagLabel fontSize="2xs">{loc.trim()}</TagLabel>
                                   </Tag>
                                 )) || <Text fontSize="xs" color="gray.400">-</Text>}
                               </Wrap>
                             </Box>
 
                             <Box>
-                              <Text fontSize="xs" color="gray.500" fontWeight="bold">PRIVATE AUTH & HIGH AVAILABILITY</Text>
+                              <Text fontSize="2xs" color="gray.500" fontWeight="bold">PRIVATE AUTH & HIGH AVAILABILITY</Text>
                               <HStack spacing={2} mt={1}>
                                 <Badge colorScheme={DataApplication?.appPrivateAuth === "Y" ? "green" : "gray"}>
                                   Auth: {DataApplication?.appPrivateAuth === "Y" ? "Private" : "Public"}
@@ -2126,7 +2133,7 @@ export default function ApplicationDetail() {
                           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                             <Box p={3} rounded="lg" bg={isDark ? "gray.800" : "white"} border="1px solid" borderColor={isDark ? "gray.700" : "gray.200"}>
                               <HStack justify="space-between" mb={1}>
-                                <Text fontSize="xs" fontWeight="bold" color="blue.500">FRONTSITE (PUBLIC ACCESS)</Text>
+                                <Text fontSize="2xs" fontWeight="bold" color="blue.500">FRONTSITE (PUBLIC ACCESS)</Text>
                                 <Icon as={FiGlobe} color="blue.500" />
                               </HStack>
                               <Text fontSize="xs" color="gray.500">DNS:</Text>
@@ -2137,7 +2144,7 @@ export default function ApplicationDetail() {
 
                             <Box p={3} rounded="lg" bg={isDark ? "gray.800" : "white"} border="1px solid" borderColor={isDark ? "gray.700" : "gray.200"}>
                               <HStack justify="space-between" mb={1}>
-                                <Text fontSize="xs" fontWeight="bold" color="purple.500">BACKSITE (INTERNAL / BACKEND)</Text>
+                                <Text fontSize="2xs" fontWeight="bold" color="purple.500">BACKSITE (INTERNAL / BACKEND)</Text>
                                 <Icon as={FiLock} color="purple.500" />
                               </HStack>
                               <Text fontSize="xs" color="gray.500">DNS:</Text>
@@ -2147,106 +2154,6 @@ export default function ApplicationDetail() {
                             </Box>
                           </SimpleGrid>
                         </Box>
-
-                        {/* Section 4: Project SDLC Ratio & Audit & Metadata */}
-                        <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
-                          {/* Project SDLC Ratio */}
-                          <Box
-                            p={5}
-                            rounded="xl"
-                            border="1px solid"
-                            borderColor={isDark ? "gray.700" : "gray.200"}
-                            bg={isDark ? "gray.850" : "gray.50"}
-                          >
-                            <HStack spacing={2} mb={4} color="secondary.500">
-                              <Icon as={FiBriefcase} boxSize={5} />
-                              <Heading size="xs" fontWeight="800" textTransform="uppercase" letterSpacing="wider">
-                                Project SDLC Ratio
-                              </Heading>
-                            </HStack>
-                            <VStack spacing={3} align="stretch">
-                              <Flex justify="space-between" align="center" fontSize="xs">
-                                <Text color="gray.500">Completion Rate</Text>
-                                <Text fontWeight="extrabold" color="secondary.500">{completionRate}%</Text>
-                              </Flex>
-                              <Progress
-                                value={completionRate}
-                                size="sm"
-                                colorScheme={completionRate === 100 ? "green" : "secondary"}
-                                rounded="full"
-                                bg={isDark ? "gray.700" : "gray.100"}
-                              />
-                              <HStack justify="space-between" fontSize="xs" pt={1}>
-                                <VStack align="start" spacing={0}>
-                                  <Text color="gray.500">Total Projects</Text>
-                                  <Text fontWeight="bold">{totalProjects}</Text>
-                                </VStack>
-                                <VStack align="center" spacing={0}>
-                                  <Text color="orange.500">Running</Text>
-                                  <Text fontWeight="bold" color="orange.500">{onGoingProjects}</Text>
-                                </VStack>
-                                <VStack align="end" spacing={0}>
-                                  <Text color="green.500">Completed</Text>
-                                  <Text fontWeight="bold" color="green.500">{completedProjects}</Text>
-                                </VStack>
-                              </HStack>
-                            </VStack>
-                          </Box>
-
-                          {/* Audit & Metadata */}
-                          <Box
-                            p={5}
-                            rounded="xl"
-                            border="1px solid"
-                            borderColor={isDark ? "gray.700" : "gray.200"}
-                            bg={isDark ? "gray.850" : "gray.50"}
-                          >
-                            <HStack spacing={2} mb={4} color="secondary.500">
-                              <Icon as={FiActivity} boxSize={5} />
-                              <Heading size="xs" fontWeight="800" textTransform="uppercase" letterSpacing="wider">
-                                Audit & Metadata
-                              </Heading>
-                            </HStack>
-                            <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={4} fontSize="xs">
-                              <Box>
-                                <Text color="gray.500">Created At:</Text>
-                                <Text fontWeight="semibold" mt={0.5}>
-                                  {DataApplication?.createdAt ? new Date(DataApplication.createdAt).toLocaleDateString("en-US") : "-"}
-                                </Text>
-                              </Box>
-                              <Box>
-                                <Text color="gray.500">Created By:</Text>
-                                <Text fontWeight="semibold" noOfLines={1} mt={0.5}>
-                                  {DataApplication?.createdBy || "-"}
-                                </Text>
-                              </Box>
-                              <Box>
-                                <Text color="gray.500">Updated At:</Text>
-                                <Text fontWeight="semibold" mt={0.5}>
-                                  {DataApplication?.updatedAt ? new Date(DataApplication.updatedAt).toLocaleDateString("en-US") : "-"}
-                                </Text>
-                              </Box>
-                              <Box>
-                                <Text color="gray.500">Data Status:</Text>
-                                <Box mt={0.5}>
-                                  <Badge
-                                    colorScheme={
-                                      DataApplication?.appsStatus === "ACTIVE"
-                                        ? "green"
-                                        : DataApplication?.appsStatus === "ON DEVELOPMENT"
-                                        ? "purple"
-                                        : "red"
-                                    }
-                                    fontSize="xs"
-                                    rounded="md"
-                                  >
-                                    {DataApplication?.appsStatus || "ACTIVE"}
-                                  </Badge>
-                                </Box>
-                              </Box>
-                            </SimpleGrid>
-                          </Box>
-                        </SimpleGrid>
                       </VStack>
                     </TabPanel>
 
@@ -2256,65 +2163,15 @@ export default function ApplicationDetail() {
                     <TabPanel p={{ base: 4, md: 6 }}>
                       <VStack spacing={6} align="stretch">
                         {/* Section Header */}
-                        <Flex
-                          justify="space-between"
-                          align={{ base: "start", sm: "center" }}
-                          direction={{ base: "column", sm: "row" }}
-                          gap={3}
-                        >
+                        <Flex justify="space-between" align="center">
                           <VStack align="start" spacing={0}>
                             <Heading size="xs" color={isDark ? "white" : "gray.800"}>
                               {IsEditMode ? "Edit Application Specifications & Architecture" : "Architecture & Technical Specifications"}
                             </Heading>
-                            <Text fontSize="xs" color="gray.500">
+                            <Text fontSize="2xs" color="gray.500">
                               {IsEditMode ? "Update technical information and system configuration." : "Detailed technical information regarding architecture, programming languages, and environment."}
                             </Text>
                           </VStack>
-
-                          {!IsEditMode ? (
-                            <Button
-                              leftIcon={<FiEdit />}
-                              size="md"
-                              colorScheme="secondary"
-                              variant="outline"
-                              rounded="xl"
-                              px={5}
-                              fontSize="md"
-                              fontWeight="bold"
-                              onClick={() => setIsEditMode(true)}
-                            >
-                              Edit Specifications
-                            </Button>
-                          ) : (
-                            <HStack spacing={2} alignSelf={{ base: "flex-end", sm: "center" }}>
-                              <Button
-                                leftIcon={<FiX />}
-                                size="md"
-                                variant="ghost"
-                                rounded="xl"
-                                fontSize="md"
-                                onClick={() => {
-                                  setIsEditMode(false);
-                                  LoadApplicationData();
-                                }}
-                              >
-                                Cancel
-                              </Button>
-                              <Button
-                                leftIcon={<FiSave />}
-                                colorScheme="secondary"
-                                size="md"
-                                rounded="xl"
-                                px={5}
-                                fontSize="md"
-                                fontWeight="bold"
-                                isLoading={IsLoadingProcess}
-                                onClick={handleSave}
-                              >
-                                Save Changes
-                              </Button>
-                            </HStack>
-                          )}
                         </Flex>
 
                         <Divider borderColor={isDark ? "gray.700" : "gray.200"} />
@@ -2341,7 +2198,7 @@ export default function ApplicationDetail() {
                             <HStack justify="space-between" align="center" mb={1}>
                               <FormLabel fontSize="xs" fontWeight="bold" mb={0}>Short Name</FormLabel>
                               {IsEditMode && (
-                                <Badge colorScheme="gray" fontSize="xs" rounded="md">
+                                <Badge colorScheme="gray" fontSize="3xs" rounded="md">
                                   Locked (Read Only)
                                 </Badge>
                               )}
@@ -2361,7 +2218,7 @@ export default function ApplicationDetail() {
                                     placeholder="Example: CBS"
                                   />
                                 </Tooltip>
-                                <Text fontSize="xs" color="gray.500" mt={1}>
+                                <Text fontSize="3xs" color="gray.500" mt={1}>
                                   *Application short name is permanent and cannot be edited.
                                 </Text>
                               </Box>
@@ -2607,65 +2464,15 @@ export default function ApplicationDetail() {
                         ────────────────────────────────────────────────────────── */}
                     <TabPanel p={{ base: 4, md: 6 }}>
                       <VStack spacing={6} align="stretch">
-                        <Flex
-                          justify="space-between"
-                          align={{ base: "start", sm: "center" }}
-                          direction={{ base: "column", sm: "row" }}
-                          gap={3}
-                        >
+                        <Flex justify="space-between" align="center">
                           <VStack align="start" spacing={0}>
                             <Heading size="xs" color={isDark ? "white" : "gray.800"}>
                               Governance Structure & Management Team
                             </Heading>
-                            <Text fontSize="xs" color="gray.500">
+                            <Text fontSize="2xs" color="gray.500">
                               Configuration for IT managing division, business owner, assigned PICs, and operational hours.
                             </Text>
                           </VStack>
-
-                          {!IsEditMode ? (
-                            <Button
-                              leftIcon={<FiEdit />}
-                              size="md"
-                              colorScheme="secondary"
-                              variant="outline"
-                              rounded="xl"
-                              px={5}
-                              fontSize="md"
-                              fontWeight="bold"
-                              onClick={() => setIsEditMode(true)}
-                            >
-                              Edit Governance
-                            </Button>
-                          ) : (
-                            <HStack spacing={2} alignSelf={{ base: "flex-end", sm: "center" }}>
-                              <Button
-                                leftIcon={<FiX />}
-                                size="md"
-                                variant="ghost"
-                                rounded="xl"
-                                fontSize="md"
-                                onClick={() => {
-                                  setIsEditMode(false);
-                                  LoadApplicationData();
-                                }}
-                              >
-                                Cancel
-                              </Button>
-                              <Button
-                                leftIcon={<FiSave />}
-                                colorScheme="secondary"
-                                size="md"
-                                rounded="xl"
-                                px={5}
-                                fontSize="md"
-                                fontWeight="bold"
-                                isLoading={IsLoadingProcess}
-                                onClick={handleSave}
-                              >
-                                Save Changes
-                              </Button>
-                            </HStack>
-                          )}
                         </Flex>
 
                         {/* In-tab Warning Banner if Governance is Incomplete */}
@@ -2708,7 +2515,7 @@ export default function ApplicationDetail() {
                                 <Heading size="xs" fontWeight="bold">IT Management Division</Heading>
                               </HStack>
                               {isITManagementEmpty && (
-                                <Badge colorScheme="red" fontSize="xs" rounded="md" px={2} py={0.5}>
+                                <Badge colorScheme="red" fontSize="3xs" rounded="md" px={2} py={0.5}>
                                   Required
                                 </Badge>
                               )}
@@ -2716,7 +2523,7 @@ export default function ApplicationDetail() {
 
                             <VStack spacing={3} align="stretch">
                               <FormControl isRequired={IsEditMode}>
-                                <FormLabel fontSize="xs" fontWeight="bold">IT Managing Division</FormLabel>
+                                <FormLabel fontSize="2xs" fontWeight="bold">IT Managing Division</FormLabel>
                                 {IsEditMode ? (
                                   <Select
                                     options={divisionOptions}
@@ -2735,7 +2542,7 @@ export default function ApplicationDetail() {
                               </FormControl>
 
                               <FormControl>
-                                <FormLabel fontSize="xs" fontWeight="bold">IT Managing Group</FormLabel>
+                                <FormLabel fontSize="2xs" fontWeight="bold">IT Managing Group</FormLabel>
                                 {IsEditMode ? (
                                   <Select
                                     options={groupOptions.filter((g) => !formData.appManageByDivisionId || g.parentId === formData.appManageByDivisionId)}
@@ -2749,7 +2556,7 @@ export default function ApplicationDetail() {
                               </FormControl>
 
                               <FormControl>
-                                <FormLabel fontSize="xs" fontWeight="bold">IT Managing PIC</FormLabel>
+                                <FormLabel fontSize="2xs" fontWeight="bold">IT Managing PIC</FormLabel>
                                 {IsEditMode ? (
                                   <VStack align="stretch" spacing={2}>
                                     <InputGroup size="sm">
@@ -2776,7 +2583,7 @@ export default function ApplicationDetail() {
                                       editMode={IsEditMode}
                                     />
                                     {formData.appManagePicName && (
-                                      <Text fontSize="xs" color="green.500" fontWeight="bold">
+                                      <Text fontSize="2xs" color="green.500" fontWeight="bold">
                                         Selected: {formData.appManagePicName} ({formData.appManagePicUserId})
                                       </Text>
                                     )}
@@ -2802,7 +2609,7 @@ export default function ApplicationDetail() {
                                 <Heading size="xs" fontWeight="bold">Business Owner Division</Heading>
                               </HStack>
                               {isBusinessOwnerEmpty && (
-                                <Badge colorScheme="red" fontSize="xs" rounded="md" px={2} py={0.5}>
+                                <Badge colorScheme="red" fontSize="3xs" rounded="md" px={2} py={0.5}>
                                   Required
                                 </Badge>
                               )}
@@ -2810,7 +2617,7 @@ export default function ApplicationDetail() {
 
                             <VStack spacing={3} align="stretch">
                               <FormControl isRequired={IsEditMode}>
-                                <FormLabel fontSize="xs" fontWeight="bold">Business Owner Division</FormLabel>
+                                <FormLabel fontSize="2xs" fontWeight="bold">Business Owner Division</FormLabel>
                                 {IsEditMode ? (
                                   <Select
                                     options={divisionOptions}
@@ -2829,7 +2636,7 @@ export default function ApplicationDetail() {
                               </FormControl>
 
                               <FormControl>
-                                <FormLabel fontSize="xs" fontWeight="bold">Business Owner Group</FormLabel>
+                                <FormLabel fontSize="2xs" fontWeight="bold">Business Owner Group</FormLabel>
                                 {IsEditMode ? (
                                   <Select
                                     options={groupOptions.filter((g) => !formData.appBusinessOwnerDivisionId || g.parentId === formData.appBusinessOwnerDivisionId)}
@@ -2843,7 +2650,7 @@ export default function ApplicationDetail() {
                               </FormControl>
 
                               <FormControl>
-                                <FormLabel fontSize="xs" fontWeight="bold">Business Owner PIC</FormLabel>
+                                <FormLabel fontSize="2xs" fontWeight="bold">Business Owner PIC</FormLabel>
                                 {IsEditMode ? (
                                   <VStack align="stretch" spacing={2}>
                                     <InputGroup size="sm">
@@ -2870,7 +2677,7 @@ export default function ApplicationDetail() {
                                       editMode={IsEditMode}
                                     />
                                     {formData.appBusinessOwnerPicName && (
-                                      <Text fontSize="xs" color="purple.500" fontWeight="bold">
+                                      <Text fontSize="2xs" color="purple.500" fontWeight="bold">
                                         Selected: {formData.appBusinessOwnerPicName} ({formData.appBusinessOwnerPicUserId})
                                       </Text>
                                     )}
@@ -2891,7 +2698,7 @@ export default function ApplicationDetail() {
 
                             <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
                               <FormControl>
-                                <FormLabel fontSize="xs" fontWeight="bold">24/7 Full Service (24/7)</FormLabel>
+                                <FormLabel fontSize="2xs" fontWeight="bold">24/7 Full Service (24/7)</FormLabel>
                                 {IsEditMode ? (
                                   <RadioGroup
                                     value={formData.appOperational24hrs}
@@ -2910,7 +2717,7 @@ export default function ApplicationDetail() {
                               </FormControl>
 
                               <FormControl>
-                                <FormLabel fontSize="xs" fontWeight="bold">Opening Hours</FormLabel>
+                                <FormLabel fontSize="2xs" fontWeight="bold">Opening Hours</FormLabel>
                                 {IsEditMode ? (
                                   <Input
                                     size="sm"
@@ -2925,7 +2732,7 @@ export default function ApplicationDetail() {
                               </FormControl>
 
                               <FormControl>
-                                <FormLabel fontSize="xs" fontWeight="bold">Closing Hours</FormLabel>
+                                <FormLabel fontSize="2xs" fontWeight="bold">Closing Hours</FormLabel>
                                 {IsEditMode ? (
                                   <Input
                                     size="sm"
@@ -2979,11 +2786,11 @@ export default function ApplicationDetail() {
                                   <Heading size="xs" color={isDark ? "white" : "gray.800"}>
                                     Connected Projects Portfolio
                                   </Heading>
-                                  <Badge colorScheme="purple" fontSize="xs" rounded="full" px={2}>
+                                  <Badge colorScheme="purple" fontSize="3xs" rounded="full" px={2}>
                                     {projectsTotal} Projects
                                   </Badge>
                                 </HStack>
-                                <Text fontSize="xs" color="gray.500">
+                                <Text fontSize="2xs" color="gray.500">
                                   List of project initiations, SDLC implementations, and system procurements linked to this application.
                                 </Text>
                               </Box>
@@ -3011,7 +2818,7 @@ export default function ApplicationDetail() {
                             <CardBody p={3.5}>
                               <HStack justify="space-between">
                                 <VStack align="start" spacing={0}>
-                                  <Text fontSize="xs" fontWeight="bold" textTransform="uppercase" color="gray.500" letterSpacing="wider">
+                                  <Text fontSize="3xs" fontWeight="bold" textTransform="uppercase" color="gray.500" letterSpacing="wider">
                                     Total Projects
                                   </Text>
                                   <Heading size="md" color={isDark ? "white" : "gray.800"}>
@@ -3029,7 +2836,7 @@ export default function ApplicationDetail() {
                             <CardBody p={3.5}>
                               <HStack justify="space-between">
                                 <VStack align="start" spacing={0}>
-                                  <Text fontSize="xs" fontWeight="bold" textTransform="uppercase" color="blue.500" letterSpacing="wider">
+                                  <Text fontSize="3xs" fontWeight="bold" textTransform="uppercase" color="blue.500" letterSpacing="wider">
                                     Ongoing
                                   </Text>
                                   <Heading size="md" color="blue.500">
@@ -3047,7 +2854,7 @@ export default function ApplicationDetail() {
                             <CardBody p={3.5}>
                               <HStack justify="space-between">
                                 <VStack align="start" spacing={0}>
-                                  <Text fontSize="xs" fontWeight="bold" textTransform="uppercase" color="green.500" letterSpacing="wider">
+                                  <Text fontSize="3xs" fontWeight="bold" textTransform="uppercase" color="green.500" letterSpacing="wider">
                                     Completed (Done)
                                   </Text>
                                   <Heading size="md" color="green.500">
@@ -3065,7 +2872,7 @@ export default function ApplicationDetail() {
                             <CardBody p={3.5}>
                               <HStack justify="space-between">
                                 <VStack align="start" spacing={0}>
-                                  <Text fontSize="xs" fontWeight="bold" textTransform="uppercase" color="secondary.500" letterSpacing="wider">
+                                  <Text fontSize="3xs" fontWeight="bold" textTransform="uppercase" color="secondary.500" letterSpacing="wider">
                                     Average Progress
                                   </Text>
                                   <Heading size="md" color="secondary.500">
@@ -3209,12 +3016,12 @@ export default function ApplicationDetail() {
                                           bg={isDark ? "rgba(147, 51, 234, 0.2)" : "purple.50"}
                                           color={isDark ? "purple.300" : "purple.700"}
                                           fontWeight="bold"
-                                          fontSize="xs"
+                                          fontSize="2xs"
                                         >
                                           {prj.projectNo || prj.projectCode || "PRJ"}
                                         </Badge>
                                         {prj.projectType && (
-                                          <Badge fontSize="xs" variant="outline" colorScheme="gray" rounded="md">
+                                          <Badge fontSize="3xs" variant="outline" colorScheme="gray" rounded="md">
                                             {prj.projectType.replace(/_/g, " ")}
                                           </Badge>
                                         )}
@@ -3227,7 +3034,7 @@ export default function ApplicationDetail() {
                                         bg={statusStyle.bg}
                                         color={statusStyle.color}
                                         fontWeight="semibold"
-                                        fontSize="xs"
+                                        fontSize="3xs"
                                       >
                                         {statusStyle.label}
                                       </Badge>
@@ -3244,7 +3051,7 @@ export default function ApplicationDetail() {
                                       >
                                         {prj.projectName}
                                       </Heading>
-                                      <Text fontSize="xs" color="gray.500" noOfLines={2} lineHeight="tall">
+                                      <Text fontSize="2xs" color="gray.500" noOfLines={2} lineHeight="tall">
                                         {prj.projectDesc || "No detailed project description available."}
                                       </Text>
                                     </Box>
@@ -3254,11 +3061,11 @@ export default function ApplicationDetail() {
                                       <Flex justify="space-between" align="center" mb={1.5}>
                                         <HStack spacing={1.5}>
                                           <Icon as={FiLayers} boxSize={3} color="purple.500" />
-                                          <Text fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.700"}>
+                                          <Text fontSize="3xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.700"}>
                                             Stage: {prj.sdlcStageName || "SDLC Initiation"}
                                           </Text>
                                         </HStack>
-                                        <Text fontSize="xs" fontWeight="bold" color={progress === 100 ? "green.500" : "purple.500"}>
+                                        <Text fontSize="3xs" fontWeight="bold" color={progress === 100 ? "green.500" : "purple.500"}>
                                           {progress}%
                                         </Text>
                                       </Flex>
@@ -3274,12 +3081,12 @@ export default function ApplicationDetail() {
                                     {/* Requirement Ref & PIC/Team */}
                                     <Flex justify="space-between" align="center" pt={1}>
                                       {prj.requirementData?.reqNumber ? (
-                                        <HStack spacing={1} fontSize="xs" color="gray.500">
+                                        <HStack spacing={1} fontSize="3xs" color="gray.500">
                                           <Icon as={FiFileText} />
                                           <Text fontWeight="medium">{prj.requirementData.reqNumber}</Text>
                                         </HStack>
                                       ) : (
-                                        <HStack spacing={1} fontSize="xs" color="gray.500">
+                                        <HStack spacing={1} fontSize="3xs" color="gray.500">
                                           <Icon as={FiCalendar} />
                                           <Text>
                                             {prj.projectRegisterDate
@@ -3295,12 +3102,12 @@ export default function ApplicationDetail() {
 
                                       {/* Assigned Users Avatar Stack */}
                                       {prj.userAssignment && prj.userAssignment.length > 0 ? (
-                                        <AvatarGroup size="xs" max={3} spacing="-0.75rem">
+                                        <AvatarGroup size="2xs" max={3} spacing="-0.75rem">
                                           {prj.userAssignment.map((assign, idx) => (
                                             <Tooltip
                                               key={assign.id || idx}
                                               label={`${assign.userData?.nama || "User"} (${assign.userData?.teamRole?.specName || "Team Member"})`}
-                                              fontSize="xs"
+                                              fontSize="3xs"
                                               rounded="md"
                                             >
                                               <Avatar
@@ -3312,7 +3119,7 @@ export default function ApplicationDetail() {
                                           ))}
                                         </AvatarGroup>
                                       ) : (
-                                        <Text fontSize="xs" color="gray.400" fontStyle="italic">
+                                        <Text fontSize="3xs" color="gray.400" fontStyle="italic">
                                           No PIC assigned
                                         </Text>
                                       )}
@@ -3322,7 +3129,7 @@ export default function ApplicationDetail() {
 
                                     {/* Action Link to Project Detail */}
                                     <Flex justify="space-between" align="center">
-                                      <Text fontSize="xs" color="gray.400" noOfLines={1} maxW="60%">
+                                      <Text fontSize="3xs" color="gray.400" noOfLines={1} maxW="60%">
                                         {prj.proManageByDivisionName || prj.proOwnerDivisionName || "IT Division"}
                                       </Text>
                                       <Button
@@ -3330,7 +3137,7 @@ export default function ApplicationDetail() {
                                         variant="ghost"
                                         colorScheme="purple"
                                         rightIcon={<FiExternalLink />}
-                                        fontSize="xs"
+                                        fontSize="3xs"
                                         onClick={() => router.push(`/project-development/detail?id=${prj.id}`)}
                                       >
                                         Project Details
@@ -3364,7 +3171,7 @@ export default function ApplicationDetail() {
                             </Box>
                             <VStack align="start" spacing={0}>
                               <Heading size="xs" color={isDark ? "white" : "gray.800"}>Assessment Reports</Heading>
-                              <Text fontSize="xs" color="gray.500">{assessmentTotal} application criticality assessment reports</Text>
+                              <Text fontSize="2xs" color="gray.500">{assessmentTotal} application criticality assessment reports</Text>
                             </VStack>
                           </HStack>
 
@@ -3412,10 +3219,10 @@ export default function ApplicationDetail() {
                                 <Flex direction={{ base: "column", sm: "row" }} justify="space-between" align={{ base: "start", sm: "center" }} gap={3}>
                                   <VStack align="start" spacing={1.5} flex={1}>
                                     <HStack spacing={2} wrap="wrap">
-                                      <Badge colorScheme="purple" fontFamily="mono" fontSize="xs" px={2} rounded="md">
+                                      <Badge colorScheme="purple" fontFamily="mono" fontSize="2xs" px={2} rounded="md">
                                         {a.batchCode}
                                       </Badge>
-                                      <Badge colorScheme="blue" variant="outline" fontSize="xs" px={2} rounded="md">
+                                      <Badge colorScheme="blue" variant="outline" fontSize="2xs" px={2} rounded="md">
                                         {a.quartalReport} {a.yearReport}
                                       </Badge>
                                       <Badge
@@ -3424,17 +3231,17 @@ export default function ApplicationDetail() {
                                           a.statusReport === "DECLINE" ? "red" :
                                           a.statusReport?.includes("WAITING") ? "orange" : "gray"
                                         }
-                                        fontSize="xs"
+                                        fontSize="2xs"
                                         rounded="full"
                                       >
                                         {a.statusReport}
                                       </Badge>
                                       {a.isFullyReviewed ? (
-                                        <Badge colorScheme="green" variant="subtle" fontSize="xs" rounded="full">
+                                        <Badge colorScheme="green" variant="subtle" fontSize="2xs" rounded="full">
                                           Reviewed ({a.filledCount}/{a.totalCount})
                                         </Badge>
                                       ) : (
-                                        <Badge colorScheme="orange" variant="subtle" fontSize="xs" rounded="full">
+                                        <Badge colorScheme="orange" variant="subtle" fontSize="2xs" rounded="full">
                                           Pending ({a.filledCount}/{a.totalCount})
                                         </Badge>
                                       )}
@@ -3492,11 +3299,11 @@ export default function ApplicationDetail() {
                                 <Heading size="xs" color={isDark ? "white" : "gray.800"}>
                                   Application Environment & Server Topology
                                 </Heading>
-                                <Badge colorScheme="purple" fontSize="xs" rounded="full" px={2}>
+                                <Badge colorScheme="purple" fontSize="3xs" rounded="full" px={2}>
                                   {serverEnvironments.length} Nodes
                                 </Badge>
                               </HStack>
-                              <Text fontSize="xs" color="gray.500">
+                              <Text fontSize="2xs" color="gray.500">
                                 Server role configurations, site segments, DC1/DC2 primary flags, hardening posture & dual deploy architecture.
                               </Text>
                             </VStack>
@@ -3507,21 +3314,24 @@ export default function ApplicationDetail() {
                               <>
                                 <Button
                                   leftIcon={<FiX />}
-                                  size="md"
+                                  size="sm"
                                   variant="ghost"
                                   rounded="xl"
-                                  fontSize="md"
-                                  onClick={handleCancelEnvironmentEdit}
+                                  fontSize="xs"
+                                  onClick={() => {
+                                    setIsEditMode(false);
+                                    LoadTopologyData();
+                                  }}
                                 >
                                   Cancel
                                 </Button>
                                 <Button
                                   leftIcon={<FiSave />}
                                   colorScheme="secondary"
-                                  size="md"
+                                  size="sm"
                                   rounded="xl"
-                                  px={5}
-                                  fontSize="md"
+                                  px={4}
+                                  fontSize="xs"
                                   fontWeight="bold"
                                   isLoading={IsLoadingProcess}
                                   onClick={handleSave}
@@ -3532,12 +3342,12 @@ export default function ApplicationDetail() {
                             ) : (
                               <Button
                                 leftIcon={<FiEdit />}
-                                size="md"
+                                size="sm"
                                 colorScheme="secondary"
                                 variant="outline"
                                 rounded="xl"
-                                px={5}
-                                fontSize="md"
+                                px={4}
+                                fontSize="xs"
                                 fontWeight="bold"
                                 onClick={() => setIsEditMode(true)}
                               >
@@ -3558,12 +3368,16 @@ export default function ApplicationDetail() {
                           >
                             <HStack justify="space-between">
                               <VStack align="start" spacing={0}>
-                                <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
+                                <Text fontSize="3xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
                                   Total Servers
                                 </Text>
-                                <Heading size="md" color={isDark ? "white" : "gray.800"}>
-                                  {serverEnvironments.length}
-                                </Heading>
+                                {isTopologyLoading ? (
+                                  <Skeleton height="20px" width="36px" rounded="md" mt={1} />
+                                ) : (
+                                  <Heading size="sm" color={isDark ? "white" : "gray.800"}>
+                                    {serverEnvironments.length}
+                                  </Heading>
+                                )}
                               </VStack>
                               <Box p={2} rounded="lg" bg={isDark ? "gray.750" : "gray.200"} color="gray.400">
                                 <Icon as={FiServer} boxSize={4} />
@@ -3580,12 +3394,16 @@ export default function ApplicationDetail() {
                           >
                             <HStack justify="space-between">
                               <VStack align="start" spacing={0}>
-                                <Text fontSize="xs" fontWeight="bold" color="green.500" textTransform="uppercase">
+                                <Text fontSize="3xs" fontWeight="bold" color="green.500" textTransform="uppercase">
                                   Status Aktif
                                 </Text>
-                                <Heading size="md" color="green.500">
-                                  {serverEnvironments.filter((s) => s.status === "Aktif").length}
-                                </Heading>
+                                {isTopologyLoading ? (
+                                  <Skeleton height="20px" width="36px" rounded="md" mt={1} />
+                                ) : (
+                                  <Heading size="sm" color="green.500">
+                                    {serverEnvironments.filter((s) => s.status === "Aktif").length}
+                                  </Heading>
+                                )}
                               </VStack>
                               <Box p={2} rounded="lg" bg="green.50" color="green.600">
                                 <Icon as={FiCheckCircle} boxSize={4} />
@@ -3602,12 +3420,16 @@ export default function ApplicationDetail() {
                           >
                             <HStack justify="space-between">
                               <VStack align="start" spacing={0}>
-                                <Text fontSize="xs" fontWeight="bold" color="blue.500" textTransform="uppercase">
+                                <Text fontSize="3xs" fontWeight="bold" color="blue.500" textTransform="uppercase">
                                   Primary DC1 Nodes
                                 </Text>
-                                <Heading size="md" color="blue.500">
-                                  {serverEnvironments.filter((s) => s.primary === "DC1").length}
-                                </Heading>
+                                {isTopologyLoading ? (
+                                  <Skeleton height="20px" width="36px" rounded="md" mt={1} />
+                                ) : (
+                                  <Heading size="sm" color="blue.500">
+                                    {serverEnvironments.filter((s) => s.primary === "DC1").length}
+                                  </Heading>
+                                )}
                               </VStack>
                               <Box p={2} rounded="lg" bg="blue.50" color="blue.600">
                                 <Icon as={FiGlobe} boxSize={4} />
@@ -3624,12 +3446,16 @@ export default function ApplicationDetail() {
                           >
                             <HStack justify="space-between">
                               <VStack align="start" spacing={0}>
-                                <Text fontSize="xs" fontWeight="bold" color="purple.500" textTransform="uppercase">
+                                <Text fontSize="3xs" fontWeight="bold" color="purple.500" textTransform="uppercase">
                                   Primary DC2 Nodes
                                 </Text>
-                                <Heading size="md" color="purple.500">
-                                  {serverEnvironments.filter((s) => s.primary === "DC2").length}
-                                </Heading>
+                                {isTopologyLoading ? (
+                                  <Skeleton height="20px" width="36px" rounded="md" mt={1} />
+                                ) : (
+                                  <Heading size="sm" color="purple.500">
+                                    {serverEnvironments.filter((s) => s.primary === "DC2").length}
+                                  </Heading>
+                                )}
                               </VStack>
                               <Box p={2} rounded="lg" bg="purple.50" color="purple.600">
                                 <Icon as={FiLayers} boxSize={4} />
@@ -3678,7 +3504,7 @@ export default function ApplicationDetail() {
                                         </Heading>
                                         <Badge
                                           colorScheme={linkAksesEnv === "Dev" ? "blue" : "green"}
-                                          fontSize="xs"
+                                          fontSize="3xs"
                                           rounded="md"
                                           px={2}
                                           fontWeight="bold"
@@ -3686,7 +3512,7 @@ export default function ApplicationDetail() {
                                           {linkAksesEnv}
                                         </Badge>
                                       </HStack>
-                                      <Text fontSize="xs" color="gray.500">
+                                      <Text fontSize="2xs" color="gray.500">
                                         Pilih lingkungan Dev atau Prod untuk konfigurasi URL akses dan kredensial pengujian.
                                       </Text>
                                     </VStack>
@@ -3701,30 +3527,30 @@ export default function ApplicationDetail() {
                                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                                   {/* Selection: Dev / Prod */}
                                   <FormControl>
-                                    <FormLabel fontSize="xs" fontWeight="bold" textTransform="uppercase" color="gray.500">
+                                    <FormLabel fontSize="2xs" fontWeight="bold" textTransform="uppercase" color="gray.500">
                                       Link Akses Lingkungan
                                     </FormLabel>
                                     <HStack spacing={2} mt={1}>
                                       <Button
-                                        size="md"
+                                        size="sm"
                                         rounded="lg"
                                         variant={linkAksesEnv === "Dev" ? "solid" : "outline"}
                                         colorScheme={linkAksesEnv === "Dev" ? "blue" : "gray"}
                                         onClick={() => setLinkAksesEnv("Dev")}
                                         px={5}
-                                        fontSize="md"
+                                        fontSize="xs"
                                         fontWeight="bold"
                                       >
                                         Dev
                                       </Button>
                                       <Button
-                                        size="md"
+                                        size="sm"
                                         rounded="lg"
                                         variant={linkAksesEnv === "Prod" ? "solid" : "outline"}
                                         colorScheme={linkAksesEnv === "Prod" ? "green" : "gray"}
                                         onClick={() => setLinkAksesEnv("Prod")}
                                         px={5}
-                                        fontSize="md"
+                                        fontSize="xs"
                                         fontWeight="bold"
                                       >
                                         Prod
@@ -3734,16 +3560,22 @@ export default function ApplicationDetail() {
 
                                   {/* URL Link Akses */}
                                   <FormControl>
-                                    <FormLabel fontSize="xs" fontWeight="bold" textTransform="uppercase" color="gray.500">
+                                    <FormLabel fontSize="2xs" fontWeight="bold" textTransform="uppercase" color="gray.500">
                                       URL Link Akses ({linkAksesEnv})
                                     </FormLabel>
                                     {IsEditMode ? (
                                       <Input
-                                        size="md"
+                                        size="sm"
                                         rounded="lg"
-                                        placeholder="URL Link Akses"
-                                        value={linkAksesUrl}
-                                        onChange={(e) => setLinkAksesUrl(e.target.value)}
+                                        placeholder={`URL Link Akses ${linkAksesEnv}`}
+                                        value={linkAksesEnv === "Dev" ? linkAksesDevUrl : linkAksesProdUrl}
+                                        onChange={(e) => {
+                                          if (linkAksesEnv === "Dev") {
+                                            setLinkAksesDevUrl(e.target.value);
+                                          } else {
+                                            setLinkAksesProdUrl(e.target.value);
+                                          }
+                                        }}
                                       />
                                     ) : (
                                       <HStack
@@ -3755,12 +3587,12 @@ export default function ApplicationDetail() {
                                         justify="space-between"
                                       >
                                         <Text fontSize="xs" fontWeight="bold" color="blue.500" noOfLines={1}>
-                                          {linkAksesUrl ||
+                                          {(linkAksesEnv === "Dev" ? linkAksesDevUrl : linkAksesProdUrl) ||
                                             (linkAksesEnv === "Dev"
                                               ? `https://${DataApplication?.appShortName?.toLowerCase() || "app"}-dev.bankbki.co.id`
                                               : `https://${DataApplication?.appShortName?.toLowerCase() || "app"}.bankbki.co.id`)}
                                         </Text>
-                                        {(linkAksesUrl || DataApplication?.appShortName) && (
+                                        {((linkAksesEnv === "Dev" ? linkAksesDevUrl : linkAksesProdUrl) || DataApplication?.appShortName) && (
                                           <IconButton
                                             aria-label="Buka URL Akses"
                                             icon={<FiExternalLink />}
@@ -3769,7 +3601,7 @@ export default function ApplicationDetail() {
                                             colorScheme="blue"
                                             onClick={() => {
                                               const target =
-                                                linkAksesUrl ||
+                                                (linkAksesEnv === "Dev" ? linkAksesDevUrl : linkAksesProdUrl) ||
                                                 (linkAksesEnv === "Dev"
                                                   ? `https://${DataApplication?.appShortName?.toLowerCase() || "app"}-dev.bankbki.co.id`
                                                   : `https://${DataApplication?.appShortName?.toLowerCase() || "app"}.bankbki.co.id`);
@@ -3782,77 +3614,249 @@ export default function ApplicationDetail() {
                                   </FormControl>
                                 </SimpleGrid>
 
-                                {/* IF DEV = TRUE: SHOW FIELD TEST USER AND TEST DATA FIELD */}
+                                {/* IF DEV = TRUE: SHOW DYNAMIC TESTING PARAMETERS */}
                                 {linkAksesEnv === "Dev" && (
                                   <Box
-                                    p={3.5}
-                                    rounded="lg"
+                                    p={4}
+                                    rounded="xl"
                                     bg={isDark ? "gray.800" : "white"}
                                     border="1px dashed"
                                     borderColor="blue.300"
                                   >
-                                    <HStack mb={2.5} spacing={1.5} color="blue.500">
-                                      <Icon as={FiCheckCircle} boxSize={4} />
-                                      <Text fontSize="xs" fontWeight="bold" textTransform="uppercase" letterSpacing="wide">
-                                        Parameter Pengujian (Environment Development)
-                                      </Text>
-                                    </HStack>
+                                    <Flex justify="space-between" align="center" mb={3}>
+                                      <HStack spacing={2} color="blue.500">
+                                        <Icon as={FiCheckCircle} boxSize={4} />
+                                        <Text fontSize="2xs" fontWeight="bold" textTransform="uppercase" letterSpacing="wide">
+                                          Parameter Pengujian (Environment Development)
+                                        </Text>
+                                        <Badge colorScheme="blue" variant="subtle" fontSize="3xs" rounded="full" px={2}>
+                                          {testingParameters.length}
+                                        </Badge>
+                                      </HStack>
+                                      {IsEditMode && (
+                                        <Button
+                                          size="xs"
+                                          colorScheme="blue"
+                                          variant="solid"
+                                          leftIcon={<FiPlus />}
+                                          rounded="lg"
+                                          onClick={handleAddTestingParameter}
+                                        >
+                                          Tambah Parameter
+                                        </Button>
+                                      )}
+                                    </Flex>
 
-                                    <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
-                                      <FormControl>
-                                        <FormLabel fontSize="xs" fontWeight="bold" color="gray.500">
-                                          Test User
-                                        </FormLabel>
-                                        {IsEditMode ? (
-                                          <Input
-                                            size="md"
-                                            rounded="lg"
-                                            placeholder="Test User"
-                                            value={testUser}
-                                            onChange={(e) => setTestUser(e.target.value)}
-                                          />
-                                        ) : (
+                                    {IsEditMode ? (
+                                      <VStack spacing={3} align="stretch">
+                                        {testingParameters.length === 0 ? (
                                           <Box
-                                            p={2}
-                                            rounded="md"
-                                            bg={isDark ? "gray.750" : "gray.50"}
-                                            border="1px solid"
-                                            borderColor={isDark ? "gray.700" : "gray.200"}
+                                            p={4}
+                                            textAlign="center"
+                                            rounded="lg"
+                                            bg={isDark ? "gray.850" : "gray.50"}
+                                            border="1px dashed"
+                                            borderColor={isDark ? "gray.700" : "gray.300"}
                                           >
-                                            <Text fontSize="xs" fontFamily="mono" color={isDark ? "white" : "gray.800"}>
-                                              {testUser || "dev_test_user01"}
+                                            <Text fontSize="xs" color="gray.500" mb={2}>
+                                              Belum ada parameter pengujian yang ditambahkan.
+                                            </Text>
+                                            <Button
+                                              size="xs"
+                                              colorScheme="blue"
+                                              leftIcon={<FiPlus />}
+                                              onClick={handleAddTestingParameter}
+                                            >
+                                              Tambah Parameter Pertama
+                                            </Button>
+                                          </Box>
+                                        ) : (
+                                          testingParameters.map((param, index) => (
+                                            <HStack
+                                              key={param.id || `param-item-${index}`}
+                                              p={3}
+                                              rounded="lg"
+                                              bg={isDark ? "gray.850" : "gray.50"}
+                                              border="1px solid"
+                                              borderColor={isDark ? "gray.700" : "gray.200"}
+                                              spacing={3}
+                                              align="flex-start"
+                                            >
+                                              <FormControl flex={{ base: "1", md: "1.2" }}>
+                                                <FormLabel fontSize="3xs" fontWeight="bold" color="gray.500" mb={1}>
+                                                  Nama Parameter
+                                                </FormLabel>
+                                                <Input
+                                                  size="sm"
+                                                  rounded="md"
+                                                  placeholder="misal: Test User, CIF, API Key"
+                                                  value={param.paramLabel}
+                                                  onChange={(e) =>
+                                                    handleUpdateTestingParameter(index, "paramLabel", e.target.value)
+                                                  }
+                                                />
+                                              </FormControl>
+
+                                              <FormControl w={{ base: "90px", md: "110px" }}>
+                                                <FormLabel fontSize="3xs" fontWeight="bold" color="gray.500" mb={1}>
+                                                  Tipe
+                                                </FormLabel>
+                                                <ChakraSelect
+                                                  size="sm"
+                                                  rounded="md"
+                                                  value={param.fieldType}
+                                                  onChange={(e) =>
+                                                    handleUpdateTestingParameter(
+                                                      index,
+                                                      "fieldType",
+                                                      e.target.value as "text" | "password" | "textarea"
+                                                    )
+                                                  }
+                                                >
+                                                  <option value="text">Text</option>
+                                                  <option value="password">Password</option>
+                                                  <option value="textarea">Textarea</option>
+                                                </ChakraSelect>
+                                              </FormControl>
+
+                                              <FormControl flex={{ base: "1.5", md: "2" }}>
+                                                <FormLabel fontSize="3xs" fontWeight="bold" color="gray.500" mb={1}>
+                                                  Nilai Parameter
+                                                </FormLabel>
+                                                {param.fieldType === "textarea" ? (
+                                                  <Textarea
+                                                    size="sm"
+                                                    rounded="md"
+                                                    rows={2}
+                                                    placeholder="Nilai parameter"
+                                                    value={param.paramValue || ""}
+                                                    onChange={(e) =>
+                                                      handleUpdateTestingParameter(index, "paramValue", e.target.value)
+                                                    }
+                                                  />
+                                                ) : (
+                                                  <Input
+                                                    size="sm"
+                                                    rounded="md"
+                                                    type={param.fieldType === "password" ? "password" : "text"}
+                                                    placeholder="Nilai parameter"
+                                                    value={param.paramValue || ""}
+                                                    onChange={(e) =>
+                                                      handleUpdateTestingParameter(index, "paramValue", e.target.value)
+                                                    }
+                                                  />
+                                                )}
+                                              </FormControl>
+
+                                              <Box pt={6}>
+                                                <IconButton
+                                                  aria-label="Hapus Parameter"
+                                                  icon={<FiTrash2 />}
+                                                  size="sm"
+                                                  variant="ghost"
+                                                  colorScheme="red"
+                                                  onClick={() => handleDeleteTestingParameter(index)}
+                                                />
+                                              </Box>
+                                            </HStack>
+                                          ))
+                                        )}
+                                      </VStack>
+                                    ) : (
+                                      <>
+                                        {isAccessLoading ? (
+                                          <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={3}>
+                                            <Skeleton height="54px" rounded="lg" />
+                                            <Skeleton height="54px" rounded="lg" />
+                                          </SimpleGrid>
+                                        ) : testingParameters.length === 0 ? (
+                                          <Box
+                                            p={3}
+                                            rounded="lg"
+                                            bg={isDark ? "gray.850" : "gray.50"}
+                                            border="1px dashed"
+                                            borderColor={isDark ? "gray.700" : "gray.200"}
+                                            textAlign="center"
+                                          >
+                                            <Text fontSize="xs" color="gray.500">
+                                              Belum ada parameter pengujian yang dikonfigurasi untuk environment Development.
                                             </Text>
                                           </Box>
-                                        )}
-                                      </FormControl>
-
-                                      <FormControl>
-                                        <FormLabel fontSize="xs" fontWeight="bold" color="gray.500">
-                                          Test Data
-                                        </FormLabel>
-                                        {IsEditMode ? (
-                                          <Input
-                                            size="md"
-                                            rounded="lg"
-                                            placeholder="Test Data"
-                                            value={testData}
-                                            onChange={(e) => setTestData(e.target.value)}
-                                          />
                                         ) : (
-                                          <Box
-                                            p={2}
-                                            rounded="md"
-                                            bg={isDark ? "gray.750" : "gray.50"}
-                                            border="1px solid"
-                                            borderColor={isDark ? "gray.700" : "gray.200"}
-                                          >
-                                            <Text fontSize="xs" fontFamily="mono" color={isDark ? "white" : "gray.800"}>
-                                              {testData || "CIF: 902188201 / Rekening: 1029384756"}
-                                            </Text>
-                                          </Box>
+                                          <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={3}>
+                                            {testingParameters.map((param, index) => {
+                                              const paramId = param.id || `param-${index}`;
+                                              const isRevealed = maskedVisibility[paramId] || false;
+                                              const isSecret = param.fieldType === "password";
+                                              const displayVal = isSecret && !isRevealed
+                                                ? "••••••••"
+                                                : param.paramValue || "-";
+
+                                              return (
+                                                <Box
+                                                  key={paramId}
+                                                  p={2.5}
+                                                  rounded="lg"
+                                                  bg={isDark ? "gray.750" : "gray.50"}
+                                                  border="1px solid"
+                                                  borderColor={isDark ? "gray.700" : "gray.200"}
+                                                >
+                                                  <Flex justify="space-between" align="center" mb={1}>
+                                                    <Text
+                                                      fontSize="3xs"
+                                                      fontWeight="bold"
+                                                      color="gray.500"
+                                                      textTransform="uppercase"
+                                                      noOfLines={1}
+                                                    >
+                                                      {param.paramLabel}
+                                                    </Text>
+                                                    <HStack spacing={1}>
+                                                      {isSecret && (
+                                                        <IconButton
+                                                          aria-label={isRevealed ? "Sembunyikan" : "Tampilkan"}
+                                                          icon={isRevealed ? <FiEyeOff /> : <FiEye />}
+                                                          size="xs"
+                                                          variant="ghost"
+                                                          colorScheme="gray"
+                                                          onClick={() => toggleMaskVisibility(paramId)}
+                                                        />
+                                                      )}
+                                                      {param.paramValue && (
+                                                        <IconButton
+                                                          aria-label="Salin nilai"
+                                                          icon={<FiCopy />}
+                                                          size="xs"
+                                                          variant="ghost"
+                                                          colorScheme="blue"
+                                                          onClick={() => {
+                                                            navigator.clipboard.writeText(param.paramValue || "");
+                                                            showToast({
+                                                              description: `${param.paramLabel} berhasil disalin`,
+                                                              statusToast: "info",
+                                                            });
+                                                          }}
+                                                        />
+                                                      )}
+                                                    </HStack>
+                                                  </Flex>
+                                                  <Text
+                                                    fontSize="xs"
+                                                    fontFamily="mono"
+                                                    fontWeight="medium"
+                                                    color={isDark ? "white" : "gray.800"}
+                                                    noOfLines={param.fieldType === "textarea" ? 3 : 1}
+                                                    wordBreak="break-all"
+                                                  >
+                                                    {displayVal}
+                                                  </Text>
+                                                </Box>
+                                              );
+                                            })}
+                                          </SimpleGrid>
                                         )}
-                                      </FormControl>
-                                    </SimpleGrid>
+                                      </>
+                                    )}
                                   </Box>
                                 )}
                               </VStack>
@@ -3895,31 +3899,29 @@ export default function ApplicationDetail() {
                                   <Heading size="xs" color={isDark ? "white" : "gray.800"}>
                                     Daftar Server Node & Virtual Machine
                                   </Heading>
-                                  <Badge colorScheme="purple" fontSize="xs" rounded="full" px={2}>
+                                  <Badge colorScheme="purple" fontSize="3xs" rounded="full" px={2}>
                                     {serverEnvironments.length} Nodes
                                   </Badge>
                                 </HStack>
-                                <Text fontSize="xs" color="gray.500">
+                                <Text fontSize="2xs" color="gray.500">
                                   Konfigurasi server role, site segment, DC1/DC2 primary flag, hardening, PAM, dual deploy & spesifikasi VM.
                                 </Text>
                               </VStack>
                             </HStack>
 
-                            {!isAddServerHidden && (
-                              <Button
-                                leftIcon={<FiPlus />}
-                                size="md"
-                                colorScheme="purple"
-                                variant="outline"
-                                rounded="xl"
-                                px={4}
-                                fontSize="md"
-                                fontWeight="bold"
-                                onClick={handleAddServer}
-                              >
-                                Add Server
-                              </Button>
-                            )}
+                            <Button
+                              leftIcon={<FiPlus />}
+                              size="sm"
+                              colorScheme="purple"
+                              variant={IsEditMode ? "solid" : "outline"}
+                              rounded="xl"
+                              px={3.5}
+                              fontSize="xs"
+                              fontWeight="bold"
+                              onClick={handleAddServer}
+                            >
+                              Tambah Server Node
+                            </Button>
                           </Flex>
 
                           {/* Accordion List */}
@@ -3941,7 +3943,7 @@ export default function ApplicationDetail() {
                             </Text>
                             <Button
                               leftIcon={<FiPlus />}
-                              size="md"
+                              size="sm"
                               colorScheme="secondary"
                               rounded="xl"
                               onClick={handleAddServer}
@@ -3950,12 +3952,7 @@ export default function ApplicationDetail() {
                             </Button>
                           </Box>
                         ) : (
-                          <Accordion
-                            allowMultiple
-                            index={serverAccordionIndices}
-                            onChange={(indices) => setServerAccordionIndices(indices as number[])}
-                            w="full"
-                          >
+                          <Accordion allowMultiple defaultIndex={[0]} w="full">
                             {serverEnvironments.map((srv, index) => {
                               const isDc1 = srv.primary === "DC1";
                               const isDc2 = srv.primary === "DC2";
@@ -3978,9 +3975,6 @@ export default function ApplicationDetail() {
                               return (
                                 <AccordionItem
                                   key={srv.id || index}
-                                  id={`server-node-${srv.id || index}`}
-                                  data-server-node={srv.id || index}
-                                  style={{ scrollMarginTop: "120px" }}
                                   mb={4}
                                   rounded="xl"
                                   border="1px solid"
@@ -3997,9 +3991,6 @@ export default function ApplicationDetail() {
                                   {IsEditMode ? (
                                     /* Edit Mode: Parent fields as inputs */
                                     <Box
-                                      id={`server-node-${srv.id || index}`}
-                                      data-server-node={srv.id || index}
-                                      style={{ scrollMarginTop: "120px" }}
                                       p={4}
                                       bg={isDark ? "gray.800" : "gray.50"}
                                       borderBottom="1px solid"
@@ -4015,7 +4006,7 @@ export default function ApplicationDetail() {
                                           </Text>
                                           <Badge
                                             colorScheme={isDc1 ? "blue" : isDc2 ? "purple" : "gray"}
-                                            fontSize="xs"
+                                            fontSize="3xs"
                                             rounded="full"
                                             px={2}
                                           >
@@ -4037,9 +4028,9 @@ export default function ApplicationDetail() {
                                       <SimpleGrid columns={{ base: 1, sm: 2, md: 4 }} spacing={3}>
                                         {/* Role Server */}
                                         <FormControl isRequired>
-                                          <FormLabel fontSize="xs" fontWeight="bold">Role Server</FormLabel>
+                                          <FormLabel fontSize="2xs" fontWeight="bold">Role Server</FormLabel>
                                           <ChakraSelect
-                                            size="md"
+                                            size="sm"
                                             rounded="lg"
                                             value={
                                               STANDARD_ROLE_SERVERS.includes(srv.roleServer as any)
@@ -4054,21 +4045,17 @@ export default function ApplicationDetail() {
                                               }
                                             }}
                                           >
-                                            <option value="Web Server">Web Server</option>
-                                            <option value="App Server">App Server</option>
-                                            <option value="DB Server">DB Server</option>
-                                            <option value="Middleware">Middleware</option>
-                                            <option value="API Gateway">API Gateway</option>
-                                            <option value="Cache / Redis">Cache / Redis</option>
-                                            <option value="Storage / NAS">Storage / NAS</option>
-                                            <option value="Batch / Worker">Batch / Worker</option>
-                                            <option value="Other">Other</option>
+                                            {SERVER_ROLE_OPTIONS.map((role) => (
+                                              <option key={role} value={role}>
+                                                {role}
+                                              </option>
+                                            ))}
                                           </ChakraSelect>
                                           {(srv.roleServer === "Other" ||
                                             !STANDARD_ROLE_SERVERS.includes(srv.roleServer as any)) && (
                                             <Input
                                               mt={1.5}
-                                              size="md"
+                                              size="sm"
                                               rounded="lg"
                                               placeholder="Role Server"
                                               value={
@@ -4084,9 +4071,9 @@ export default function ApplicationDetail() {
 
                                         {/* Role Detail */}
                                         <FormControl isRequired>
-                                          <FormLabel fontSize="xs" fontWeight="bold">Role Detail</FormLabel>
+                                          <FormLabel fontSize="2xs" fontWeight="bold">Role Detail</FormLabel>
                                           <Input
-                                            size="md"
+                                            size="sm"
                                             rounded="lg"
                                             value={srv.roleDetail}
                                             onChange={(e) => handleUpdateServer(index, "roleDetail", e.target.value)}
@@ -4096,24 +4083,27 @@ export default function ApplicationDetail() {
 
                                         {/* Status */}
                                         <FormControl isRequired>
-                                          <FormLabel fontSize="xs" fontWeight="bold">Status</FormLabel>
+                                          <FormLabel fontSize="2xs" fontWeight="bold">Status</FormLabel>
                                           <ChakraSelect
-                                            size="md"
+                                            size="sm"
                                             rounded="lg"
                                             value={srv.status}
                                             onChange={(e) =>
                                               handleUpdateServer(index, "status", e.target.value as "Aktif" | "Pasif")
                                             }
                                           >
-                                            <option value="Aktif">Aktif</option>
-                                            <option value="Pasif">Pasif</option>
+                                            {SERVER_STATUS_OPTIONS.map((st) => (
+                                              <option key={st} value={st}>
+                                                {st}
+                                              </option>
+                                            ))}
                                           </ChakraSelect>
                                         </FormControl>
 
                                         {/* IP Address & Primary */}
                                         <FormControl isRequired>
                                           <HStack justify="space-between" mb={1}>
-                                            <FormLabel fontSize="xs" fontWeight="bold" mb={0}>
+                                            <FormLabel fontSize="2xs" fontWeight="bold" mb={0}>
                                               IP Address
                                             </FormLabel>
                                             <Tooltip
@@ -4123,7 +4113,7 @@ export default function ApplicationDetail() {
                                             >
                                               <Badge
                                                 colorScheme={isDc1 ? "blue" : isDc2 ? "purple" : "gray"}
-                                                fontSize="xs"
+                                                fontSize="3xs"
                                                 rounded="md"
                                                 cursor="help"
                                               >
@@ -4132,7 +4122,7 @@ export default function ApplicationDetail() {
                                             </Tooltip>
                                           </HStack>
                                           <Input
-                                            size="md"
+                                            size="sm"
                                             rounded="lg"
                                             fontFamily="mono"
                                             value={srv.ipAddress}
@@ -4140,7 +4130,7 @@ export default function ApplicationDetail() {
                                             placeholder="IP Address"
                                           />
                                           <HStack justify="space-between" mt={1}>
-                                            <Text fontSize="xs" color="gray.500">
+                                            <Text fontSize="3xs" color="gray.500">
                                               Primary Override:
                                             </Text>
                                             <ChakraSelect
@@ -4156,9 +4146,11 @@ export default function ApplicationDetail() {
                                                 )
                                               }
                                             >
-                                              <option value="DC1">DC1</option>
-                                              <option value="DC2">DC2</option>
-                                              <option value="-">-</option>
+                                              {SERVER_PRIMARY_DC_OPTIONS.map((dc) => (
+                                                <option key={dc} value={dc}>
+                                                  {dc}
+                                                </option>
+                                              ))}
                                             </ChakraSelect>
                                           </HStack>
                                         </FormControl>
@@ -4172,7 +4164,7 @@ export default function ApplicationDetail() {
                                         bg={isDark ? "gray.750" : "gray.100"}
                                         _hover={{ bg: isDark ? "gray.700" : "gray.200" }}
                                       >
-                                        <HStack spacing={1.5} fontSize="xs" color={isDark ? "gray.300" : "gray.600"} fontWeight="bold">
+                                        <HStack spacing={1.5} fontSize="3xs" color={isDark ? "gray.300" : "gray.600"} fontWeight="bold">
                                           <Icon as={FiLayers} color="gray.500" />
                                           <Text>Edit Child Parameters (Network, Governance, Dual Deploy & VM Specification)</Text>
                                         </HStack>
@@ -4182,9 +4174,6 @@ export default function ApplicationDetail() {
                                   ) : (
                                     /* View Mode: Parent fields as clean grey header */
                                     <AccordionButton
-                                      id={`server-node-${srv.id || index}`}
-                                      data-server-node={srv.id || index}
-                                      style={{ scrollMarginTop: "120px" }}
                                       py={3.5}
                                       px={{ base: 4, md: 5 }}
                                       bg={isDark ? "gray.800" : "gray.50"}
@@ -4227,21 +4216,21 @@ export default function ApplicationDetail() {
                                           </Box>
                                           <VStack align="start" spacing={0.5}>
                                             <HStack spacing={2} wrap="wrap">
-                                              <Text fontSize="xs" fontWeight="800" color="gray.500" textTransform="uppercase" letterSpacing="wider">
+                                              <Text fontSize="3xs" fontWeight="800" color="gray.500" textTransform="uppercase" letterSpacing="wider">
                                                 SERVER #{index + 1}
                                               </Text>
-                                              <Text fontSize="md" fontWeight="800" color={isDark ? "white" : "gray.800"}>
+                                              <Text fontSize="sm" fontWeight="800" color={isDark ? "white" : "gray.800"}>
                                                 {displayRoleServer}
                                               </Text>
                                               {isCustomRole && srv.roleServerOther?.trim() && (
-                                                <Badge colorScheme="purple" variant="outline" fontSize="xs" rounded="md">
+                                                <Badge colorScheme="purple" variant="outline" fontSize="3xs" rounded="md">
                                                   Other Role
                                                 </Badge>
                                               )}
                                               <Badge
                                                 colorScheme={srv.status === "Aktif" ? "green" : "gray"}
                                                 variant="solid"
-                                                fontSize="xs"
+                                                fontSize="3xs"
                                                 rounded="full"
                                                 px={2}
                                               >
@@ -4262,7 +4251,7 @@ export default function ApplicationDetail() {
                                               variant="subtle"
                                               colorScheme="blue"
                                               fontFamily="mono"
-                                              fontSize="xs"
+                                              fontSize="2xs"
                                               px={2}
                                               py={0.5}
                                               rounded="md"
@@ -4276,7 +4265,7 @@ export default function ApplicationDetail() {
                                             <Badge
                                               colorScheme="teal"
                                               variant="subtle"
-                                              fontSize="xs"
+                                              fontSize="3xs"
                                               px={1.5}
                                               py={0.5}
                                               rounded="md"
@@ -4294,7 +4283,7 @@ export default function ApplicationDetail() {
                                             <Badge
                                               colorScheme={isDc1 ? "blue" : isDc2 ? "purple" : "gray"}
                                               variant="solid"
-                                              fontSize="xs"
+                                              fontSize="2xs"
                                               fontWeight="extrabold"
                                               px={2.5}
                                               py={0.5}
@@ -4344,7 +4333,7 @@ export default function ApplicationDetail() {
                                           >
                                             <HStack spacing={2}>
                                               <Icon as={FiGlobe} color="blue.500" boxSize={4} />
-                                              <Text fontSize="xs" fontWeight="800" color="blue.500" textTransform="uppercase" letterSpacing="wider">
+                                              <Text fontSize="2xs" fontWeight="800" color="blue.500" textTransform="uppercase" letterSpacing="wider">
                                                 Network & Governance Environment
                                               </Text>
                                             </HStack>
@@ -4360,7 +4349,7 @@ export default function ApplicationDetail() {
                                                   ? "blue"
                                                   : "teal"
                                               }
-                                              fontSize="xs"
+                                              fontSize="3xs"
                                               rounded="md"
                                               px={2}
                                               py={0.5}
@@ -4373,9 +4362,9 @@ export default function ApplicationDetail() {
                                             /* Edit Mode: Network & Governance */
                                             <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
                                               <FormControl>
-                                                <FormLabel fontSize="xs" fontWeight="bold">Site</FormLabel>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">Site</FormLabel>
                                                 <ChakraSelect
-                                                  size="md"
+                                                  size="sm"
                                                   rounded="lg"
                                                   value={srv.site}
                                                   onChange={(e) => {
@@ -4386,17 +4375,16 @@ export default function ApplicationDetail() {
                                                     }
                                                   }}
                                                 >
-                                                  <option value="DC Narogong">DC Narogong</option>
-                                                  <option value="DRC Surabaya">DRC Surabaya</option>
-                                                  <option value="Head Office">Head Office</option>
-                                                  <option value="AWS Cloud">AWS Cloud</option>
-                                                  <option value="Google Cloud">Google Cloud</option>
-                                                  <option value="Other Site">Other Site</option>
+                                                  {SERVER_SITE_OPTIONS.map((site) => (
+                                                    <option key={site} value={site}>
+                                                      {site}
+                                                    </option>
+                                                  ))}
                                                 </ChakraSelect>
                                                 {(srv.site === "Other Site" || srv.site === "Other") && (
                                                   <Input
                                                     mt={1.5}
-                                                    size="md"
+                                                    size="sm"
                                                     rounded="lg"
                                                     placeholder="Site"
                                                     value={srv.siteOther || ""}
@@ -4408,9 +4396,9 @@ export default function ApplicationDetail() {
                                               </FormControl>
 
                                               <FormControl>
-                                                <FormLabel fontSize="xs" fontWeight="bold">Segment</FormLabel>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">Segment</FormLabel>
                                                 <Input
-                                                  size="md"
+                                                  size="sm"
                                                   rounded="lg"
                                                   value={srv.segment}
                                                   onChange={(e) => handleUpdateServer(index, "segment", e.target.value)}
@@ -4419,9 +4407,9 @@ export default function ApplicationDetail() {
                                               </FormControl>
 
                                               <FormControl>
-                                                <FormLabel fontSize="xs" fontWeight="bold">Environment</FormLabel>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">Environment</FormLabel>
                                                 <ChakraSelect
-                                                  size="md"
+                                                  size="sm"
                                                   rounded="lg"
                                                   value={srv.environment}
                                                   onChange={(e) => {
@@ -4432,17 +4420,16 @@ export default function ApplicationDetail() {
                                                     }
                                                   }}
                                                 >
-                                                  <option value="Production">Production</option>
-                                                  <option value="DRC">DRC</option>
-                                                  <option value="Staging">Staging</option>
-                                                  <option value="UAT">UAT</option>
-                                                  <option value="Development">Development</option>
-                                                  <option value="Other">Other</option>
+                                                  {SERVER_ENVIRONMENT_OPTIONS.map((env) => (
+                                                    <option key={env} value={env}>
+                                                      {env}
+                                                    </option>
+                                                  ))}
                                                 </ChakraSelect>
                                                 {srv.environment === "Other" && (
                                                   <Input
                                                     mt={1.5}
-                                                    size="md"
+                                                    size="sm"
                                                     rounded="lg"
                                                     placeholder="Environment"
                                                     value={srv.environmentOther || ""}
@@ -4454,7 +4441,7 @@ export default function ApplicationDetail() {
                                               </FormControl>
 
                                               <FormControl>
-                                                <FormLabel fontSize="xs" fontWeight="bold">Join Domain</FormLabel>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">Join Domain</FormLabel>
                                                 <RadioGroup
                                                   value={srv.joinDomain}
                                                   onChange={(val) =>
@@ -4462,14 +4449,14 @@ export default function ApplicationDetail() {
                                                   }
                                                 >
                                                   <HStack spacing={4} mt={1}>
-                                                    <Radio value="Ya" size="md" colorScheme="green">Ya</Radio>
-                                                    <Radio value="Tidak" size="md" colorScheme="gray">Tidak</Radio>
+                                                    <Radio value="Ya" size="sm" colorScheme="green">Ya</Radio>
+                                                    <Radio value="Tidak" size="sm" colorScheme="gray">Tidak</Radio>
                                                   </HStack>
                                                 </RadioGroup>
                                               </FormControl>
 
                                               <FormControl>
-                                                <FormLabel fontSize="xs" fontWeight="bold">Hardening</FormLabel>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">Hardening</FormLabel>
                                                 <RadioGroup
                                                   value={srv.hardening}
                                                   onChange={(val) =>
@@ -4477,14 +4464,14 @@ export default function ApplicationDetail() {
                                                   }
                                                 >
                                                   <HStack spacing={4} mt={1}>
-                                                    <Radio value="Ya" size="md" colorScheme="green">Ya</Radio>
-                                                    <Radio value="Tidak" size="md" colorScheme="gray">Tidak</Radio>
+                                                    <Radio value="Ya" size="sm" colorScheme="green">Ya</Radio>
+                                                    <Radio value="Tidak" size="sm" colorScheme="gray">Tidak</Radio>
                                                   </HStack>
                                                 </RadioGroup>
                                               </FormControl>
 
                                               <FormControl>
-                                                <FormLabel fontSize="xs" fontWeight="bold">PAM (Privileged Access)</FormLabel>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">PAM (Privileged Access)</FormLabel>
                                                 <RadioGroup
                                                   value={srv.pam}
                                                   onChange={(val) =>
@@ -4492,14 +4479,14 @@ export default function ApplicationDetail() {
                                                   }
                                                 >
                                                   <HStack spacing={4} mt={1}>
-                                                    <Radio value="Ya" size="md" colorScheme="green">Ya</Radio>
-                                                    <Radio value="Tidak" size="md" colorScheme="gray">Tidak</Radio>
+                                                    <Radio value="Ya" size="sm" colorScheme="green">Ya</Radio>
+                                                    <Radio value="Tidak" size="sm" colorScheme="gray">Tidak</Radio>
                                                   </HStack>
                                                 </RadioGroup>
                                               </FormControl>
 
                                               <FormControl gridColumn={{ base: "1", sm: "1 / -1" }}>
-                                                <FormLabel fontSize="xs" fontWeight="bold">Dual Deploy Architecture</FormLabel>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">Dual Deploy Architecture</FormLabel>
                                                 <RadioGroup
                                                   value={srv.dualDeploy}
                                                   onChange={(val) =>
@@ -4507,10 +4494,10 @@ export default function ApplicationDetail() {
                                                   }
                                                 >
                                                   <HStack spacing={4} mt={1}>
-                                                    <Radio value="Ya" size="md" colorScheme="teal" fontWeight="bold">
+                                                    <Radio value="Ya" size="sm" colorScheme="teal" fontWeight="bold">
                                                       Ya (Dual Deploy)
                                                     </Radio>
-                                                    <Radio value="Tidak" size="md" colorScheme="gray">
+                                                    <Radio value="Tidak" size="sm" colorScheme="gray">
                                                       Tidak
                                                     </Radio>
                                                   </HStack>
@@ -4553,7 +4540,7 @@ export default function ApplicationDetail() {
                                                       px={2}
                                                       py={0.5}
                                                       rounded="md"
-                                                      fontSize="xs"
+                                                      fontSize="2xs"
                                                       fontWeight="bold"
                                                     >
                                                       {displayEnvironment || "-"}
@@ -4566,7 +4553,7 @@ export default function ApplicationDetail() {
                                                   <HStack spacing={1.5} mt={0.5}>
                                                     <Badge
                                                       colorScheme={isDc1 ? "blue" : isDc2 ? "purple" : "gray"}
-                                                      fontSize="xs"
+                                                      fontSize="2xs"
                                                       fontWeight="bold"
                                                       px={2}
                                                       py={0.5}
@@ -4574,7 +4561,7 @@ export default function ApplicationDetail() {
                                                     >
                                                       {srv.primary}
                                                     </Badge>
-                                                    <Text fontSize="xs" color="gray.400">
+                                                    <Text fontSize="3xs" color="gray.400">
                                                       {isDc1 ? "(DC1 Subnet)" : isDc2 ? "(DC2 Subnet)" : ""}
                                                     </Text>
                                                   </HStack>
@@ -4588,7 +4575,7 @@ export default function ApplicationDetail() {
                                                       px={2}
                                                       py={0.5}
                                                       rounded="md"
-                                                      fontSize="xs"
+                                                      fontSize="2xs"
                                                       fontWeight="bold"
                                                     >
                                                       {srv.joinDomain === "Ya" ? "Ya (Domain Joined)" : "Tidak"}
@@ -4604,7 +4591,7 @@ export default function ApplicationDetail() {
                                                       px={2}
                                                       py={0.5}
                                                       rounded="md"
-                                                      fontSize="xs"
+                                                      fontSize="2xs"
                                                       fontWeight="bold"
                                                     >
                                                       {srv.hardening === "Ya" ? "Ya (Hardened)" : "Tidak"}
@@ -4620,7 +4607,7 @@ export default function ApplicationDetail() {
                                                       px={2}
                                                       py={0.5}
                                                       rounded="md"
-                                                      fontSize="xs"
+                                                      fontSize="2xs"
                                                       fontWeight="bold"
                                                     >
                                                       {srv.pam === "Ya" ? "Ya (PAM Managed)" : "Tidak"}
@@ -4648,7 +4635,7 @@ export default function ApplicationDetail() {
                                                   <Badge
                                                     colorScheme={srv.dualDeploy === "Ya" ? "teal" : "gray"}
                                                     variant={srv.dualDeploy === "Ya" ? "solid" : "subtle"}
-                                                    fontSize="xs"
+                                                    fontSize="2xs"
                                                     px={2.5}
                                                     py={0.5}
                                                     rounded="full"
@@ -4683,13 +4670,13 @@ export default function ApplicationDetail() {
                                           >
                                             <HStack spacing={2}>
                                               <Icon as={FiCpu} color="purple.500" boxSize={4} />
-                                              <Text fontSize="xs" fontWeight="800" color="purple.500" textTransform="uppercase" letterSpacing="wider">
+                                              <Text fontSize="2xs" fontWeight="800" color="purple.500" textTransform="uppercase" letterSpacing="wider">
                                                 Virtual Machine (VM) Specification
                                               </Text>
                                             </HStack>
                                             <Badge
                                               colorScheme="purple"
-                                              fontSize="xs"
+                                              fontSize="3xs"
                                               rounded="md"
                                               px={2}
                                               py={0.5}
@@ -4703,9 +4690,9 @@ export default function ApplicationDetail() {
                                             /* Edit Mode: VM Details */
                                             <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
                                               <FormControl>
-                                                <FormLabel fontSize="xs" fontWeight="bold">Nama VM</FormLabel>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">Nama VM</FormLabel>
                                                 <Input
-                                                  size="md"
+                                                  size="sm"
                                                   rounded="lg"
                                                   fontFamily="mono"
                                                   value={srv.vmDetail?.namaVm || ""}
@@ -4715,9 +4702,9 @@ export default function ApplicationDetail() {
                                               </FormControl>
 
                                               <FormControl>
-                                                <FormLabel fontSize="xs" fontWeight="bold">IP Address</FormLabel>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">IP Address</FormLabel>
                                                 <Input
-                                                  size="md"
+                                                  size="sm"
                                                   rounded="lg"
                                                   fontFamily="mono"
                                                   value={srv.vmDetail?.ipAddress || ""}
@@ -4727,54 +4714,214 @@ export default function ApplicationDetail() {
                                               </FormControl>
 
                                               <FormControl>
-                                                <FormLabel fontSize="xs" fontWeight="bold">OS</FormLabel>
-                                                <Input
-                                                  size="md"
+                                                <FormLabel fontSize="2xs" fontWeight="bold">OS (Operating System)</FormLabel>
+                                                <ChakraSelect
+                                                  size="sm"
                                                   rounded="lg"
-                                                  value={srv.vmDetail?.os || ""}
-                                                  onChange={(e) => handleUpdateServerVm(index, "os", e.target.value)}
-                                                  placeholder="OS"
-                                                />
+                                                  value={
+                                                    VM_OS_OPTIONS.filter((o) => o !== "Other").includes((srv.vmDetail?.os || "") as any)
+                                                      ? srv.vmDetail?.os
+                                                      : (srv.vmDetail?.os ? "Other" : "")
+                                                  }
+                                                  placeholder="Pilih Operating System"
+                                                  onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    if (val === "Other") {
+                                                      handleUpdateServerVm(index, "os", "");
+                                                    } else {
+                                                      handleUpdateServerVm(index, "os", val);
+                                                    }
+                                                  }}
+                                                >
+                                                  {VM_OS_OPTIONS.map((os) => (
+                                                    <option key={os} value={os}>
+                                                      {os}
+                                                    </option>
+                                                  ))}
+                                                </ChakraSelect>
+                                                {(srv.vmDetail?.os === "Other" ||
+                                                  (!VM_OS_OPTIONS.filter((o) => o !== "Other").includes((srv.vmDetail?.os || "") as any) &&
+                                                    srv.vmDetail?.os !== undefined && srv.vmDetail?.os !== "")) && (
+                                                  <Input
+                                                    mt={1.5}
+                                                    size="sm"
+                                                    rounded="lg"
+                                                    placeholder="Ketik nama OS kustom..."
+                                                    value={srv.vmDetail?.os === "Other" ? "" : (srv.vmDetail?.os || "")}
+                                                    onChange={(e) => handleUpdateServerVm(index, "os", e.target.value)}
+                                                  />
+                                                )}
                                               </FormControl>
 
                                               <FormControl>
-                                                <FormLabel fontSize="xs" fontWeight="bold">CPU</FormLabel>
-                                                <Input
-                                                  size="md"
+                                                <FormLabel fontSize="2xs" fontWeight="bold">CPU Compute</FormLabel>
+                                                <ChakraSelect
+                                                  size="sm"
                                                   rounded="lg"
-                                                  value={srv.vmDetail?.cpu || ""}
-                                                  onChange={(e) => handleUpdateServerVm(index, "cpu", e.target.value)}
-                                                  placeholder="CPU"
-                                                />
+                                                  value={
+                                                    VM_CPU_OPTIONS.filter((o) => o !== "Custom").includes((srv.vmDetail?.cpu || "") as any)
+                                                      ? srv.vmDetail?.cpu
+                                                      : ((srv.vmDetail?.cpu || "").trim() ? "Custom" : "")
+                                                  }
+                                                  placeholder="Pilih vCPU"
+                                                  onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    if (val === "Custom") {
+                                                      const curNum = (srv.vmDetail?.cpu || "").replace(/\D/g, "") || "4";
+                                                      handleUpdateServerVm(index, "cpu", `${curNum} vCPU`);
+                                                    } else {
+                                                      handleUpdateServerVm(index, "cpu", val);
+                                                    }
+                                                  }}
+                                                >
+                                                  {VM_CPU_OPTIONS.map((cpu) => (
+                                                    <option key={cpu} value={cpu}>
+                                                      {cpu}
+                                                    </option>
+                                                  ))}
+                                                </ChakraSelect>
+                                                {(!VM_CPU_OPTIONS.filter((o) => o !== "Custom").includes((srv.vmDetail?.cpu || "") as any) &&
+                                                  (srv.vmDetail?.cpu || "").trim().length > 0) && (
+                                                  <InputGroup size="sm" mt={1.5}>
+                                                    <Input
+                                                      rounded="lg"
+                                                      type="number"
+                                                      min={1}
+                                                      placeholder="Jumlah core"
+                                                      value={(srv.vmDetail?.cpu || "").replace(/\D/g, "")}
+                                                      onChange={(e) => {
+                                                        const num = e.target.value;
+                                                        handleUpdateServerVm(index, "cpu", num ? `${num} vCPU` : "");
+                                                      }}
+                                                    />
+                                                    <InputRightAddon rounded="lg" fontSize="2xs" fontWeight="bold">
+                                                      vCPU
+                                                    </InputRightAddon>
+                                                  </InputGroup>
+                                                )}
                                               </FormControl>
 
                                               <FormControl>
-                                                <FormLabel fontSize="xs" fontWeight="bold">MEMORY</FormLabel>
-                                                <Input
-                                                  size="md"
+                                                <FormLabel fontSize="2xs" fontWeight="bold">Memory (RAM)</FormLabel>
+                                                <ChakraSelect
+                                                  size="sm"
                                                   rounded="lg"
-                                                  value={srv.vmDetail?.memory || ""}
-                                                  onChange={(e) => handleUpdateServerVm(index, "memory", e.target.value)}
-                                                  placeholder="MEMORY"
-                                                />
+                                                  value={
+                                                    VM_MEMORY_OPTIONS.filter((o) => o !== "Custom").includes((srv.vmDetail?.memory || "") as any)
+                                                      ? srv.vmDetail?.memory
+                                                      : ((srv.vmDetail?.memory || "").trim() ? "Custom" : "")
+                                                  }
+                                                  placeholder="Pilih Kapasitas RAM"
+                                                  onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    if (val === "Custom") {
+                                                      const curNum = (srv.vmDetail?.memory || "").replace(/\D/g, "") || "16";
+                                                      handleUpdateServerVm(index, "memory", `${curNum} GB RAM`);
+                                                    } else {
+                                                      handleUpdateServerVm(index, "memory", val);
+                                                    }
+                                                  }}
+                                                >
+                                                  {VM_MEMORY_OPTIONS.map((mem) => (
+                                                    <option key={mem} value={mem}>
+                                                      {mem}
+                                                    </option>
+                                                  ))}
+                                                </ChakraSelect>
+                                                {(!VM_MEMORY_OPTIONS.filter((o) => o !== "Custom").includes((srv.vmDetail?.memory || "") as any) &&
+                                                  (srv.vmDetail?.memory || "").trim().length > 0) && (
+                                                  <InputGroup size="sm" mt={1.5}>
+                                                    <Input
+                                                      rounded="lg"
+                                                      type="number"
+                                                      min={1}
+                                                      placeholder="Kapasitas RAM"
+                                                      value={(srv.vmDetail?.memory || "").replace(/\D/g, "")}
+                                                      onChange={(e) => {
+                                                        const num = e.target.value;
+                                                        handleUpdateServerVm(index, "memory", num ? `${num} GB RAM` : "");
+                                                      }}
+                                                    />
+                                                    <InputRightAddon rounded="lg" fontSize="2xs" fontWeight="bold">
+                                                      GB RAM
+                                                    </InputRightAddon>
+                                                  </InputGroup>
+                                                )}
                                               </FormControl>
 
                                               <FormControl>
-                                                <FormLabel fontSize="xs" fontWeight="bold">STORAGE</FormLabel>
-                                                <Input
-                                                  size="md"
+                                                <FormLabel fontSize="2xs" fontWeight="bold">Storage Capacity</FormLabel>
+                                                <ChakraSelect
+                                                  size="sm"
                                                   rounded="lg"
-                                                  value={srv.vmDetail?.storage || ""}
-                                                  onChange={(e) => handleUpdateServerVm(index, "storage", e.target.value)}
-                                                  placeholder="STORAGE"
-                                                />
+                                                  value={
+                                                    VM_STORAGE_OPTIONS.filter((o) => o !== "Custom").includes((srv.vmDetail?.storage || "") as any)
+                                                      ? srv.vmDetail?.storage
+                                                      : ((srv.vmDetail?.storage || "").trim() ? "Custom" : "")
+                                                  }
+                                                  placeholder="Pilih Kapasitas Storage"
+                                                  onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    if (val === "Custom") {
+                                                      const curNum = (srv.vmDetail?.storage || "").replace(/[^\d.]/g, "") || "250";
+                                                      handleUpdateServerVm(index, "storage", `${curNum} GB SSD`);
+                                                    } else {
+                                                      handleUpdateServerVm(index, "storage", val);
+                                                    }
+                                                  }}
+                                                >
+                                                  {VM_STORAGE_OPTIONS.map((stg) => (
+                                                    <option key={stg} value={stg}>
+                                                      {stg}
+                                                    </option>
+                                                  ))}
+                                                </ChakraSelect>
+                                                {(!VM_STORAGE_OPTIONS.filter((o) => o !== "Custom").includes((srv.vmDetail?.storage || "") as any) &&
+                                                  (srv.vmDetail?.storage || "").trim().length > 0) && (
+                                                  <HStack mt={1.5} spacing={2}>
+                                                    <Input
+                                                      size="sm"
+                                                      rounded="lg"
+                                                      type="number"
+                                                      min={1}
+                                                      placeholder="Ukuran"
+                                                      value={(srv.vmDetail?.storage || "").split(" ")[0] || ""}
+                                                      onChange={(e) => {
+                                                        const num = e.target.value;
+                                                        const currentUnit =
+                                                          (srv.vmDetail?.storage || "").split(" ").slice(1).join(" ") || "GB SSD";
+                                                        handleUpdateServerVm(index, "storage", num ? `${num} ${currentUnit}` : "");
+                                                      }}
+                                                    />
+                                                    <ChakraSelect
+                                                      size="sm"
+                                                      rounded="lg"
+                                                      w="130px"
+                                                      value={
+                                                        (srv.vmDetail?.storage || "").split(" ").slice(1).join(" ") || "GB SSD"
+                                                      }
+                                                      onChange={(e) => {
+                                                        const currentNum =
+                                                          (srv.vmDetail?.storage || "").split(" ")[0] || "100";
+                                                        const newUnit = e.target.value;
+                                                        handleUpdateServerVm(index, "storage", `${currentNum} ${newUnit}`);
+                                                      }}
+                                                    >
+                                                      {VM_STORAGE_UNIT_OPTIONS.map((unit) => (
+                                                        <option key={unit} value={unit}>
+                                                          {unit}
+                                                        </option>
+                                                      ))}
+                                                    </ChakraSelect>
+                                                  </HStack>
+                                                )}
                                               </FormControl>
 
                                               <FormControl gridColumn={{ base: "1", sm: "1 / -1" }}>
-                                                <FormLabel fontSize="xs" fontWeight="bold">Note (opsional)</FormLabel>
+                                                <FormLabel fontSize="2xs" fontWeight="bold">Note (opsional)</FormLabel>
                                                 <Textarea
                                                   rows={2}
-                                                  size="md"
+                                                  size="sm"
                                                   rounded="lg"
                                                   value={srv.vmDetail?.note || ""}
                                                   onChange={(e) => handleUpdateServerVm(index, "note", e.target.value)}
@@ -4810,7 +4957,7 @@ export default function ApplicationDetail() {
                                                 <Box>
                                                   <Text fontSize="xs" color="gray.500">CPU Compute:</Text>
                                                   <Box mt={0.5}>
-                                                    <Badge colorScheme="purple" fontSize="xs" px={2} py={0.5} rounded="md">
+                                                    <Badge colorScheme="purple" fontSize="2xs" px={2} py={0.5} rounded="md">
                                                       {srv.vmDetail?.cpu || "-"}
                                                     </Badge>
                                                   </Box>
@@ -4819,7 +4966,7 @@ export default function ApplicationDetail() {
                                                 <Box>
                                                   <Text fontSize="xs" color="gray.500">Memory (RAM):</Text>
                                                   <Box mt={0.5}>
-                                                    <Badge colorScheme="teal" fontSize="xs" px={2} py={0.5} rounded="md">
+                                                    <Badge colorScheme="teal" fontSize="2xs" px={2} py={0.5} rounded="md">
                                                       {srv.vmDetail?.memory || "-"}
                                                     </Badge>
                                                   </Box>
@@ -4828,7 +4975,7 @@ export default function ApplicationDetail() {
                                                 <Box>
                                                   <Text fontSize="xs" color="gray.500">Storage Capacity:</Text>
                                                   <Box mt={0.5}>
-                                                    <Badge colorScheme="cyan" fontSize="xs" px={2} py={0.5} rounded="md">
+                                                    <Badge colorScheme="cyan" fontSize="2xs" px={2} py={0.5} rounded="md">
                                                       {srv.vmDetail?.storage || "-"}
                                                     </Badge>
                                                   </Box>
@@ -4863,55 +5010,43 @@ export default function ApplicationDetail() {
                         {/* Add Server Button below accordion when in Edit Mode */}
                         {IsEditMode && (
                           <Flex
-                            justify={!isAddServerHidden ? "space-between" : "flex-end"}
+                            justify="space-between"
                             align="center"
                             pt={3}
                             borderTop="1px dashed"
                             borderColor={isDark ? "gray.700" : "gray.200"}
+                            wrap="wrap"
+                            gap={3}
                           >
-                            {!isAddServerHidden && (
-                              <Button
-                                leftIcon={<FiPlus />}
-                                size="md"
-                                variant="outline"
-                                colorScheme="purple"
-                                rounded="xl"
-                                fontWeight="bold"
-                                onClick={handleAddServer}
-                              >
-                                Add Server
-                              </Button>
-                            )}
-                            <HStack spacing={3}>
-                              <Button
-                                leftIcon={<FiX />}
-                                size="md"
-                                variant="ghost"
-                                rounded="xl"
-                                fontSize="md"
-                                onClick={handleCancelEnvironmentEdit}
-                              >
-                                Cancel
-                              </Button>
-                              <Button
-                                leftIcon={<FiSave />}
-                                size="md"
-                                colorScheme="secondary"
-                                rounded="xl"
-                                px={6}
-                                fontWeight="bold"
-                                isLoading={IsLoadingProcess}
-                                onClick={handleSave}
-                              >
-                                Save Environment Changes
-                              </Button>
-                            </HStack>
+                            <Button
+                              leftIcon={<FiPlus />}
+                              size="sm"
+                              variant="outline"
+                              colorScheme="purple"
+                              rounded="xl"
+                              fontWeight="bold"
+                              onClick={handleAddServer}
+                            >
+                              Tambah Server Node
+                            </Button>
+                            <Button
+                              leftIcon={<FiSave />}
+                              size="md"
+                              colorScheme="secondary"
+                              rounded="xl"
+                              px={6}
+                              fontWeight="bold"
+                              isLoading={IsLoadingProcess}
+                              onClick={handleSave}
+                            >
+                              Simpan Konfigurasi Server
+                            </Button>
                           </Flex>
                         )}
                       </Box>
 
                       {/* ══════════════════════════════════════════════════════════
-                          3. SECTION: APLIKASI PENDUKUNG (DATA TABLE LIST)
+                          3. SECTION: SOFTWARE, RUNTIME & MIDDLEWARE PENDUKUNG (OPTION B)
                           ══════════════════════════════════════════════════════════ */}
                       <Box
                         p={{ base: 4, md: 5 }}
@@ -4935,179 +5070,294 @@ export default function ApplicationDetail() {
                             <Box
                               p={2}
                               rounded="lg"
-                              bg="teal.50"
-                              color="teal.600"
+                              bg="cyan.50"
+                              color="cyan.600"
                             >
-                              <Icon as={FiLayers} boxSize={5} />
+                              <Icon as={FiCpu} boxSize={5} />
                             </Box>
                             <VStack align="start" spacing={0.5}>
                               <HStack spacing={2}>
                                 <Heading size="xs" color={isDark ? "white" : "gray.800"}>
-                                  Aplikasi Pendukung
+                                  Software, Runtime & Middleware Pendukung
                                 </Heading>
-                                <Badge colorScheme="teal" fontSize="xs" rounded="full" px={2}>
-                                  {relatedSupportingApps.length} Terhubung
+                                <Badge colorScheme="cyan" fontSize="3xs" rounded="full" px={2}>
+                                  {installedSoftwares.length} Terhubung
                                 </Badge>
                               </HStack>
-                              <Text fontSize="xs" color="gray.500">
-                                Daftar aplikasi terhubung dan dependensi dari katalog Master Data Application.
+                              <Text fontSize="2xs" color="gray.500">
+                                Komponen perangkat lunak, runtime engine (.NET, Java, NodeJS, Python), database client, web server, dan middleware pada topology server.
                               </Text>
                             </VStack>
                           </HStack>
 
-                          <Button
-                            size="md"
-                            colorScheme="teal"
-                            leftIcon={<FiPlus />}
-                            rounded="lg"
-                            fontWeight="semibold"
-                            onClick={handleOpenAddCatalog}
-                          >
-                            Add Aplikasi Pendukung
-                          </Button>
+                          <HStack spacing={2} w={{ base: "full", sm: "auto" }}>
+                            <InputGroup size="sm" maxW={{ base: "full", sm: "200px" }}>
+                              <InputLeftElement pointerEvents="none">
+                                <Icon as={FiSearch} color="gray.400" />
+                              </InputLeftElement>
+                              <Input
+                                rounded="lg"
+                                placeholder="Cari software terpasang..."
+                                value={connectedSoftwaresSearch}
+                                onChange={(e) => setConnectedSoftwaresSearch(e.target.value)}
+                              />
+                            </InputGroup>
+                            <Button
+                              size="sm"
+                              colorScheme={isSoftwareCatalogOpen ? "gray" : "cyan"}
+                              variant={isSoftwareCatalogOpen ? "outline" : "solid"}
+                              leftIcon={isSoftwareCatalogOpen ? <FiX /> : <FiPlus />}
+                              rounded="lg"
+                              fontWeight="semibold"
+                              onClick={handleOpenAddCatalog}
+                            >
+                              {isSoftwareCatalogOpen ? "Tutup Katalog" : "Tambah Software"}
+                            </Button>
+                          </HStack>
                         </Flex>
 
-                        {/* Table 1: Related Applications Table */}
+                        {/* Table 1: Connected / Installed Softwares Table */}
                         <TableContainer
                           rounded="lg"
                           border="1px solid"
                           borderColor={isDark ? "gray.700" : "gray.200"}
                           bg={isDark ? "gray.800" : "white"}
                         >
-                          <Table size="md" variant="simple">
+                          <Table size="sm" variant="simple">
                             <Thead bg={isDark ? "gray.750" : "gray.50"}>
                               <Tr>
-                                <Th py={3} fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
-                                  Nama
+                                <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
+                                  Nama Software / Runtime
                                 </Th>
-                                <Th py={3} fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
-                                  Versi
+                                <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
+                                  Kategori
                                 </Th>
-                                <Th py={3} fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
-                                  Tahun
+                                <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
+                                  Standar Bank
                                 </Th>
-                                <Th py={3} fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"} textAlign="center" w="80px">
+                                <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
+                                  Versi & Port
+                                </Th>
+                                <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
+                                  Status Service
+                                </Th>
+                                <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"} textAlign="center" w="80px">
                                   Aksi
                                 </Th>
                               </Tr>
                             </Thead>
                             <Tbody>
-                              {relatedSupportingApps.length === 0 ? (
+                              {isInstalledSoftwaresLoading ? (
                                 <Tr>
-                                  <Td colSpan={4} textAlign="center" py={8}>
+                                  <Td colSpan={6} textAlign="center" py={8}>
                                     <VStack spacing={2}>
-                                      <Text fontSize="xs" fontWeight="semibold" color="gray.500">
-                                        Belum ada aplikasi pendukung yang terhubung
-                                      </Text>
-                                      <Text fontSize="xs" color="gray.400">
-                                        Klik tombol &quot;Add Aplikasi Pendukung&quot; di atas untuk menghubungkan aplikasi dari katalog.
+                                      <Spinner size="sm" color="cyan.500" />
+                                      <Text fontSize="xs" color="gray.500">
+                                        Memuat daftar software dan runtime...
                                       </Text>
                                     </VStack>
                                   </Td>
                                 </Tr>
-                              ) : (
-                                relatedSupportingApps.map((app) => (
-                                  <Tr
-                                    key={app.id}
-                                    _hover={{ bg: isDark ? "gray.750" : "gray.50" }}
-                                    transition="background-color 0.15s"
-                                  >
-                                    {/* Column 1: Nama */}
-                                    <Td py={3}>
-                                      <HStack spacing={2.5}>
-                                        <Avatar
-                                          name={app.appShortName || app.appName}
+                              ) : installedSoftwares.filter((sw) => {
+                                if (!connectedSoftwaresSearch.trim()) return true;
+                                const q = connectedSoftwaresSearch.toLowerCase().trim();
+                                return (
+                                  sw.softwareName.toLowerCase().includes(q) ||
+                                  sw.softwareCategory.toLowerCase().includes(q) ||
+                                  (sw.vendor && sw.vendor.toLowerCase().includes(q)) ||
+                                  (sw.installedVersion && sw.installedVersion.toLowerCase().includes(q))
+                                );
+                              }).length === 0 ? (
+                                <Tr>
+                                  <Td colSpan={6} textAlign="center" py={8}>
+                                    <VStack spacing={2}>
+                                      <Text fontSize="xs" fontWeight="semibold" color="gray.500">
+                                        {connectedSoftwaresSearch.trim()
+                                          ? `Tidak ditemukan software yang cocok dengan "${connectedSoftwaresSearch}"`
+                                          : "Belum ada software atau runtime yang terhubung"}
+                                      </Text>
+                                      <Text fontSize="2xs" color="gray.400">
+                                        {connectedSoftwaresSearch.trim()
+                                          ? "Coba gunakan kata kunci pencarian yang lain."
+                                          : 'Klik tombol "Hubungkan Software / Runtime" di atas untuk menambahkan komponen standar.'}
+                                      </Text>
+                                      {!isSoftwareCatalogOpen && !connectedSoftwaresSearch.trim() && (
+                                        <Button
                                           size="xs"
-                                          bg="teal.500"
-                                          color="white"
-                                          fontSize="xs"
-                                        />
-                                        <VStack align="start" spacing={0.5}>
-                                          <Text
-                                            fontSize="xs"
-                                            fontWeight="bold"
-                                            color={isDark ? "white" : "gray.800"}
-                                          >
-                                            {app.appName}
-                                          </Text>
-                                          <HStack spacing={1.5}>
-                                            <Badge colorScheme="blue" fontSize="xs" rounded="md" px={1.5}>
-                                              {app.appShortName || "APP"}
-                                            </Badge>
-                                            {app.appsStatus && (
-                                              <Badge
-                                                colorScheme={
-                                                  app.appsStatus === "ACTIVE"
-                                                    ? "green"
-                                                    : app.appsStatus === "ON DEVELOPMENT"
-                                                    ? "orange"
-                                                    : "gray"
-                                                }
+                                          colorScheme="cyan"
+                                          variant="outline"
+                                          leftIcon={<FiPlus />}
+                                          mt={1}
+                                          rounded="md"
+                                          onClick={handleOpenAddCatalog}
+                                        >
+                                          Buka Katalog Software
+                                        </Button>
+                                      )}
+                                    </VStack>
+                                  </Td>
+                                </Tr>
+                              ) : (
+                                installedSoftwares
+                                  .filter((sw) => {
+                                    if (!connectedSoftwaresSearch.trim()) return true;
+                                    const q = connectedSoftwaresSearch.toLowerCase().trim();
+                                    return (
+                                      sw.softwareName.toLowerCase().includes(q) ||
+                                      sw.softwareCategory.toLowerCase().includes(q) ||
+                                      (sw.vendor && sw.vendor.toLowerCase().includes(q)) ||
+                                      (sw.installedVersion && sw.installedVersion.toLowerCase().includes(q))
+                                    );
+                                  })
+                                  .map((sw) => {
+                                    const getCatColor = (cat: string) => {
+                                      switch (cat) {
+                                        case "LANGUAGE_RUNTIME":
+                                          return { scheme: "blue", label: "Runtime Engine" };
+                                        case "WEB_SERVER":
+                                          return { scheme: "cyan", label: "Web Server" };
+                                        case "DATABASE_CLIENT":
+                                          return { scheme: "orange", label: "Database Client" };
+                                        case "CACHE_BROKER":
+                                          return { scheme: "purple", label: "Cache / Broker" };
+                                        default:
+                                          return { scheme: "teal", label: cat };
+                                      }
+                                    };
+                                    const catInfo = getCatColor(sw.softwareCategory);
+
+                                    return (
+                                      <Tr
+                                        key={sw.id}
+                                        _hover={{ bg: isDark ? "gray.750" : "gray.50" }}
+                                        transition="background-color 0.15s"
+                                      >
+                                        {/* Column 1: Nama Software */}
+                                        <Td py={3}>
+                                          <HStack spacing={2.5}>
+                                            <Avatar
+                                              name={sw.softwareName}
+                                              size="xs"
+                                              bg="cyan.500"
+                                              color="white"
+                                              fontSize="3xs"
+                                              icon={<Icon as={FiServer} fontSize="xs" />}
+                                            />
+                                            <VStack align="start" spacing={0.5}>
+                                              <Text
                                                 fontSize="xs"
-                                                rounded="md"
-                                                px={1.5}
+                                                fontWeight="bold"
+                                                color={isDark ? "white" : "gray.800"}
                                               >
-                                                {app.appsStatus}
+                                                {sw.softwareName}
+                                              </Text>
+                                              {sw.vendor && (
+                                                <Badge colorScheme="gray" fontSize="3xs" rounded="md" px={1.5}>
+                                                  {sw.vendor}
+                                                </Badge>
+                                              )}
+                                            </VStack>
+                                          </HStack>
+                                        </Td>
+
+                                        {/* Column 2: Kategori */}
+                                        <Td py={3}>
+                                          <Badge
+                                            colorScheme={catInfo.scheme}
+                                            fontSize="2xs"
+                                            px={2}
+                                            py={0.5}
+                                            rounded="md"
+                                          >
+                                            {catInfo.label}
+                                          </Badge>
+                                        </Td>
+
+                                        {/* Column 3: Standar Bank */}
+                                        <Td py={3}>
+                                          <Badge
+                                            colorScheme={sw.isStandardBank === "Y" || sw.isStandardBank === "Ya" ? "green" : "gray"}
+                                            variant="subtle"
+                                            fontSize="2xs"
+                                            px={2}
+                                            py={0.5}
+                                            rounded="md"
+                                          >
+                                            {sw.isStandardBank === "Y" || sw.isStandardBank === "Ya" ? "Standar Bank" : "Kustom"}
+                                          </Badge>
+                                        </Td>
+
+                                        {/* Column 4: Versi & Port */}
+                                        <Td py={3}>
+                                          <HStack spacing={1.5}>
+                                            <Badge
+                                              colorScheme="purple"
+                                              variant="subtle"
+                                              fontSize="2xs"
+                                              px={2}
+                                              py={0.5}
+                                              rounded="md"
+                                              fontFamily="mono"
+                                            >
+                                              {sw.installedVersion || "Latest"}
+                                            </Badge>
+                                            {sw.portNumber && (
+                                              <Badge
+                                                colorScheme="teal"
+                                                variant="outline"
+                                                fontSize="3xs"
+                                                px={1.5}
+                                                rounded="md"
+                                              >
+                                                Port: {sw.portNumber}
                                               </Badge>
                                             )}
                                           </HStack>
-                                        </VStack>
-                                      </HStack>
-                                    </Td>
+                                        </Td>
 
-                                    {/* Column 2: Versi */}
-                                    <Td py={3}>
-                                      <Badge
-                                        colorScheme="purple"
-                                        variant="subtle"
-                                        fontSize="xs"
-                                        px={2}
-                                        py={0.5}
-                                        rounded="md"
-                                        fontFamily="mono"
-                                      >
-                                        {app.appVersion || "v1.0.0"}
-                                      </Badge>
-                                    </Td>
+                                        {/* Column 5: Status Service */}
+                                        <Td py={3}>
+                                          <Badge
+                                            colorScheme={sw.serviceStatus === "Running" ? "green" : "gray"}
+                                            variant="solid"
+                                            fontSize="3xs"
+                                            px={2}
+                                            py={0.5}
+                                            rounded="md"
+                                          >
+                                            {sw.serviceStatus || "Active"}
+                                          </Badge>
+                                        </Td>
 
-                                    {/* Column 3: Tahun */}
-                                    <Td py={3}>
-                                      <Text
-                                        fontSize="xs"
-                                        fontWeight="semibold"
-                                        color={isDark ? "gray.300" : "gray.700"}
-                                      >
-                                        {app.appInitaiteYear || "-"}
-                                      </Text>
-                                    </Td>
-
-                                    {/* Column 4: Aksi */}
-                                    <Td py={3} textAlign="center">
-                                      <IconButton
-                                        aria-label="Hapus aplikasi pendukung"
-                                        icon={<FiTrash2 />}
-                                        size="xs"
-                                        colorScheme="red"
-                                        variant="ghost"
-                                        rounded="md"
-                                        onClick={() => handleRemoveSupportingApp(app.id)}
-                                      />
-                                    </Td>
-                                  </Tr>
-                                ))
+                                        {/* Column 6: Aksi */}
+                                        <Td py={3} textAlign="center">
+                                          <IconButton
+                                            aria-label="Hapus software"
+                                            icon={<FiTrash2 />}
+                                            size="xs"
+                                            colorScheme="red"
+                                            variant="ghost"
+                                            rounded="md"
+                                            isLoading={isRemovingSoftwareId === sw.softwareId}
+                                            onClick={() => handleRemoveSoftware(sw.softwareId, sw.softwareName)}
+                                          />
+                                        </Td>
+                                      </Tr>
+                                    );
+                                  })
                               )}
                             </Tbody>
                           </Table>
                         </TableContainer>
 
-                        {/* Stage 2: Catalog Data Table (Revealed when "Add Aplikasi Pendukung" is clicked) */}
-                        {isCatalogOpen && (
+                        {/* Stage 2: Master Software & Runtime Catalog (Revealed when clicked) */}
+                        {isSoftwareCatalogOpen && (
                           <Box
                             mt={5}
                             p={4}
                             rounded="lg"
                             border="1px solid"
-                            borderColor={isDark ? "teal.700" : "teal.200"}
+                            borderColor={isDark ? "cyan.700" : "cyan.200"}
                             bg={isDark ? "gray.800" : "white"}
                             shadow="sm"
                           >
@@ -5123,57 +5373,89 @@ export default function ApplicationDetail() {
                             >
                               <VStack align="start" spacing={0.5}>
                                 <HStack spacing={2}>
-                                  <Heading size="xs" color={isDark ? "teal.300" : "teal.700"}>
-                                    Katalog Master Data Application
+                                  <Heading size="xs" color={isDark ? "cyan.300" : "cyan.700"}>
+                                    Katalog Master Software, Runtime & Middleware
                                   </Heading>
-                                  <Badge colorScheme="teal" fontSize="xs" rounded="full" px={2}>
-                                    {supportingAppsTotal} Tersedia
+                                  <Badge colorScheme="cyan" fontSize="3xs" rounded="full" px={2}>
+                                    {softwareCatalog.length} Komponen Tersedia
                                   </Badge>
                                 </HStack>
-                                <Text fontSize="xs" color="gray.500">
-                                  Pilih aplikasi untuk dihubungkan sebagai aplikasi pendukung.
+                                <Text fontSize="2xs" color="gray.500">
+                                  Pilih teknologi atau runtime standar bank untuk dihubungkan ke server aplikasi.
                                 </Text>
                               </VStack>
 
                               <HStack spacing={2} w={{ base: "full", sm: "auto" }}>
-                                <InputGroup size="md" maxW={{ base: "full", sm: "260px" }}>
+                                <InputGroup size="sm" maxW={{ base: "full", sm: "220px" }}>
                                   <InputLeftElement pointerEvents="none">
                                     <Icon as={FiSearch} color="gray.400" />
                                   </InputLeftElement>
                                   <Input
                                     rounded="lg"
-                                    placeholder="Cari nama aplikasi..."
-                                    value={supportingAppsSearch}
-                                    onChange={(e) => setSupportingAppsSearch(e.target.value)}
+                                    placeholder="Cari software, runtime..."
+                                    value={softwareCatalogSearch}
+                                    onChange={(e) => setSoftwareCatalogSearch(e.target.value)}
                                     onKeyDown={(e) => {
                                       if (e.key === "Enter") {
-                                        setSupportingAppsPageIndex(0);
-                                        fetchSupportingApps(0, supportingAppsPageSize, supportingAppsSearch);
+                                        fetchSoftwareCatalog(softwareCatalogSearch);
                                       }
                                     }}
                                   />
                                 </InputGroup>
                                 <IconButton
-                                  aria-label="Refresh Katalog Aplikasi"
+                                  aria-label="Refresh Katalog"
                                   icon={<FiRefreshCw />}
-                                  size="md"
+                                  size="sm"
                                   rounded="lg"
                                   variant="outline"
-                                  isLoading={isSupportingAppsLoading}
-                                  onClick={() => fetchSupportingApps(supportingAppsPageIndex, supportingAppsPageSize, supportingAppsSearch)}
+                                  isLoading={isSoftwareCatalogLoading}
+                                  onClick={() => fetchSoftwareCatalog(softwareCatalogSearch)}
                                 />
                                 <Button
-                                  size="md"
+                                  size="sm"
+                                  colorScheme="cyan"
+                                  leftIcon={<FiPlus />}
+                                  rounded="lg"
+                                  fontWeight="semibold"
+                                  onClick={handleOpenCreateModal}
+                                >
+                                  Software Baru
+                                </Button>
+                                <Button
+                                  size="sm"
                                   variant="ghost"
                                   colorScheme="gray"
                                   rounded="lg"
                                   leftIcon={<FiX />}
-                                  onClick={() => setIsCatalogOpen(false)}
+                                  onClick={() => setIsSoftwareCatalogOpen(false)}
                                 >
                                   Tutup
                                 </Button>
                               </HStack>
                             </Flex>
+
+                            {/* Category Filter Pills */}
+                            <HStack spacing={2} mb={3} overflowX="auto" pb={1}>
+                              {[
+                                { key: "ALL", label: "Semua Kategori" },
+                                { key: "LANGUAGE_RUNTIME", label: "Runtime Engine" },
+                                { key: "WEB_SERVER", label: "Web Server" },
+                                { key: "DATABASE_CLIENT", label: "Database Client" },
+                                { key: "CACHE_BROKER", label: "Cache & Broker" },
+                              ].map((cat) => (
+                                <Button
+                                  key={cat.key}
+                                  size="xs"
+                                  variant={softwareCategoryFilter === cat.key ? "solid" : "outline"}
+                                  colorScheme="cyan"
+                                  rounded="full"
+                                  px={3}
+                                  onClick={() => setSoftwareCategoryFilter(cat.key)}
+                                >
+                                  {cat.label}
+                                </Button>
+                              ))}
+                            </HStack>
 
                             {/* Catalog Table */}
                             <TableContainer
@@ -5182,393 +5464,551 @@ export default function ApplicationDetail() {
                               borderColor={isDark ? "gray.700" : "gray.200"}
                               bg={isDark ? "gray.850" : "gray.50"}
                             >
-                              <Table size="md" variant="simple">
+                              <Table size="sm" variant="simple">
                                 <Thead bg={isDark ? "gray.750" : "gray.100"}>
                                   <Tr>
-                                    <Th py={3} fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
-                                      Nama
+                                    <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
+                                      Nama Komponen & Vendor
                                     </Th>
-                                    <Th py={3} fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
-                                      Versi
+                                    <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
+                                      Kategori
                                     </Th>
-                                    <Th py={3} fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
-                                      Tahun
+                                    <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
+                                      Standar Bank
                                     </Th>
-                                    <Th py={3} fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"} textAlign="center" w="110px">
+                                    <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
+                                      Deskripsi
+                                    </Th>
+                                    <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"} textAlign="center" w="110px">
                                       Aksi
                                     </Th>
                                   </Tr>
                                 </Thead>
                                 <Tbody>
-                                  {isSupportingAppsLoading ? (
+                                  {isSoftwareCatalogLoading ? (
                                     <Tr>
-                                      <Td colSpan={4} textAlign="center" py={8}>
+                                      <Td colSpan={5} textAlign="center" py={8}>
                                         <VStack spacing={2}>
-                                          <Spinner size="md" color="teal.500" />
+                                          <Spinner size="sm" color="cyan.500" />
                                           <Text fontSize="xs" color="gray.500">
-                                            Memuat data aplikasi dari katalog...
+                                            Memuat data katalog software standar...
                                           </Text>
                                         </VStack>
                                       </Td>
                                     </Tr>
-                                  ) : supportingApps.length === 0 ? (
+                                  ) : softwareCatalog.filter((item) => {
+                                    const matchCat = softwareCategoryFilter === "ALL" || item.softwareCategory === softwareCategoryFilter;
+                                    const q = softwareCatalogSearch.toLowerCase().trim();
+                                    const matchSearch = !q || item.softwareName.toLowerCase().includes(q) || (item.vendor && item.vendor.toLowerCase().includes(q)) || (item.description && item.description.toLowerCase().includes(q));
+                                    return matchCat && matchSearch;
+                                  }).length === 0 ? (
                                     <Tr>
-                                      <Td colSpan={4} textAlign="center" py={8}>
+                                      <Td colSpan={5} textAlign="center" py={8}>
                                         <VStack spacing={1}>
                                           <Text fontSize="xs" fontWeight="semibold" color="gray.500">
-                                            Tidak ada aplikasi yang ditemukan
+                                            Tidak ada komponen yang ditemukan
                                           </Text>
-                                          <Text fontSize="xs" color="gray.400">
-                                            Gunakan kotak pencarian di atas untuk menyaring data aplikasi.
+                                          <Text fontSize="2xs" color="gray.400">
+                                            Gunakan kotak pencarian atau pilih kategori lain di atas.
                                           </Text>
                                         </VStack>
                                       </Td>
                                     </Tr>
                                   ) : (
-                                    supportingApps.map((app) => {
-                                      const displayVersion =
-                                        (app as any).appVersion ||
-                                        (app as any).version ||
-                                        app.appStatusProject ||
-                                        "v1.0.0";
-                                      const displayYear =
-                                        app.appInitaiteYear ||
-                                        (app.createdAt ? new Date(app.createdAt).getFullYear().toString() : "-");
-                                      const isAlreadyConnected = relatedSupportingApps.some(
-                                        (rel) => rel.id === app.id || rel.appName.toLowerCase() === app.appName.toLowerCase()
-                                      );
+                                    softwareCatalog
+                                      .filter((item) => {
+                                        const matchCat = softwareCategoryFilter === "ALL" || item.softwareCategory === softwareCategoryFilter;
+                                        const q = softwareCatalogSearch.toLowerCase().trim();
+                                        const matchSearch = !q || item.softwareName.toLowerCase().includes(q) || (item.vendor && item.vendor.toLowerCase().includes(q)) || (item.description && item.description.toLowerCase().includes(q));
+                                        return matchCat && matchSearch;
+                                      })
+                                      .map((sw) => {
+                                        const isAlreadyConnected = installedSoftwares.some(
+                                          (inst) => inst.softwareId === sw.id || inst.softwareName.toLowerCase() === sw.softwareName.toLowerCase()
+                                        );
 
-                                      return (
-                                        <Tr
-                                          key={app.id}
-                                          _hover={{ bg: isDark ? "gray.700" : "white" }}
-                                          transition="background-color 0.15s"
-                                        >
-                                          {/* Column 1: Nama */}
-                                          <Td py={3}>
-                                            <HStack spacing={2.5}>
-                                              <Avatar
-                                                name={app.appShortName || app.appName}
-                                                size="xs"
-                                                bg="teal.500"
-                                                color="white"
-                                                fontSize="xs"
-                                              />
-                                              <VStack align="start" spacing={0.5}>
-                                                <Text
-                                                  fontSize="xs"
-                                                  fontWeight="bold"
-                                                  color={isDark ? "white" : "gray.800"}
-                                                >
-                                                  {app.appName}
-                                                </Text>
-                                                <HStack spacing={1.5}>
-                                                  <Badge colorScheme="blue" fontSize="xs" rounded="md" px={1.5}>
-                                                    {app.appShortName || app.appCode || "APP"}
-                                                  </Badge>
-                                                  {app.appsStatus && (
-                                                    <Badge
-                                                      colorScheme={
-                                                        app.appsStatus === "ACTIVE"
-                                                          ? "green"
-                                                          : app.appsStatus === "ON DEVELOPMENT"
-                                                          ? "orange"
-                                                          : "gray"
-                                                      }
-                                                      fontSize="xs"
-                                                      rounded="md"
-                                                      px={1.5}
-                                                    >
-                                                      {app.appsStatus}
+                                        const getCatColor = (cat: string) => {
+                                          switch (cat) {
+                                            case "LANGUAGE_RUNTIME":
+                                              return { scheme: "blue", label: "Runtime Engine" };
+                                            case "WEB_SERVER":
+                                              return { scheme: "cyan", label: "Web Server" };
+                                            case "DATABASE_CLIENT":
+                                              return { scheme: "orange", label: "Database Client" };
+                                            case "CACHE_BROKER":
+                                              return { scheme: "purple", label: "Cache / Broker" };
+                                            default:
+                                              return { scheme: "teal", label: cat };
+                                          }
+                                        };
+                                        const catInfo = getCatColor(sw.softwareCategory);
+
+                                        return (
+                                          <Tr
+                                            key={sw.id}
+                                            _hover={{ bg: isDark ? "gray.700" : "white" }}
+                                            transition="background-color 0.15s"
+                                          >
+                                            {/* Column 1: Nama & Vendor */}
+                                            <Td py={3}>
+                                              <HStack spacing={2.5}>
+                                                <Avatar
+                                                  name={sw.softwareName}
+                                                  size="xs"
+                                                  bg="cyan.500"
+                                                  color="white"
+                                                  fontSize="3xs"
+                                                  icon={<Icon as={FiCpu} fontSize="xs" />}
+                                                />
+                                                <VStack align="start" spacing={0.5}>
+                                                  <Text
+                                                    fontSize="xs"
+                                                    fontWeight="bold"
+                                                    color={isDark ? "white" : "gray.800"}
+                                                  >
+                                                    {sw.softwareName}
+                                                  </Text>
+                                                  {sw.vendor && (
+                                                    <Badge colorScheme="gray" fontSize="3xs" rounded="md" px={1.5}>
+                                                      {sw.vendor}
                                                     </Badge>
                                                   )}
-                                                </HStack>
-                                              </VStack>
-                                            </HStack>
-                                          </Td>
+                                                </VStack>
+                                              </HStack>
+                                            </Td>
 
-                                          {/* Column 2: Versi */}
-                                          <Td py={3}>
-                                            <Badge
-                                              colorScheme="purple"
-                                              variant="subtle"
-                                              fontSize="xs"
-                                              px={2}
-                                              py={0.5}
-                                              rounded="md"
-                                              fontFamily="mono"
-                                            >
-                                              {displayVersion}
-                                            </Badge>
-                                          </Td>
-
-                                          {/* Column 3: Tahun */}
-                                          <Td py={3}>
-                                            <Text
-                                              fontSize="xs"
-                                              fontWeight="semibold"
-                                              color={isDark ? "gray.300" : "gray.700"}
-                                            >
-                                              {displayYear}
-                                            </Text>
-                                          </Td>
-
-                                          {/* Column 4: Aksi */}
-                                          <Td py={3} textAlign="center">
-                                            {isAlreadyConnected ? (
-                                              <Badge colorScheme="green" variant="solid" fontSize="xs" px={2} py={1} rounded="md">
-                                                Terhubung
-                                              </Badge>
-                                            ) : (
-                                              <Button
-                                                size="xs"
-                                                colorScheme="teal"
-                                                leftIcon={<FiPlus />}
+                                            {/* Column 2: Kategori */}
+                                            <Td py={3}>
+                                              <Badge
+                                                colorScheme={catInfo.scheme}
+                                                fontSize="2xs"
+                                                px={2}
+                                                py={0.5}
                                                 rounded="md"
-                                                onClick={() => handleAddSupportingApp(app)}
                                               >
-                                                Hubungkan
-                                              </Button>
-                                            )}
-                                          </Td>
-                                        </Tr>
-                                      );
-                                    })
+                                                {catInfo.label}
+                                              </Badge>
+                                            </Td>
+
+                                            {/* Column 3: Standar Bank */}
+                                            <Td py={3}>
+                                              <Badge
+                                                colorScheme={sw.isStandardBank === "Y" || sw.isStandardBank === "Ya" ? "green" : "gray"}
+                                                variant="subtle"
+                                                fontSize="2xs"
+                                                px={2}
+                                                py={0.5}
+                                                rounded="md"
+                                              >
+                                                {sw.isStandardBank === "Y" || sw.isStandardBank === "Ya" ? "Standar Bank" : "Kustom"}
+                                              </Badge>
+                                            </Td>
+
+                                            {/* Column 4: Deskripsi */}
+                                            <Td py={3}>
+                                              <Text
+                                                fontSize="2xs"
+                                                color={isDark ? "gray.300" : "gray.600"}
+                                                maxW="280px"
+                                                isTruncated
+                                              >
+                                                {sw.description || "-"}
+                                              </Text>
+                                            </Td>
+
+                                            {/* Column 5: Aksi */}
+                                            <Td py={3} textAlign="center">
+                                              {isAlreadyConnected ? (
+                                                <Badge colorScheme="green" variant="solid" fontSize="3xs" px={2} py={1} rounded="md">
+                                                  Terhubung
+                                                </Badge>
+                                              ) : (
+                                                <Button
+                                                  size="xs"
+                                                  colorScheme="cyan"
+                                                  leftIcon={<FiPlus />}
+                                                  rounded="md"
+                                                  isLoading={isAddingSoftwareId === sw.id}
+                                                  onClick={() => handleAddSoftware(sw)}
+                                                >
+                                                  Hubungkan
+                                                </Button>
+                                              )}
+                                            </Td>
+                                          </Tr>
+                                        );
+                                      })
                                   )}
                                 </Tbody>
                               </Table>
                             </TableContainer>
-
-                            {/* Compact Section Pagination */}
-                            {supportingAppsTotal > 0 && (
-                              <Flex
-                                direction={{ base: "column", sm: "row" }}
-                                justify="space-between"
-                                align={{ base: "start", sm: "center" }}
-                                gap={2}
-                                pt={3}
-                                px={1}
-                              >
-                                {/* Left: Info & Rows per page */}
-                                <HStack spacing={2} fontSize="xs" color={isDark ? "gray.400" : "gray.600"}>
-                                  <Text>
-                                    Menampilkan{" "}
-                                    <Text as="span" fontWeight="bold" color={isDark ? "white" : "gray.800"}>
-                                      {supportingAppsPageIndex * supportingAppsPageSize + 1}-
-                                      {Math.min((supportingAppsPageIndex + 1) * supportingAppsPageSize, supportingAppsTotal)}
-                                    </Text>{" "}
-                                    dari{" "}
-                                    <Text as="span" fontWeight="bold" color={isDark ? "white" : "gray.800"}>
-                                      {supportingAppsTotal}
-                                    </Text>
-                                  </Text>
-                                  <Text color="gray.400">|</Text>
-                                  <HStack spacing={1}>
-                                    <Text>Per hal:</Text>
-                                    <ChakraSelect
-                                      size="xs"
-                                      w="65px"
-                                      h="26px"
-                                      rounded="md"
-                                      fontSize="xs"
-                                      value={supportingAppsPageSize}
-                                      onChange={(e) => supportingAppsTableAdapter.setPageSize(Number(e.target.value))}
-                                    >
-                                      <option value={5}>5</option>
-                                      <option value={10}>10</option>
-                                      <option value={20}>20</option>
-                                    </ChakraSelect>
-                                  </HStack>
-                                </HStack>
-
-                                {/* Right: Compact Page Buttons */}
-                                <HStack spacing={1} alignSelf={{ base: "flex-end", sm: "center" }}>
-                                  <IconButton
-                                    aria-label="Halaman Pertama"
-                                    icon={<FiChevronsLeft />}
-                                    size="xs"
-                                    variant="ghost"
-                                    rounded="md"
-                                    isDisabled={supportingAppsPageIndex === 0}
-                                    onClick={() => supportingAppsTableAdapter.setPageIndex(0)}
-                                  />
-                                  <IconButton
-                                    aria-label="Halaman Sebelumnya"
-                                    icon={<FiChevronLeft />}
-                                    size="xs"
-                                    variant="ghost"
-                                    rounded="md"
-                                    isDisabled={!supportingAppsTableAdapter.getCanPreviousPage()}
-                                    onClick={() => supportingAppsTableAdapter.previousPage()}
-                                  />
-
-                                  {/* Numbered Page Buttons */}
-                                  {(() => {
-                                    const maxVisible = 5;
-                                    let start = Math.max(1, supportingAppsPageIndex + 1 - 2);
-                                    let end = Math.min(supportingAppsPageCount, start + maxVisible - 1);
-                                    if (end - start + 1 < maxVisible) {
-                                      start = Math.max(1, end - maxVisible + 1);
-                                    }
-                                    const pages: number[] = [];
-                                    for (let i = start; i <= end; i++) {
-                                      pages.push(i);
-                                    }
-
-                                    return pages.map((page) => {
-                                      const isCurrent = page === supportingAppsPageIndex + 1;
-                                      return (
-                                        <Button
-                                          key={page}
-                                          size="xs"
-                                          minW="26px"
-                                          h="26px"
-                                          px={1.5}
-                                          rounded="md"
-                                          fontSize="xs"
-                                          fontWeight={isCurrent ? "bold" : "normal"}
-                                          colorScheme={isCurrent ? "teal" : "gray"}
-                                          variant={isCurrent ? "solid" : "ghost"}
-                                          onClick={() => supportingAppsTableAdapter.setPageIndex(page - 1)}
-                                        >
-                                          {page}
-                                        </Button>
-                                      );
-                                    });
-                                  })()}
-
-                                  <IconButton
-                                    aria-label="Halaman Berikutnya"
-                                    icon={<FiChevronRight />}
-                                    size="xs"
-                                    variant="ghost"
-                                    rounded="md"
-                                    isDisabled={!supportingAppsTableAdapter.getCanNextPage()}
-                                    onClick={() => supportingAppsTableAdapter.nextPage()}
-                                  />
-                                  <IconButton
-                                    aria-label="Halaman Terakhir"
-                                    icon={<FiChevronsRight />}
-                                    size="xs"
-                                    variant="ghost"
-                                    rounded="md"
-                                    isDisabled={supportingAppsPageIndex >= supportingAppsPageCount - 1}
-                                    onClick={() => supportingAppsTableAdapter.setPageIndex(supportingAppsPageCount - 1)}
-                                  />
-                                </HStack>
-                              </Flex>
-                            )}
                           </Box>
                         )}
                       </Box>
+
+                      {/* ── MODAL: TAMBAH MASTER SOFTWARE & RUNTIME BARU ── */}
+                      <Modal
+                        isOpen={isCreateSoftwareModalOpen}
+                        onClose={() => setIsCreateSoftwareModalOpen(false)}
+                        isCentered
+                        size="lg"
+                      >
+                        <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(3px)" />
+                        <ModalContent
+                          rounded="xl"
+                          bg={isDark ? "gray.800" : "white"}
+                          border="1px solid"
+                          borderColor={isDark ? "gray.700" : "gray.200"}
+                          shadow="2xl"
+                        >
+                          <ModalHeader
+                            pb={2}
+                            borderBottom="1px dashed"
+                            borderColor={isDark ? "gray.700" : "gray.200"}
+                          >
+                            <HStack spacing={2.5}>
+                              <Box p={2} rounded="lg" bg="cyan.50" color="cyan.600">
+                                <Icon as={FiCpu} boxSize={5} />
+                              </Box>
+                              <VStack align="start" spacing={0}>
+                                <Heading size="sm" color={isDark ? "white" : "gray.800"}>
+                                  Tambah Master Software / Runtime
+                                </Heading>
+                                <Text fontSize="xs" color="gray.500">
+                                  Daftarkan teknologi, runtime engine, atau middleware baru ke katalog master.
+                                </Text>
+                              </VStack>
+                            </HStack>
+                          </ModalHeader>
+                          <ModalCloseButton />
+
+                          <ModalBody py={4}>
+                            <VStack spacing={4} align="stretch">
+                              {/* Nama Software */}
+                              <FormControl isRequired>
+                                <FormLabel fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.700"}>
+                                  Nama Software / Runtime
+                                </FormLabel>
+                                <Input
+                                  size="sm"
+                                  rounded="lg"
+                                  placeholder="Contoh: Ruby 3.3 YJIT, MariaDB 11.2, Kong Gateway"
+                                  value={newSoftwareName}
+                                  onChange={(e) => setNewSoftwareName(e.target.value)}
+                                />
+                              </FormControl>
+
+                              {/* Kategori */}
+                              <FormControl isRequired>
+                                <FormLabel fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.700"}>
+                                  Kategori Perangkat Lunak
+                                </FormLabel>
+                                <ChakraSelect
+                                  size="sm"
+                                  rounded="lg"
+                                  value={newSoftwareCategory}
+                                  onChange={(e) => setNewSoftwareCategory(e.target.value)}
+                                >
+                                  <option value="LANGUAGE_RUNTIME">Runtime Engine (Node.js, .NET, Java, Python, Go, dll)</option>
+                                  <option value="WEB_SERVER">Web & App Server (Nginx, Tomcat, Apache, IIS, dll)</option>
+                                  <option value="DATABASE_CLIENT">Database Client (Oracle, PostgreSQL, MySQL, dll)</option>
+                                  <option value="CACHE_BROKER">Cache & Message Broker (Redis, Kafka, RabbitMQ, dll)</option>
+                                  <option value="MIDDLEWARE">Middleware / API Gateway / Tools</option>
+                                  <option value="OTHER">Lainnya</option>
+                                </ChakraSelect>
+                              </FormControl>
+
+                              {/* Vendor & Standar Bank Grid */}
+                              <Grid templateColumns="repeat(2, 1fr)" gap={3}>
+                                <GridItem>
+                                  <FormControl>
+                                    <FormLabel fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.700"}>
+                                      Vendor / Publisher
+                                    </FormLabel>
+                                    <Input
+                                      size="sm"
+                                      rounded="lg"
+                                      placeholder="Contoh: Oracle, Microsoft, Apache"
+                                      value={newSoftwareVendor}
+                                      onChange={(e) => setNewSoftwareVendor(e.target.value)}
+                                    />
+                                  </FormControl>
+                                </GridItem>
+                                <GridItem>
+                                  <FormControl>
+                                    <FormLabel fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.700"}>
+                                      Standar Bank
+                                    </FormLabel>
+                                    <ChakraSelect
+                                      size="sm"
+                                      rounded="lg"
+                                      value={newSoftwareIsStandardBank}
+                                      onChange={(e) => setNewSoftwareIsStandardBank(e.target.value)}
+                                    >
+                                      <option value="Y">Ya - Standar Disetujui Bank</option>
+                                      <option value="N">Tidak - Kustom / Third-Party</option>
+                                    </ChakraSelect>
+                                  </FormControl>
+                                </GridItem>
+                              </Grid>
+
+                              {/* Deskripsi */}
+                              <FormControl>
+                                <FormLabel fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.700"}>
+                                  Deskripsi / Catatan Penggunaan
+                                </FormLabel>
+                                <Textarea
+                                  size="sm"
+                                  rounded="lg"
+                                  rows={2}
+                                  placeholder="Keterangan versi, kegunaan, atau kompatibilitas..."
+                                  value={newSoftwareDescription}
+                                  onChange={(e) => setNewSoftwareDescription(e.target.value)}
+                                />
+                              </FormControl>
+
+                              {/* Auto-connect checkbox */}
+                              <Box
+                                p={3}
+                                rounded="lg"
+                                bg={isDark ? "gray.750" : "cyan.50"}
+                                border="1px solid"
+                                borderColor={isDark ? "gray.600" : "cyan.200"}
+                              >
+                                <Checkbox
+                                  size="sm"
+                                  colorScheme="cyan"
+                                  isChecked={autoConnectNewSoftware}
+                                  onChange={(e) => setAutoConnectNewSoftware(e.target.checked)}
+                                >
+                                  <Text fontSize="xs" fontWeight="semibold" color={isDark ? "white" : "gray.800"}>
+                                    Langsung hubungkan software ini ke aplikasi setelah disimpan
+                                  </Text>
+                                </Checkbox>
+                              </Box>
+                            </VStack>
+                          </ModalBody>
+
+                          <ModalFooter
+                            pt={2}
+                            borderTop="1px dashed"
+                            borderColor={isDark ? "gray.700" : "gray.200"}
+                          >
+                            <HStack spacing={2}>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                rounded="lg"
+                                onClick={() => setIsCreateSoftwareModalOpen(false)}
+                              >
+                                Batal
+                              </Button>
+                              <Button
+                                size="sm"
+                                colorScheme="cyan"
+                                rounded="lg"
+                                leftIcon={<FiSave />}
+                                isLoading={isSubmittingNewSoftware}
+                                onClick={handleCreateNewSoftware}
+                              >
+                                Simpan ke Katalog
+                              </Button>
+                            </HStack>
+                          </ModalFooter>
+                        </ModalContent>
+                      </Modal>
                       </VStack>
                     </TabPanel>
                   </TabPanels>
                 </Tabs>
               </Card>
+            </GridItem>
 
-              {/* ──────────────────────────────────────────────────────────
-                  TAB SWITCH CONFIRMATION GUARD MODAL
-                  ────────────────────────────────────────────────────────── */}
-              <Modal
-                isOpen={isTabGuardOpen}
-                onClose={handleCancelLeaveTab}
-                isCentered
-                size="md"
-                motionPreset="slideInBottom"
-              >
-                <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(5px)" />
-                <ModalContent
-                  rounded="2xl"
-                  bg={isDark ? "gray.850" : "white"}
-                  border="1px solid"
+            {/* ── RIGHT 20% STICKY SIDEBAR (COL-SPAN 3) ── */}
+            <GridItem colSpan={{ base: 12, lg: 3, xl: 3 }}>
+              <VStack spacing={4} align="stretch" position="sticky" top="85px">
+                {/* 1. Card Aksi Cepat */}
+                <Card
+                  shadow="md"
+                  rounded={radiusStyle}
+                  border="1px"
                   borderColor={isDark ? "gray.700" : "gray.200"}
-                  shadow="2xl"
-                  p={2}
+                  bg={isDark ? "gray.800" : "white"}
                 >
-                  <ModalHeader pt={4} pb={2}>
-                    <HStack spacing={3} align="center">
-                      <Box
-                        w={10}
-                        h={10}
-                        rounded="xl"
-                        bg="orange.50"
-                        color="orange.500"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                      >
-                        <Icon as={FiAlertTriangle} boxSize={5} />
-                      </Box>
-                      <VStack align="start" spacing={0}>
-                        <Heading size="sm" color={isDark ? "white" : "gray.800"}>
-                          Peringatan Perubahan Belum Disimpan
-                        </Heading>
-                        <Text fontSize="xs" color="gray.500" fontWeight="normal">
-                          Mode edit masih aktif di tab {tabNames[activeTabIndex] || "ini"}
-                        </Text>
-                      </VStack>
+                  <CardHeader pb={2} pt={4} px={4}>
+                    <HStack spacing={2}>
+                      <Icon as={FiZap} color="secondary.500" />
+                      <Heading size="xs" color={isDark ? "white" : "gray.800"}>
+                        Actions & Operations
+                      </Heading>
                     </HStack>
-                  </ModalHeader>
-                  <ModalCloseButton top={4} right={4} rounded="lg" />
+                  </CardHeader>
+                  <CardBody px={4} pb={4} pt={2}>
+                    <VStack spacing={2.5} align="stretch">
+                      {IsEditMode ? (
+                        <>
+                          <Button
+                            leftIcon={<FiSave />}
+                            size="md"
+                            h="42px"
+                            colorScheme="green"
+                            w="full"
+                            rounded="xl"
+                            fontWeight="bold"
+                            isLoading={IsLoadingProcess}
+                            onClick={handleSave}
+                          >
+                            Save Changes
+                          </Button>
+                          <Button
+                            leftIcon={<FiX />}
+                            size="sm"
+                            variant="outline"
+                            w="full"
+                            rounded="xl"
+                            onClick={() => {
+                              setIsEditMode(false);
+                              LoadApplicationData();
+                            }}
+                          >
+                            Cancel Edit
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          leftIcon={<FiEdit />}
+                          size="md"
+                          h="42px"
+                          colorScheme="secondary"
+                          w="full"
+                          rounded="xl"
+                          fontWeight="bold"
+                          shadow="sm"
+                          onClick={() => setIsEditMode(true)}
+                        >
+                          Edit Mode
+                        </Button>
+                      )}
 
-                  <ModalBody py={4}>
-                    <VStack align="stretch" spacing={3}>
-                      <Text fontSize="sm" color={isDark ? "gray.300" : "gray.600"} lineHeight="tall">
-                        Anda sedang dalam mode pengeditan di tab{" "}
-                        <Text as="span" fontWeight="bold" color={isDark ? "white" : "gray.800"}>
-                          {tabNames[activeTabIndex] || "saat ini"}
-                        </Text>
-                        . Jika Anda berpindah ke tab{" "}
-                        <Text as="span" fontWeight="bold" color="secondary.500">
-                          {pendingTabIndex !== null ? tabNames[pendingTabIndex] : "lain"}
-                        </Text>
-                        , semua perubahan yang belum disimpan akan{" "}
-                        <Text as="span" fontWeight="bold" color="red.500">
-                          dibatalkan
-                        </Text>
-                        .
-                      </Text>
-
-                      <Box
-                        p={3}
+                      <Button
+                        leftIcon={<FiCopy />}
+                        size="sm"
+                        variant="outline"
+                        w="full"
                         rounded="xl"
-                        bg={isDark ? "whiteAlpha.50" : "gray.50"}
-                        border="1px dashed"
-                        borderColor={isDark ? "gray.700" : "gray.200"}
+                        onClick={onCopy}
                       >
-                        <HStack spacing={2} fontSize="xs" color="gray.500">
-                          <Icon as={FiInfo} color="secondary.500" />
-                          <Text>
-                            Pastikan Anda telah menyimpan data sebelum berpindah tab jika ingin mempertahankan perubahan.
-                          </Text>
-                        </HStack>
-                      </Box>
+                        {hasCopied ? "Copied!" : "Copy App Code"}
+                      </Button>
                     </VStack>
-                  </ModalBody>
+                  </CardBody>
+                </Card>
 
-                  <ModalFooter pb={4} pt={2} gap={2}>
-                    <Button
-                      variant="outline"
-                      colorScheme="gray"
-                      rounded="xl"
-                      size="md"
-                      onClick={handleCancelLeaveTab}
-                    >
-                      Tetap di Sini
-                    </Button>
-                    <Button
-                      colorScheme="red"
-                      rounded="xl"
-                      size="md"
-                      fontWeight="bold"
-                      onClick={handleConfirmLeaveTab}
-                    >
-                      Ya, Pindah Tab
-                    </Button>
-                  </ModalFooter>
-                </ModalContent>
-              </Modal>
+                {/* 2. Card Status Portofolio Proyek */}
+                <Card
+                  shadow="md"
+                  rounded={radiusStyle}
+                  border="1px"
+                  borderColor={isDark ? "gray.700" : "gray.200"}
+                  bg={isDark ? "gray.800" : "white"}
+                >
+                  <CardHeader pb={2} pt={4} px={4}>
+                    <HStack spacing={2}>
+                      <Icon as={FiBriefcase} color="secondary.500" />
+                      <Heading size="xs" color={isDark ? "white" : "gray.800"}>
+                        Project SDLC Ratio
+                      </Heading>
+                    </HStack>
+                  </CardHeader>
+                  <CardBody px={4} pb={4} pt={2}>
+                    <VStack spacing={3} align="stretch">
+                      <Flex justify="space-between" align="center" fontSize="2xs">
+                        <Text color="gray.500">Completion Rate</Text>
+                        <Text fontWeight="extrabold" color="secondary.500">{completionRate}%</Text>
+                      </Flex>
+                      <Progress
+                        value={completionRate}
+                        size="sm"
+                        colorScheme={completionRate === 100 ? "green" : "secondary"}
+                        rounded="full"
+                        bg={isDark ? "gray.700" : "gray.100"}
+                      />
+                      <HStack justify="space-between" fontSize="2xs" pt={1}>
+                        <VStack align="start" spacing={0}>
+                          <Text color="gray.500">Total Projects</Text>
+                          <Text fontWeight="bold">{totalProjects}</Text>
+                        </VStack>
+                        <VStack align="center" spacing={0}>
+                          <Text color="orange.500">Running</Text>
+                          <Text fontWeight="bold" color="orange.500">{onGoingProjects}</Text>
+                        </VStack>
+                        <VStack align="end" spacing={0}>
+                          <Text color="green.500">Completed</Text>
+                          <Text fontWeight="bold" color="green.500">{completedProjects}</Text>
+                        </VStack>
+                      </HStack>
+                    </VStack>
+                  </CardBody>
+                </Card>
+
+                {/* 3. Card Metadata & Audit Log */}
+                <Card
+                  shadow="md"
+                  rounded={radiusStyle}
+                  border="1px"
+                  borderColor={isDark ? "gray.700" : "gray.200"}
+                  bg={isDark ? "gray.800" : "white"}
+                >
+                  <CardHeader pb={2} pt={4} px={4}>
+                    <HStack spacing={2}>
+                      <Icon as={FiActivity} color="secondary.500" />
+                      <Heading size="xs" color={isDark ? "white" : "gray.800"}>
+                        Audit & Metadata
+                      </Heading>
+                    </HStack>
+                  </CardHeader>
+                  <CardBody px={4} pb={4} pt={2}>
+                    <VStack spacing={2.5} align="stretch" fontSize="2xs">
+                      <Flex justify="space-between">
+                        <Text color="gray.500">Created At:</Text>
+                        <Text fontWeight="semibold">
+                          {DataApplication?.createdAt ? new Date(DataApplication.createdAt).toLocaleDateString("en-US") : "-"}
+                        </Text>
+                      </Flex>
+                      <Flex justify="space-between">
+                        <Text color="gray.500">Created By:</Text>
+                        <Text fontWeight="semibold" noOfLines={1} maxW="120px">
+                          {DataApplication?.createdBy || "-"}
+                        </Text>
+                      </Flex>
+                      <Flex justify="space-between">
+                        <Text color="gray.500">Updated At:</Text>
+                        <Text fontWeight="semibold">
+                          {DataApplication?.updatedAt ? new Date(DataApplication.updatedAt).toLocaleDateString("en-US") : "-"}
+                        </Text>
+                      </Flex>
+                      <Flex justify="space-between">
+                        <Text color="gray.500">Data Status:</Text>
+                        <Badge
+                          colorScheme={
+                            DataApplication?.appsStatus === "ACTIVE"
+                              ? "green"
+                              : DataApplication?.appsStatus === "ON DEVELOPMENT"
+                              ? "purple"
+                              : "red"
+                          }
+                          fontSize="3xs"
+                          rounded="md"
+                        >
+                          {DataApplication?.appsStatus || "ACTIVE"}
+                        </Badge>
+                      </Flex>
+                    </VStack>
+                  </CardBody>
+                </Card>
+              </VStack>
+            </GridItem>
+          </Grid>
         </Box>
       )}
     </LayoutAdmin>
