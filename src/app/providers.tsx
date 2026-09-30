@@ -179,11 +179,23 @@ const colors = {
     800: "#004593",
     900: "#00326b",
   },
+  secondaryxx: {
+    50: "#E7ECFD",
+    100: "#D0DAFB",
+    200: "#A1B5F7",
+    300: "#7290F3",
+    400: "#436BEF",
+    500: "#1446EB",
+    600: "#1038BC",
+    700: "#0C2A8D",
+    800: "#081C5E",
+    900: "#040E2F",
+  },
 };
 
 const config: ThemeConfig = {
   initialColorMode: "system", // Follow OS (Windows/Mac) theme on first launch
-  useSystemColorMode: true,   // Sync with OS preference when no explicit localStorage choice
+  useSystemColorMode: true, // Sync with OS preference when no explicit localStorage choice
 };
 
 export const theme = extendTheme({

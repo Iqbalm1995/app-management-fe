@@ -64,7 +64,7 @@ import { useFormik } from "formik";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { FiLogIn, FiLayers, FiCheckSquare } from "react-icons/fi";
+import { FiLogIn, FiLayers, FiCheckSquare, FiShield, FiLock, FiCheck } from "react-icons/fi";
 import * as Yup from "yup";
 import { DEV_THEME } from "@/app/(pages)/dev/constants/devThemeConstants";
 
@@ -454,6 +454,33 @@ const AuthPanelModal = () => {
                         textAlign="center"
                         px={8}
                       >
+                        <HStack
+                          spacing={2}
+                          px={3.5}
+                          py={1.5}
+                          borderRadius="full"
+                          bg="rgba(255, 255, 255, 0.16)"
+                          backdropFilter="blur(16px)"
+                          border="1px solid rgba(255, 255, 255, 0.3)"
+                          boxShadow="0 8px 24px rgba(0, 0, 0, 0.15)"
+                        >
+                          <Box
+                            w="7px"
+                            h="7px"
+                            borderRadius="full"
+                            bg="green.400"
+                            boxShadow="0 0 8px #4ade80"
+                          />
+                          <Icon as={FiShield} boxSize={3.5} color="white" />
+                          <Text
+                            fontSize="2xs"
+                            fontWeight={700}
+                            letterSpacing="0.08em"
+                            textTransform="uppercase"
+                          >
+                            Bank bjb UIM Integrated
+                          </Text>
+                        </HStack>
                         <Text fontSize="3xl" fontWeight="bold">
                           Welcome Back
                         </Text>
@@ -509,9 +536,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ isDevMode, setIsDevMode }) => {
   const { Login, GetAuth, isLoading, error } = useAuthentications();
   const { GetMyAccess } = useSysModuleGroup();
   const [LupaPassText, setLupaPassText] = useState(false);
-  const [showDefaultPasswordModal, setShowDefaultPasswordModal] = useState(false);
-  const [countdown, setCountdown] = useState(30);
-  const [isDefaultPassword, setIsDefaultPassword] = useState(false);
 
   const formik = useFormik({
     initialValues: initialValueAuthEx,
@@ -519,11 +543,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ isDevMode, setIsDevMode }) => {
     validateOnChange: false,
     validateOnBlur: false,
     onSubmit: async (values) => {
-      // showToast({
-      //   description: "Proses Login",
-      //   statusToast: "loading",
-      // });
-
       setIsLoadingProcess(true);
       await AuthAction(values);
     },
@@ -533,32 +552,10 @@ const AuthForm: React.FC<AuthFormProps> = ({ isDevMode, setIsDevMode }) => {
     setIsError(false);
   }, [formik.values]);
 
-  // Countdown effect for default password modal
-  useEffect(() => {
-    if (showDefaultPasswordModal && countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-      return () => clearTimeout(timer);
-    } else if (showDefaultPasswordModal && countdown === 0) {
-      router.push("/change-password");
-    }
-  }, [showDefaultPasswordModal, countdown, router]);
-
   const AuthAction = async (values: AuthCorporateUserModel) => {
     setIsLoadingProcess(true);
 
-
-    // Check if using default password before login
     const encryptedPassword = encryptAES(values.password);
-    console.log("Encrypted password:", encryptedPassword);
-    console.log("Is default password:", encryptedPassword === "sJTLr62VFATzZr7e3jmwNA==");
-    
-    if (encryptedPassword === "sJTLr62VFATzZr7e3jmwNA==") {
-      setIsDefaultPassword(true);
-      localStorage.setItem("tempUserId", values.username);
-      console.log("Default password detected, setting flag");
-    } else {
-      setIsDefaultPassword(false);
-    }
 
     const response = await Login({
       username: values.username,
@@ -615,20 +612,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ isDevMode, setIsDevMode }) => {
       }
 
       // Proceed with login
-      // Check encrypted password directly instead of state
-      const encryptedPassword = encryptAES(values.password);
-      const isUsingDefaultPassword = encryptedPassword === "sJTLr62VFATzZr7e3jmwNA==";
-      
-      if (isUsingDefaultPassword) {
-        showToast({
-          description: "Anda menggunakan password default. Silakan ganti password Anda.",
-          statusToast: "warning",
-        });
-        // Store flag before login to redirect after
-        localStorage.setItem("redirectToChangePassword", "true");
-        console.log("Default password detected, flag set:", localStorage.getItem("redirectToChangePassword"));
-      }
-      
       if (isDevMode) {
         localStorage.setItem("dev_mode", "true");
       } else {
@@ -663,29 +646,156 @@ const AuthForm: React.FC<AuthFormProps> = ({ isDevMode, setIsDevMode }) => {
 
   return (
     <VStack width={"full"} spacing={3} align="stretch">
-      <Box>
-        <Center>
-          <Flex width={"80px"} py={2}>
+      {/* Brand & UIM Integration Header Card */}
+      <Box
+        p={3}
+        borderRadius="xl"
+        bg={
+          isDevMode
+            ? "rgba(24, 12, 48, 0.65)"
+            : colorMode === "light"
+            ? "linear-gradient(135deg, rgba(239, 246, 255, 0.92), rgba(240, 253, 250, 0.8))"
+            : "linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 58, 138, 0.35))"
+        }
+        border="1px solid"
+        borderColor={
+          isDevMode
+            ? "rgba(168, 85, 247, 0.3)"
+            : colorMode === "light"
+            ? "rgba(59, 130, 246, 0.22)"
+            : "rgba(59, 130, 246, 0.3)"
+        }
+        boxShadow={
+          isDevMode
+            ? "0 4px 16px rgba(168, 85, 247, 0.15)"
+            : colorMode === "light"
+            ? "0 4px 16px rgba(37, 99, 235, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9)"
+            : "0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)"
+        }
+        mb={1}
+      >
+        <Flex align="center" justify="space-between">
+          {/* Left: Bank bjb Brand Logo */}
+          <Flex width={"75px"} py={0.5}>
             <Image src={"/img/logo-bjb.png"} alt="Bank bjb" />
           </Flex>
-        </Center>
+
+          <Divider
+            orientation="vertical"
+            h="32px"
+            mx={2}
+            borderColor={colorMode === "light" ? "gray.300" : "whiteAlpha.300"}
+          />
+
+          {/* Right: Graphic UIM SSO Logo Emblem */}
+          <HStack spacing={2.5} align="center">
+            {/* Logo Emblem Squircle */}
+            <Box pos="relative">
+              <Flex
+                w="34px"
+                h="34px"
+                borderRadius="lg"
+                bgGradient={
+                  isDevMode
+                    ? "linear(to-br, #a855f7, #6366f1, #ec4899)"
+                    : "linear(to-br, #1e40af, #2563eb, #06b6d4)"
+                }
+                align="center"
+                justify="center"
+                color="white"
+                boxShadow={
+                  isDevMode
+                    ? "0 4px 10px rgba(168, 85, 247, 0.4)"
+                    : "0 4px 10px rgba(37, 99, 235, 0.35)"
+                }
+              >
+                <Icon as={FiShield} boxSize="17px" />
+              </Flex>
+              {/* Active Pulsing Live Indicator */}
+              <Box
+                pos="absolute"
+                bottom="-1px"
+                right="-1px"
+                w="9px"
+                h="9px"
+                borderRadius="full"
+                bg="green.400"
+                border="2px solid"
+                borderColor={colorMode === "light" ? "white" : "gray.900"}
+                boxShadow="0 0 6px #22c55e"
+              />
+            </Box>
+
+            <VStack align="start" spacing={0}>
+              <HStack spacing={1.5} align="center">
+                <Text
+                  fontSize="xs"
+                  fontWeight={800}
+                  letterSpacing="0.04em"
+                  color={
+                    isDevMode
+                      ? "purple.200"
+                      : colorMode === "light"
+                      ? "blue.800"
+                      : "blue.100"
+                  }
+                  lineHeight="shorter"
+                >
+                  UIM SSO
+                </Text>
+                <Badge
+                  fontSize="3xs"
+                  colorScheme="green"
+                  variant="solid"
+                  borderRadius="full"
+                  px={1.5}
+                  py={0.1}
+                  letterSpacing="wider"
+                >
+                  ACTIVE
+                </Badge>
+              </HStack>
+              <Text
+                fontSize="3xs"
+                fontWeight={500}
+                color={
+                  isDevMode
+                    ? "purple.300"
+                    : colorMode === "light"
+                    ? "gray.500"
+                    : "gray.400"
+                }
+                letterSpacing="0.02em"
+                lineHeight="shorter"
+              >
+                Unified Identity Management
+              </Text>
+            </VStack>
+          </HStack>
+        </Flex>
       </Box>
+
       <Box>
         <HStack justify="space-between" align="center">
           <Text fontWeight={600} fontSize={"20px"}>
             {isDevMode ? "Developer Workspace" : "Welcome"}
           </Text>
         </HStack>
-      </Box>
-      <Box>
         <Text
-          color={isDevMode ? (colorMode === "light" ? "purple.600" : "purple.300") : undefined}
-          fontSize="sm"
+          color={
+            isDevMode
+              ? colorMode === "light"
+                ? "purple.600"
+                : "purple.300"
+              : "gray.500"
+          }
+          fontSize="xs"
+          mt={0.5}
           transition="color 0.3s ease"
         >
           {isDevMode
-            ? "Use your User ID and Email/PC Password"
-            : "Use your User ID and Email/PC Password"}
+            ? "Use your User ID and Email/PC Password (UIM Authentication)"
+            : "Use your User ID and Email/PC Password (UIM Authentication)"}
         </Text>
       </Box>
       <Box>
@@ -739,26 +849,14 @@ const AuthForm: React.FC<AuthFormProps> = ({ isDevMode, setIsDevMode }) => {
               <FormErrorMessage>{formik.errors.password}</FormErrorMessage>
             </FormControl>
             <Box w={"full"}>
-              <Flex>
-                <Link href="/change-password">
-                  <Button
-                    size={"sm"}
-                    variant={"link"}
-                    color={isDevMode ? (colorMode === "light" ? "purple.600" : "purple.300") : "secondary.600"}
-                  >
-                    Change Password
-                  </Button>
-                </Link>
-                <Spacer />
-                <Link href="#">
-                  <Button
-                    size={"sm"}
-                    variant={"link"}
-                    onClick={() => setLupaPassText(!LupaPassText)}
-                  >
-                    Forgot password?
-                  </Button>
-                </Link>
+              <Flex justify="flex-end">
+                <Button
+                  size={"sm"}
+                  variant={"link"}
+                  onClick={() => setLupaPassText(!LupaPassText)}
+                >
+                  Forgot password?
+                </Button>
               </Flex>
             </Box>
             {/* <HStack justify="space-between" w="full" py={1}>
@@ -845,44 +943,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ isDevMode, setIsDevMode }) => {
           </VStack>
         </form>
       </Box>
-
-      {/* Default Password Warning Modal */}
-      <Modal isOpen={showDefaultPasswordModal} onClose={() => { }} closeOnOverlayClick={false} isCentered>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Password Default Terdeteksi</ModalHeader>
-          <ModalBody>
-            <VStack spacing={4} align="stretch">
-              <Text>
-                Anda masih menggunakan password default. Untuk keamanan akun Anda, silakan ganti password segera.
-              </Text>
-              <Box p={4} bg="orange.50" borderRadius="md" borderLeft="4px" borderColor="orange.500">
-                <AlertDescription>
-                  Anda memasukkan password default. Setelah login, diharapkan untuk mengganti password Anda di{" "}
-                  <Link href="/change-password">
-                    <Text as="span" color="blue.500" textDecoration="underline" cursor="pointer">
-                      sini
-                    </Text>
-                  </Link>
-                  .
-                </AlertDescription>
-              </Box>
-              <Button
-                colorScheme="blue"
-                onClick={() => router.push("/change-password")}
-                size="lg"
-              >
-                Ganti Password Sekarang
-              </Button>
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Text fontSize="sm" color="gray.500">
-              Redirect otomatis dalam {countdown} detik...
-            </Text>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
     </VStack>
   );
 };

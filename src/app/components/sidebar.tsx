@@ -1034,19 +1034,6 @@ export default function NavigationAdmin({ children }: { children: ReactNode }) {
                         )}
                       </Flex>
                     </MenuItem>
-                    <Link href="/change-password">
-                      <MenuItem
-                        color={useColorModeValue("gray.800", "white")}
-                        bg={useColorModeValue("white", "gray.900")}
-                        _hover={{
-                          bg: useColorModeValue("gray.100", "gray.700"),
-                          color: useColorModeValue("gray.900", "white"),
-                        }}
-                        icon={<FiLock />}
-                      >
-                        Ganti Password
-                      </MenuItem>
-                    </Link>
                     <MenuItem
                       icon={<FaPowerOff />}
                       color={useColorModeValue("gray.800", "white")}

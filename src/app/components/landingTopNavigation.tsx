@@ -281,20 +281,6 @@ export default function TopNavigationLanding() {
                         Home
                       </MenuItem>
                     </Link>
-                    <Link href={`/change-password`}>
-                      <MenuItem
-                        icon={<MdPassword />}
-                        color={colorMode == "light" ? "gray.800" : "white"}
-                        bg={colorMode == "light" ? "white" : "gray.900"}
-                        _hover={{
-                          bg: colorMode == "light" ? "gray.100" : "gray.700",
-                          color: colorMode == "light" ? "gray.900" : "white",
-                        }}
-                        rounded={radiusStyle}
-                      >
-                        Ganti Password
-                      </MenuItem>
-                    </Link>
                     <MenuItem
                       icon={<FaPowerOff />}
                       color={colorMode == "light" ? "gray.800" : "white"}
