@@ -21,6 +21,13 @@ import {
   Input,
   InputGroup,
   InputRightAddon,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
   Radio,
   RadioGroup,
   Select as ChakraSelect,
@@ -33,6 +40,7 @@ import {
   Textarea,
   Tooltip,
   useColorMode,
+  useDisclosure,
   useToast,
   VStack,
 } from "@chakra-ui/react";
@@ -75,6 +83,7 @@ import {
   SERVER_STATUS_OPTIONS,
   SERVER_ENVIRONMENT_OPTIONS,
   SERVER_SEGMENT_OPTIONS,
+  VM_OS_OPTIONS,
 } from "@/app/constants/applicationConstants";
 import {
   AppServerEnvironmentItem,
@@ -221,10 +230,18 @@ export default function CreateEnvironmentView() {
   const [ipAddress, setIpAddress] = useState<string>("10.20.101.50");
   const [vmIpAddress, setVmIpAddress] = useState<string>("10.20.101.50");
   const [os, setOs] = useState<string>("Red Hat Enterprise Linux 9");
+  const [osOther, setOsOther] = useState<string>("");
   const [cpu, setCpu] = useState<string>("4");
   const [memory, setMemory] = useState<string>("16");
   const [storage, setStorage] = useState<string>("250");
   const [note, setNote] = useState<string>("");
+
+  // Summary & Confirmation Modal Disclosure
+  const {
+    isOpen: isOpenSummaryModal,
+    onOpen: onOpenSummaryModal,
+    onClose: onCloseSummaryModal,
+  } = useDisclosure();
 
   // Network & Governance
   const [site, setSite] = useState<string>("DC Narogong");
@@ -310,7 +327,8 @@ export default function CreateEnvironmentView() {
   };
 
   // Form Submit Handler
-  const handleSaveEnvironmentServer = async () => {
+  // Comprehensive Input Validation
+  const validateInputs = (): boolean => {
     if (!appId) {
       toast({
         title: "Parameter Error",
@@ -319,7 +337,7 @@ export default function CreateEnvironmentView() {
         duration: 3000,
         isClosable: true,
       });
-      return;
+      return false;
     }
 
     if (!namaVm.trim()) {
@@ -330,7 +348,7 @@ export default function CreateEnvironmentView() {
         duration: 3000,
         isClosable: true,
       });
-      return;
+      return false;
     }
 
     if (!ipAddress.trim()) {
@@ -341,8 +359,99 @@ export default function CreateEnvironmentView() {
         duration: 3000,
         isClosable: true,
       });
-      return;
+      return false;
     }
+
+    if (os === "Other" && !osOther.trim()) {
+      toast({
+        title: "Validasi Gagal",
+        description: "Nama Operating System (OS) kustom wajib diisi.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return false;
+    }
+
+    if (!cpu.trim()) {
+      toast({
+        title: "Validasi Gagal",
+        description: "Kapasitas CPU Core wajib diisi.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return false;
+    }
+
+    if (!memory.trim()) {
+      toast({
+        title: "Validasi Gagal",
+        description: "Kapasitas Memory RAM wajib diisi.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return false;
+    }
+
+    if (!storage.trim()) {
+      toast({
+        title: "Validasi Gagal",
+        description: "Kapasitas Storage Disk wajib diisi.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return false;
+    }
+
+    if (roleServer === "Other" && !roleServerOther.trim()) {
+      toast({
+        title: "Validasi Gagal",
+        description: "Nama Role Server kustom wajib diisi.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return false;
+    }
+
+    if (site === "Other Site" && !siteOther.trim()) {
+      toast({
+        title: "Validasi Gagal",
+        description: "Nama Lokasi Site kustom wajib diisi.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return false;
+    }
+
+    if (targetEnvironment === "Other" && !targetEnvironmentOther.trim()) {
+      toast({
+        title: "Validasi Gagal",
+        description: "Nama Environment kustom wajib diisi.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  // Trigger Summary Modal
+  const handleOpenSummary = () => {
+    if (validateInputs()) {
+      onOpenSummaryModal();
+    }
+  };
+
+  // Form Submit Handler (Executed upon user confirmation in Summary Modal)
+  const handleSaveEnvironmentServer = async () => {
+    if (!validateInputs()) return;
 
     try {
       setIsSubmitting(true);
@@ -361,6 +470,11 @@ export default function CreateEnvironmentView() {
         targetEnvironment === "Other" && targetEnvironmentOther.trim()
           ? targetEnvironmentOther.trim()
           : targetEnvironment;
+
+      const resolvedOs =
+        os === "Other" && osOther.trim()
+          ? osOther.trim()
+          : os;
 
       const newServerItem: AppServerEnvironmentItem = {
         id: `srv-${Date.now()}`,
@@ -382,7 +496,7 @@ export default function CreateEnvironmentView() {
         vmDetail: {
           namaVm: namaVm.trim(),
           ipAddress: (vmIpAddress || ipAddress).trim(),
-          os: os.trim(),
+          os: resolvedOs.trim(),
           cpu: `${cpu.replace(/\D/g, "") || "4"} CPU`,
           memory: `${memory.replace(/\D/g, "") || "16"} GB`,
           storage: `${storage.replace(/\D/g, "") || "250"} GB`,
@@ -969,15 +1083,43 @@ export default function CreateEnvironmentView() {
               </FormControl>
 
               {/* Operating System (OS) - Vertical */}
-              <FormControl>
+              <FormControl isRequired>
                 <FormLabel fontSize="xs" fontWeight="bold">Operating System (OS)</FormLabel>
-                <Input
+                <ChakraSelect
                   size="md"
                   rounded="lg"
-                  placeholder="Contoh: Red Hat Enterprise Linux 9 / Ubuntu 22.04"
-                  value={os}
-                  onChange={(e) => setOs(e.target.value)}
-                />
+                  value={
+                    VM_OS_OPTIONS.filter((o) => o !== "Other").includes(os as any)
+                      ? os
+                      : (os ? "Other" : "")
+                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "Other") {
+                      setOs("Other");
+                      setOsOther("");
+                    } else {
+                      setOs(val);
+                      setOsOther("");
+                    }
+                  }}
+                >
+                  {VM_OS_OPTIONS.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </ChakraSelect>
+                {(os === "Other" || (!VM_OS_OPTIONS.filter((o) => o !== "Other").includes(os as any) && os !== "")) && (
+                  <Input
+                    mt={2}
+                    size="md"
+                    rounded="lg"
+                    placeholder="Ketik nama OS kustom..."
+                    value={osOther}
+                    onChange={(e) => setOsOther(e.target.value)}
+                  />
+                )}
               </FormControl>
 
               {/* CPU Core - Vertical */}
@@ -1288,11 +1430,271 @@ export default function CreateEnvironmentView() {
             px={6}
             fontWeight="bold"
             isLoading={isSubmitting}
-            onClick={handleSaveEnvironmentServer}
+            onClick={handleOpenSummary}
           >
-            Simpan Server Environment
+            Simpan 
           </Button>
         </Flex>
+
+        {/* ── MODAL SUMMARY KONFIGURASI SERVER SEBELUM SIMPAN ── */}
+        <Modal
+          isOpen={isOpenSummaryModal}
+          onClose={onCloseSummaryModal}
+          size="2xl"
+          isCentered
+          scrollBehavior="inside"
+        >
+          <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(4px)" />
+          <ModalContent
+            rounded="xl"
+            border="1px solid"
+            borderColor={isDark ? "gray.700" : "gray.200"}
+            bg={isDark ? "gray.850" : "white"}
+            shadow="xl"
+          >
+            <ModalHeader borderBottom="1px solid" borderColor={isDark ? "gray.700" : "gray.200"} pb={3}>
+              <HStack spacing={2.5}>
+                <Box p={2} rounded="lg" bg={isDark ? "blue.900" : "blue.50"} color="blue.600">
+                  <Icon as={FiServer} boxSize={5} />
+                </Box>
+                <VStack align="start" spacing={0.5}>
+                  <Heading size="sm" fontWeight="800">
+                    Ringkasan Konfigurasi Server Node
+                  </Heading>
+                  <Text fontSize="xs" color="gray.500" fontWeight="normal">
+                    Pastikan seluruh parameter Virtual Machine, peran, dan postur jaringan sudah tepat sebelum konfirmasi.
+                  </Text>
+                </VStack>
+              </HStack>
+            </ModalHeader>
+            <ModalCloseButton mt={1} />
+
+            <ModalBody py={4}>
+              <VStack spacing={3.5} align="stretch">
+                {/* 1. Target & Peran Server */}
+                <Box
+                  p={3.5}
+                  rounded="lg"
+                  border="1px solid"
+                  borderColor={isDark ? "gray.700" : "gray.200"}
+                  bg={isDark ? "gray.800" : "white"}
+                  shadow="xs"
+                >
+                  <Text fontSize="xs" fontWeight="800" textTransform="uppercase" letterSpacing="wider" color="blue.600" mb={2}>
+                    1. Target Environment & Peran
+                  </Text>
+                  <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={2.5} fontSize="xs">
+                    <HStack justify="space-between">
+                      <Text color="gray.500">Target Environment:</Text>
+                      <Badge colorScheme="blue" px={2} py={0.5} rounded="md" fontWeight="bold">
+                        {targetEnvironment === "Other" ? targetEnvironmentOther : targetEnvironment} ({activeMeta.code})
+                      </Badge>
+                    </HStack>
+
+                    <HStack justify="space-between">
+                      <Text color="gray.500">Status Server:</Text>
+                      <Badge colorScheme={status === "Aktif" ? "green" : "gray"} px={2} py={0.5} rounded="md">
+                        {status}
+                      </Badge>
+                    </HStack>
+
+                    <HStack justify="space-between">
+                      <Text color="gray.500">Role Server:</Text>
+                      <Text fontWeight="bold">
+                        {roleServer === "Other" ? (roleServerOther || "Custom") : roleServer}
+                      </Text>
+                    </HStack>
+
+                    <HStack justify="space-between">
+                      <Text color="gray.500">Dual Deployment (HA):</Text>
+                      <Badge colorScheme={dualDeploy === "Ya" ? "blue" : "gray"} px={2} py={0.5} rounded="md">
+                        {dualDeploy === "Ya" ? "Ya (Dual Deploy)" : "Tidak"}
+                      </Badge>
+                    </HStack>
+                  </SimpleGrid>
+
+                  {roleDetail && (
+                    <Box mt={2.5} pt={2} borderTop="1px dashed" borderColor={isDark ? "gray.700" : "gray.200"}>
+                      <Text fontSize="3xs" color="gray.500" mb={0.5}>Deskripsi Fungsi:</Text>
+                      <Text fontSize="xs" color={isDark ? "gray.200" : "gray.700"} noOfLines={2}>
+                        {roleDetail}
+                      </Text>
+                    </Box>
+                  )}
+                </Box>
+
+                {/* 2. Virtual Machine Specs */}
+                <Box
+                  p={3.5}
+                  rounded="lg"
+                  border="1px solid"
+                  borderColor={isDark ? "gray.700" : "gray.200"}
+                  bg={isDark ? "gray.800" : "white"}
+                  shadow="xs"
+                >
+                  <Text fontSize="xs" fontWeight="800" textTransform="uppercase" letterSpacing="wider" color="blue.600" mb={2}>
+                    2. Spesifikasi Virtual Machine (VM)
+                  </Text>
+                  <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={2.5} fontSize="xs">
+                    <HStack justify="space-between">
+                      <Text color="gray.500">Nama VM:</Text>
+                      <Text fontFamily="mono" fontWeight="bold">{namaVm}</Text>
+                    </HStack>
+
+                    <HStack justify="space-between">
+                      <Text color="gray.500">IP Address:</Text>
+                      <Text fontFamily="mono" fontWeight="bold" color="blue.600">{ipAddress}</Text>
+                    </HStack>
+
+                    <HStack justify="space-between">
+                      <Text color="gray.500">Operating System:</Text>
+                      <Text fontWeight="semibold">{os === "Other" ? (osOther || "Custom") : os}</Text>
+                    </HStack>
+
+                    <HStack justify="space-between">
+                      <Text color="gray.500">CPU Compute:</Text>
+                      <Text fontWeight="bold">{cpu} CPU</Text>
+                    </HStack>
+
+                    <HStack justify="space-between">
+                      <Text color="gray.500">Memory (RAM):</Text>
+                      <Text fontWeight="bold">{memory} GB</Text>
+                    </HStack>
+
+                    <HStack justify="space-between">
+                      <Text color="gray.500">Storage Disk:</Text>
+                      <Text fontWeight="bold">{storage} GB</Text>
+                    </HStack>
+                  </SimpleGrid>
+
+                  {note && (
+                    <Box mt={2.5} pt={2} borderTop="1px dashed" borderColor={isDark ? "gray.700" : "gray.200"}>
+                      <Text fontSize="3xs" color="gray.500" mb={0.5}>Catatan Teknis:</Text>
+                      <Text fontSize="xs" color={isDark ? "gray.200" : "gray.700"} noOfLines={2}>
+                        {note}
+                      </Text>
+                    </Box>
+                  )}
+                </Box>
+
+                {/* 3. Network, Data Center & Security Posture */}
+                <Box
+                  p={3.5}
+                  rounded="lg"
+                  border="1px solid"
+                  borderColor={isDark ? "gray.700" : "gray.200"}
+                  bg={isDark ? "gray.800" : "white"}
+                  shadow="xs"
+                >
+                  <Text fontSize="xs" fontWeight="800" textTransform="uppercase" letterSpacing="wider" color="blue.600" mb={2}>
+                    3. Network & Security Posture
+                  </Text>
+                  <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={2.5} fontSize="xs">
+                    <HStack justify="space-between">
+                      <Text color="gray.500">Site Data Center:</Text>
+                      <Text fontWeight="bold">{site === "Other Site" ? (siteOther || "Other") : site}</Text>
+                    </HStack>
+
+                    <HStack justify="space-between">
+                      <Text color="gray.500">SITE Flag (Primary DC):</Text>
+                      <Badge colorScheme={primarySite === "DC1" ? "blue" : primarySite === "DC2" ? "purple" : "gray"} px={2} py={0.5} rounded="md">
+                        {primarySite}
+                      </Badge>
+                    </HStack>
+
+                    <HStack justify="space-between">
+                      <Text color="gray.500">Site Segment:</Text>
+                      <Text fontWeight="bold">{segment}</Text>
+                    </HStack>
+
+                    <HStack justify="space-between">
+                      <Text color="gray.500">Domain Joining:</Text>
+                      <Badge colorScheme={joinDomain === "Ya" ? "blue" : "gray"} px={2} py={0.5} rounded="md">
+                        {joinDomain}
+                      </Badge>
+                    </HStack>
+
+                    <HStack justify="space-between">
+                      <Text color="gray.500">Hardening Security:</Text>
+                      <Badge colorScheme={hardening === "Ya" ? "blue" : "gray"} px={2} py={0.5} rounded="md">
+                        {hardening}
+                      </Badge>
+                    </HStack>
+
+                    <HStack justify="space-between">
+                      <Text color="gray.500">PAM Integration:</Text>
+                      <Badge colorScheme={pam === "Ya" ? "blue" : "gray"} px={2} py={0.5} rounded="md">
+                        {pam}
+                      </Badge>
+                    </HStack>
+                  </SimpleGrid>
+                </Box>
+
+                {/* 4. Link Akses & Kredensial (jika diisi) */}
+                {(envLinkUrl || testUser || testData) && (
+                  <Box
+                    p={3.5}
+                    rounded="lg"
+                    border="1px solid"
+                    borderColor={isDark ? "gray.700" : "gray.200"}
+                    bg={isDark ? "gray.800" : "white"}
+                    shadow="xs"
+                  >
+                    <Text fontSize="xs" fontWeight="800" textTransform="uppercase" letterSpacing="wider" color="blue.600" mb={2}>
+                      4. Akses Endpoint & Data Pengujian
+                    </Text>
+                    <VStack align="stretch" spacing={2} fontSize="xs">
+                      {envLinkUrl && (
+                        <HStack justify="space-between" wrap="wrap">
+                          <Text color="gray.500">URL Akses:</Text>
+                          <Text fontWeight="bold" color="blue.600" wordBreak="break-all">{envLinkUrl}</Text>
+                        </HStack>
+                      )}
+                      {testUser && (
+                        <HStack justify="space-between" wrap="wrap">
+                          <Text color="gray.500">Test User:</Text>
+                          <Text fontWeight="semibold">{testUser}</Text>
+                        </HStack>
+                      )}
+                      {testData && (
+                        <HStack justify="space-between" wrap="wrap">
+                          <Text color="gray.500">Test Data:</Text>
+                          <Text fontWeight="semibold">{testData}</Text>
+                        </HStack>
+                      )}
+                    </VStack>
+                  </Box>
+                )}
+              </VStack>
+            </ModalBody>
+
+            <ModalFooter borderTop="1px solid" borderColor={isDark ? "gray.700" : "gray.200"} pt={3} justify="space-between">
+              <Button
+                variant="ghost"
+                size="md"
+                rounded="lg"
+                leftIcon={<FiX />}
+                onClick={onCloseSummaryModal}
+                isDisabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                colorScheme="secondary"
+                size="md"
+                rounded="lg"
+                px={6}
+                leftIcon={<FiCheckCircle />}
+                fontWeight="bold"
+                isLoading={isSubmitting}
+                loadingText="Menyimpan..."
+                onClick={handleSaveEnvironmentServer}
+              >
+                Simpan
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
       </Box>
     </LayoutAdmin>
   );
