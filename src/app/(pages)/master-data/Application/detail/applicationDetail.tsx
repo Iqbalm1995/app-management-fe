@@ -357,6 +357,54 @@ export default function ApplicationDetail() {
   // Server Environment State
   const [serverEnvironments, setServerEnvironments] = useState<AppServerEnvironmentItem[]>([]);
   const [isTopologyLoading, setIsTopologyLoading] = useState<boolean>(false);
+  const [activeEnvFilter, setActiveEnvFilter] = useState<"PROD" | "DEV" | "DRC" | "ALL">("PROD");
+
+  const prodServers = useMemo(() => {
+    return serverEnvironments.filter((s) => {
+      const env = (s.environment || "").toLowerCase();
+      return env.includes("prod");
+    });
+  }, [serverEnvironments]);
+
+  const devServers = useMemo(() => {
+    return serverEnvironments.filter((s) => {
+      const env = (s.environment || "").toLowerCase();
+      return env.includes("dev") || env.includes("uat") || env.includes("test");
+    });
+  }, [serverEnvironments]);
+
+  const drcServers = useMemo(() => {
+    return serverEnvironments.filter((s) => {
+      const env = (s.environment || "").toLowerCase();
+      return (
+        env.includes("drc") ||
+        (!env.includes("prod") &&
+          !env.includes("dev") &&
+          !env.includes("uat") &&
+          !env.includes("test"))
+      );
+    });
+  }, [serverEnvironments]);
+
+  const displayedServers = useMemo(() => {
+    if (activeEnvFilter === "PROD") return prodServers;
+    if (activeEnvFilter === "DEV") return devServers;
+    if (activeEnvFilter === "DRC") return drcServers;
+    return serverEnvironments;
+  }, [activeEnvFilter, prodServers, devServers, drcServers, serverEnvironments]);
+
+  const handleNavigateCreateServer = (targetEnv?: string) => {
+    const envVal =
+      targetEnv ||
+      (activeEnvFilter === "PROD"
+        ? "Production"
+        : activeEnvFilter === "DEV"
+        ? "Development"
+        : activeEnvFilter === "DRC"
+        ? "DRC"
+        : "Production");
+    router.push(`/master-data/Application/create-environment?appId=${appId}&env=${envVal}`);
+  };
 
   // Link Akses & Environment Test Parameters State
   const [linkAksesEnv, setLinkAksesEnv] = useState<"Dev" | "Prod">("Dev");
@@ -982,13 +1030,36 @@ export default function ApplicationDetail() {
     try {
       setIsTopologyLoading(true);
       const res = await GetTopologyOverview(appId, tokenData);
-      if (res && res.statusCode === RES_CODE_OK && res.data) {
-        setServerEnvironments((res.data.servers || []) as AppServerEnvironmentItem[]);
+      if (res && res.statusCode === RES_CODE_OK && res.data && Array.isArray(res.data.servers) && res.data.servers.length > 0) {
+        setServerEnvironments(res.data.servers as AppServerEnvironmentItem[]);
+        if (typeof window !== "undefined") {
+          localStorage.setItem(`app_env_servers_${appId}`, JSON.stringify(res.data.servers));
+        }
       } else {
+        const localRaw = typeof window !== "undefined" ? localStorage.getItem(`app_env_servers_${appId}`) : null;
+        if (localRaw) {
+          try {
+            const parsed = JSON.parse(localRaw);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setServerEnvironments(parsed);
+              return;
+            }
+          } catch (e) {}
+        }
         setServerEnvironments([]);
       }
     } catch (e) {
       console.error("Error loading server topology:", e);
+      const localRaw = typeof window !== "undefined" ? localStorage.getItem(`app_env_servers_${appId}`) : null;
+      if (localRaw) {
+        try {
+          const parsed = JSON.parse(localRaw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setServerEnvironments(parsed);
+            return;
+          }
+        } catch (err) {}
+      }
       setServerEnvironments([]);
     } finally {
       setIsTopologyLoading(false);
@@ -1607,6 +1678,24 @@ export default function ApplicationDetail() {
                   Refresh
                 </Button>
 
+                <Button
+                  leftIcon={<FiCopy />}
+                  size="md"
+                  h="40px"
+                  variant="outline"
+                  color="white"
+                  borderColor="whiteAlpha.300"
+                  bg="whiteAlpha.100"
+                  backdropFilter="blur(8px)"
+                  _hover={{ bg: "whiteAlpha.250", borderColor: "whiteAlpha.450", transform: "translateY(-1px)" }}
+                  rounded="full"
+                  px={4}
+                  onClick={onCopy}
+                  transition="all 0.2s ease"
+                >
+                  {hasCopied ? "Copied!" : "Copy Code"}
+                </Button>
+
                 {IsEditMode ? (
                   <>
                     <Button
@@ -1805,19 +1894,17 @@ export default function ApplicationDetail() {
           )}
 
           {/* ══════════════════════════════════════════════════════════════════
-              80 / 20 RESPONSIVE LAYOUT
+              FULL WIDTH WORKSPACE CONTAINER
               ══════════════════════════════════════════════════════════════════ */}
-          <Grid templateColumns={{ base: "1fr", lg: "repeat(12, 1fr)" }} gap={5}>
-            {/* ── LEFT 80% WORKSPACE (COL-SPAN 9/10) ── */}
-            <GridItem colSpan={{ base: 12, lg: 9, xl: 9 }}>
-              <Card
-                shadow="md"
-                rounded={radiusStyle}
-                border="1px"
-                borderColor={isDark ? "gray.700" : "gray.200"}
-                bg={isDark ? "gray.800" : "white"}
-                overflow="hidden"
-              >
+          <Card
+            w="full"
+            shadow="md"
+            rounded={radiusStyle}
+            border="1px"
+            borderColor={isDark ? "gray.700" : "gray.200"}
+            bg={isDark ? "gray.800" : "white"}
+            overflow="hidden"
+          >
                 <Tabs
                   variant="unstyled"
                   index={activeTabIndex}
@@ -2154,6 +2241,112 @@ export default function ApplicationDetail() {
                             </Box>
                           </SimpleGrid>
                         </Box>
+
+                        {/* Section 4: Project SDLC Ratio & Audit Metadata */}
+                        <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={4}>
+                          {/* Project SDLC Ratio Card */}
+                          <Box
+                            p={5}
+                            rounded="xl"
+                            border="1px solid"
+                            borderColor={isDark ? "gray.700" : "gray.200"}
+                            bg={isDark ? "gray.850" : "gray.50"}
+                          >
+                            <HStack spacing={2} mb={4} color="secondary.500">
+                              <Icon as={FiBriefcase} boxSize={5} />
+                              <Heading size="xs" fontWeight="800" textTransform="uppercase" letterSpacing="wider">
+                                Project SDLC Ratio
+                              </Heading>
+                            </HStack>
+
+                            <VStack spacing={3.5} align="stretch">
+                              <Flex justify="space-between" align="center" fontSize="xs">
+                                <Text color="gray.500" fontWeight="bold">Completion Rate</Text>
+                                <Text fontWeight="extrabold" color="secondary.500" fontSize="sm">{completionRate}%</Text>
+                              </Flex>
+                              <Progress
+                                value={completionRate}
+                                size="md"
+                                colorScheme={completionRate === 100 ? "green" : "secondary"}
+                                rounded="full"
+                                bg={isDark ? "gray.700" : "gray.200"}
+                              />
+                              <HStack justify="space-between" fontSize="xs" pt={1}>
+                                <VStack align="start" spacing={0.5}>
+                                  <Text color="gray.500" fontSize="2xs" fontWeight="bold">TOTAL PROJECTS</Text>
+                                  <Text fontWeight="extrabold" fontSize="md">{totalProjects}</Text>
+                                </VStack>
+                                <VStack align="center" spacing={0.5}>
+                                  <Text color="orange.500" fontSize="2xs" fontWeight="bold">ON GOING</Text>
+                                  <Text fontWeight="extrabold" color="orange.500" fontSize="md">{onGoingProjects}</Text>
+                                </VStack>
+                                <VStack align="end" spacing={0.5}>
+                                  <Text color="green.500" fontSize="2xs" fontWeight="bold">COMPLETED</Text>
+                                  <Text fontWeight="extrabold" color="green.500" fontSize="md">{completedProjects}</Text>
+                                </VStack>
+                              </HStack>
+                            </VStack>
+                          </Box>
+
+                          {/* Audit & Metadata Card */}
+                          <Box
+                            p={5}
+                            rounded="xl"
+                            border="1px solid"
+                            borderColor={isDark ? "gray.700" : "gray.200"}
+                            bg={isDark ? "gray.850" : "gray.50"}
+                          >
+                            <HStack spacing={2} mb={4} color="secondary.500">
+                              <Icon as={FiActivity} boxSize={5} />
+                              <Heading size="xs" fontWeight="800" textTransform="uppercase" letterSpacing="wider">
+                                Audit & Metadata
+                              </Heading>
+                            </HStack>
+
+                            <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3.5}>
+                              <Box p={3} rounded="lg" bg={isDark ? "gray.800" : "white"} border="1px solid" borderColor={isDark ? "gray.700" : "gray.200"}>
+                                <Text fontSize="2xs" color="gray.500" fontWeight="bold">CREATED AT</Text>
+                                <Text fontSize="xs" fontWeight="bold" mt={0.5}>
+                                  {DataApplication?.createdAt ? new Date(DataApplication.createdAt).toLocaleDateString("en-US") : "-"}
+                                </Text>
+                              </Box>
+
+                              <Box p={3} rounded="lg" bg={isDark ? "gray.800" : "white"} border="1px solid" borderColor={isDark ? "gray.700" : "gray.200"}>
+                                <Text fontSize="2xs" color="gray.500" fontWeight="bold">CREATED BY</Text>
+                                <Text fontSize="xs" fontWeight="bold" mt={0.5} noOfLines={1}>
+                                  {DataApplication?.createdBy || "-"}
+                                </Text>
+                              </Box>
+
+                              <Box p={3} rounded="lg" bg={isDark ? "gray.800" : "white"} border="1px solid" borderColor={isDark ? "gray.700" : "gray.200"}>
+                                <Text fontSize="2xs" color="gray.500" fontWeight="bold">UPDATED AT</Text>
+                                <Text fontSize="xs" fontWeight="bold" mt={0.5}>
+                                  {DataApplication?.updatedAt ? new Date(DataApplication.updatedAt).toLocaleDateString("en-US") : "-"}
+                                </Text>
+                              </Box>
+
+                              <Box p={3} rounded="lg" bg={isDark ? "gray.800" : "white"} border="1px solid" borderColor={isDark ? "gray.700" : "gray.200"}>
+                                <Text fontSize="2xs" color="gray.500" fontWeight="bold">DATA STATUS</Text>
+                                <Badge
+                                  mt={1}
+                                  colorScheme={
+                                    DataApplication?.appsStatus === "ACTIVE"
+                                      ? "green"
+                                      : DataApplication?.appsStatus === "ON DEVELOPMENT"
+                                      ? "purple"
+                                      : "red"
+                                  }
+                                  fontSize="2xs"
+                                  rounded="md"
+                                  px={2}
+                                  py={0.5}
+                                >
+                                  {DataApplication?.appsStatus || "ACTIVE"}
+                                </Badge>
+                              </Box>
+                            </SimpleGrid>
+                          </Box>
+                        </SimpleGrid>
                       </VStack>
                     </TabPanel>
 
@@ -3310,6 +3503,18 @@ export default function ApplicationDetail() {
                           </HStack>
 
                           <HStack spacing={2} alignSelf={{ base: "flex-end", sm: "center" }}>
+                            <Button
+                              leftIcon={<FiPlus />}
+                              colorScheme="purple"
+                              size="sm"
+                              rounded="xl"
+                              px={4}
+                              fontSize="xs"
+                              fontWeight="bold"
+                              onClick={() => handleNavigateCreateServer()}
+                            >
+                              Tambah Server Node
+                            </Button>
                             {IsEditMode ? (
                               <>
                                 <Button
@@ -3467,402 +3672,756 @@ export default function ApplicationDetail() {
                         <Divider borderColor={isDark ? "gray.700" : "gray.200"} />
 
                         {/* ══════════════════════════════════════════════════════════
-                            1. LINK AKSES & TESTING PARAMETERS CONTAINER
+                            1. SEGMENTED ENVIRONMENT CONTROL
                             ══════════════════════════════════════════════════════════ */}
+                        <Box
+                          p={2}
+                          rounded="2xl"
+                          bg={isDark ? "gray.850" : "white"}
+                          border="1px solid"
+                          borderColor={isDark ? "gray.700" : "gray.200"}
+                          shadow="xs"
+                        >
+                          <Flex
+                            justify="space-between"
+                            align={{ base: "stretch", md: "center" }}
+                            direction={{ base: "column", md: "row" }}
+                            gap={3}
+                          >
+                            <HStack spacing={2} wrap="wrap">
+                              <Button
+                                size="sm"
+                                rounded="xl"
+                                leftIcon={<Icon as={FiGlobe} color={activeEnvFilter === "PROD" ? "green.300" : "gray.400"} />}
+                                variant={activeEnvFilter === "PROD" ? "solid" : "ghost"}
+                                colorScheme={activeEnvFilter === "PROD" ? "green" : "gray"}
+                                bg={activeEnvFilter === "PROD" ? (isDark ? "green.700" : "green.500") : "transparent"}
+                                color={activeEnvFilter === "PROD" ? "white" : isDark ? "gray.300" : "gray.600"}
+                                onClick={() => {
+                                  setActiveEnvFilter("PROD");
+                                  setLinkAksesEnv("Prod");
+                                }}
+                                fontWeight="bold"
+                                fontSize="xs"
+                                px={3.5}
+                              >
+                                Production
+                                <Badge
+                                  ml={2}
+                                  rounded="full"
+                                  px={2}
+                                  fontSize="3xs"
+                                  colorScheme={activeEnvFilter === "PROD" ? "blackAlpha" : "green"}
+                                >
+                                  {prodServers.length}
+                                </Badge>
+                              </Button>
+
+                              <Button
+                                size="sm"
+                                rounded="xl"
+                                leftIcon={<Icon as={FiActivity} color={activeEnvFilter === "DEV" ? "blue.300" : "gray.400"} />}
+                                variant={activeEnvFilter === "DEV" ? "solid" : "ghost"}
+                                colorScheme={activeEnvFilter === "DEV" ? "blue" : "gray"}
+                                bg={activeEnvFilter === "DEV" ? (isDark ? "blue.700" : "blue.500") : "transparent"}
+                                color={activeEnvFilter === "DEV" ? "white" : isDark ? "gray.300" : "gray.600"}
+                                onClick={() => {
+                                  setActiveEnvFilter("DEV");
+                                  setLinkAksesEnv("Dev");
+                                }}
+                                fontWeight="bold"
+                                fontSize="xs"
+                                px={3.5}
+                              >
+                                Development & UAT
+                                <Badge
+                                  ml={2}
+                                  rounded="full"
+                                  px={2}
+                                  fontSize="3xs"
+                                  colorScheme={activeEnvFilter === "DEV" ? "blackAlpha" : "blue"}
+                                >
+                                  {devServers.length}
+                                </Badge>
+                              </Button>
+
+                              {drcServers.length > 0 && (
+                                <Button
+                                  size="sm"
+                                  rounded="xl"
+                                  leftIcon={<Icon as={FiLayers} color={activeEnvFilter === "DRC" ? "purple.300" : "gray.400"} />}
+                                  variant={activeEnvFilter === "DRC" ? "solid" : "ghost"}
+                                  colorScheme={activeEnvFilter === "DRC" ? "purple" : "gray"}
+                                  bg={activeEnvFilter === "DRC" ? (isDark ? "purple.700" : "purple.500") : "transparent"}
+                                  color={activeEnvFilter === "DRC" ? "white" : isDark ? "gray.300" : "gray.600"}
+                                  onClick={() => setActiveEnvFilter("DRC")}
+                                  fontWeight="bold"
+                                  fontSize="xs"
+                                  px={3.5}
+                                >
+                                  DRC / Staging
+                                  <Badge
+                                    ml={2}
+                                    rounded="full"
+                                    px={2}
+                                    fontSize="3xs"
+                                    colorScheme={activeEnvFilter === "DRC" ? "blackAlpha" : "purple"}
+                                  >
+                                    {drcServers.length}
+                                  </Badge>
+                                </Button>
+                              )}
+
+                              <Button
+                                size="sm"
+                                rounded="xl"
+                                leftIcon={<Icon as={FiServer} color={activeEnvFilter === "ALL" ? "purple.300" : "gray.400"} />}
+                                variant={activeEnvFilter === "ALL" ? "solid" : "ghost"}
+                                colorScheme={activeEnvFilter === "ALL" ? "purple" : "gray"}
+                                bg={activeEnvFilter === "ALL" ? (isDark ? "purple.700" : "purple.500") : "transparent"}
+                                color={activeEnvFilter === "ALL" ? "white" : isDark ? "gray.300" : "gray.600"}
+                                onClick={() => setActiveEnvFilter("ALL")}
+                                fontWeight="bold"
+                                fontSize="xs"
+                                px={3.5}
+                              >
+                                Semua Environment
+                                <Badge
+                                  ml={2}
+                                  rounded="full"
+                                  px={2}
+                                  fontSize="3xs"
+                                  colorScheme={activeEnvFilter === "ALL" ? "blackAlpha" : "gray"}
+                                >
+                                  {serverEnvironments.length}
+                                </Badge>
+                              </Button>
+                            </HStack>
+
+                            <HStack spacing={2}>
+                              <Button
+                                leftIcon={<FiPlus />}
+                                colorScheme="purple"
+                                size="sm"
+                                rounded="xl"
+                                px={4}
+                                fontSize="xs"
+                                fontWeight="bold"
+                                onClick={() => handleNavigateCreateServer()}
+                              >
+                                Tambah Server Node
+                              </Button>
+                            </HStack>
+                          </Flex>
+                        </Box>
+
                         {/* ══════════════════════════════════════════════════════════
-                            1. LINK AKSES & TESTING PARAMETERS ACCORDION
+                            2. DIVIDED ENVIRONMENT CARDS: PROD / DEV / DRC
                             ══════════════════════════════════════════════════════════ */}
-                        <Accordion allowToggle defaultIndex={[0]} w="full">
-                          <AccordionItem
-                            rounded="xl"
+                        {/* A. PRODUCTION ENVIRONMENT CARD */}
+                        {(activeEnvFilter === "PROD" || activeEnvFilter === "ALL") && (
+                          <Box
+                            p={{ base: 4, md: 5 }}
+                            rounded="2xl"
                             border="1px solid"
-                            borderColor={isDark ? "gray.700" : "gray.200"}
+                            borderColor={isDark ? "green.800" : "green.200"}
                             bg={isDark ? "gray.850" : "white"}
-                            overflow="hidden"
                             shadow="sm"
                           >
-                            <h2>
-                              <AccordionButton
-                                p={4}
-                                bg={isDark ? "gray.800" : "gray.50"}
-                                _hover={{ bg: isDark ? "gray.750" : "gray.100" }}
-                              >
-                                <Flex justify="space-between" align="center" w="full" pr={2}>
-                                  <HStack spacing={3}>
-                                    <Box
-                                      p={2}
-                                      rounded="lg"
-                                      bg={linkAksesEnv === "Dev" ? "blue.50" : "green.50"}
-                                      color={linkAksesEnv === "Dev" ? "blue.600" : "green.600"}
-                                    >
-                                      <Icon as={FiGlobe} boxSize={5} />
-                                    </Box>
-                                    <VStack align="start" spacing={0.5}>
-                                      <HStack spacing={2}>
-                                        <Heading size="xs" color={isDark ? "white" : "gray.800"}>
-                                          Link Akses & Parameter Pengujian
-                                        </Heading>
-                                        <Badge
-                                          colorScheme={linkAksesEnv === "Dev" ? "blue" : "green"}
-                                          fontSize="3xs"
-                                          rounded="md"
-                                          px={2}
-                                          fontWeight="bold"
-                                        >
-                                          {linkAksesEnv}
-                                        </Badge>
-                                      </HStack>
-                                      <Text fontSize="2xs" color="gray.500">
-                                        Pilih lingkungan Dev atau Prod untuk konfigurasi URL akses dan kredensial pengujian.
-                                      </Text>
-                                    </VStack>
+                            <Flex
+                              justify="space-between"
+                              align={{ base: "start", sm: "center" }}
+                              direction={{ base: "column", sm: "row" }}
+                              gap={3}
+                              mb={4}
+                              pb={3}
+                              borderBottom="1px dashed"
+                              borderColor={isDark ? "gray.700" : "green.200"}
+                            >
+                              <HStack spacing={3}>
+                                <Box
+                                  p={2.5}
+                                  rounded="xl"
+                                  bg={isDark ? "green.900" : "green.50"}
+                                  color="green.500"
+                                >
+                                  <Icon as={FiGlobe} boxSize={5} />
+                                </Box>
+                                <VStack align="start" spacing={0.5}>
+                                  <HStack spacing={2}>
+                                    <Heading size="xs" color={isDark ? "white" : "gray.800"}>
+                                      Production Environment
+                                    </Heading>
+                                    <Badge colorScheme="green" fontSize="3xs" rounded="md" px={2} fontWeight="bold">
+                                      LIVE PRODUCTION
+                                    </Badge>
+                                    <Badge colorScheme="purple" fontSize="3xs" rounded="full" px={2}>
+                                      {prodServers.length} Nodes
+                                    </Badge>
                                   </HStack>
-                                </Flex>
-                                <AccordionIcon color="gray.400" />
-                              </AccordionButton>
-                            </h2>
+                                  <Text fontSize="2xs" color="gray.500">
+                                    Infrastruktur live production, arsitektur High Availability & DNS Domain resmi.
+                                  </Text>
+                                </VStack>
+                              </HStack>
 
-                            <AccordionPanel p={{ base: 4, md: 5 }} bg={isDark ? "gray.850" : "white"}>
-                              <VStack spacing={4} align="stretch">
-                                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                                  {/* Selection: Dev / Prod */}
-                                  <FormControl>
-                                    <FormLabel fontSize="2xs" fontWeight="bold" textTransform="uppercase" color="gray.500">
-                                      Link Akses Lingkungan
-                                    </FormLabel>
-                                    <HStack spacing={2} mt={1}>
-                                      <Button
-                                        size="sm"
-                                        rounded="lg"
-                                        variant={linkAksesEnv === "Dev" ? "solid" : "outline"}
-                                        colorScheme={linkAksesEnv === "Dev" ? "blue" : "gray"}
-                                        onClick={() => setLinkAksesEnv("Dev")}
-                                        px={5}
-                                        fontSize="xs"
-                                        fontWeight="bold"
-                                      >
-                                        Dev
-                                      </Button>
-                                      <Button
-                                        size="sm"
-                                        rounded="lg"
-                                        variant={linkAksesEnv === "Prod" ? "solid" : "outline"}
-                                        colorScheme={linkAksesEnv === "Prod" ? "green" : "gray"}
-                                        onClick={() => setLinkAksesEnv("Prod")}
-                                        px={5}
-                                        fontSize="xs"
-                                        fontWeight="bold"
-                                      >
-                                        Prod
-                                      </Button>
+                              <Button
+                                leftIcon={<FiPlus />}
+                                size="xs"
+                                colorScheme="green"
+                                variant="outline"
+                                rounded="lg"
+                                fontWeight="bold"
+                                onClick={() => handleNavigateCreateServer("Production")}
+                              >
+                                Tambah Server Production
+                              </Button>
+                            </Flex>
+
+                            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                              <FormControl>
+                                <FormLabel fontSize="2xs" fontWeight="bold" textTransform="uppercase" color="gray.500">
+                                  URL Link Akses Production
+                                </FormLabel>
+                                {IsEditMode ? (
+                                  <Input
+                                    size="sm"
+                                    rounded="lg"
+                                    placeholder="https://apps.bankbki.co.id"
+                                    value={linkAksesProdUrl}
+                                    onChange={(e) => setLinkAksesProdUrl(e.target.value)}
+                                  />
+                                ) : (
+                                  <HStack
+                                    p={2.5}
+                                    rounded="lg"
+                                    bg={isDark ? "gray.800" : "green.50"}
+                                    border="1px solid"
+                                    borderColor={isDark ? "gray.700" : "green.200"}
+                                    justify="space-between"
+                                  >
+                                    <HStack spacing={2} minW={0}>
+                                      <Icon as={FiGlobe} color="green.500" />
+                                      <Text fontSize="xs" fontWeight="bold" color="green.600" noOfLines={1}>
+                                        {linkAksesProdUrl ||
+                                          `https://${DataApplication?.appShortName?.toLowerCase() || "app"}.bankbki.co.id`}
+                                      </Text>
                                     </HStack>
-                                  </FormControl>
-
-                                  {/* URL Link Akses */}
-                                  <FormControl>
-                                    <FormLabel fontSize="2xs" fontWeight="bold" textTransform="uppercase" color="gray.500">
-                                      URL Link Akses ({linkAksesEnv})
-                                    </FormLabel>
-                                    {IsEditMode ? (
-                                      <Input
-                                        size="sm"
-                                        rounded="lg"
-                                        placeholder={`URL Link Akses ${linkAksesEnv}`}
-                                        value={linkAksesEnv === "Dev" ? linkAksesDevUrl : linkAksesProdUrl}
-                                        onChange={(e) => {
-                                          if (linkAksesEnv === "Dev") {
-                                            setLinkAksesDevUrl(e.target.value);
-                                          } else {
-                                            setLinkAksesProdUrl(e.target.value);
-                                          }
+                                    <HStack spacing={1}>
+                                      <IconButton
+                                        aria-label="Salin URL"
+                                        icon={<FiCopy />}
+                                        size="xs"
+                                        variant="ghost"
+                                        colorScheme="green"
+                                        onClick={() => {
+                                          const url =
+                                            linkAksesProdUrl ||
+                                            `https://${DataApplication?.appShortName?.toLowerCase() || "app"}.bankbki.co.id`;
+                                          navigator.clipboard.writeText(url);
+                                          showToast({
+                                            description: "URL Production berhasil disalin",
+                                            statusToast: "info",
+                                          });
                                         }}
                                       />
-                                    ) : (
+                                      <IconButton
+                                        aria-label="Buka URL Akses"
+                                        icon={<FiExternalLink />}
+                                        size="xs"
+                                        variant="ghost"
+                                        colorScheme="green"
+                                        onClick={() => {
+                                          const target =
+                                            linkAksesProdUrl ||
+                                            `https://${DataApplication?.appShortName?.toLowerCase() || "app"}.bankbki.co.id`;
+                                          window.open(target.startsWith("http") ? target : `https://${target}`, "_blank");
+                                        }}
+                                      />
+                                    </HStack>
+                                  </HStack>
+                                )}
+                              </FormControl>
+
+                              <Box
+                                p={2.5}
+                                rounded="lg"
+                                bg={isDark ? "gray.800" : "gray.50"}
+                                border="1px solid"
+                                borderColor={isDark ? "gray.700" : "gray.200"}
+                              >
+                                <Text fontSize="3xs" fontWeight="bold" color="gray.500" textTransform="uppercase" mb={1.5}>
+                                  Metrik Node Production
+                                </Text>
+                                <HStack spacing={3} wrap="wrap">
+                                  <Badge colorScheme="blue" fontSize="3xs" rounded="md" px={2} py={0.5}>
+                                    DC1 Primary: {prodServers.filter((s) => s.primary === "DC1").length}
+                                  </Badge>
+                                  <Badge colorScheme="purple" fontSize="3xs" rounded="md" px={2} py={0.5}>
+                                    DC2 Primary: {prodServers.filter((s) => s.primary === "DC2").length}
+                                  </Badge>
+                                  <Badge colorScheme="green" fontSize="3xs" rounded="md" px={2} py={0.5}>
+                                    Aktif: {prodServers.filter((s) => s.status === "Aktif").length}
+                                  </Badge>
+                                </HStack>
+                              </Box>
+                            </SimpleGrid>
+                          </Box>
+                        )}
+
+                        {/* B. DEVELOPMENT & UAT ENVIRONMENT CARD */}
+                        {(activeEnvFilter === "DEV" || activeEnvFilter === "ALL") && (
+                          <Box
+                            p={{ base: 4, md: 5 }}
+                            rounded="2xl"
+                            border="1px solid"
+                            borderColor={isDark ? "blue.800" : "blue.200"}
+                            bg={isDark ? "gray.850" : "white"}
+                            shadow="sm"
+                          >
+                            <Flex
+                              justify="space-between"
+                              align={{ base: "start", sm: "center" }}
+                              direction={{ base: "column", sm: "row" }}
+                              gap={3}
+                              mb={4}
+                              pb={3}
+                              borderBottom="1px dashed"
+                              borderColor={isDark ? "gray.700" : "blue.200"}
+                            >
+                              <HStack spacing={3}>
+                                <Box
+                                  p={2.5}
+                                  rounded="xl"
+                                  bg={isDark ? "blue.900" : "blue.50"}
+                                  color="blue.500"
+                                >
+                                  <Icon as={FiActivity} boxSize={5} />
+                                </Box>
+                                <VStack align="start" spacing={0.5}>
+                                  <HStack spacing={2}>
+                                    <Heading size="xs" color={isDark ? "white" : "gray.800"}>
+                                      Development & UAT Environment
+                                    </Heading>
+                                    <Badge colorScheme="blue" fontSize="3xs" rounded="md" px={2} fontWeight="bold">
+                                      DEV / UAT / TESTING
+                                    </Badge>
+                                    <Badge colorScheme="purple" fontSize="3xs" rounded="full" px={2}>
+                                      {devServers.length} Nodes
+                                    </Badge>
+                                  </HStack>
+                                  <Text fontSize="2xs" color="gray.500">
+                                    Lingkungan staging, user acceptance test, integrasi API & konfigurasi kredensial uji.
+                                  </Text>
+                                </VStack>
+                              </HStack>
+
+                              <Button
+                                leftIcon={<FiPlus />}
+                                size="xs"
+                                colorScheme="blue"
+                                variant="outline"
+                                rounded="lg"
+                                fontWeight="bold"
+                                onClick={() => handleNavigateCreateServer("Development")}
+                              >
+                                Tambah Server Development
+                              </Button>
+                            </Flex>
+
+                            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={4}>
+                              <FormControl>
+                                <FormLabel fontSize="2xs" fontWeight="bold" textTransform="uppercase" color="gray.500">
+                                  URL Link Akses Development
+                                </FormLabel>
+                                {IsEditMode ? (
+                                  <Input
+                                    size="sm"
+                                    rounded="lg"
+                                    placeholder="https://apps-dev.bankbki.co.id"
+                                    value={linkAksesDevUrl}
+                                    onChange={(e) => setLinkAksesDevUrl(e.target.value)}
+                                  />
+                                ) : (
+                                  <HStack
+                                    p={2.5}
+                                    rounded="lg"
+                                    bg={isDark ? "gray.800" : "blue.50"}
+                                    border="1px solid"
+                                    borderColor={isDark ? "gray.700" : "blue.200"}
+                                    justify="space-between"
+                                  >
+                                    <HStack spacing={2} minW={0}>
+                                      <Icon as={FiGlobe} color="blue.500" />
+                                      <Text fontSize="xs" fontWeight="bold" color="blue.600" noOfLines={1}>
+                                        {linkAksesDevUrl ||
+                                          `https://${DataApplication?.appShortName?.toLowerCase() || "app"}-dev.bankbki.co.id`}
+                                      </Text>
+                                    </HStack>
+                                    <HStack spacing={1}>
+                                      <IconButton
+                                        aria-label="Salin URL"
+                                        icon={<FiCopy />}
+                                        size="xs"
+                                        variant="ghost"
+                                        colorScheme="blue"
+                                        onClick={() => {
+                                          const url =
+                                            linkAksesDevUrl ||
+                                            `https://${DataApplication?.appShortName?.toLowerCase() || "app"}-dev.bankbki.co.id`;
+                                          navigator.clipboard.writeText(url);
+                                          showToast({
+                                            description: "URL Development berhasil disalin",
+                                            statusToast: "info",
+                                          });
+                                        }}
+                                      />
+                                      <IconButton
+                                        aria-label="Buka URL Akses"
+                                        icon={<FiExternalLink />}
+                                        size="xs"
+                                        variant="ghost"
+                                        colorScheme="blue"
+                                        onClick={() => {
+                                          const target =
+                                            linkAksesDevUrl ||
+                                            `https://${DataApplication?.appShortName?.toLowerCase() || "app"}-dev.bankbki.co.id`;
+                                          window.open(target.startsWith("http") ? target : `https://${target}`, "_blank");
+                                        }}
+                                      />
+                                    </HStack>
+                                  </HStack>
+                                )}
+                              </FormControl>
+
+                              <Box
+                                p={2.5}
+                                rounded="lg"
+                                bg={isDark ? "gray.800" : "gray.50"}
+                                border="1px solid"
+                                borderColor={isDark ? "gray.700" : "gray.200"}
+                              >
+                                <Text fontSize="3xs" fontWeight="bold" color="gray.500" textTransform="uppercase" mb={1.5}>
+                                  Status Pengujian
+                                </Text>
+                                <HStack spacing={3} wrap="wrap">
+                                  <Badge colorScheme="blue" fontSize="3xs" rounded="md" px={2} py={0.5}>
+                                    Total Nodes: {devServers.length}
+                                  </Badge>
+                                  <Badge colorScheme="teal" fontSize="3xs" rounded="md" px={2} py={0.5}>
+                                    Parameter Uji: {testingParameters.length} Parameter
+                                  </Badge>
+                                  <Badge colorScheme="green" fontSize="3xs" rounded="md" px={2} py={0.5}>
+                                    Aktif: {devServers.filter((s) => s.status === "Aktif").length}
+                                  </Badge>
+                                </HStack>
+                              </Box>
+                            </SimpleGrid>
+
+                            {/* Testing Parameters Sub-section */}
+                            <Box
+                              p={4}
+                              rounded="xl"
+                              bg={isDark ? "gray.800" : "white"}
+                              border="1px dashed"
+                              borderColor={isDark ? "gray.700" : "blue.300"}
+                            >
+                              <Flex justify="space-between" align="center" mb={3}>
+                                <HStack spacing={2} color="blue.500">
+                                  <Icon as={FiCheckCircle} boxSize={4} />
+                                  <Text fontSize="2xs" fontWeight="bold" textTransform="uppercase" letterSpacing="wide">
+                                    Parameter Pengujian (Environment Development)
+                                  </Text>
+                                  <Badge colorScheme="blue" variant="subtle" fontSize="3xs" rounded="full" px={2}>
+                                    {testingParameters.length}
+                                  </Badge>
+                                </HStack>
+                                {IsEditMode && (
+                                  <Button
+                                    size="xs"
+                                    colorScheme="blue"
+                                    variant="solid"
+                                    leftIcon={<FiPlus />}
+                                    rounded="lg"
+                                    onClick={handleAddTestingParameter}
+                                  >
+                                    Tambah Parameter
+                                  </Button>
+                                )}
+                              </Flex>
+
+                              {IsEditMode ? (
+                                <VStack spacing={3} align="stretch">
+                                  {testingParameters.length === 0 ? (
+                                    <Box
+                                      p={4}
+                                      textAlign="center"
+                                      rounded="lg"
+                                      bg={isDark ? "gray.850" : "gray.50"}
+                                      border="1px dashed"
+                                      borderColor={isDark ? "gray.700" : "gray.300"}
+                                    >
+                                      <Text fontSize="xs" color="gray.500" mb={2}>
+                                        Belum ada parameter pengujian yang ditambahkan.
+                                      </Text>
+                                      <Button
+                                        size="xs"
+                                        colorScheme="blue"
+                                        leftIcon={<FiPlus />}
+                                        onClick={handleAddTestingParameter}
+                                      >
+                                        Tambah Parameter Pertama
+                                      </Button>
+                                    </Box>
+                                  ) : (
+                                    testingParameters.map((param, index) => (
                                       <HStack
-                                        p={2}
+                                        key={param.id || `param-item-${index}`}
+                                        p={3}
                                         rounded="lg"
-                                        bg={isDark ? "gray.800" : "white"}
+                                        bg={isDark ? "gray.850" : "gray.50"}
                                         border="1px solid"
                                         borderColor={isDark ? "gray.700" : "gray.200"}
-                                        justify="space-between"
+                                        spacing={3}
+                                        align="flex-start"
                                       >
-                                        <Text fontSize="xs" fontWeight="bold" color="blue.500" noOfLines={1}>
-                                          {(linkAksesEnv === "Dev" ? linkAksesDevUrl : linkAksesProdUrl) ||
-                                            (linkAksesEnv === "Dev"
-                                              ? `https://${DataApplication?.appShortName?.toLowerCase() || "app"}-dev.bankbki.co.id`
-                                              : `https://${DataApplication?.appShortName?.toLowerCase() || "app"}.bankbki.co.id`)}
-                                        </Text>
-                                        {((linkAksesEnv === "Dev" ? linkAksesDevUrl : linkAksesProdUrl) || DataApplication?.appShortName) && (
-                                          <IconButton
-                                            aria-label="Buka URL Akses"
-                                            icon={<FiExternalLink />}
-                                            size="xs"
-                                            variant="ghost"
-                                            colorScheme="blue"
-                                            onClick={() => {
-                                              const target =
-                                                (linkAksesEnv === "Dev" ? linkAksesDevUrl : linkAksesProdUrl) ||
-                                                (linkAksesEnv === "Dev"
-                                                  ? `https://${DataApplication?.appShortName?.toLowerCase() || "app"}-dev.bankbki.co.id`
-                                                  : `https://${DataApplication?.appShortName?.toLowerCase() || "app"}.bankbki.co.id`);
-                                              window.open(target.startsWith("http") ? target : `https://${target}`, "_blank");
-                                            }}
+                                        <FormControl flex={{ base: "1", md: "1.2" }}>
+                                          <FormLabel fontSize="3xs" fontWeight="bold" color="gray.500" mb={1}>
+                                            Nama Parameter
+                                          </FormLabel>
+                                          <Input
+                                            size="sm"
+                                            rounded="md"
+                                            placeholder="misal: Test User, CIF, API Key"
+                                            value={param.paramLabel}
+                                            onChange={(e) =>
+                                              handleUpdateTestingParameter(index, "paramLabel", e.target.value)
+                                            }
                                           />
-                                        )}
-                                      </HStack>
-                                    )}
-                                  </FormControl>
-                                </SimpleGrid>
+                                        </FormControl>
 
-                                {/* IF DEV = TRUE: SHOW DYNAMIC TESTING PARAMETERS */}
-                                {linkAksesEnv === "Dev" && (
-                                  <Box
-                                    p={4}
-                                    rounded="xl"
-                                    bg={isDark ? "gray.800" : "white"}
-                                    border="1px dashed"
-                                    borderColor="blue.300"
-                                  >
-                                    <Flex justify="space-between" align="center" mb={3}>
-                                      <HStack spacing={2} color="blue.500">
-                                        <Icon as={FiCheckCircle} boxSize={4} />
-                                        <Text fontSize="2xs" fontWeight="bold" textTransform="uppercase" letterSpacing="wide">
-                                          Parameter Pengujian (Environment Development)
-                                        </Text>
-                                        <Badge colorScheme="blue" variant="subtle" fontSize="3xs" rounded="full" px={2}>
-                                          {testingParameters.length}
-                                        </Badge>
-                                      </HStack>
-                                      {IsEditMode && (
-                                        <Button
-                                          size="xs"
-                                          colorScheme="blue"
-                                          variant="solid"
-                                          leftIcon={<FiPlus />}
-                                          rounded="lg"
-                                          onClick={handleAddTestingParameter}
-                                        >
-                                          Tambah Parameter
-                                        </Button>
-                                      )}
-                                    </Flex>
-
-                                    {IsEditMode ? (
-                                      <VStack spacing={3} align="stretch">
-                                        {testingParameters.length === 0 ? (
-                                          <Box
-                                            p={4}
-                                            textAlign="center"
-                                            rounded="lg"
-                                            bg={isDark ? "gray.850" : "gray.50"}
-                                            border="1px dashed"
-                                            borderColor={isDark ? "gray.700" : "gray.300"}
+                                        <FormControl w={{ base: "90px", md: "110px" }}>
+                                          <FormLabel fontSize="3xs" fontWeight="bold" color="gray.500" mb={1}>
+                                            Tipe
+                                          </FormLabel>
+                                          <ChakraSelect
+                                            size="sm"
+                                            rounded="md"
+                                            value={param.fieldType}
+                                            onChange={(e) =>
+                                              handleUpdateTestingParameter(
+                                                index,
+                                                "fieldType",
+                                                e.target.value as "text" | "password" | "textarea"
+                                              )
+                                            }
                                           >
-                                            <Text fontSize="xs" color="gray.500" mb={2}>
-                                              Belum ada parameter pengujian yang ditambahkan.
-                                            </Text>
-                                            <Button
-                                              size="xs"
-                                              colorScheme="blue"
-                                              leftIcon={<FiPlus />}
-                                              onClick={handleAddTestingParameter}
-                                            >
-                                              Tambah Parameter Pertama
-                                            </Button>
-                                          </Box>
-                                        ) : (
-                                          testingParameters.map((param, index) => (
-                                            <HStack
-                                              key={param.id || `param-item-${index}`}
-                                              p={3}
-                                              rounded="lg"
-                                              bg={isDark ? "gray.850" : "gray.50"}
-                                              border="1px solid"
-                                              borderColor={isDark ? "gray.700" : "gray.200"}
-                                              spacing={3}
-                                              align="flex-start"
-                                            >
-                                              <FormControl flex={{ base: "1", md: "1.2" }}>
-                                                <FormLabel fontSize="3xs" fontWeight="bold" color="gray.500" mb={1}>
-                                                  Nama Parameter
-                                                </FormLabel>
-                                                <Input
-                                                  size="sm"
-                                                  rounded="md"
-                                                  placeholder="misal: Test User, CIF, API Key"
-                                                  value={param.paramLabel}
-                                                  onChange={(e) =>
-                                                    handleUpdateTestingParameter(index, "paramLabel", e.target.value)
-                                                  }
-                                                />
-                                              </FormControl>
+                                            <option value="text">Text</option>
+                                            <option value="password">Password</option>
+                                            <option value="textarea">Textarea</option>
+                                          </ChakraSelect>
+                                        </FormControl>
 
-                                              <FormControl w={{ base: "90px", md: "110px" }}>
-                                                <FormLabel fontSize="3xs" fontWeight="bold" color="gray.500" mb={1}>
-                                                  Tipe
-                                                </FormLabel>
-                                                <ChakraSelect
-                                                  size="sm"
-                                                  rounded="md"
-                                                  value={param.fieldType}
-                                                  onChange={(e) =>
-                                                    handleUpdateTestingParameter(
-                                                      index,
-                                                      "fieldType",
-                                                      e.target.value as "text" | "password" | "textarea"
-                                                    )
-                                                  }
-                                                >
-                                                  <option value="text">Text</option>
-                                                  <option value="password">Password</option>
-                                                  <option value="textarea">Textarea</option>
-                                                </ChakraSelect>
-                                              </FormControl>
+                                        <FormControl flex={{ base: "1.5", md: "2" }}>
+                                          <FormLabel fontSize="3xs" fontWeight="bold" color="gray.500" mb={1}>
+                                            Nilai Parameter
+                                          </FormLabel>
+                                          {param.fieldType === "textarea" ? (
+                                            <Textarea
+                                              size="sm"
+                                              rounded="md"
+                                              rows={2}
+                                              placeholder="Nilai parameter"
+                                              value={param.paramValue || ""}
+                                              onChange={(e) =>
+                                                handleUpdateTestingParameter(index, "paramValue", e.target.value)
+                                              }
+                                            />
+                                          ) : (
+                                            <Input
+                                              size="sm"
+                                              rounded="md"
+                                              type={param.fieldType === "password" ? "password" : "text"}
+                                              placeholder="Nilai parameter"
+                                              value={param.paramValue || ""}
+                                              onChange={(e) =>
+                                                handleUpdateTestingParameter(index, "paramValue", e.target.value)
+                                              }
+                                            />
+                                          )}
+                                        </FormControl>
 
-                                              <FormControl flex={{ base: "1.5", md: "2" }}>
-                                                <FormLabel fontSize="3xs" fontWeight="bold" color="gray.500" mb={1}>
-                                                  Nilai Parameter
-                                                </FormLabel>
-                                                {param.fieldType === "textarea" ? (
-                                                  <Textarea
-                                                    size="sm"
-                                                    rounded="md"
-                                                    rows={2}
-                                                    placeholder="Nilai parameter"
-                                                    value={param.paramValue || ""}
-                                                    onChange={(e) =>
-                                                      handleUpdateTestingParameter(index, "paramValue", e.target.value)
-                                                    }
-                                                  />
-                                                ) : (
-                                                  <Input
-                                                    size="sm"
-                                                    rounded="md"
-                                                    type={param.fieldType === "password" ? "password" : "text"}
-                                                    placeholder="Nilai parameter"
-                                                    value={param.paramValue || ""}
-                                                    onChange={(e) =>
-                                                      handleUpdateTestingParameter(index, "paramValue", e.target.value)
-                                                    }
+                                        <Box pt={6}>
+                                          <IconButton
+                                            aria-label="Hapus Parameter"
+                                            icon={<FiTrash2 />}
+                                            size="sm"
+                                            variant="ghost"
+                                            colorScheme="red"
+                                            onClick={() => handleDeleteTestingParameter(index)}
+                                          />
+                                        </Box>
+                                      </HStack>
+                                    ))
+                                  )}
+                                </VStack>
+                              ) : (
+                                <>
+                                  {isAccessLoading ? (
+                                    <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={3}>
+                                      <Skeleton height="54px" rounded="lg" />
+                                      <Skeleton height="54px" rounded="lg" />
+                                    </SimpleGrid>
+                                  ) : testingParameters.length === 0 ? (
+                                    <Box
+                                      p={3}
+                                      rounded="lg"
+                                      bg={isDark ? "gray.850" : "gray.50"}
+                                      border="1px dashed"
+                                      borderColor={isDark ? "gray.700" : "gray.200"}
+                                      textAlign="center"
+                                    >
+                                      <Text fontSize="xs" color="gray.500">
+                                        Belum ada parameter pengujian yang dikonfigurasi untuk environment Development.
+                                      </Text>
+                                    </Box>
+                                  ) : (
+                                    <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={3}>
+                                      {testingParameters.map((param, index) => {
+                                        const paramId = param.id || `param-${index}`;
+                                        const isRevealed = maskedVisibility[paramId] || false;
+                                        const isSecret = param.fieldType === "password";
+                                        const displayVal =
+                                          isSecret && !isRevealed
+                                            ? "••••••••"
+                                            : param.paramValue || "-";
+
+                                        return (
+                                          <Box
+                                            key={paramId}
+                                            p={2.5}
+                                            rounded="lg"
+                                            bg={isDark ? "gray.750" : "white"}
+                                            border="1px solid"
+                                            borderColor={isDark ? "gray.700" : "gray.200"}
+                                          >
+                                            <Flex justify="space-between" align="center" mb={1}>
+                                              <Text
+                                                fontSize="3xs"
+                                                fontWeight="bold"
+                                                color="gray.500"
+                                                textTransform="uppercase"
+                                                noOfLines={1}
+                                              >
+                                                {param.paramLabel}
+                                              </Text>
+                                              <HStack spacing={1}>
+                                                {isSecret && (
+                                                  <IconButton
+                                                    aria-label={isRevealed ? "Sembunyikan" : "Tampilkan"}
+                                                    icon={isRevealed ? <FiEyeOff /> : <FiEye />}
+                                                    size="xs"
+                                                    variant="ghost"
+                                                    colorScheme="gray"
+                                                    onClick={() => toggleMaskVisibility(paramId)}
                                                   />
                                                 )}
-                                              </FormControl>
-
-                                              <Box pt={6}>
-                                                <IconButton
-                                                  aria-label="Hapus Parameter"
-                                                  icon={<FiTrash2 />}
-                                                  size="sm"
-                                                  variant="ghost"
-                                                  colorScheme="red"
-                                                  onClick={() => handleDeleteTestingParameter(index)}
-                                                />
-                                              </Box>
-                                            </HStack>
-                                          ))
-                                        )}
-                                      </VStack>
-                                    ) : (
-                                      <>
-                                        {isAccessLoading ? (
-                                          <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={3}>
-                                            <Skeleton height="54px" rounded="lg" />
-                                            <Skeleton height="54px" rounded="lg" />
-                                          </SimpleGrid>
-                                        ) : testingParameters.length === 0 ? (
-                                          <Box
-                                            p={3}
-                                            rounded="lg"
-                                            bg={isDark ? "gray.850" : "gray.50"}
-                                            border="1px dashed"
-                                            borderColor={isDark ? "gray.700" : "gray.200"}
-                                            textAlign="center"
-                                          >
-                                            <Text fontSize="xs" color="gray.500">
-                                              Belum ada parameter pengujian yang dikonfigurasi untuk environment Development.
+                                                {param.paramValue && (
+                                                  <IconButton
+                                                    aria-label="Salin nilai"
+                                                    icon={<FiCopy />}
+                                                    size="xs"
+                                                    variant="ghost"
+                                                    colorScheme="blue"
+                                                    onClick={() => {
+                                                      navigator.clipboard.writeText(param.paramValue || "");
+                                                      showToast({
+                                                        description: `${param.paramLabel} berhasil disalin`,
+                                                        statusToast: "info",
+                                                      });
+                                                    }}
+                                                  />
+                                                )}
+                                              </HStack>
+                                            </Flex>
+                                            <Text
+                                              fontSize="xs"
+                                              fontFamily="mono"
+                                              fontWeight="medium"
+                                              color={isDark ? "white" : "gray.800"}
+                                              noOfLines={param.fieldType === "textarea" ? 3 : 1}
+                                              wordBreak="break-all"
+                                            >
+                                              {displayVal}
                                             </Text>
                                           </Box>
-                                        ) : (
-                                          <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={3}>
-                                            {testingParameters.map((param, index) => {
-                                              const paramId = param.id || `param-${index}`;
-                                              const isRevealed = maskedVisibility[paramId] || false;
-                                              const isSecret = param.fieldType === "password";
-                                              const displayVal = isSecret && !isRevealed
-                                                ? "••••••••"
-                                                : param.paramValue || "-";
+                                        );
+                                      })}
+                                    </SimpleGrid>
+                                  )}
+                                </>
+                              )}
+                            </Box>
+                          </Box>
+                        )}
 
-                                              return (
-                                                <Box
-                                                  key={paramId}
-                                                  p={2.5}
-                                                  rounded="lg"
-                                                  bg={isDark ? "gray.750" : "gray.50"}
-                                                  border="1px solid"
-                                                  borderColor={isDark ? "gray.700" : "gray.200"}
-                                                >
-                                                  <Flex justify="space-between" align="center" mb={1}>
-                                                    <Text
-                                                      fontSize="3xs"
-                                                      fontWeight="bold"
-                                                      color="gray.500"
-                                                      textTransform="uppercase"
-                                                      noOfLines={1}
-                                                    >
-                                                      {param.paramLabel}
-                                                    </Text>
-                                                    <HStack spacing={1}>
-                                                      {isSecret && (
-                                                        <IconButton
-                                                          aria-label={isRevealed ? "Sembunyikan" : "Tampilkan"}
-                                                          icon={isRevealed ? <FiEyeOff /> : <FiEye />}
-                                                          size="xs"
-                                                          variant="ghost"
-                                                          colorScheme="gray"
-                                                          onClick={() => toggleMaskVisibility(paramId)}
-                                                        />
-                                                      )}
-                                                      {param.paramValue && (
-                                                        <IconButton
-                                                          aria-label="Salin nilai"
-                                                          icon={<FiCopy />}
-                                                          size="xs"
-                                                          variant="ghost"
-                                                          colorScheme="blue"
-                                                          onClick={() => {
-                                                            navigator.clipboard.writeText(param.paramValue || "");
-                                                            showToast({
-                                                              description: `${param.paramLabel} berhasil disalin`,
-                                                              statusToast: "info",
-                                                            });
-                                                          }}
-                                                        />
-                                                      )}
-                                                    </HStack>
-                                                  </Flex>
-                                                  <Text
-                                                    fontSize="xs"
-                                                    fontFamily="mono"
-                                                    fontWeight="medium"
-                                                    color={isDark ? "white" : "gray.800"}
-                                                    noOfLines={param.fieldType === "textarea" ? 3 : 1}
-                                                    wordBreak="break-all"
-                                                  >
-                                                    {displayVal}
-                                                  </Text>
-                                                </Box>
-                                              );
-                                            })}
-                                          </SimpleGrid>
-                                        )}
-                                      </>
-                                    )}
-                                  </Box>
-                                )}
-                              </VStack>
-                            </AccordionPanel>
-                          </AccordionItem>
-                        </Accordion>
+                        {/* C. DRC / STAGING ENVIRONMENT CARD (WHEN ACTIVE OR HAS NODES) */}
+                        {activeEnvFilter === "DRC" && (
+                          <Box
+                            p={{ base: 4, md: 5 }}
+                            rounded="2xl"
+                            border="1px solid"
+                            borderColor={isDark ? "purple.800" : "purple.200"}
+                            bg={isDark ? "gray.850" : "white"}
+                            shadow="sm"
+                          >
+                            <Flex
+                              justify="space-between"
+                              align={{ base: "start", sm: "center" }}
+                              direction={{ base: "column", sm: "row" }}
+                              gap={3}
+                            >
+                              <HStack spacing={3}>
+                                <Box
+                                  p={2.5}
+                                  rounded="xl"
+                                  bg={isDark ? "purple.900" : "purple.50"}
+                                  color="purple.500"
+                                >
+                                  <Icon as={FiLayers} boxSize={5} />
+                                </Box>
+                                <VStack align="start" spacing={0.5}>
+                                  <HStack spacing={2}>
+                                    <Heading size="xs" color={isDark ? "white" : "gray.800"}>
+                                      Disaster Recovery (DRC) Environment
+                                    </Heading>
+                                    <Badge colorScheme="purple" fontSize="3xs" rounded="md" px={2} fontWeight="bold">
+                                      DRC / SECONDARY
+                                    </Badge>
+                                    <Badge colorScheme="purple" fontSize="3xs" rounded="full" px={2}>
+                                      {drcServers.length} Nodes
+                                    </Badge>
+                                  </HStack>
+                                  <Text fontSize="2xs" color="gray.500">
+                                    Node failover dan mitigasi bencana kontinuitas operasional perbankan.
+                                  </Text>
+                                </VStack>
+                              </HStack>
+
+                              <Button
+                                leftIcon={<FiPlus />}
+                                size="xs"
+                                colorScheme="purple"
+                                variant="outline"
+                                rounded="lg"
+                                fontWeight="bold"
+                                onClick={() => handleNavigateCreateServer("DRC")}
+                              >
+                                Tambah Server DRC
+                              </Button>
+                            </Flex>
+                          </Box>
+                        )}
 
                         {/* ══════════════════════════════════════════════════════════
                             2. CONTAINERED SECTION: DAFTAR SERVER NODES & VM
@@ -3897,10 +4456,10 @@ export default function ApplicationDetail() {
                               <VStack align="start" spacing={0.5}>
                                 <HStack spacing={2}>
                                   <Heading size="xs" color={isDark ? "white" : "gray.800"}>
-                                    Daftar Server Node & Virtual Machine
+                                    Daftar Server Node & Virtual Machine ({activeEnvFilter === "PROD" ? "Production" : activeEnvFilter === "DEV" ? "Development & UAT" : activeEnvFilter === "DRC" ? "DRC" : "Semua Environment"})
                                   </Heading>
                                   <Badge colorScheme="purple" fontSize="3xs" rounded="full" px={2}>
-                                    {serverEnvironments.length} Nodes
+                                    {displayedServers.length} Nodes
                                   </Badge>
                                 </HStack>
                                 <Text fontSize="2xs" color="gray.500">
@@ -3918,14 +4477,14 @@ export default function ApplicationDetail() {
                               px={3.5}
                               fontSize="xs"
                               fontWeight="bold"
-                              onClick={handleAddServer}
+                              onClick={() => handleNavigateCreateServer()}
                             >
                               Tambah Server Node
                             </Button>
                           </Flex>
 
                           {/* Accordion List */}
-                        {serverEnvironments.length === 0 ? (
+                        {displayedServers.length === 0 ? (
                           <Box
                             p={8}
                             textAlign="center"
@@ -3936,24 +4495,28 @@ export default function ApplicationDetail() {
                           >
                             <Icon as={FiServer} boxSize={10} color="gray.400" mb={3} />
                             <Heading size="xs" mb={1} color={isDark ? "white" : "gray.700"}>
-                              No Server Nodes Configured
+                              Belum Ada Server di Environment {activeEnvFilter === "PROD" ? "Production" : activeEnvFilter === "DEV" ? "Development & UAT" : activeEnvFilter === "DRC" ? "DRC / Staging" : "ini"}
                             </Heading>
                             <Text fontSize="xs" color="gray.500" mb={4}>
-                              This application does not have any server nodes in its environment list.
+                              Aplikasi ini belum memiliki node server yang dikonfigurasi untuk lingkungan {activeEnvFilter === "PROD" ? "Production" : activeEnvFilter === "DEV" ? "Development & UAT" : activeEnvFilter === "DRC" ? "DRC / Staging" : "ini"}.
                             </Text>
                             <Button
                               leftIcon={<FiPlus />}
                               size="sm"
-                              colorScheme="secondary"
+                              colorScheme="purple"
                               rounded="xl"
-                              onClick={handleAddServer}
+                              onClick={() => handleNavigateCreateServer()}
                             >
-                              Add First Server Node
+                              Tambah Server Node
                             </Button>
                           </Box>
                         ) : (
                           <Accordion allowMultiple defaultIndex={[0]} w="full">
-                            {serverEnvironments.map((srv, index) => {
+                            {displayedServers.map((srv, srvIdx) => {
+                              const targetIdx = serverEnvironments.findIndex((item, i) =>
+                                item.id && srv.id ? item.id === srv.id : i === srvIdx
+                              );
+                              const index = targetIdx >= 0 ? targetIdx : srvIdx;
                               const isDc1 = srv.primary === "DC1";
                               const isDc2 = srv.primary === "DC2";
                               const displayRoleServer =
@@ -4217,7 +4780,7 @@ export default function ApplicationDetail() {
                                           <VStack align="start" spacing={0.5}>
                                             <HStack spacing={2} wrap="wrap">
                                               <Text fontSize="3xs" fontWeight="800" color="gray.500" textTransform="uppercase" letterSpacing="wider">
-                                                SERVER #{index + 1}
+                                                SERVER #{srvIdx + 1} • {srv.environment || "Production"}
                                               </Text>
                                               <Text fontSize="sm" fontWeight="800" color={isDark ? "white" : "gray.800"}>
                                                 {displayRoleServer}
@@ -5822,194 +6385,7 @@ export default function ApplicationDetail() {
                   </TabPanels>
                 </Tabs>
               </Card>
-            </GridItem>
-
-            {/* ── RIGHT 20% STICKY SIDEBAR (COL-SPAN 3) ── */}
-            <GridItem colSpan={{ base: 12, lg: 3, xl: 3 }}>
-              <VStack spacing={4} align="stretch" position="sticky" top="85px">
-                {/* 1. Card Aksi Cepat */}
-                <Card
-                  shadow="md"
-                  rounded={radiusStyle}
-                  border="1px"
-                  borderColor={isDark ? "gray.700" : "gray.200"}
-                  bg={isDark ? "gray.800" : "white"}
-                >
-                  <CardHeader pb={2} pt={4} px={4}>
-                    <HStack spacing={2}>
-                      <Icon as={FiZap} color="secondary.500" />
-                      <Heading size="xs" color={isDark ? "white" : "gray.800"}>
-                        Actions & Operations
-                      </Heading>
-                    </HStack>
-                  </CardHeader>
-                  <CardBody px={4} pb={4} pt={2}>
-                    <VStack spacing={2.5} align="stretch">
-                      {IsEditMode ? (
-                        <>
-                          <Button
-                            leftIcon={<FiSave />}
-                            size="md"
-                            h="42px"
-                            colorScheme="green"
-                            w="full"
-                            rounded="xl"
-                            fontWeight="bold"
-                            isLoading={IsLoadingProcess}
-                            onClick={handleSave}
-                          >
-                            Save Changes
-                          </Button>
-                          <Button
-                            leftIcon={<FiX />}
-                            size="sm"
-                            variant="outline"
-                            w="full"
-                            rounded="xl"
-                            onClick={() => {
-                              setIsEditMode(false);
-                              LoadApplicationData();
-                            }}
-                          >
-                            Cancel Edit
-                          </Button>
-                        </>
-                      ) : (
-                        <Button
-                          leftIcon={<FiEdit />}
-                          size="md"
-                          h="42px"
-                          colorScheme="secondary"
-                          w="full"
-                          rounded="xl"
-                          fontWeight="bold"
-                          shadow="sm"
-                          onClick={() => setIsEditMode(true)}
-                        >
-                          Edit Mode
-                        </Button>
-                      )}
-
-                      <Button
-                        leftIcon={<FiCopy />}
-                        size="sm"
-                        variant="outline"
-                        w="full"
-                        rounded="xl"
-                        onClick={onCopy}
-                      >
-                        {hasCopied ? "Copied!" : "Copy App Code"}
-                      </Button>
-                    </VStack>
-                  </CardBody>
-                </Card>
-
-                {/* 2. Card Status Portofolio Proyek */}
-                <Card
-                  shadow="md"
-                  rounded={radiusStyle}
-                  border="1px"
-                  borderColor={isDark ? "gray.700" : "gray.200"}
-                  bg={isDark ? "gray.800" : "white"}
-                >
-                  <CardHeader pb={2} pt={4} px={4}>
-                    <HStack spacing={2}>
-                      <Icon as={FiBriefcase} color="secondary.500" />
-                      <Heading size="xs" color={isDark ? "white" : "gray.800"}>
-                        Project SDLC Ratio
-                      </Heading>
-                    </HStack>
-                  </CardHeader>
-                  <CardBody px={4} pb={4} pt={2}>
-                    <VStack spacing={3} align="stretch">
-                      <Flex justify="space-between" align="center" fontSize="2xs">
-                        <Text color="gray.500">Completion Rate</Text>
-                        <Text fontWeight="extrabold" color="secondary.500">{completionRate}%</Text>
-                      </Flex>
-                      <Progress
-                        value={completionRate}
-                        size="sm"
-                        colorScheme={completionRate === 100 ? "green" : "secondary"}
-                        rounded="full"
-                        bg={isDark ? "gray.700" : "gray.100"}
-                      />
-                      <HStack justify="space-between" fontSize="2xs" pt={1}>
-                        <VStack align="start" spacing={0}>
-                          <Text color="gray.500">Total Projects</Text>
-                          <Text fontWeight="bold">{totalProjects}</Text>
-                        </VStack>
-                        <VStack align="center" spacing={0}>
-                          <Text color="orange.500">Running</Text>
-                          <Text fontWeight="bold" color="orange.500">{onGoingProjects}</Text>
-                        </VStack>
-                        <VStack align="end" spacing={0}>
-                          <Text color="green.500">Completed</Text>
-                          <Text fontWeight="bold" color="green.500">{completedProjects}</Text>
-                        </VStack>
-                      </HStack>
-                    </VStack>
-                  </CardBody>
-                </Card>
-
-                {/* 3. Card Metadata & Audit Log */}
-                <Card
-                  shadow="md"
-                  rounded={radiusStyle}
-                  border="1px"
-                  borderColor={isDark ? "gray.700" : "gray.200"}
-                  bg={isDark ? "gray.800" : "white"}
-                >
-                  <CardHeader pb={2} pt={4} px={4}>
-                    <HStack spacing={2}>
-                      <Icon as={FiActivity} color="secondary.500" />
-                      <Heading size="xs" color={isDark ? "white" : "gray.800"}>
-                        Audit & Metadata
-                      </Heading>
-                    </HStack>
-                  </CardHeader>
-                  <CardBody px={4} pb={4} pt={2}>
-                    <VStack spacing={2.5} align="stretch" fontSize="2xs">
-                      <Flex justify="space-between">
-                        <Text color="gray.500">Created At:</Text>
-                        <Text fontWeight="semibold">
-                          {DataApplication?.createdAt ? new Date(DataApplication.createdAt).toLocaleDateString("en-US") : "-"}
-                        </Text>
-                      </Flex>
-                      <Flex justify="space-between">
-                        <Text color="gray.500">Created By:</Text>
-                        <Text fontWeight="semibold" noOfLines={1} maxW="120px">
-                          {DataApplication?.createdBy || "-"}
-                        </Text>
-                      </Flex>
-                      <Flex justify="space-between">
-                        <Text color="gray.500">Updated At:</Text>
-                        <Text fontWeight="semibold">
-                          {DataApplication?.updatedAt ? new Date(DataApplication.updatedAt).toLocaleDateString("en-US") : "-"}
-                        </Text>
-                      </Flex>
-                      <Flex justify="space-between">
-                        <Text color="gray.500">Data Status:</Text>
-                        <Badge
-                          colorScheme={
-                            DataApplication?.appsStatus === "ACTIVE"
-                              ? "green"
-                              : DataApplication?.appsStatus === "ON DEVELOPMENT"
-                              ? "purple"
-                              : "red"
-                          }
-                          fontSize="3xs"
-                          rounded="md"
-                        >
-                          {DataApplication?.appsStatus || "ACTIVE"}
-                        </Badge>
-                      </Flex>
-                    </VStack>
-                  </CardBody>
-                </Card>
-              </VStack>
-            </GridItem>
-          </Grid>
-        </Box>
+            </Box>
       )}
     </LayoutAdmin>
   );

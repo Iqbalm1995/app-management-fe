@@ -295,6 +295,10 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
     pattern: "/master-data/conf-matrix-criteria-apps/criteria/detail",
     baseMenu: "/master-data/conf-matrix-criteria-apps",
   },
+  {
+    pattern: "/master-data/Application/create-environment",
+    baseMenu: "/master-data/Application",
+  },
 
   // report
 

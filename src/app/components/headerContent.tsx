@@ -12,12 +12,14 @@ import {
   useColorModeValue,
 } from "@chakra-ui/react";
 
+export type BreadCrumbItemType = string | { title?: string; link?: string; name?: string; label?: string };
+
 export interface HeaderContentProps {
   titleName?: string;
   title?: string;
   subtitle?: string;
   titleTooltip?: string;
-  breadCrumb?: string[];
+  breadCrumb?: BreadCrumbItemType[];
 }
 
 export function HeaderContent({
@@ -61,16 +63,20 @@ export function HeaderContent({
           </Box>
           {breadCrumb && breadCrumb.length > 0 && (
             <Breadcrumb fontSize="sm" color={breadcrumbColor}>
-              {breadCrumb.map((item: string, index: number) => (
-                <BreadcrumbItem key={item} isCurrentPage={index === breadCrumb.length - 1}>
-                  <BreadcrumbLink
-                    href="#"
-                    fontWeight={index === breadCrumb.length - 1 ? "semibold" : "normal"}
-                  >
-                    {item}
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-              ))}
+              {breadCrumb.map((item: BreadCrumbItemType, index: number) => {
+                const label = typeof item === "string" ? item : (item?.title || item?.name || item?.label || "");
+                const href = typeof item === "string" ? "#" : (item?.link || "#");
+                return (
+                  <BreadcrumbItem key={`${label}-${index}`} isCurrentPage={index === breadCrumb.length - 1}>
+                    <BreadcrumbLink
+                      href={href}
+                      fontWeight={index === breadCrumb.length - 1 ? "semibold" : "normal"}
+                    >
+                      {label}
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                );
+              })}
             </Breadcrumb>
           )}
         </Flex>
