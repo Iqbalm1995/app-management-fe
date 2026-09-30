@@ -122,20 +122,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       statusLogin: STATUS_LOGIN_ON,
     };
 
-    const shouldRedirectToChangePassword = localStorage.getItem("redirectToChangePassword");
     const isDevMode = localStorage.getItem("dev_mode") === "true";
-    console.log("Checking redirect flag:", shouldRedirectToChangePassword, "isDevMode:", isDevMode);
 
     // Save immediately to avoid race conditions
     localStorage.setItem("authData", JSON.stringify(authData));
     localStorage.setItem("tokenData", dataAuth.apiKey);
     setAuthData(authData);
 
-    if (shouldRedirectToChangePassword === "true") {
-      localStorage.removeItem("redirectToChangePassword");
-      console.log("Redirecting to change-password");
-      window.location.href = "/change-password";
-    } else if (isDevMode) {
+    if (isDevMode) {
       console.log("Redirecting to Focus Mode");
       window.location.href = "/dev";
     } else {
