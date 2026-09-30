@@ -64,6 +64,7 @@ import {
   Thead,
   Tr,
   Tag,
+  TagCloseButton,
   TagLabel,
   Text,
   Textarea,
@@ -72,6 +73,7 @@ import {
   useColorMode,
   VStack,
   Wrap,
+  WrapItem,
 } from "@chakra-ui/react";
 import {
   FiActivity,
@@ -186,6 +188,14 @@ export interface AppServerVmDetail {
   note?: string;
 }
 
+export interface ServerSupportingToolItem {
+  id?: string;
+  name: string;
+  version?: string;
+  year?: string;
+  description?: string;
+}
+
 export interface AppServerEnvironmentItem {
   id: string;
   roleServer: string;
@@ -204,6 +214,7 @@ export interface AppServerEnvironmentItem {
   pam: "Ya" | "Tidak";
   dualDeploy: "Ya" | "Tidak";
   vmDetail?: AppServerVmDetail;
+  supportingApps?: ServerSupportingToolItem[];
 }
 
 export interface RelatedAppItem {
@@ -3799,7 +3810,7 @@ export default function ApplicationDetail() {
                             </HStack>
 
                             <HStack spacing={2}>
-                              <Button
+                              {/* <Button
                                 leftIcon={<FiPlus />}
                                 colorScheme="purple"
                                 size="sm"
@@ -3810,7 +3821,7 @@ export default function ApplicationDetail() {
                                 onClick={() => handleNavigateCreateServer()}
                               >
                                 Tambah Server Node
-                              </Button>
+                              </Button> */}
                             </HStack>
                           </Flex>
                         </Box>
@@ -3865,7 +3876,7 @@ export default function ApplicationDetail() {
                                 </VStack>
                               </HStack>
 
-                              <Button
+                              {/* <Button
                                 leftIcon={<FiPlus />}
                                 size="xs"
                                 colorScheme="green"
@@ -3875,7 +3886,7 @@ export default function ApplicationDetail() {
                                 onClick={() => handleNavigateCreateServer("Production")}
                               >
                                 Tambah Server Production
-                              </Button>
+                              </Button> */}
                             </Flex>
 
                             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
@@ -4468,7 +4479,7 @@ export default function ApplicationDetail() {
                               </VStack>
                             </HStack>
 
-                            <Button
+                            {/* <Button
                               leftIcon={<FiPlus />}
                               size="sm"
                               colorScheme="purple"
@@ -4480,7 +4491,7 @@ export default function ApplicationDetail() {
                               onClick={() => handleNavigateCreateServer()}
                             >
                               Tambah Server Node
-                            </Button>
+                            </Button> */}
                           </Flex>
 
                           {/* Accordion List */}
@@ -5561,6 +5572,201 @@ export default function ApplicationDetail() {
                                             </VStack>
                                           )}
                                         </Box>
+
+                                        {/* ──────────────────────────────────────────────────────────
+                                            CARD 3: APLIKASI & TOOLS PENDUKUNG (PER SERVER NODE)
+                                            ────────────────────────────────────────────────────────── */}
+                                        <Box
+                                          p={4}
+                                          rounded="xl"
+                                          bg={isDark ? "gray.800" : "white"}
+                                          border="1px solid"
+                                          borderColor={isDark ? "gray.700" : "gray.200"}
+                                          gridColumn={{ base: "1", xl: "1 / -1" }}
+                                        >
+                                          <HStack
+                                            justify="space-between"
+                                            mb={3}
+                                            pb={2}
+                                            borderBottom="1px solid"
+                                            borderColor={isDark ? "gray.700" : "gray.100"}
+                                          >
+                                            <HStack spacing={2}>
+                                              <Icon as={FiLayers} color="blue.500" boxSize={4} />
+                                              <Text fontSize="2xs" fontWeight="800" color="blue.500" textTransform="uppercase" letterSpacing="wider">
+                                                Aplikasi & Tools Pendukung Server
+                                              </Text>
+                                            </HStack>
+                                            <Badge
+                                              colorScheme="blue"
+                                              fontSize="3xs"
+                                              rounded="md"
+                                              px={2}
+                                              py={0.5}
+                                            >
+                                              {(srv.supportingApps || []).length} Tools Terpasang
+                                            </Badge>
+                                          </HStack>
+
+                                          {IsEditMode ? (
+                                            /* Edit Mode: Add / Remove Tools per Server */
+                                            <VStack align="stretch" spacing={3}>
+                                              {/* Quick Add Presets */}
+                                              <Box p={2.5} rounded="lg" bg={isDark ? "gray.750" : "gray.50"} border="1px dashed" borderColor={isDark ? "gray.700" : "gray.200"}>
+                                                <Text fontSize="3xs" fontWeight="bold" color="gray.500" mb={1.5} textTransform="uppercase">
+                                                  Preset Cepat (Klik untuk menambahkan):
+                                                </Text>
+                                                <Wrap spacing={1.5}>
+                                                  {["nodejs", "npm", "pm2", "git", "docker", "nginx", "python", "java", "redis"].map((preset) => {
+                                                    const currentTools = srv.supportingApps || [];
+                                                    const isAdded = currentTools.some(
+                                                      (t) => (typeof t === "string" ? t : t.name).toLowerCase() === preset.toLowerCase()
+                                                    );
+                                                    return (
+                                                      <WrapItem key={preset}>
+                                                        <Button
+                                                          size="xs"
+                                                          variant={isAdded ? "solid" : "outline"}
+                                                          colorScheme="blue"
+                                                          rounded="md"
+                                                          leftIcon={isAdded ? <FiCheckCircle /> : <FiPlus />}
+                                                          isDisabled={isAdded}
+                                                          onClick={() => {
+                                                            const newTool: ServerSupportingToolItem = {
+                                                              id: `tool-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+                                                              name: preset,
+                                                              version: "Latest",
+                                                            };
+                                                            handleUpdateServer(srvIdx, "supportingApps", [...currentTools, newTool]);
+                                                          }}
+                                                        >
+                                                          {preset}
+                                                        </Button>
+                                                      </WrapItem>
+                                                    );
+                                                  })}
+                                                </Wrap>
+                                              </Box>
+
+                                              {/* Custom Inline Add Form */}
+                                              <HStack spacing={2} wrap={{ base: "wrap", sm: "nowrap" }}>
+                                                <Input
+                                                  id={`tool-name-${srvIdx}`}
+                                                  size="xs"
+                                                  rounded="md"
+                                                  placeholder="Nama tool (mis: pm2, git, redis)..."
+                                                  maxW={{ base: "full", sm: "200px" }}
+                                                />
+                                                <Input
+                                                  id={`tool-ver-${srvIdx}`}
+                                                  size="xs"
+                                                  rounded="md"
+                                                  placeholder="Versi (opsional)..."
+                                                  maxW={{ base: "full", sm: "130px" }}
+                                                />
+                                                <Input
+                                                  id={`tool-year-${srvIdx}`}
+                                                  size="xs"
+                                                  rounded="md"
+                                                  placeholder="Tahun..."
+                                                  maxW={{ base: "full", sm: "90px" }}
+                                                  maxLength={4}
+                                                />
+                                                <Button
+                                                  size="xs"
+                                                  colorScheme="blue"
+                                                  rounded="md"
+                                                  leftIcon={<FiPlus />}
+                                                  onClick={() => {
+                                                    const nameEl = document.getElementById(`tool-name-${srvIdx}`) as HTMLInputElement;
+                                                    const verEl = document.getElementById(`tool-ver-${srvIdx}`) as HTMLInputElement;
+                                                    const yearEl = document.getElementById(`tool-year-${srvIdx}`) as HTMLInputElement;
+                                                    const nameVal = nameEl?.value?.trim()?.toLowerCase();
+                                                    const verVal = verEl?.value?.trim() || "Latest";
+                                                    const yearVal = yearEl?.value?.trim()?.replace(/\D/g, "");
+                                                    if (!nameVal) return;
+                                                    const currentTools = srv.supportingApps || [];
+                                                    if (currentTools.some((t) => (typeof t === "string" ? t : t.name).toLowerCase() === nameVal)) {
+                                                      return;
+                                                    }
+                                                    const newTool: ServerSupportingToolItem = {
+                                                      id: `tool-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+                                                      name: nameVal,
+                                                      version: verVal,
+                                                      year: yearVal || undefined,
+                                                    };
+                                                    handleUpdateServer(srvIdx, "supportingApps", [...currentTools, newTool]);
+                                                    if (nameEl) nameEl.value = "";
+                                                    if (verEl) verEl.value = "";
+                                                    if (yearEl) yearEl.value = "";
+                                                  }}
+                                                >
+                                                  Tambah
+                                                </Button>
+                                              </HStack>
+
+                                              {/* Active Tools Chips with Delete */}
+                                              <Wrap spacing={2} mt={1}>
+                                                {(srv.supportingApps || []).length === 0 ? (
+                                                  <Text fontSize="2xs" color="gray.400" fontStyle="italic">
+                                                    Belum ada tools / aplikasi pendukung ditambahkan pada node ini.
+                                                  </Text>
+                                                ) : (
+                                                  (srv.supportingApps || []).map((tool, tIdx) => {
+                                                    const toolName = typeof tool === "string" ? tool : tool.name;
+                                                    const toolVer = typeof tool === "string" ? "" : tool.version;
+                                                    return (
+                                                      <WrapItem key={tIdx}>
+                                                        <Tag size="sm" rounded="md" colorScheme="blue" variant="subtle" py={1} px={2.5}>
+                                                         <TagLabel fontWeight="bold" fontSize="2xs">
+                                                            {toolName} {toolVer && toolVer !== "Latest" ? `(${toolVer})` : ""} {typeof tool !== "string" && tool.year ? `• ${tool.year}` : ""}
+                                                          </TagLabel>
+                                                          <TagCloseButton
+                                                            onClick={() => {
+                                                              const updated = (srv.supportingApps || []).filter((_, idx) => idx !== tIdx);
+                                                              handleUpdateServer(srvIdx, "supportingApps", updated);
+                                                            }}
+                                                          />
+                                                        </Tag>
+                                                      </WrapItem>
+                                                    );
+                                                  })
+                                                )}
+                                              </Wrap>
+                                            </VStack>
+                                          ) : (
+                                            /* View Mode */
+                                            <Box>
+                                              {(srv.supportingApps || []).length === 0 ? (
+                                                <Text fontSize="xs" color="gray.400" fontStyle="italic">
+                                                  Belum ada tools / aplikasi pendukung terdaftar pada server node ini.
+                                                </Text>
+                                              ) : (
+                                                <Wrap spacing={2}>
+                                                  {(srv.supportingApps || []).map((tool, tIdx) => {
+                                                    const toolName = typeof tool === "string" ? tool : tool.name;
+                                                    const toolVer = typeof tool === "string" ? "" : tool.version;
+                                                    return (
+                                                      <WrapItem key={tIdx}>
+                                                        <Badge
+                                                          colorScheme="blue"
+                                                          variant="subtle"
+                                                          fontSize="2xs"
+                                                          px={2.5}
+                                                          py={1}
+                                                          rounded="md"
+                                                          fontWeight="semibold"
+                                                        >
+                                                          {toolName} {toolVer && toolVer !== "Latest" ? `(${toolVer})` : ""} {typeof tool !== "string" && tool.year ? `• ${tool.year}` : ""}
+                                                        </Badge>
+                                                      </WrapItem>
+                                                    );
+                                                  })}
+                                                </Wrap>
+                                              )}
+                                            </Box>
+                                          )}
+                                        </Box>
                                       </SimpleGrid>
                                     </VStack>
                                   </AccordionPanel>
@@ -5609,7 +5815,7 @@ export default function ApplicationDetail() {
                       </Box>
 
                       {/* ══════════════════════════════════════════════════════════
-                          3. SECTION: SOFTWARE, RUNTIME & MIDDLEWARE PENDUKUNG (OPTION B)
+                          3. SECTION: RINGKASAN APLIKASI & TOOLS PENDUKUNG (PER SERVER)
                           ══════════════════════════════════════════════════════════ */}
                       <Box
                         p={{ base: 4, md: 5 }}
@@ -5641,745 +5847,88 @@ export default function ApplicationDetail() {
                             <VStack align="start" spacing={0.5}>
                               <HStack spacing={2}>
                                 <Heading size="xs" color={isDark ? "white" : "gray.800"}>
-                                  Software, Runtime & Middleware Pendukung
+                                  Aplikasi & Tools Pendukung (Per Server)
                                 </Heading>
                                 <Badge colorScheme="cyan" fontSize="3xs" rounded="full" px={2}>
-                                  {installedSoftwares.length} Terhubung
+                                  {serverEnvironments.reduce((acc, s) => acc + (s.supportingApps?.length || 0), 0)} Terdaftar
                                 </Badge>
                               </HStack>
                               <Text fontSize="2xs" color="gray.500">
-                                Komponen perangkat lunak, runtime engine (.NET, Java, NodeJS, Python), database client, web server, dan middleware pada topology server.
+                                Runtime engine, package manager, process manager, dan dev tools (Node.js, NPM, PM2, Git, Docker, Nginx, dll.) yang terpasang pada masing-masing server node.
                               </Text>
                             </VStack>
                           </HStack>
-
-                          <HStack spacing={2} w={{ base: "full", sm: "auto" }}>
-                            <InputGroup size="sm" maxW={{ base: "full", sm: "200px" }}>
-                              <InputLeftElement pointerEvents="none">
-                                <Icon as={FiSearch} color="gray.400" />
-                              </InputLeftElement>
-                              <Input
-                                rounded="lg"
-                                placeholder="Cari software terpasang..."
-                                value={connectedSoftwaresSearch}
-                                onChange={(e) => setConnectedSoftwaresSearch(e.target.value)}
-                              />
-                            </InputGroup>
-                            <Button
-                              size="sm"
-                              colorScheme={isSoftwareCatalogOpen ? "gray" : "cyan"}
-                              variant={isSoftwareCatalogOpen ? "outline" : "solid"}
-                              leftIcon={isSoftwareCatalogOpen ? <FiX /> : <FiPlus />}
-                              rounded="lg"
-                              fontWeight="semibold"
-                              onClick={handleOpenAddCatalog}
-                            >
-                              {isSoftwareCatalogOpen ? "Tutup Katalog" : "Tambah Software"}
-                            </Button>
-                          </HStack>
                         </Flex>
 
-                        {/* Table 1: Connected / Installed Softwares Table */}
-                        <TableContainer
-                          rounded="lg"
-                          border="1px solid"
-                          borderColor={isDark ? "gray.700" : "gray.200"}
-                          bg={isDark ? "gray.800" : "white"}
-                        >
-                          <Table size="sm" variant="simple">
-                            <Thead bg={isDark ? "gray.750" : "gray.50"}>
-                              <Tr>
-                                <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
-                                  Nama Software / Runtime
-                                </Th>
-                                <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
-                                  Kategori
-                                </Th>
-                                <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
-                                  Standar Bank
-                                </Th>
-                                <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
-                                  Versi & Port
-                                </Th>
-                                <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
-                                  Status Service
-                                </Th>
-                                <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"} textAlign="center" w="80px">
-                                  Aksi
-                                </Th>
-                              </Tr>
-                            </Thead>
-                            <Tbody>
-                              {isInstalledSoftwaresLoading ? (
-                                <Tr>
-                                  <Td colSpan={6} textAlign="center" py={8}>
-                                    <VStack spacing={2}>
-                                      <Spinner size="sm" color="cyan.500" />
-                                      <Text fontSize="xs" color="gray.500">
-                                        Memuat daftar software dan runtime...
-                                      </Text>
-                                    </VStack>
-                                  </Td>
-                                </Tr>
-                              ) : installedSoftwares.filter((sw) => {
-                                if (!connectedSoftwaresSearch.trim()) return true;
-                                const q = connectedSoftwaresSearch.toLowerCase().trim();
-                                return (
-                                  sw.softwareName.toLowerCase().includes(q) ||
-                                  sw.softwareCategory.toLowerCase().includes(q) ||
-                                  (sw.vendor && sw.vendor.toLowerCase().includes(q)) ||
-                                  (sw.installedVersion && sw.installedVersion.toLowerCase().includes(q))
-                                );
-                              }).length === 0 ? (
-                                <Tr>
-                                  <Td colSpan={6} textAlign="center" py={8}>
-                                    <VStack spacing={2}>
-                                      <Text fontSize="xs" fontWeight="semibold" color="gray.500">
-                                        {connectedSoftwaresSearch.trim()
-                                          ? `Tidak ditemukan software yang cocok dengan "${connectedSoftwaresSearch}"`
-                                          : "Belum ada software atau runtime yang terhubung"}
-                                      </Text>
-                                      <Text fontSize="2xs" color="gray.400">
-                                        {connectedSoftwaresSearch.trim()
-                                          ? "Coba gunakan kata kunci pencarian yang lain."
-                                          : 'Klik tombol "Hubungkan Software / Runtime" di atas untuk menambahkan komponen standar.'}
-                                      </Text>
-                                      {!isSoftwareCatalogOpen && !connectedSoftwaresSearch.trim() && (
-                                        <Button
-                                          size="xs"
-                                          colorScheme="cyan"
-                                          variant="outline"
-                                          leftIcon={<FiPlus />}
-                                          mt={1}
-                                          rounded="md"
-                                          onClick={handleOpenAddCatalog}
-                                        >
-                                          Buka Katalog Software
-                                        </Button>
-                                      )}
-                                    </VStack>
-                                  </Td>
-                                </Tr>
-                              ) : (
-                                installedSoftwares
-                                  .filter((sw) => {
-                                    if (!connectedSoftwaresSearch.trim()) return true;
-                                    const q = connectedSoftwaresSearch.toLowerCase().trim();
-                                    return (
-                                      sw.softwareName.toLowerCase().includes(q) ||
-                                      sw.softwareCategory.toLowerCase().includes(q) ||
-                                      (sw.vendor && sw.vendor.toLowerCase().includes(q)) ||
-                                      (sw.installedVersion && sw.installedVersion.toLowerCase().includes(q))
-                                    );
-                                  })
-                                  .map((sw) => {
-                                    const getCatColor = (cat: string) => {
-                                      switch (cat) {
-                                        case "LANGUAGE_RUNTIME":
-                                          return { scheme: "blue", label: "Runtime Engine" };
-                                        case "WEB_SERVER":
-                                          return { scheme: "cyan", label: "Web Server" };
-                                        case "DATABASE_CLIENT":
-                                          return { scheme: "orange", label: "Database Client" };
-                                        case "CACHE_BROKER":
-                                          return { scheme: "purple", label: "Cache / Broker" };
-                                        default:
-                                          return { scheme: "teal", label: cat };
-                                      }
-                                    };
-                                    const catInfo = getCatColor(sw.softwareCategory);
-
-                                    return (
-                                      <Tr
-                                        key={sw.id}
-                                        _hover={{ bg: isDark ? "gray.750" : "gray.50" }}
-                                        transition="background-color 0.15s"
-                                      >
-                                        {/* Column 1: Nama Software */}
-                                        <Td py={3}>
-                                          <HStack spacing={2.5}>
-                                            <Avatar
-                                              name={sw.softwareName}
-                                              size="xs"
-                                              bg="cyan.500"
-                                              color="white"
-                                              fontSize="3xs"
-                                              icon={<Icon as={FiServer} fontSize="xs" />}
-                                            />
-                                            <VStack align="start" spacing={0.5}>
-                                              <Text
-                                                fontSize="xs"
-                                                fontWeight="bold"
-                                                color={isDark ? "white" : "gray.800"}
-                                              >
-                                                {sw.softwareName}
-                                              </Text>
-                                              {sw.vendor && (
-                                                <Badge colorScheme="gray" fontSize="3xs" rounded="md" px={1.5}>
-                                                  {sw.vendor}
-                                                </Badge>
-                                              )}
-                                            </VStack>
-                                          </HStack>
-                                        </Td>
-
-                                        {/* Column 2: Kategori */}
-                                        <Td py={3}>
-                                          <Badge
-                                            colorScheme={catInfo.scheme}
-                                            fontSize="2xs"
-                                            px={2}
-                                            py={0.5}
-                                            rounded="md"
-                                          >
-                                            {catInfo.label}
-                                          </Badge>
-                                        </Td>
-
-                                        {/* Column 3: Standar Bank */}
-                                        <Td py={3}>
-                                          <Badge
-                                            colorScheme={sw.isStandardBank === "Y" || sw.isStandardBank === "Ya" ? "green" : "gray"}
-                                            variant="subtle"
-                                            fontSize="2xs"
-                                            px={2}
-                                            py={0.5}
-                                            rounded="md"
-                                          >
-                                            {sw.isStandardBank === "Y" || sw.isStandardBank === "Ya" ? "Standar Bank" : "Kustom"}
-                                          </Badge>
-                                        </Td>
-
-                                        {/* Column 4: Versi & Port */}
-                                        <Td py={3}>
-                                          <HStack spacing={1.5}>
-                                            <Badge
-                                              colorScheme="purple"
-                                              variant="subtle"
-                                              fontSize="2xs"
-                                              px={2}
-                                              py={0.5}
-                                              rounded="md"
-                                              fontFamily="mono"
-                                            >
-                                              {sw.installedVersion || "Latest"}
-                                            </Badge>
-                                            {sw.portNumber && (
-                                              <Badge
-                                                colorScheme="teal"
-                                                variant="outline"
-                                                fontSize="3xs"
-                                                px={1.5}
-                                                rounded="md"
-                                              >
-                                                Port: {sw.portNumber}
-                                              </Badge>
-                                            )}
-                                          </HStack>
-                                        </Td>
-
-                                        {/* Column 5: Status Service */}
-                                        <Td py={3}>
-                                          <Badge
-                                            colorScheme={sw.serviceStatus === "Running" ? "green" : "gray"}
-                                            variant="solid"
-                                            fontSize="3xs"
-                                            px={2}
-                                            py={0.5}
-                                            rounded="md"
-                                          >
-                                            {sw.serviceStatus || "Active"}
-                                          </Badge>
-                                        </Td>
-
-                                        {/* Column 6: Aksi */}
-                                        <Td py={3} textAlign="center">
-                                          <IconButton
-                                            aria-label="Hapus software"
-                                            icon={<FiTrash2 />}
-                                            size="xs"
-                                            colorScheme="red"
-                                            variant="ghost"
-                                            rounded="md"
-                                            isLoading={isRemovingSoftwareId === sw.softwareId}
-                                            onClick={() => handleRemoveSoftware(sw.softwareId, sw.softwareName)}
-                                          />
-                                        </Td>
-                                      </Tr>
-                                    );
-                                  })
-                              )}
-                            </Tbody>
-                          </Table>
-                        </TableContainer>
-
-                        {/* Stage 2: Master Software & Runtime Catalog (Revealed when clicked) */}
-                        {isSoftwareCatalogOpen && (
-                          <Box
-                            mt={5}
-                            p={4}
-                            rounded="lg"
-                            border="1px solid"
-                            borderColor={isDark ? "cyan.700" : "cyan.200"}
-                            bg={isDark ? "gray.800" : "white"}
-                            shadow="sm"
-                          >
-                            <Flex
-                              justify="space-between"
-                              align={{ base: "start", sm: "center" }}
-                              direction={{ base: "column", sm: "row" }}
-                              gap={3}
-                              mb={3}
-                              pb={2}
-                              borderBottom="1px dashed"
-                              borderColor={isDark ? "gray.700" : "gray.200"}
-                            >
-                              <VStack align="start" spacing={0.5}>
-                                <HStack spacing={2}>
-                                  <Heading size="xs" color={isDark ? "cyan.300" : "cyan.700"}>
-                                    Katalog Master Software, Runtime & Middleware
-                                  </Heading>
-                                  <Badge colorScheme="cyan" fontSize="3xs" rounded="full" px={2}>
-                                    {softwareCatalog.length} Komponen Tersedia
-                                  </Badge>
-                                </HStack>
-                                <Text fontSize="2xs" color="gray.500">
-                                  Pilih teknologi atau runtime standar bank untuk dihubungkan ke server aplikasi.
-                                </Text>
-                              </VStack>
-
-                              <HStack spacing={2} w={{ base: "full", sm: "auto" }}>
-                                <InputGroup size="sm" maxW={{ base: "full", sm: "220px" }}>
-                                  <InputLeftElement pointerEvents="none">
-                                    <Icon as={FiSearch} color="gray.400" />
-                                  </InputLeftElement>
-                                  <Input
-                                    rounded="lg"
-                                    placeholder="Cari software, runtime..."
-                                    value={softwareCatalogSearch}
-                                    onChange={(e) => setSoftwareCatalogSearch(e.target.value)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter") {
-                                        fetchSoftwareCatalog(softwareCatalogSearch);
-                                      }
-                                    }}
-                                  />
-                                </InputGroup>
-                                <IconButton
-                                  aria-label="Refresh Katalog"
-                                  icon={<FiRefreshCw />}
-                                  size="sm"
-                                  rounded="lg"
-                                  variant="outline"
-                                  isLoading={isSoftwareCatalogLoading}
-                                  onClick={() => fetchSoftwareCatalog(softwareCatalogSearch)}
-                                />
-                                <Button
-                                  size="sm"
-                                  colorScheme="cyan"
-                                  leftIcon={<FiPlus />}
-                                  rounded="lg"
-                                  fontWeight="semibold"
-                                  onClick={handleOpenCreateModal}
-                                >
-                                  Software Baru
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  colorScheme="gray"
-                                  rounded="lg"
-                                  leftIcon={<FiX />}
-                                  onClick={() => setIsSoftwareCatalogOpen(false)}
-                                >
-                                  Tutup
-                                </Button>
-                              </HStack>
-                            </Flex>
-
-                            {/* Category Filter Pills */}
-                            <HStack spacing={2} mb={3} overflowX="auto" pb={1}>
-                              {[
-                                { key: "ALL", label: "Semua Kategori" },
-                                { key: "LANGUAGE_RUNTIME", label: "Runtime Engine" },
-                                { key: "WEB_SERVER", label: "Web Server" },
-                                { key: "DATABASE_CLIENT", label: "Database Client" },
-                                { key: "CACHE_BROKER", label: "Cache & Broker" },
-                              ].map((cat) => (
-                                <Button
-                                  key={cat.key}
-                                  size="xs"
-                                  variant={softwareCategoryFilter === cat.key ? "solid" : "outline"}
-                                  colorScheme="cyan"
-                                  rounded="full"
-                                  px={3}
-                                  onClick={() => setSoftwareCategoryFilter(cat.key)}
-                                >
-                                  {cat.label}
-                                </Button>
-                              ))}
-                            </HStack>
-
-                            {/* Catalog Table */}
-                            <TableContainer
-                              rounded="lg"
-                              border="1px solid"
-                              borderColor={isDark ? "gray.700" : "gray.200"}
-                              bg={isDark ? "gray.850" : "gray.50"}
-                            >
-                              <Table size="sm" variant="simple">
-                                <Thead bg={isDark ? "gray.750" : "gray.100"}>
-                                  <Tr>
-                                    <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
-                                      Nama Komponen & Vendor
-                                    </Th>
-                                    <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
-                                      Kategori
-                                    </Th>
-                                    <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
-                                      Standar Bank
-                                    </Th>
-                                    <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"}>
-                                      Deskripsi
-                                    </Th>
-                                    <Th py={3} fontSize="2xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.600"} textAlign="center" w="110px">
-                                      Aksi
-                                    </Th>
-                                  </Tr>
-                                </Thead>
-                                <Tbody>
-                                  {isSoftwareCatalogLoading ? (
-                                    <Tr>
-                                      <Td colSpan={5} textAlign="center" py={8}>
-                                        <VStack spacing={2}>
-                                          <Spinner size="sm" color="cyan.500" />
-                                          <Text fontSize="xs" color="gray.500">
-                                            Memuat data katalog software standar...
-                                          </Text>
-                                        </VStack>
-                                      </Td>
-                                    </Tr>
-                                  ) : softwareCatalog.filter((item) => {
-                                    const matchCat = softwareCategoryFilter === "ALL" || item.softwareCategory === softwareCategoryFilter;
-                                    const q = softwareCatalogSearch.toLowerCase().trim();
-                                    const matchSearch = !q || item.softwareName.toLowerCase().includes(q) || (item.vendor && item.vendor.toLowerCase().includes(q)) || (item.description && item.description.toLowerCase().includes(q));
-                                    return matchCat && matchSearch;
-                                  }).length === 0 ? (
-                                    <Tr>
-                                      <Td colSpan={5} textAlign="center" py={8}>
-                                        <VStack spacing={1}>
-                                          <Text fontSize="xs" fontWeight="semibold" color="gray.500">
-                                            Tidak ada komponen yang ditemukan
-                                          </Text>
-                                          <Text fontSize="2xs" color="gray.400">
-                                            Gunakan kotak pencarian atau pilih kategori lain di atas.
-                                          </Text>
-                                        </VStack>
-                                      </Td>
-                                    </Tr>
-                                  ) : (
-                                    softwareCatalog
-                                      .filter((item) => {
-                                        const matchCat = softwareCategoryFilter === "ALL" || item.softwareCategory === softwareCategoryFilter;
-                                        const q = softwareCatalogSearch.toLowerCase().trim();
-                                        const matchSearch = !q || item.softwareName.toLowerCase().includes(q) || (item.vendor && item.vendor.toLowerCase().includes(q)) || (item.description && item.description.toLowerCase().includes(q));
-                                        return matchCat && matchSearch;
-                                      })
-                                      .map((sw) => {
-                                        const isAlreadyConnected = installedSoftwares.some(
-                                          (inst) => inst.softwareId === sw.id || inst.softwareName.toLowerCase() === sw.softwareName.toLowerCase()
-                                        );
-
-                                        const getCatColor = (cat: string) => {
-                                          switch (cat) {
-                                            case "LANGUAGE_RUNTIME":
-                                              return { scheme: "blue", label: "Runtime Engine" };
-                                            case "WEB_SERVER":
-                                              return { scheme: "cyan", label: "Web Server" };
-                                            case "DATABASE_CLIENT":
-                                              return { scheme: "orange", label: "Database Client" };
-                                            case "CACHE_BROKER":
-                                              return { scheme: "purple", label: "Cache / Broker" };
-                                            default:
-                                              return { scheme: "teal", label: cat };
-                                          }
-                                        };
-                                        const catInfo = getCatColor(sw.softwareCategory);
-
-                                        return (
-                                          <Tr
-                                            key={sw.id}
-                                            _hover={{ bg: isDark ? "gray.700" : "white" }}
-                                            transition="background-color 0.15s"
-                                          >
-                                            {/* Column 1: Nama & Vendor */}
-                                            <Td py={3}>
-                                              <HStack spacing={2.5}>
-                                                <Avatar
-                                                  name={sw.softwareName}
-                                                  size="xs"
-                                                  bg="cyan.500"
-                                                  color="white"
-                                                  fontSize="3xs"
-                                                  icon={<Icon as={FiCpu} fontSize="xs" />}
-                                                />
-                                                <VStack align="start" spacing={0.5}>
-                                                  <Text
-                                                    fontSize="xs"
-                                                    fontWeight="bold"
-                                                    color={isDark ? "white" : "gray.800"}
-                                                  >
-                                                    {sw.softwareName}
-                                                  </Text>
-                                                  {sw.vendor && (
-                                                    <Badge colorScheme="gray" fontSize="3xs" rounded="md" px={1.5}>
-                                                      {sw.vendor}
-                                                    </Badge>
-                                                  )}
-                                                </VStack>
-                                              </HStack>
-                                            </Td>
-
-                                            {/* Column 2: Kategori */}
-                                            <Td py={3}>
-                                              <Badge
-                                                colorScheme={catInfo.scheme}
-                                                fontSize="2xs"
-                                                px={2}
-                                                py={0.5}
-                                                rounded="md"
-                                              >
-                                                {catInfo.label}
-                                              </Badge>
-                                            </Td>
-
-                                            {/* Column 3: Standar Bank */}
-                                            <Td py={3}>
-                                              <Badge
-                                                colorScheme={sw.isStandardBank === "Y" || sw.isStandardBank === "Ya" ? "green" : "gray"}
-                                                variant="subtle"
-                                                fontSize="2xs"
-                                                px={2}
-                                                py={0.5}
-                                                rounded="md"
-                                              >
-                                                {sw.isStandardBank === "Y" || sw.isStandardBank === "Ya" ? "Standar Bank" : "Kustom"}
-                                              </Badge>
-                                            </Td>
-
-                                            {/* Column 4: Deskripsi */}
-                                            <Td py={3}>
-                                              <Text
-                                                fontSize="2xs"
-                                                color={isDark ? "gray.300" : "gray.600"}
-                                                maxW="280px"
-                                                isTruncated
-                                              >
-                                                {sw.description || "-"}
-                                              </Text>
-                                            </Td>
-
-                                            {/* Column 5: Aksi */}
-                                            <Td py={3} textAlign="center">
-                                              {isAlreadyConnected ? (
-                                                <Badge colorScheme="green" variant="solid" fontSize="3xs" px={2} py={1} rounded="md">
-                                                  Terhubung
-                                                </Badge>
-                                              ) : (
-                                                <Button
-                                                  size="xs"
-                                                  colorScheme="cyan"
-                                                  leftIcon={<FiPlus />}
-                                                  rounded="md"
-                                                  isLoading={isAddingSoftwareId === sw.id}
-                                                  onClick={() => handleAddSoftware(sw)}
-                                                >
-                                                  Hubungkan
-                                                </Button>
-                                              )}
-                                            </Td>
-                                          </Tr>
-                                        );
-                                      })
-                                  )}
-                                </Tbody>
-                              </Table>
-                            </TableContainer>
+                        {serverEnvironments.length === 0 ? (
+                          <Box py={8} textAlign="center">
+                            <Text fontSize="xs" color="gray.400">
+                              Belum ada server node terdaftar. Silakan tambahkan server node terlebih dahulu pada seksi Topology Server di atas.
+                            </Text>
                           </Box>
+                        ) : (
+                          <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} spacing={4}>
+                            {serverEnvironments.map((srv, srvIdx) => {
+                              const tools = srv.supportingApps || [];
+                              return (
+                                <Box
+                                  key={srv.id || srvIdx}
+                                  p={4}
+                                  rounded="xl"
+                                  border="1px solid"
+                                  borderColor={isDark ? "gray.700" : "gray.200"}
+                                  bg={isDark ? "gray.800" : "white"}
+                                  shadow="xs"
+                                  transition="all 0.2s"
+                                  _hover={{ shadow: "sm", borderColor: isDark ? "cyan.700" : "cyan.200" }}
+                                >
+                                  <Flex justify="space-between" align="start" mb={3}>
+                                    <VStack align="start" spacing={0.5}>
+                                      <HStack spacing={2}>
+                                        <Badge colorScheme="cyan" variant="subtle" fontSize="3xs" rounded="md" px={2} py={0.5}>
+                                          {srv.roleServer === "Lainnya" ? (srv.roleServerOther || "Server") : (srv.roleServer || "Server")}
+                                        </Badge>
+                                        <Text fontSize="xs" fontWeight="bold" color={isDark ? "white" : "gray.800"}>
+                                          {srv.vmDetail?.namaVm || `Server #${srvIdx + 1}`}
+                                        </Text>
+                                      </HStack>
+                                      <Text fontSize="3xs" color="gray.400" fontFamily="mono">
+                                        IP: {srv.ipAddress || "-"} • Primary: {srv.primary || "-"} • Site: {srv.site || "-"}
+                                      </Text>
+                                    </VStack>
+                                    <Badge colorScheme="gray" fontSize="3xs" rounded="full" px={2}>
+                                      {tools.length} Tools
+                                    </Badge>
+                                  </Flex>
+
+                                  <Box>
+                                    <Text fontSize="3xs" color="gray.500" mb={2} fontWeight="semibold" textTransform="uppercase" letterSpacing="wider">
+                                      Installed Tools / Runtimes:
+                                    </Text>
+                                    {tools.length === 0 ? (
+                                      <Text fontSize="2xs" color="gray.400" fontStyle="italic">
+                                        Belum ada tools pendukung terdaftar untuk server ini.
+                                      </Text>
+                                    ) : (
+                                      <Wrap spacing={1.5}>
+                                        {tools.map((tool, tIdx) => (
+                                          <WrapItem key={tIdx}>
+                                            <Tag size="sm" colorScheme="cyan" variant="subtle" rounded="md" fontSize="3xs">
+                                              <TagLabel fontWeight="semibold">
+                                                {tool.name} {tool.version ? `(${tool.version})` : ""} {tool.year ? `• ${tool.year}` : ""}
+                                              </TagLabel>
+                                            </Tag>
+                                          </WrapItem>
+                                        ))}
+                                      </Wrap>
+                                    )}
+                                  </Box>
+                                </Box>
+                              );
+                            })}
+                          </SimpleGrid>
                         )}
                       </Box>
-
-                      {/* ── MODAL: TAMBAH MASTER SOFTWARE & RUNTIME BARU ── */}
-                      <Modal
-                        isOpen={isCreateSoftwareModalOpen}
-                        onClose={() => setIsCreateSoftwareModalOpen(false)}
-                        isCentered
-                        size="lg"
-                      >
-                        <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(3px)" />
-                        <ModalContent
-                          rounded="xl"
-                          bg={isDark ? "gray.800" : "white"}
-                          border="1px solid"
-                          borderColor={isDark ? "gray.700" : "gray.200"}
-                          shadow="2xl"
-                        >
-                          <ModalHeader
-                            pb={2}
-                            borderBottom="1px dashed"
-                            borderColor={isDark ? "gray.700" : "gray.200"}
-                          >
-                            <HStack spacing={2.5}>
-                              <Box p={2} rounded="lg" bg="cyan.50" color="cyan.600">
-                                <Icon as={FiCpu} boxSize={5} />
-                              </Box>
-                              <VStack align="start" spacing={0}>
-                                <Heading size="sm" color={isDark ? "white" : "gray.800"}>
-                                  Tambah Master Software / Runtime
-                                </Heading>
-                                <Text fontSize="xs" color="gray.500">
-                                  Daftarkan teknologi, runtime engine, atau middleware baru ke katalog master.
-                                </Text>
-                              </VStack>
-                            </HStack>
-                          </ModalHeader>
-                          <ModalCloseButton />
-
-                          <ModalBody py={4}>
-                            <VStack spacing={4} align="stretch">
-                              {/* Nama Software */}
-                              <FormControl isRequired>
-                                <FormLabel fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.700"}>
-                                  Nama Software / Runtime
-                                </FormLabel>
-                                <Input
-                                  size="sm"
-                                  rounded="lg"
-                                  placeholder="Contoh: Ruby 3.3 YJIT, MariaDB 11.2, Kong Gateway"
-                                  value={newSoftwareName}
-                                  onChange={(e) => setNewSoftwareName(e.target.value)}
-                                />
-                              </FormControl>
-
-                              {/* Kategori */}
-                              <FormControl isRequired>
-                                <FormLabel fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.700"}>
-                                  Kategori Perangkat Lunak
-                                </FormLabel>
-                                <ChakraSelect
-                                  size="sm"
-                                  rounded="lg"
-                                  value={newSoftwareCategory}
-                                  onChange={(e) => setNewSoftwareCategory(e.target.value)}
-                                >
-                                  <option value="LANGUAGE_RUNTIME">Runtime Engine (Node.js, .NET, Java, Python, Go, dll)</option>
-                                  <option value="WEB_SERVER">Web & App Server (Nginx, Tomcat, Apache, IIS, dll)</option>
-                                  <option value="DATABASE_CLIENT">Database Client (Oracle, PostgreSQL, MySQL, dll)</option>
-                                  <option value="CACHE_BROKER">Cache & Message Broker (Redis, Kafka, RabbitMQ, dll)</option>
-                                  <option value="MIDDLEWARE">Middleware / API Gateway / Tools</option>
-                                  <option value="OTHER">Lainnya</option>
-                                </ChakraSelect>
-                              </FormControl>
-
-                              {/* Vendor & Standar Bank Grid */}
-                              <Grid templateColumns="repeat(2, 1fr)" gap={3}>
-                                <GridItem>
-                                  <FormControl>
-                                    <FormLabel fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.700"}>
-                                      Vendor / Publisher
-                                    </FormLabel>
-                                    <Input
-                                      size="sm"
-                                      rounded="lg"
-                                      placeholder="Contoh: Oracle, Microsoft, Apache"
-                                      value={newSoftwareVendor}
-                                      onChange={(e) => setNewSoftwareVendor(e.target.value)}
-                                    />
-                                  </FormControl>
-                                </GridItem>
-                                <GridItem>
-                                  <FormControl>
-                                    <FormLabel fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.700"}>
-                                      Standar Bank
-                                    </FormLabel>
-                                    <ChakraSelect
-                                      size="sm"
-                                      rounded="lg"
-                                      value={newSoftwareIsStandardBank}
-                                      onChange={(e) => setNewSoftwareIsStandardBank(e.target.value)}
-                                    >
-                                      <option value="Y">Ya - Standar Disetujui Bank</option>
-                                      <option value="N">Tidak - Kustom / Third-Party</option>
-                                    </ChakraSelect>
-                                  </FormControl>
-                                </GridItem>
-                              </Grid>
-
-                              {/* Deskripsi */}
-                              <FormControl>
-                                <FormLabel fontSize="xs" fontWeight="bold" color={isDark ? "gray.300" : "gray.700"}>
-                                  Deskripsi / Catatan Penggunaan
-                                </FormLabel>
-                                <Textarea
-                                  size="sm"
-                                  rounded="lg"
-                                  rows={2}
-                                  placeholder="Keterangan versi, kegunaan, atau kompatibilitas..."
-                                  value={newSoftwareDescription}
-                                  onChange={(e) => setNewSoftwareDescription(e.target.value)}
-                                />
-                              </FormControl>
-
-                              {/* Auto-connect checkbox */}
-                              <Box
-                                p={3}
-                                rounded="lg"
-                                bg={isDark ? "gray.750" : "cyan.50"}
-                                border="1px solid"
-                                borderColor={isDark ? "gray.600" : "cyan.200"}
-                              >
-                                <Checkbox
-                                  size="sm"
-                                  colorScheme="cyan"
-                                  isChecked={autoConnectNewSoftware}
-                                  onChange={(e) => setAutoConnectNewSoftware(e.target.checked)}
-                                >
-                                  <Text fontSize="xs" fontWeight="semibold" color={isDark ? "white" : "gray.800"}>
-                                    Langsung hubungkan software ini ke aplikasi setelah disimpan
-                                  </Text>
-                                </Checkbox>
-                              </Box>
-                            </VStack>
-                          </ModalBody>
-
-                          <ModalFooter
-                            pt={2}
-                            borderTop="1px dashed"
-                            borderColor={isDark ? "gray.700" : "gray.200"}
-                          >
-                            <HStack spacing={2}>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                rounded="lg"
-                                onClick={() => setIsCreateSoftwareModalOpen(false)}
-                              >
-                                Batal
-                              </Button>
-                              <Button
-                                size="sm"
-                                colorScheme="cyan"
-                                rounded="lg"
-                                leftIcon={<FiSave />}
-                                isLoading={isSubmittingNewSoftware}
-                                onClick={handleCreateNewSoftware}
-                              >
-                                Simpan ke Katalog
-                              </Button>
-                            </HStack>
-                          </ModalFooter>
-                        </ModalContent>
-                      </Modal>
                       </VStack>
                     </TabPanel>
                   </TabPanels>

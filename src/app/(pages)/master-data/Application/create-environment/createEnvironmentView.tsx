@@ -35,6 +35,7 @@ import {
   Skeleton,
   Stack,
   Tag,
+  TagCloseButton,
   TagLabel,
   Text,
   Textarea,
@@ -43,6 +44,8 @@ import {
   useDisclosure,
   useToast,
   VStack,
+  Wrap,
+  WrapItem,
 } from "@chakra-ui/react";
 import {
   FiActivity,
@@ -88,6 +91,7 @@ import {
 import {
   AppServerEnvironmentItem,
   detectDcFromIp,
+  ServerSupportingToolItem,
 } from "@/app/(pages)/master-data/Application/detail/applicationDetail";
 
 
@@ -229,6 +233,8 @@ export default function CreateEnvironmentView() {
   const [namaVm, setNamaVm] = useState<string>(`VM-${initialEnv.slice(0, 3).toUpperCase()}-NODE-${Date.now().toString().slice(-4)}`);
   const [ipAddress, setIpAddress] = useState<string>("10.20.101.50");
   const [vmIpAddress, setVmIpAddress] = useState<string>("10.20.101.50");
+  const [dcSelection, setDcSelection] = useState<string>("DC 1");
+  const [dcSelectionOther, setDcSelectionOther] = useState<string>("");
   const [os, setOs] = useState<string>("Red Hat Enterprise Linux 9");
   const [osOther, setOsOther] = useState<string>("");
   const [cpu, setCpu] = useState<string>("4");
@@ -251,12 +257,54 @@ export default function CreateEnvironmentView() {
   const [joinDomain, setJoinDomain] = useState<"Ya" | "Tidak">("Ya");
   const [hardening, setHardening] = useState<"Ya" | "Tidak">("Ya");
   const [pam, setPam] = useState<"Ya" | "Tidak">("Ya");
-  const [dualDeploy, setDualDeploy] = useState<"Ya" | "Tidak">("Ya");
+  const [dualDeploy, setDualDeploy] = useState<"Ya" | "Tidak">("Tidak");
 
   // Optional Environment Access Link & Testing Parameters
   const [envLinkUrl, setEnvLinkUrl] = useState<string>("");
   const [testUser, setTestUser] = useState<string>("");
   const [testData, setTestData] = useState<string>("");
+  const [showTestingParams, setShowTestingParams] = useState<boolean>(false);
+
+  // Aplikasi & Tools Pendukung (Per Server Node)
+  const [supportingTools, setSupportingTools] = useState<ServerSupportingToolItem[]>([
+    { id: "tool-1", name: "nodejs", version: "v20.x" },
+    { id: "tool-2", name: "npm", version: "v10.x" },
+    { id: "tool-3", name: "pm2", version: "v5.x" },
+    { id: "tool-4", name: "git", version: "2.x" },
+  ]);
+  const [newToolName, setNewToolName] = useState<string>("");
+  const [newToolVersion, setNewToolVersion] = useState<string>("");
+  const [newToolYear, setNewToolYear] = useState<string>("");
+
+  const handleAddSupportingTool = (nameToAdd?: string) => {
+    const name = (nameToAdd || newToolName).trim().toLowerCase();
+    if (!name) return;
+    if (supportingTools.some((t) => t.name.toLowerCase() === name)) {
+      toast({
+        title: "Sudah Ada",
+        description: `Tool "${name}" sudah terdaftar pada server node ini.`,
+        status: "info",
+        duration: 2000,
+        isClosable: true,
+      });
+      return;
+    }
+    const version = nameToAdd ? "Latest" : newToolVersion.trim() || "Latest";
+    const year = nameToAdd ? undefined : (newToolYear.trim() || undefined);
+    setSupportingTools((prev) => [
+      ...prev,
+      { id: `tool-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`, name, version, year },
+    ]);
+    if (!nameToAdd) {
+      setNewToolName("");
+      setNewToolVersion("");
+      setNewToolYear("");
+    }
+  };
+
+  const handleRemoveSupportingTool = (id?: string, name?: string) => {
+    setSupportingTools((prev) => prev.filter((t) => (id ? t.id !== id : t.name !== name)));
+  };
 
   // API Hooks
   const { GetDetailById, GetTopologyOverview, SyncAppServers, GetAccessParameters, SyncAccessParameters } = useApps();
@@ -303,8 +351,12 @@ export default function CreateEnvironmentView() {
     setIpAddress(newIp);
     setVmIpAddress(newIp);
     const detected = detectDcFromIp(newIp);
-    if (detected !== "-") {
-      setPrimarySite(detected);
+    if (detected === "DC1") {
+      setPrimarySite("DC1");
+      setDcSelection("DC 1");
+    } else if (detected === "DC2") {
+      setPrimarySite("DC2");
+      setDcSelection("DC 2");
     }
   };
 
@@ -417,6 +469,17 @@ export default function CreateEnvironmentView() {
       return false;
     }
 
+    if (dcSelection === "Other" && !dcSelectionOther.trim()) {
+      toast({
+        title: "Validasi Gagal",
+        description: "Nama Data Center kustom wajib diisi.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return false;
+    }
+
     if (site === "Other Site" && !siteOther.trim()) {
       toast({
         title: "Validasi Gagal",
@@ -476,6 +539,20 @@ export default function CreateEnvironmentView() {
           ? osOther.trim()
           : os;
 
+      const resolvedDc =
+        dcSelectionOther.trim()
+          ? dcSelectionOther.trim()
+          : dcSelection === "Tanpa Flag"
+          ? "-"
+          : dcSelection;
+
+      const primarySiteResolved: "DC1" | "DC2" | "-" =
+        dcSelection === "DC 1"
+          ? "DC1"
+          : dcSelection === "DC 2"
+          ? "DC2"
+          : "-";
+
       const newServerItem: AppServerEnvironmentItem = {
         id: `srv-${Date.now()}`,
         roleServer: resolvedRole,
@@ -483,9 +560,9 @@ export default function CreateEnvironmentView() {
         roleDetail: roleDetail.trim() || `${resolvedRole} for ${resolvedEnv}`,
         status: status,
         ipAddress: ipAddress.trim(),
-        primary: primarySite,
+        primary: primarySiteResolved,
         site: resolvedSite,
-        siteOther: site === "Other Site" ? siteOther : undefined,
+        siteOther: site === "Other Site" ? siteOther : (dcSelectionOther.trim() ? dcSelectionOther.trim() : undefined),
         segment: segment,
         environment: resolvedEnv,
         environmentOther: targetEnvironment === "Other" ? targetEnvironmentOther : undefined,
@@ -500,9 +577,13 @@ export default function CreateEnvironmentView() {
           cpu: `${cpu.replace(/\D/g, "") || "4"} CPU`,
           memory: `${memory.replace(/\D/g, "") || "16"} GB`,
           storage: `${storage.replace(/\D/g, "") || "250"} GB`,
-          note: note.trim(),
+          note: dcSelectionOther.trim()
+            ? (note.trim() ? `${note.trim()} [DC: ${dcSelectionOther.trim()}]` : `DC: ${dcSelectionOther.trim()}`)
+            : note.trim(),
         },
+        supportingApps: supportingTools,
       };
+      (newServerItem as any).dataCenter = resolvedDc;
 
       // 1. Load existing servers from API or LocalStorage
       let existingServers: AppServerEnvironmentItem[] = [];
@@ -991,21 +1072,6 @@ export default function CreateEnvironmentView() {
                 </ChakraSelect>
               </FormControl>
 
-              {/* Dual Deployment (HA) - Vertical */}
-              <FormControl>
-                <FormLabel fontSize="xs" fontWeight="bold">Dual Deployment (HA)</FormLabel>
-                <RadioGroup value={dualDeploy} onChange={(val: "Ya" | "Tidak") => setDualDeploy(val)}>
-                  <HStack spacing={6} mt={1}>
-                    <Radio value="Ya" colorScheme="blue">
-                      <Text fontSize="xs" fontWeight="bold">Ya (Dual Deploy)</Text>
-                    </Radio>
-                    <Radio value="Tidak" colorScheme="gray">
-                      <Text fontSize="xs">Tidak</Text>
-                    </Radio>
-                  </HStack>
-                </RadioGroup>
-              </FormControl>
-
               {/* Role Server Detail - Vertical */}
               <FormControl>
                 <FormLabel fontSize="xs" fontWeight="bold">
@@ -1078,7 +1144,50 @@ export default function CreateEnvironmentView() {
                   onChange={(e) => handleIpChange(e.target.value)}
                 />
                 <FormHelperText fontSize="3xs" color="gray.500">
-                  Otomatis mendeteksi DC1 (10.x.1xx.x) atau DC2 (10.x.2xx.x).
+                  Otomatis mendeteksi DC 1 (10.x.1xx.x) atau DC 2 (10.x.2xx.x).
+                </FormHelperText>
+              </FormControl>
+
+              {/* Data Center (DC 1 / DC 2 / Other) - Vertical */}
+              <FormControl isRequired>
+                <FormLabel fontSize="xs" fontWeight="bold">Data Center (DC)</FormLabel>
+                <ChakraSelect
+                  size="md"
+                  rounded="lg"
+                  value={dcSelection}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setDcSelection(val);
+                    if (val === "DC 1") {
+                      setPrimarySite("DC1");
+                      setDcSelectionOther("");
+                    } else if (val === "DC 2") {
+                      setPrimarySite("DC2");
+                      setDcSelectionOther("");
+                    } else if (val === "Tanpa Flag") {
+                      setPrimarySite("-");
+                    } else {
+                      setPrimarySite("-");
+                    }
+                  }}
+                >
+                  <option value="DC 1">DC 1</option>
+                  <option value="DC 2">DC 2</option>
+                  <option value="Other">Other</option>
+                  <option value="Tanpa Flag">Tanpa Flag (-)</option>
+                </ChakraSelect>
+                {(dcSelection === "Other" || dcSelection === "Tanpa Flag") && (
+                  <Input
+                    mt={2}
+                    size="md"
+                    rounded="lg"
+                    placeholder="Ketik nama Data Center kustom..."
+                    value={dcSelectionOther}
+                    onChange={(e) => setDcSelectionOther(e.target.value)}
+                  />
+                )}
+                <FormHelperText fontSize="3xs" color="gray.500">
+                  Pilih penempatan Data Center (DC 1, DC 2, Other, atau Tanpa Flag) dan isi nama custom jika diperlukan.
                 </FormHelperText>
               </FormControl>
 
@@ -1246,20 +1355,6 @@ export default function CreateEnvironmentView() {
                 )}
               </FormControl>
 
-              {/* SITE (Primary DC Flag) - Vertical */}
-              <FormControl isRequired>
-                <FormLabel fontSize="xs" fontWeight="bold">SITE (Primary DC Flag)</FormLabel>
-                <ChakraSelect
-                  size="md"
-                  rounded="lg"
-                  value={primarySite}
-                  onChange={(e) => setPrimarySite(e.target.value as "DC1" | "DC2" | "-")}
-                >
-                  <option value="DC1">DC1 (Primary Data Center 1)</option>
-                  <option value="DC2">DC2 (Secondary Data Center 2)</option>
-                  <option value="-">Tanpa Flag (-)</option>
-                </ChakraSelect>
-              </FormControl>
 
               {/* Site Segment - Vertical */}
               <FormControl isRequired>
@@ -1315,7 +1410,179 @@ export default function CreateEnvironmentView() {
           </Box>
 
             {/* ════════════════════════════════════════════════════════════
-                CARD SECTION 4: URL LINK AKSES & TESTING PARAMETERS
+                CARD SECTION 4: APLIKASI & TOOLS PENDUKUNG (PER SERVER NODE)
+                ════════════════════════════════════════════════════════════ */}
+            <Box
+              as="section"
+              rounded="lg"
+              border="1px solid"
+              borderColor={isDark ? "gray.700" : "gray.200"}
+              bg={isDark ? "gray.800" : "white"}
+              p={{ base: 4, md: 5 }}
+              shadow="none"
+            >
+              <HStack spacing={2.5} mb={4}>
+                <Box p={2} rounded="lg" bg={isDark ? "blue.900" : "blue.50"} color="blue.600">
+                  <Icon as={FiLayers} boxSize={5} />
+                </Box>
+                <VStack align="start" spacing={0.5}>
+                  <HStack spacing={2}>
+                    <Heading size="sm" fontWeight="800" textTransform="uppercase" letterSpacing="wider">
+                      4. Aplikasi & Tools Pendukung Server
+                    </Heading>
+                    <Badge colorScheme="blue" fontSize="2xs" rounded="md" px={2} py={0.5}>
+                      {supportingTools.length} Terdaftar
+                    </Badge>
+                  </HStack>
+                  <Text fontSize="xs" color="gray.500">
+                    Daftar developer tools, runtime, dan package pendukung yang terpasang pada node ini (misalnya: nodejs, npm, pm2, git, docker, nginx).
+                  </Text>
+                </VStack>
+              </HStack>
+
+              {/* Quick Add Presets */}
+              <Box mb={4} p={3} rounded="lg" bg={isDark ? "gray.750" : "gray.50"} border="1px dashed" borderColor={isDark ? "gray.650" : "gray.200"}>
+                <Text fontSize="2xs" fontWeight="bold" color="gray.500" mb={2} textTransform="uppercase" letterSpacing="wider">
+                  Preset Cepat (Klik untuk menambahkan ke server):
+                </Text>
+                <Wrap spacing={2}>
+                  {["nodejs", "npm", "pm2", "git", "docker", "nginx", "python", "java", "redis"].map((preset) => {
+                    const isAdded = supportingTools.some((t) => t.name.toLowerCase() === preset.toLowerCase());
+                    return (
+                      <WrapItem key={preset}>
+                        <Button
+                          size="xs"
+                          variant={isAdded ? "solid" : "outline"}
+                          colorScheme="blue"
+                          rounded="md"
+                          leftIcon={isAdded ? <FiCheckCircle /> : <FiPlus />}
+                          onClick={() => handleAddSupportingTool(preset)}
+                          isDisabled={isAdded}
+                        >
+                          {preset}
+                        </Button>
+                      </WrapItem>
+                    );
+                  })}
+                </Wrap>
+              </Box>
+
+              {/* Custom Add Tool Input Form */}
+              <SimpleGrid columns={{ base: 1, sm: 12 }} spacing={3} mb={4} alignItems="end">
+                <Box gridColumn={{ base: "span 12", sm: "span 5" }}>
+                  <FormLabel fontSize="2xs" fontWeight="bold">Nama Tool / Aplikasi</FormLabel>
+                  <Input
+                    size="sm"
+                    rounded="lg"
+                    placeholder="Contoh: pm2, nodejs, git, kong..."
+                    value={newToolName}
+                    onChange={(e) => setNewToolName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddSupportingTool();
+                      }
+                    }}
+                  />
+                </Box>
+                <Box gridColumn={{ base: "span 12", sm: "span 3" }}>
+                  <FormLabel fontSize="2xs" fontWeight="bold">Versi (Opsional)</FormLabel>
+                  <Input
+                    size="sm"
+                    rounded="lg"
+                    placeholder="Contoh: v20.x, 5.3.0, Latest"
+                    value={newToolVersion}
+                    onChange={(e) => setNewToolVersion(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddSupportingTool();
+                      }
+                    }}
+                  />
+                </Box>
+                <Box gridColumn={{ base: "span 12", sm: "span 2" }}>
+                  <FormLabel fontSize="2xs" fontWeight="bold">Tahun</FormLabel>
+                  <Input
+                    size="sm"
+                    rounded="lg"
+                    placeholder="YYYY"
+                    maxLength={4}
+                    value={newToolYear}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "");
+                      setNewToolYear(val);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddSupportingTool();
+                      }
+                    }}
+                  />
+                </Box>
+                <Box gridColumn={{ base: "span 12", sm: "span 2" }}>
+                  <Button
+                    size="sm"
+                    w="full"
+                    colorScheme="blue"
+                    rounded="lg"
+                    leftIcon={<FiPlus />}
+                    onClick={() => handleAddSupportingTool()}
+                    isDisabled={!newToolName.trim()}
+                  >
+                    Tambah
+                  </Button>
+                </Box>
+              </SimpleGrid>
+
+              {/* Active Installed Tools Chips List */}
+              <Box pt={2} borderTop="1px solid" borderColor={isDark ? "gray.700" : "gray.200"}>
+                <Text fontSize="2xs" fontWeight="bold" color="gray.500" mb={2}>
+                  Tools yang Terpasang pada Server Node Ini:
+                </Text>
+                {supportingTools.length === 0 ? (
+                  <Text fontSize="xs" color="gray.400" fontStyle="italic">
+                    Belum ada tools pendukung yang ditambahkan.
+                  </Text>
+                ) : (
+                  <Wrap spacing={2.5}>
+                    {supportingTools.map((tool) => (
+                      <WrapItem key={tool.id}>
+                        <Tag
+                          size="md"
+                          rounded="lg"
+                          variant="subtle"
+                          colorScheme="blue"
+                          py={1.5}
+                          px={3}
+                          border="1px solid"
+                          borderColor={isDark ? "blue.700" : "blue.200"}
+                        >
+                          <TagLabel fontWeight="bold" fontSize="xs">
+                            {tool.name}
+                            {tool.version && (
+                              <Text as="span" ml={1.5} fontWeight="normal" fontSize="2xs" opacity={0.85}>
+                                ({tool.version})
+                              </Text>
+                            )}
+                            {tool.year && (
+                              <Badge ml={1.5} colorScheme="blue" variant="solid" fontSize="3xs" rounded="md" px={1.5}>
+                                {tool.year}
+                              </Badge>
+                            )}
+                          </TagLabel>
+                          <TagCloseButton onClick={() => handleRemoveSupportingTool(tool.id, tool.name)} />
+                        </Tag>
+                      </WrapItem>
+                    ))}
+                  </Wrap>
+                )}
+              </Box>
+            </Box>
+
+            {/* ════════════════════════════════════════════════════════════
+                CARD SECTION 5: URL LINK AKSES & TESTING PARAMETERS
                 ════════════════════════════════════════════════════════════ */}
             <Box
               as="section"
@@ -1338,7 +1605,7 @@ export default function CreateEnvironmentView() {
               </Box>
               <VStack align="start" spacing={0.5}>
                 <Heading size="sm" fontWeight="800" textTransform="uppercase" letterSpacing="wider">
-                  4. URL Link Akses & Kredensial Pengujian ({targetEnvironment})
+                  5. URL Link Akses & Kredensial Pengujian ({targetEnvironment})
                 </Heading>
                 <Text fontSize="xs" color="gray.500">
                   Konfigurasi URL akses browser dan kredensial pengujian akun untuk lingkungan ini.
@@ -1364,34 +1631,77 @@ export default function CreateEnvironmentView() {
                 </FormHelperText>
               </FormControl>
 
-              {isDev && (
-                <>
-                  {/* Test User - Vertical */}
-                  <FormControl>
-                    <FormLabel fontSize="xs" fontWeight="bold">Test User</FormLabel>
-                    <Textarea
-                      rows={3}
-                      size="md"
-                      rounded="lg"
-                      placeholder="Contoh: dev_maker01 / User CS Maker..."
-                      value={testUser}
-                      onChange={(e) => setTestUser(e.target.value)}
-                    />
-                  </FormControl>
+              {/* Test User & Test Data: Visible for Development, UAT, Staging, or when toggled/existing in Production */}
+              {(() => {
+                const isTestDefaultEnv = ["development", "uat", "staging", "sit"].includes(targetEnvironment.toLowerCase());
+                const isVisible = isTestDefaultEnv || showTestingParams || Boolean(testUser.trim() || testData.trim());
 
-                  {/* Test Data - Vertical */}
-                  <FormControl>
-                    <FormLabel fontSize="xs" fontWeight="bold">Test Data</FormLabel>
-                    <Input
-                      size="md"
-                      rounded="lg"
-                      placeholder="Contoh: CIF: 902188201 / Rekening: 1029384756"
-                      value={testData}
-                      onChange={(e) => setTestData(e.target.value)}
-                    />
-                  </FormControl>
-                </>
-              )}
+                if (!isVisible) {
+                  return (
+                    <Box pt={1}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        colorScheme="blue"
+                        rounded="lg"
+                        leftIcon={<FiPlus />}
+                        onClick={() => setShowTestingParams(true)}
+                      >
+                        Tambah Test User & Test Data ({targetEnvironment})
+                      </Button>
+                    </Box>
+                  );
+                }
+
+                return (
+                  <VStack spacing={4} align="stretch" pt={1}>
+                    {/* Test User - Description Box */}
+                    <FormControl>
+                      <Flex justify="space-between" align="center" mb={1}>
+                        <FormLabel fontSize="xs" fontWeight="bold" mb={0}>Test User</FormLabel>
+                        {!isTestDefaultEnv && (
+                          <Button
+                            size="3xs"
+                            variant="ghost"
+                            colorScheme="red"
+                            onClick={() => {
+                              setShowTestingParams(false);
+                              setTestUser("");
+                              setTestData("");
+                            }}
+                          >
+                            X
+                          </Button>
+                        )}
+                      </Flex>
+                      <Textarea
+                        rows={3}
+                        size="md"
+                        rounded="lg"
+                        placeholder="Contoh: dev_maker01 / User CS Maker..."
+                        value={testUser}
+                        onChange={(e) => setTestUser(e.target.value)}
+                      />
+                    </FormControl>
+
+                    {/* Test Data - Description Box */}
+                    <FormControl>
+                      <FormLabel fontSize="xs" fontWeight="bold">Test Data</FormLabel>
+                      <Textarea
+                        rows={3}
+                        size="md"
+                        rounded="lg"
+                        placeholder="Contoh: CIF: 902188201 / Rekening: 1029384756 / Keterangan data uji..."
+                        value={testData}
+                        onChange={(e) => setTestData(e.target.value)}
+                      />
+                      <FormHelperText fontSize="3xs" color="gray.500">
+                        Deskripsi data uji yang digunakan untuk verifikasi sistem pada environment ini.
+                      </FormHelperText>
+                    </FormControl>
+                  </VStack>
+                );
+              })()}
             </VStack>
             </Box>
           </VStack>
@@ -1505,12 +1815,6 @@ export default function CreateEnvironmentView() {
                       </Text>
                     </HStack>
 
-                    <HStack justify="space-between">
-                      <Text color="gray.500">Dual Deployment (HA):</Text>
-                      <Badge colorScheme={dualDeploy === "Ya" ? "blue" : "gray"} px={2} py={0.5} rounded="md">
-                        {dualDeploy === "Ya" ? "Ya (Dual Deploy)" : "Tidak"}
-                      </Badge>
-                    </HStack>
                   </SimpleGrid>
 
                   {roleDetail && (
@@ -1544,6 +1848,13 @@ export default function CreateEnvironmentView() {
                     <HStack justify="space-between">
                       <Text color="gray.500">IP Address:</Text>
                       <Text fontFamily="mono" fontWeight="bold" color="blue.600">{ipAddress}</Text>
+                    </HStack>
+
+                    <HStack justify="space-between">
+                      <Text color="gray.500">Data Center:</Text>
+                      <Badge colorScheme={dcSelection === "DC 1" ? "blue" : dcSelection === "DC 2" ? "purple" : "gray"} px={2} py={0.5} rounded="md" fontWeight="bold">
+                        {dcSelectionOther.trim() ? dcSelectionOther : dcSelection}
+                      </Badge>
                     </HStack>
 
                     <HStack justify="space-between">
@@ -1596,13 +1907,6 @@ export default function CreateEnvironmentView() {
                     </HStack>
 
                     <HStack justify="space-between">
-                      <Text color="gray.500">SITE Flag (Primary DC):</Text>
-                      <Badge colorScheme={primarySite === "DC1" ? "blue" : primarySite === "DC2" ? "purple" : "gray"} px={2} py={0.5} rounded="md">
-                        {primarySite}
-                      </Badge>
-                    </HStack>
-
-                    <HStack justify="space-between">
                       <Text color="gray.500">Site Segment:</Text>
                       <Text fontWeight="bold">{segment}</Text>
                     </HStack>
@@ -1630,7 +1934,41 @@ export default function CreateEnvironmentView() {
                   </SimpleGrid>
                 </Box>
 
-                {/* 4. Link Akses & Kredensial (jika diisi) */}
+                {/* 4. Aplikasi & Tools Pendukung Server */}
+                <Box
+                  p={3.5}
+                  rounded="lg"
+                  border="1px solid"
+                  borderColor={isDark ? "gray.700" : "gray.200"}
+                  bg={isDark ? "gray.800" : "white"}
+                  shadow="xs"
+                >
+                  <HStack justify="space-between" mb={2}>
+                    <Text fontSize="xs" fontWeight="800" textTransform="uppercase" letterSpacing="wider" color="blue.600">
+                      4. Aplikasi & Tools Pendukung Server
+                    </Text>
+                    <Badge colorScheme="blue" fontSize="3xs" rounded="md" px={2} py={0.5}>
+                      {supportingTools.length} Tools
+                    </Badge>
+                  </HStack>
+                  {supportingTools.length === 0 ? (
+                    <Text fontSize="xs" color="gray.400" fontStyle="italic">
+                      Tidak ada tools pendukung yang didaftarkan.
+                    </Text>
+                  ) : (
+                    <Wrap spacing={2}>
+                      {supportingTools.map((t) => (
+                        <WrapItem key={t.id}>
+                          <Badge colorScheme="blue" variant="subtle" px={2} py={1} rounded="md" fontSize="xs">
+                            {t.name} {t.version && t.version !== "Latest" ? `(${t.version})` : ""} {t.year ? `• ${t.year}` : ""}
+                          </Badge>
+                        </WrapItem>
+                      ))}
+                    </Wrap>
+                  )}
+                </Box>
+
+                {/* 5. Link Akses & Kredensial (jika diisi) */}
                 {(envLinkUrl || testUser || testData) && (
                   <Box
                     p={3.5}
@@ -1641,7 +1979,7 @@ export default function CreateEnvironmentView() {
                     shadow="xs"
                   >
                     <Text fontSize="xs" fontWeight="800" textTransform="uppercase" letterSpacing="wider" color="blue.600" mb={2}>
-                      4. Akses Endpoint & Data Pengujian
+                      5. Akses Endpoint & Data Pengujian
                     </Text>
                     <VStack align="stretch" spacing={2} fontSize="xs">
                       {envLinkUrl && (
@@ -1668,7 +2006,7 @@ export default function CreateEnvironmentView() {
               </VStack>
             </ModalBody>
 
-            <ModalFooter borderTop="1px solid" borderColor={isDark ? "gray.700" : "gray.200"} pt={3} justify="space-between">
+            <ModalFooter borderTop="1px solid" borderColor={isDark ? "gray.700" : "gray.200"} pt={3} justifyContent="space-between">
               <Button
                 variant="ghost"
                 size="md"
