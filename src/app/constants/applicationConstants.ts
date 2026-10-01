@@ -447,7 +447,7 @@ export const SERVER_ROLE_OPTIONS = [
   "Other",
 ] as const;
 
-export const SERVER_STATUS_OPTIONS = ["Aktif", "Pasif"] as const;
+export const SERVER_STATUS_OPTIONS = ["Aktif", "Pasif", "Non Aktif"] as const;
 
 export const SERVER_ENVIRONMENT_OPTIONS = [
   "Production",

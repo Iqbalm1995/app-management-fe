@@ -201,7 +201,7 @@ export interface AppServerEnvironmentItem {
   roleServer: string;
   roleServerOther?: string;
   roleDetail: string;
-  status: "Aktif" | "Pasif";
+  status: "Aktif" | "Pasif" | "Non Aktif";
   ipAddress: string;
   primary: "DC1" | "DC2" | "-";
   site: string;
@@ -4802,7 +4802,7 @@ export default function ApplicationDetail() {
                                                 </Badge>
                                               )}
                                               <Badge
-                                                colorScheme={srv.status === "Aktif" ? "green" : "gray"}
+                                                colorScheme={srv.status === "Aktif" ? "green" : srv.status === "Pasif" ? "yellow" : "red"}
                                                 variant="solid"
                                                 fontSize="3xs"
                                                 rounded="full"
@@ -5632,12 +5632,10 @@ export default function ApplicationDetail() {
                                                           leftIcon={isAdded ? <FiCheckCircle /> : <FiPlus />}
                                                           isDisabled={isAdded}
                                                           onClick={() => {
-                                                            const newTool: ServerSupportingToolItem = {
-                                                              id: `tool-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-                                                              name: preset,
-                                                              version: "Latest",
-                                                            };
-                                                            handleUpdateServer(srvIdx, "supportingApps", [...currentTools, newTool]);
+                                                            const nameEl = document.getElementById(`tool-name-${srvIdx}`) as HTMLInputElement;
+                                                            const verEl = document.getElementById(`tool-ver-${srvIdx}`) as HTMLInputElement;
+                                                            if (nameEl) nameEl.value = preset;
+                                                            if (verEl) verEl.focus();
                                                           }}
                                                         >
                                                           {preset}

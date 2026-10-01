@@ -211,6 +211,10 @@ export default function CreateEnvironmentView() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Form State: 1 by 1 Server Creation
+  const isStandardInitial = ["development", "drc", "staging", "uat", "production"].some((e) =>
+    initialEnv.toLowerCase().includes(e)
+  );
+
   const [targetEnvironment, setTargetEnvironment] = useState<string>(
     initialEnv.toLowerCase().includes("dev")
       ? "Development"
@@ -220,14 +224,35 @@ export default function CreateEnvironmentView() {
       ? "Staging"
       : initialEnv.toLowerCase().includes("uat")
       ? "UAT"
-      : "Production"
+      : initialEnv.toLowerCase().includes("prod")
+      ? "Production"
+      : initialEnv
   );
-  const [targetEnvironmentOther, setTargetEnvironmentOther] = useState<string>("");
+  const [customEnvironments, setCustomEnvironments] = useState<string[]>(
+    isStandardInitial || !initialEnv ? [] : [initialEnv]
+  );
+  const [isAddingCustomEnv, setIsAddingCustomEnv] = useState<boolean>(false);
+  const [targetEnvironmentOther, setTargetEnvironmentOther] = useState<string>(
+    isStandardInitial || !initialEnv ? "" : initialEnv
+  );
+
+  const handleConfirmCustomEnv = (nameToConfirm?: string) => {
+    const rawName = nameToConfirm !== undefined ? nameToConfirm : targetEnvironmentOther;
+    const trimmed = rawName.trim();
+    if (!trimmed) return;
+
+    if (!customEnvironments.includes(trimmed)) {
+      setCustomEnvironments((prev) => [...prev, trimmed]);
+    }
+    handleEnvChange(trimmed);
+    setTargetEnvironmentOther(trimmed);
+    setIsAddingCustomEnv(false);
+  };
 
   const [roleServer, setRoleServer] = useState<string>("App Server");
   const [roleServerOther, setRoleServerOther] = useState<string>("");
   const [roleDetail, setRoleDetail] = useState<string>("Application Service Node");
-  const [status, setStatus] = useState<"Aktif" | "Pasif">("Aktif");
+  const [status, setStatus] = useState<"Aktif" | "Pasif" | "Non Aktif">("Aktif");
 
   // VM Specs
   const [namaVm, setNamaVm] = useState<string>(`VM-${initialEnv.slice(0, 3).toUpperCase()}-NODE-${Date.now().toString().slice(-4)}`);
@@ -250,7 +275,7 @@ export default function CreateEnvironmentView() {
   } = useDisclosure();
 
   // Network & Governance
-  const [site, setSite] = useState<string>("DC Narogong");
+  const [site, setSite] = useState<string>("DC 1");
   const [siteOther, setSiteOther] = useState<string>("");
   const [primarySite, setPrimarySite] = useState<"DC1" | "DC2" | "-">("DC1");
   const [segment, setSegment] = useState<string>("Internal App Farm");
@@ -374,7 +399,7 @@ export default function CreateEnvironmentView() {
         ? "UAT"
         : newEnv === "Staging"
         ? "STG"
-        : "SRV";
+        : newEnv.slice(0, 3).toUpperCase();
     setNamaVm(`VM-${prefix}-NODE-${Date.now().toString().slice(-4)}`);
   };
 
@@ -480,7 +505,7 @@ export default function CreateEnvironmentView() {
       return false;
     }
 
-    if (site === "Other Site" && !siteOther.trim()) {
+    if ((site === "Other" || site === "Other Site") && !siteOther.trim()) {
       toast({
         title: "Validasi Gagal",
         description: "Nama Lokasi Site kustom wajib diisi.",
@@ -491,7 +516,8 @@ export default function CreateEnvironmentView() {
       return false;
     }
 
-    if (targetEnvironment === "Other" && !targetEnvironmentOther.trim()) {
+    const isStandardEnv = ["Production", "DRC", "Staging", "UAT", "Development"].includes(targetEnvironment);
+    if (!isStandardEnv && !targetEnvironment.trim() && !targetEnvironmentOther.trim()) {
       toast({
         title: "Validasi Gagal",
         description: "Nama Environment kustom wajib diisi.",
@@ -525,7 +551,7 @@ export default function CreateEnvironmentView() {
           : roleServer;
 
       const resolvedSite =
-        site === "Other Site" && siteOther.trim()
+        (site === "Other" || site === "Other Site") && siteOther.trim()
           ? siteOther.trim()
           : site;
 
@@ -562,7 +588,7 @@ export default function CreateEnvironmentView() {
         ipAddress: ipAddress.trim(),
         primary: primarySiteResolved,
         site: resolvedSite,
-        siteOther: site === "Other Site" ? siteOther : (dcSelectionOther.trim() ? dcSelectionOther.trim() : undefined),
+        siteOther: (site === "Other" || site === "Other Site") ? siteOther : (dcSelectionOther.trim() ? dcSelectionOther.trim() : undefined),
         segment: segment,
         environment: resolvedEnv,
         environmentOther: targetEnvironment === "Other" ? targetEnvironmentOther : undefined,
@@ -718,8 +744,8 @@ export default function CreateEnvironmentView() {
   const isDev = targetEnvironment === "Development";
 
   const activeMeta = ENV_CONFIGS[targetEnvironment] || {
-    code: "CUSTOM",
-    label: targetEnvironment,
+    code: targetEnvironment === "Other" ? "CUSTOM" : (targetEnvironment.length <= 4 ? targetEnvironment.toUpperCase() : targetEnvironment.slice(0, 4).toUpperCase()),
+    label: targetEnvironment === "Other" ? (targetEnvironmentOther || "Custom Environment") : targetEnvironment,
     sublabel: "Custom Environment Node",
     icon: FiGlobe,
     colorScheme: "blue",
@@ -797,7 +823,7 @@ export default function CreateEnvironmentView() {
                 <VStack align="start" spacing={1}>
                   <HStack spacing={2} wrap="wrap">
                     <Tag size="sm" bg="whiteAlpha.300" color="white" rounded="md" px={2.5} py={0.5}>
-                      <TagLabel fontWeight="extrabold" textTransform="uppercase" fontSize="2xs">
+                      <TagLabel fontWeight="extrabold" textTransform="uppercase" fontSize="xs">
                         {dataApplication?.appShortName || "KOBRA"} &bull; {dataApplication?.appName || "Application"}
                       </TagLabel>
                     </Tag>
@@ -807,7 +833,7 @@ export default function CreateEnvironmentView() {
                         px={2}
                         py={0.5}
                         rounded="md"
-                        fontSize="3xs"
+                        fontSize="xs"
                       >
                         {dataApplication.appsStatus}
                       </Badge>
@@ -847,11 +873,11 @@ export default function CreateEnvironmentView() {
             >
               <Flex justify="space-between" align="center" mb={2.5} wrap="wrap" gap={2}>
                 <HStack spacing={2}>
-                  <Text fontSize="2xs" fontWeight="800" textTransform="uppercase" letterSpacing="wider" color="whiteAlpha.900">
+                  <Text fontSize="xs" fontWeight="800" textTransform="uppercase" letterSpacing="wider" color="whiteAlpha.900">
                     Pilih Target Environment:
                   </Text>
                   <Tag size="sm" bg="white" color="blue.800" rounded="md" px={2.5} shadow="xs">
-                    <TagLabel fontSize="2xs" fontWeight="bold">
+                    <TagLabel fontSize="xs" fontWeight="bold">
                       Aktif: {targetEnvironment} ({activeMeta.code})
                     </TagLabel>
                   </Tag>
@@ -860,28 +886,27 @@ export default function CreateEnvironmentView() {
                 {/* Custom Environment Toggle */}
                 <Button
                   size="xs"
-                  variant={targetEnvironment === "Other" ? "solid" : "outline"}
-                  bg={targetEnvironment === "Other" ? "white" : "transparent"}
-                  color={targetEnvironment === "Other" ? "blue.800" : "white"}
+                  variant={isAddingCustomEnv ? "solid" : "outline"}
+                  bg={isAddingCustomEnv ? "white" : "transparent"}
+                  color={isAddingCustomEnv ? "blue.800" : "white"}
                   borderColor="whiteAlpha.400"
-                  _hover={{ bg: targetEnvironment === "Other" ? "gray.100" : "whiteAlpha.300" }}
+                  _hover={{ bg: isAddingCustomEnv ? "gray.100" : "whiteAlpha.300" }}
                   rounded="md"
-                  fontSize="2xs"
-                  leftIcon={<FiGlobe />}
+                  fontSize="xs"
+                  leftIcon={isAddingCustomEnv ? <FiX /> : <FiGlobe />}
                   onClick={() => {
-                    if (targetEnvironment === "Other") {
-                      handleEnvChange("Production");
-                    } else {
-                      handleEnvChange("Other");
+                    setIsAddingCustomEnv(!isAddingCustomEnv);
+                    if (!isAddingCustomEnv) {
+                      setTargetEnvironmentOther("");
                     }
                   }}
                 >
-                  {targetEnvironment === "Other" ? "Kembali Menggunakan Template" : "+ Custom Environment"}
+                  {isAddingCustomEnv ? "Batal" : "+ Custom Environment"}
                 </Button>
               </Flex>
 
-              {/* Responsive 5-tier environment cards */}
-              <SimpleGrid columns={{ base: 2, sm: 3, md: 5 }} spacing={2} w="full">
+              {/* Responsive environment cards (Standard 5 tiers + Custom Environment cards) */}
+              <SimpleGrid columns={{ base: 2, sm: 3, md: 5, xl: 6 }} spacing={2} w="full">
                 {(["Production", "DRC", "Staging", "UAT", "Development"] as const).map((envOption) => {
                   const isSelected = targetEnvironment === envOption;
                   const cfg = ENV_CONFIGS[envOption];
@@ -914,7 +939,7 @@ export default function CreateEnvironmentView() {
                       <Flex align="center" justify="space-between" mb={1}>
                         <HStack spacing={1.5}>
                           <Icon as={cfg.icon} boxSize={3.5} color={isSelected ? "blue.600" : "whiteAlpha.900"} />
-                          <Text fontSize="2xs" fontWeight="bold">
+                          <Text fontSize="xs" fontWeight="bold">
                             {cfg.code}
                           </Text>
                         </HStack>
@@ -932,7 +957,7 @@ export default function CreateEnvironmentView() {
                         {cfg.label}
                       </Text>
                       <Text
-                        fontSize="3xs"
+                        fontSize="xs"
                         color={isSelected ? "blue.600" : "whiteAlpha.800"}
                         noOfLines={1}
                       >
@@ -941,24 +966,132 @@ export default function CreateEnvironmentView() {
                     </Box>
                   );
                 })}
+
+                {/* Confirmed Custom Environment Cards */}
+                {customEnvironments.map((customEnv) => {
+                  const isSelected = targetEnvironment === customEnv;
+                  const code = customEnv.length <= 4 ? customEnv.toUpperCase() : customEnv.slice(0, 4).toUpperCase();
+                  return (
+                    <Box
+                      key={customEnv}
+                      as="button"
+                      type="button"
+                      onClick={() => handleEnvChange(customEnv)}
+                      px={3}
+                      py={2}
+                      rounded="md"
+                      textAlign="left"
+                      border="1px solid"
+                      borderColor={isSelected ? "white" : "whiteAlpha.300"}
+                      bg={isSelected ? "white" : "whiteAlpha.150"}
+                      color={isSelected ? "blue.800" : "white"}
+                      shadow={isSelected ? "sm" : "none"}
+                      transition="all 0.18s ease"
+                      position="relative"
+                      _hover={{
+                        bg: isSelected ? "white" : "whiteAlpha.250",
+                        borderColor: "white",
+                        transform: "translateY(-1px)",
+                      }}
+                      _active={{
+                        transform: "scale(0.98)",
+                      }}
+                    >
+                      <Flex align="center" justify="space-between" mb={1}>
+                        <HStack spacing={1.5}>
+                          <Icon as={FiGlobe} boxSize={3.5} color={isSelected ? "blue.600" : "whiteAlpha.900"} />
+                          <Text fontSize="xs" fontWeight="bold">
+                            {code}
+                          </Text>
+                        </HStack>
+                        <HStack spacing={1}>
+                          {isSelected && (
+                            <Icon as={FiCheckCircle} boxSize={3.5} color="blue.600" />
+                          )}
+                          <IconButton
+                            aria-label="Hapus custom environment"
+                            icon={<FiX />}
+                            size="xs"
+                            variant="ghost"
+                            color={isSelected ? "gray.500" : "whiteAlpha.700"}
+                            _hover={{ color: "red.500" }}
+                            minW="18px"
+                            h="18px"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCustomEnvironments((prev) => prev.filter((c) => c !== customEnv));
+                              if (targetEnvironment === customEnv) {
+                                handleEnvChange("Production");
+                              }
+                            }}
+                          />
+                        </HStack>
+                      </Flex>
+                      <Text
+                        fontSize="xs"
+                        fontWeight="800"
+                        lineHeight="short"
+                        noOfLines={1}
+                        color={isSelected ? "blue.800" : "white"}
+                      >
+                        {customEnv}
+                      </Text>
+                      <Text
+                        fontSize="xs"
+                        color={isSelected ? "blue.600" : "whiteAlpha.800"}
+                        noOfLines={1}
+                      >
+                        Custom Environment
+                      </Text>
+                    </Box>
+                  );
+                })}
               </SimpleGrid>
 
-              {targetEnvironment === "Other" && (
+              {isAddingCustomEnv && (
                 <Box mt={3} pt={2.5} borderTop="1px dashed" borderColor="whiteAlpha.400">
                   <FormControl isRequired>
-                    <FormLabel fontSize="2xs" fontWeight="bold" color="white" mb={1}>
-                      Nama Environment Kustom
-                    </FormLabel>
-                    <Input
-                      size="sm"
-                      rounded="md"
-                      bg="white"
-                      color="gray.900"
-                      _placeholder={{ color: "gray.400" }}
-                      placeholder="Contoh: Hotfix, Sandbox, Pre-DRC, QA-Automated..."
-                      value={targetEnvironmentOther}
-                      onChange={(e) => setTargetEnvironmentOther(e.target.value)}
-                    />
+                    <HStack justify="space-between" mb={1}>
+                      <FormLabel fontSize="xs" fontWeight="bold" color="white" mb={0}>
+                        Nama Environment Kustom (Tekan Tab atau Enter untuk konfirmasi)
+                      </FormLabel>
+                      <Text fontSize="xs" color="whiteAlpha.800">
+                        Tekan <b>Tab</b> atau <b>Enter</b> untuk menyimpan
+                      </Text>
+                    </HStack>
+                    <HStack spacing={2}>
+                      <Input
+                        size="sm"
+                        rounded="md"
+                        bg="white"
+                        color="gray.900"
+                        _placeholder={{ color: "gray.400" }}
+                        placeholder="Contoh: Hotfix, Sandbox, Pre-DRC, QA-Automated..."
+                        value={targetEnvironmentOther}
+                        onChange={(e) => setTargetEnvironmentOther(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === "Tab") {
+                            if (targetEnvironmentOther.trim()) {
+                              e.preventDefault();
+                              handleConfirmCustomEnv();
+                            }
+                          }
+                        }}
+                        autoFocus
+                      />
+                      <Button
+                        size="sm"
+                        colorScheme="blue"
+                        bg="white"
+                        color="blue.700"
+                        _hover={{ bg: "gray.100" }}
+                        fontWeight="bold"
+                        onClick={() => handleConfirmCustomEnv()}
+                        isDisabled={!targetEnvironmentOther.trim()}
+                      >
+                        Simpan
+                      </Button>
+                    </HStack>
                   </FormControl>
                 </Box>
               )}
@@ -1017,7 +1150,7 @@ export default function CreateEnvironmentView() {
                   px={2.5}
                   py={1}
                   rounded="md"
-                  fontSize="2xs"
+                  fontSize="xs"
                   fontWeight="bold"
                 >
                   Target: {targetEnvironment} ({activeMeta.code})
@@ -1048,7 +1181,7 @@ export default function CreateEnvironmentView() {
                     mt={2}
                     size="md"
                     rounded="lg"
-                    placeholder="Ketik role server custom..."
+                    placeholder="Ketik role server custom"
                     value={roleServerOther}
                     onChange={(e) => setRoleServerOther(e.target.value)}
                   />
@@ -1062,7 +1195,7 @@ export default function CreateEnvironmentView() {
                   size="md"
                   rounded="lg"
                   value={status}
-                  onChange={(e) => setStatus(e.target.value as "Aktif" | "Pasif")}
+                  onChange={(e) => setStatus(e.target.value as "Aktif" | "Pasif" | "Non Aktif")}
                 >
                   {SERVER_STATUS_OPTIONS.map((opt) => (
                     <option key={opt} value={opt}>
@@ -1085,8 +1218,8 @@ export default function CreateEnvironmentView() {
                   value={roleDetail}
                   onChange={(e) => setRoleDetail(e.target.value)}
                 />
-                <FormHelperText fontSize="3xs" color="gray.500">
-                  Jelaskan fungsi khusus node ini pada topologi mikroservis atau infrastruktur aplikasi.
+                <FormHelperText fontSize="xs" color="gray.500">
+                  Deskripsi.
                 </FormHelperText>
               </FormControl>
             </VStack>
@@ -1143,53 +1276,12 @@ export default function CreateEnvironmentView() {
                   value={ipAddress}
                   onChange={(e) => handleIpChange(e.target.value)}
                 />
-                <FormHelperText fontSize="3xs" color="gray.500">
-                  Otomatis mendeteksi DC 1 (10.x.1xx.x) atau DC 2 (10.x.2xx.x).
+                <FormHelperText fontSize="xs" color="gray.500">
+                  Auto Detect
                 </FormHelperText>
               </FormControl>
 
               {/* Data Center (DC 1 / DC 2 / Other) - Vertical */}
-              <FormControl isRequired>
-                <FormLabel fontSize="xs" fontWeight="bold">Data Center (DC)</FormLabel>
-                <ChakraSelect
-                  size="md"
-                  rounded="lg"
-                  value={dcSelection}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setDcSelection(val);
-                    if (val === "DC 1") {
-                      setPrimarySite("DC1");
-                      setDcSelectionOther("");
-                    } else if (val === "DC 2") {
-                      setPrimarySite("DC2");
-                      setDcSelectionOther("");
-                    } else if (val === "Tanpa Flag") {
-                      setPrimarySite("-");
-                    } else {
-                      setPrimarySite("-");
-                    }
-                  }}
-                >
-                  <option value="DC 1">DC 1</option>
-                  <option value="DC 2">DC 2</option>
-                  <option value="Other">Other</option>
-                  <option value="Tanpa Flag">Tanpa Flag (-)</option>
-                </ChakraSelect>
-                {(dcSelection === "Other" || dcSelection === "Tanpa Flag") && (
-                  <Input
-                    mt={2}
-                    size="md"
-                    rounded="lg"
-                    placeholder="Ketik nama Data Center kustom..."
-                    value={dcSelectionOther}
-                    onChange={(e) => setDcSelectionOther(e.target.value)}
-                  />
-                )}
-                <FormHelperText fontSize="3xs" color="gray.500">
-                  Pilih penempatan Data Center (DC 1, DC 2, Other, atau Tanpa Flag) dan isi nama custom jika diperlukan.
-                </FormHelperText>
-              </FormControl>
 
               {/* Operating System (OS) - Vertical */}
               <FormControl isRequired>
@@ -1238,12 +1330,12 @@ export default function CreateEnvironmentView() {
                   <Input
                     rounded="lg"
                     type="number"
-                    placeholder="... CPU"
+                    placeholder="CPU"
                     value={cpu}
                     onChange={(e) => setCpu(e.target.value)}
                   />
                   <InputRightAddon roundedRight="lg" fontSize="xs" fontWeight="bold">
-                    CPU
+                    vCPU
                   </InputRightAddon>
                 </InputGroup>
               </FormControl>
@@ -1334,7 +1426,7 @@ export default function CreateEnvironmentView() {
                   onChange={(e) => {
                     const val = e.target.value;
                     setSite(val);
-                    if (val !== "Other Site") setSiteOther("");
+                    if (val !== "Other" && val !== "Other Site") setSiteOther("");
                   }}
                 >
                   {SERVER_SITE_OPTIONS.map((opt) => (
@@ -1343,12 +1435,12 @@ export default function CreateEnvironmentView() {
                     </option>
                   ))}
                 </ChakraSelect>
-                {site === "Other Site" && (
+                {(site === "Other" || site === "Other Site") && (
                   <Input
                     mt={2}
                     size="md"
                     rounded="lg"
-                    placeholder="Ketik lokasi site custom..."
+                    placeholder="Ketik lokasi data center / cloud custom..."
                     value={siteOther}
                     onChange={(e) => setSiteOther(e.target.value)}
                   />
@@ -1430,7 +1522,7 @@ export default function CreateEnvironmentView() {
                     <Heading size="sm" fontWeight="800" textTransform="uppercase" letterSpacing="wider">
                       4. Aplikasi & Tools Pendukung Server
                     </Heading>
-                    <Badge colorScheme="blue" fontSize="2xs" rounded="md" px={2} py={0.5}>
+                    <Badge colorScheme="blue" fontSize="xs" rounded="md" px={2} py={0.5}>
                       {supportingTools.length} Terdaftar
                     </Badge>
                   </HStack>
@@ -1442,21 +1534,26 @@ export default function CreateEnvironmentView() {
 
               {/* Quick Add Presets */}
               <Box mb={4} p={3} rounded="lg" bg={isDark ? "gray.750" : "gray.50"} border="1px dashed" borderColor={isDark ? "gray.650" : "gray.200"}>
-                <Text fontSize="2xs" fontWeight="bold" color="gray.500" mb={2} textTransform="uppercase" letterSpacing="wider">
-                  Preset Cepat (Klik untuk menambahkan ke server):
+                <Text fontSize="xs" fontWeight="bold" color="gray.500" mb={2} textTransform="uppercase" letterSpacing="wider">
+                  Preset Cepat (Klik untuk memilih tool, lalu lengkapi versi & tahun di bawah):
                 </Text>
                 <Wrap spacing={2}>
                   {["nodejs", "npm", "pm2", "git", "docker", "nginx", "python", "java", "redis"].map((preset) => {
                     const isAdded = supportingTools.some((t) => t.name.toLowerCase() === preset.toLowerCase());
+                    const isSelected = newToolName.toLowerCase() === preset.toLowerCase();
                     return (
                       <WrapItem key={preset}>
                         <Button
                           size="xs"
-                          variant={isAdded ? "solid" : "outline"}
-                          colorScheme="blue"
+                          variant={isAdded ? "solid" : isSelected ? "solid" : "outline"}
+                          colorScheme={isSelected ? "cyan" : "blue"}
                           rounded="md"
-                          leftIcon={isAdded ? <FiCheckCircle /> : <FiPlus />}
-                          onClick={() => handleAddSupportingTool(preset)}
+                          leftIcon={isAdded ? <FiCheckCircle /> : isSelected ? <FiCheckCircle /> : <FiPlus />}
+                          onClick={() => {
+                            setNewToolName(preset);
+                            const verInput = document.getElementById("input-tool-version") as HTMLInputElement;
+                            if (verInput) verInput.focus();
+                          }}
                           isDisabled={isAdded}
                         >
                           {preset}
@@ -1470,8 +1567,9 @@ export default function CreateEnvironmentView() {
               {/* Custom Add Tool Input Form */}
               <SimpleGrid columns={{ base: 1, sm: 12 }} spacing={3} mb={4} alignItems="end">
                 <Box gridColumn={{ base: "span 12", sm: "span 5" }}>
-                  <FormLabel fontSize="2xs" fontWeight="bold">Nama Tool / Aplikasi</FormLabel>
+                  <FormLabel fontSize="xs" fontWeight="bold">Nama Tool / Aplikasi</FormLabel>
                   <Input
+                    id="input-tool-name"
                     size="sm"
                     rounded="lg"
                     placeholder="Contoh: pm2, nodejs, git, kong..."
@@ -1486,8 +1584,9 @@ export default function CreateEnvironmentView() {
                   />
                 </Box>
                 <Box gridColumn={{ base: "span 12", sm: "span 3" }}>
-                  <FormLabel fontSize="2xs" fontWeight="bold">Versi (Opsional)</FormLabel>
+                  <FormLabel fontSize="xs" fontWeight="bold">Versi (Opsional)</FormLabel>
                   <Input
+                    id="input-tool-version"
                     size="sm"
                     rounded="lg"
                     placeholder="Contoh: v20.x, 5.3.0, Latest"
@@ -1502,8 +1601,9 @@ export default function CreateEnvironmentView() {
                   />
                 </Box>
                 <Box gridColumn={{ base: "span 12", sm: "span 2" }}>
-                  <FormLabel fontSize="2xs" fontWeight="bold">Tahun</FormLabel>
+                  <FormLabel fontSize="xs" fontWeight="bold">Tahun</FormLabel>
                   <Input
+                    id="input-tool-year"
                     size="sm"
                     rounded="lg"
                     placeholder="YYYY"
@@ -1538,7 +1638,7 @@ export default function CreateEnvironmentView() {
 
               {/* Active Installed Tools Chips List */}
               <Box pt={2} borderTop="1px solid" borderColor={isDark ? "gray.700" : "gray.200"}>
-                <Text fontSize="2xs" fontWeight="bold" color="gray.500" mb={2}>
+                <Text fontSize="xs" fontWeight="bold" color="gray.500" mb={2}>
                   Tools yang Terpasang pada Server Node Ini:
                 </Text>
                 {supportingTools.length === 0 ? (
@@ -1562,12 +1662,12 @@ export default function CreateEnvironmentView() {
                           <TagLabel fontWeight="bold" fontSize="xs">
                             {tool.name}
                             {tool.version && (
-                              <Text as="span" ml={1.5} fontWeight="normal" fontSize="2xs" opacity={0.85}>
+                              <Text as="span" ml={1.5} fontWeight="normal" fontSize="xs" opacity={0.85}>
                                 ({tool.version})
                               </Text>
                             )}
                             {tool.year && (
-                              <Badge ml={1.5} colorScheme="blue" variant="solid" fontSize="3xs" rounded="md" px={1.5}>
+                              <Badge ml={1.5} colorScheme="blue" variant="solid" fontSize="xs" rounded="md" px={1.5}>
                                 {tool.year}
                               </Badge>
                             )}
@@ -1654,52 +1754,89 @@ export default function CreateEnvironmentView() {
                 }
 
                 return (
-                  <VStack spacing={4} align="stretch" pt={1}>
-                    {/* Test User - Description Box */}
-                    <FormControl>
-                      <Flex justify="space-between" align="center" mb={1}>
-                        <FormLabel fontSize="xs" fontWeight="bold" mb={0}>Test User</FormLabel>
-                        {!isTestDefaultEnv && (
+                  <Box
+                    p={isTestDefaultEnv ? 0 : 3.5}
+                    rounded="lg"
+                    border={isTestDefaultEnv ? "none" : "1px solid"}
+                    borderColor={isDark ? "gray.700" : "blue.200"}
+                    bg={isTestDefaultEnv ? "transparent" : (isDark ? "gray.750" : "blue.50")}
+                  >
+                    {!isTestDefaultEnv && (
+                      <Flex justify="space-between" align="center" mb={3} pb={2} borderBottom="1px dashed" borderColor={isDark ? "gray.700" : "blue.200"}>
+                        <HStack spacing={2}>
+                          <Icon as={FiTarget} color="blue.500" />
+                          <Text fontSize="xs" fontWeight="bold" color={isDark ? "white" : "blue.800"}>
+                            Parameter Pengujian Tambahan ({targetEnvironment})
+                          </Text>
+                        </HStack>
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          colorScheme="red"
+                          rounded="md"
+                          leftIcon={<FiX />}
+                          onClick={() => {
+                            setShowTestingParams(false);
+                            setTestUser("");
+                            setTestData("");
+                          }}
+                        >
+                          Batal / Tutup Field
+                        </Button>
+                      </Flex>
+                    )}
+
+                    <VStack spacing={4} align="stretch" pt={isTestDefaultEnv ? 1 : 0}>
+                      {/* Test User - Description Box */}
+                      <FormControl>
+                        <FormLabel fontSize="xs" fontWeight="bold">Test User</FormLabel>
+                        <Textarea
+                          rows={3}
+                          size="md"
+                          rounded="lg"
+                          bg={isDark ? "gray.800" : "white"}
+                          placeholder="Contoh: dev_maker01 / User CS Maker..."
+                          value={testUser}
+                          onChange={(e) => setTestUser(e.target.value)}
+                        />
+                      </FormControl>
+
+                      {/* Test Data - Description Box */}
+                      <FormControl>
+                        <FormLabel fontSize="xs" fontWeight="bold">Test Data</FormLabel>
+                        <Textarea
+                          rows={3}
+                          size="md"
+                          rounded="lg"
+                          bg={isDark ? "gray.800" : "white"}
+                          placeholder="Contoh: CIF: 902188201 / Rekening: 1029384756 / Keterangan data uji..."
+                          value={testData}
+                          onChange={(e) => setTestData(e.target.value)}
+                        />
+                        <FormHelperText fontSize="3xs" color="gray.500">
+                          Deskripsi data uji yang digunakan untuk verifikasi sistem pada environment ini.
+                        </FormHelperText>
+                      </FormControl>
+
+                      {!isTestDefaultEnv && (
+                        <Flex justify="flex-end" pt={1}>
                           <Button
-                            size="3xs"
+                            size="xs"
                             variant="ghost"
                             colorScheme="red"
+                            leftIcon={<FiX />}
                             onClick={() => {
                               setShowTestingParams(false);
                               setTestUser("");
                               setTestData("");
                             }}
                           >
-                            X
+                            Batalkan & Sembunyikan Parameter Pengujian
                           </Button>
-                        )}
-                      </Flex>
-                      <Textarea
-                        rows={3}
-                        size="md"
-                        rounded="lg"
-                        placeholder="Contoh: dev_maker01 / User CS Maker..."
-                        value={testUser}
-                        onChange={(e) => setTestUser(e.target.value)}
-                      />
-                    </FormControl>
-
-                    {/* Test Data - Description Box */}
-                    <FormControl>
-                      <FormLabel fontSize="xs" fontWeight="bold">Test Data</FormLabel>
-                      <Textarea
-                        rows={3}
-                        size="md"
-                        rounded="lg"
-                        placeholder="Contoh: CIF: 902188201 / Rekening: 1029384756 / Keterangan data uji..."
-                        value={testData}
-                        onChange={(e) => setTestData(e.target.value)}
-                      />
-                      <FormHelperText fontSize="3xs" color="gray.500">
-                        Deskripsi data uji yang digunakan untuk verifikasi sistem pada environment ini.
-                      </FormHelperText>
-                    </FormControl>
-                  </VStack>
+                        </Flex>
+                      )}
+                    </VStack>
+                  </Box>
                 );
               })()}
             </VStack>
@@ -1803,7 +1940,7 @@ export default function CreateEnvironmentView() {
 
                     <HStack justify="space-between">
                       <Text color="gray.500">Status Server:</Text>
-                      <Badge colorScheme={status === "Aktif" ? "green" : "gray"} px={2} py={0.5} rounded="md">
+                      <Badge colorScheme={status === "Aktif" ? "green" : status === "Pasif" ? "yellow" : "red"} px={2} py={0.5} rounded="md">
                         {status}
                       </Badge>
                     </HStack>
@@ -1819,7 +1956,7 @@ export default function CreateEnvironmentView() {
 
                   {roleDetail && (
                     <Box mt={2.5} pt={2} borderTop="1px dashed" borderColor={isDark ? "gray.700" : "gray.200"}>
-                      <Text fontSize="3xs" color="gray.500" mb={0.5}>Deskripsi Fungsi:</Text>
+                      <Text fontSize="xs" color="gray.500" mb={0.5}>Deskripsi Fungsi:</Text>
                       <Text fontSize="xs" color={isDark ? "gray.200" : "gray.700"} noOfLines={2}>
                         {roleDetail}
                       </Text>
@@ -1880,7 +2017,7 @@ export default function CreateEnvironmentView() {
 
                   {note && (
                     <Box mt={2.5} pt={2} borderTop="1px dashed" borderColor={isDark ? "gray.700" : "gray.200"}>
-                      <Text fontSize="3xs" color="gray.500" mb={0.5}>Catatan Teknis:</Text>
+                      <Text fontSize="xs" color="gray.500" mb={0.5}>Catatan Teknis:</Text>
                       <Text fontSize="xs" color={isDark ? "gray.200" : "gray.700"} noOfLines={2}>
                         {note}
                       </Text>
@@ -1903,11 +2040,11 @@ export default function CreateEnvironmentView() {
                   <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={2.5} fontSize="xs">
                     <HStack justify="space-between">
                       <Text color="gray.500">Site Data Center:</Text>
-                      <Text fontWeight="bold">{site === "Other Site" ? (siteOther || "Other") : site}</Text>
+                      <Text fontWeight="bold">{(site === "Other" || site === "Other Site") ? (siteOther || "Other") : site}</Text>
                     </HStack>
 
                     <HStack justify="space-between">
-                      <Text color="gray.500">Site Segment:</Text>
+                      <Text color="gray.500">Segment:</Text>
                       <Text fontWeight="bold">{segment}</Text>
                     </HStack>
 
@@ -1947,7 +2084,7 @@ export default function CreateEnvironmentView() {
                     <Text fontSize="xs" fontWeight="800" textTransform="uppercase" letterSpacing="wider" color="blue.600">
                       4. Aplikasi & Tools Pendukung Server
                     </Text>
-                    <Badge colorScheme="blue" fontSize="3xs" rounded="md" px={2} py={0.5}>
+                    <Badge colorScheme="blue" fontSize="xs" rounded="md" px={2} py={0.5}>
                       {supportingTools.length} Tools
                     </Badge>
                   </HStack>
