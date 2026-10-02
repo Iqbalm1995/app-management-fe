@@ -90,6 +90,9 @@ export const TASK_BOARD_STATUS_NAME_DONE = "DONE";
 export const STATUS_LOGIN_ON: string = "logged_in";
 export const STATUS_LOGIN_OFF: string = "logged_out";
 
+// AUTH FEATURE FLAGS
+export const ENABLE_UIM_SSO_BRANDING: boolean = true; // Toggle UIM SSO logo emblem, badges, and contextual instructions in login modal
+
 // DELAY CONST
 export const DELAY_ZERO: number = 0;
 export const DELAY_LOW: number = 500;
@@ -123,13 +126,13 @@ export const BASE_PORT_MAIN: string = "5555";
 // export const BASE_PORT_MAIN: string = "8998";
 
 // Base Url Endpoint API
-export const ENDPOINT_API_BASEURL: string = "http://192.168.239.117";
-// export const ENDPOINT_API_BASEURL: string = "https://localhost";
+// export const ENDPOINT_API_BASEURL: string = "http://192.168.239.117";
+export const ENDPOINT_API_BASEURL: string = "https://localhost";
 export const ENDPOINT_PORT_BASIC: string = "2332";
 
 // Base Url Endpoint API
-export const ENDPOINT_API_BASEURL_OBJECT: string = "http://192.168.239.117";
-// export const ENDPOINT_API_BASEURL_OBJECT: string = "https://localhost";
+// export const ENDPOINT_API_BASEURL_OBJECT: string = "http://192.168.239.117";
+export const ENDPOINT_API_BASEURL_OBJECT: string = "https://localhost";
 export const ENDPOINT_PORT_BASIC_OBJECT: string = "2332";
 
 // http://192.168.239.117:5000
