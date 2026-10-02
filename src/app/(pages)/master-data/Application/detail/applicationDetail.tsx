@@ -125,6 +125,7 @@ import LoadingMiniSignature from "@/app/components/loadingMini";
 import { WeekdaySelector } from "@/app/components/inputProps/WeekDaySelector";
 import UserSearchSelect from "@/app/components/inputProps/userSearchSelect";
 import { ControlTable } from "@/app/components/tableComponents";
+import { ConfirmationDialog } from "@/app/components/confirmationDialog";
 
 // Constants & Helpers
 import {
@@ -562,8 +563,69 @@ export default function ApplicationDetail() {
     setServerEnvironments((prev) => [...prev, newServer]);
   };
 
+  // Delete Server Confirmation State
+  const [serverToDelete, setServerToDelete] = useState<{
+    index: number;
+    name: string;
+    ip: string;
+    env: string;
+  } | null>(null);
+  const [isDeleteServerModalOpen, setIsDeleteServerModalOpen] = useState(false);
+  const [isDeletingServer, setIsDeletingServer] = useState(false);
+
   const handleDeleteServer = (index: number) => {
-    setServerEnvironments((prev) => prev.filter((_, i) => i !== index));
+    const srv = serverEnvironments[index];
+    if (!srv) return;
+    setServerToDelete({
+      index,
+      name: srv.vmDetail?.namaVm || srv.roleDetail || srv.roleServer || `Server Node #${index + 1}`,
+      ip: srv.ipAddress || "-",
+      env: srv.environment || "Production",
+    });
+    setIsDeleteServerModalOpen(true);
+  };
+
+  const handleConfirmDeleteServer = async () => {
+    if (!serverToDelete) return;
+    const targetIndex = serverToDelete.index;
+    try {
+      setIsDeletingServer(true);
+      const updatedServers = serverEnvironments.filter((_, i) => i !== targetIndex);
+      setServerEnvironments(updatedServers);
+
+      if (appId && tokenData) {
+        const res = await SyncAppServers(appId, updatedServers as any, tokenData);
+        if (res && res.statusCode === RES_CODE_OK) {
+          showToast({
+            description: `Server ${serverToDelete.name} berhasil dihapus dari environment`,
+            statusToast: "success",
+          });
+        } else {
+          showToast({
+            description: res?.message || `Server ${serverToDelete.name} dihapus dari daftar lokal`,
+            statusToast: "warning",
+          });
+        }
+        if (typeof window !== "undefined") {
+          localStorage.setItem(`app_env_servers_${appId}`, JSON.stringify(updatedServers));
+        }
+      } else {
+        showToast({
+          description: `Server ${serverToDelete.name} berhasil dihapus`,
+          statusToast: "success",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to delete server node:", error);
+      showToast({
+        description: "Gagal menghapus server node dari backend",
+        statusToast: "error",
+      });
+    } finally {
+      setIsDeletingServer(false);
+      setIsDeleteServerModalOpen(false);
+      setServerToDelete(null);
+    }
   };
 
   // Copy app code helper
@@ -1104,9 +1166,14 @@ export default function ApplicationDetail() {
     }
   }, [appId, tokenData]);
 
-  // Initial Core Data Fetch (Lightweight)
+  // Initial Core Data Fetch (Lightweight) - Guard against duplicate/concurrent fetches
+  const initialCoreFetchDoneRef = useRef<string>("");
   useEffect(() => {
     if (tokenData && appId) {
+      const key = `${appId}-${tokenData}`;
+      if (initialCoreFetchDoneRef.current === key) return;
+      initialCoreFetchDoneRef.current = key;
+
       LoadApplicationData();
       LoadOrganizations();
       LoadProjectStatuses();
@@ -4657,13 +4724,25 @@ export default function ApplicationDetail() {
 
                                         {/* Status */}
                                         <FormControl isRequired>
-                                          <FormLabel fontSize="2xs" fontWeight="bold">Status</FormLabel>
+                                          <HStack justify="space-between" align="center" mb={1}>
+                                            <FormLabel fontSize="2xs" fontWeight="bold" mb={0}>Status</FormLabel>
+                                            <Badge
+                                              colorScheme={srv.status === "Aktif" ? "green" : srv.status === "Non Aktif" ? "red" : "gray"}
+                                              fontSize="3xs"
+                                              rounded="full"
+                                              px={2}
+                                              py={0.5}
+                                              fontWeight="bold"
+                                            >
+                                              {srv.status}
+                                            </Badge>
+                                          </HStack>
                                           <ChakraSelect
                                             size="sm"
                                             rounded="lg"
                                             value={srv.status}
                                             onChange={(e) =>
-                                              handleUpdateServer(index, "status", e.target.value as "Aktif" | "Pasif")
+                                              handleUpdateServer(index, "status", e.target.value as "Aktif" | "Pasif" | "Non Aktif")
                                             }
                                           >
                                             {SERVER_STATUS_OPTIONS.map((st) => (
@@ -4802,7 +4881,7 @@ export default function ApplicationDetail() {
                                                 </Badge>
                                               )}
                                               <Badge
-                                                colorScheme={srv.status === "Aktif" ? "green" : srv.status === "Pasif" ? "yellow" : "red"}
+                                                colorScheme={srv.status === "Aktif" ? "green" : srv.status === "Non Aktif" ? "red" : "gray"}
                                                 variant="solid"
                                                 fontSize="3xs"
                                                 rounded="full"
@@ -5934,6 +6013,22 @@ export default function ApplicationDetail() {
               </Card>
             </Box>
       )}
+
+      {/* Confirmation Dialog Delete Server Node (5s Hold to Confirm) */}
+      <ConfirmationDialog
+        key="confirmDeleteServerEnvironment"
+        isOpenTrigger={isDeleteServerModalOpen}
+        trigger={setIsDeleteServerModalOpen}
+        action={handleConfirmDeleteServer}
+        captionMsg="Konfirmasi Hapus Server Node"
+        questionMsg={`Apakah Anda yakin ingin menghapus server node "${serverToDelete?.name || ""}" (${serverToDelete?.ip || "-"}) pada environment ${serverToDelete?.env || ""}? Tindakan ini akan menghapus data konfigurasi server node dari database.`}
+        requireHold={true}
+        holdDurationSeconds={5}
+        isLoading={isDeletingServer}
+        colorScheme="red"
+        confirmButtonText="Tahan 5 Detik untuk Hapus"
+        cancelButtonText="Batal"
+      />
     </LayoutAdmin>
   );
 }

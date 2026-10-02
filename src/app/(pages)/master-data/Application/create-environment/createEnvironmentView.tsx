@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Badge,
@@ -53,6 +53,7 @@ import {
   FiArrowLeft,
   FiCheckCircle,
   FiClock,
+  FiCompass,
   FiCopy,
   FiCpu,
   FiDatabase,
@@ -75,7 +76,7 @@ import LayoutAdmin from "@/app/components/layoutAdmin";
 import { HeaderContent } from "@/app/components/headerContent";
 
 // Services & Constants
-import useApps, { ApplicationMasterResponse } from "@/app/services/useApps";
+import useApps, { ApplicationMasterResponse, AppAccessOverviewResponse } from "@/app/services/useApps";
 import {
   radiusStyle,
   RES_CODE_OK,
@@ -112,6 +113,15 @@ export interface EnvConfigItem {
   gradient: string;
 }
 
+export const DEFAULT_ENVIRONMENTS = [
+  "Production",
+  "Stagging",
+  "Dev",
+  "SIT",
+  "UAT",
+  "RnD",
+] as const;
+
 export const ENV_CONFIGS: Record<string, EnvConfigItem> = {
   Production: {
     code: "PROD",
@@ -129,11 +139,11 @@ export const ENV_CONFIGS: Record<string, EnvConfigItem> = {
     iconColor: "#1d4ed8",
     gradient: "linear(to-br, secondary.800, secondary.600)",
   },
-  DRC: {
-    code: "DRC",
-    label: "DRC",
-    sublabel: "Disaster Recovery Failover",
-    icon: FiRefreshCw,
+  Stagging: {
+    code: "STG",
+    label: "Stagging",
+    sublabel: "Pre-Release Mirror Tier",
+    icon: FiLayers,
     colorScheme: "blue",
     activeBorder: "blue.500",
     activeBgLight: "#eff6ff",
@@ -145,11 +155,27 @@ export const ENV_CONFIGS: Record<string, EnvConfigItem> = {
     iconColor: "#1d4ed8",
     gradient: "linear(to-br, secondary.800, secondary.600)",
   },
-  Staging: {
-    code: "STG",
-    label: "Staging",
-    sublabel: "Pre-Release Mirror Tier",
-    icon: FiLayers,
+  Dev: {
+    code: "DEV",
+    label: "Dev",
+    sublabel: "Active Feature Sandbox",
+    icon: FiCpu,
+    colorScheme: "blue",
+    activeBorder: "blue.500",
+    activeBgLight: "#eff6ff",
+    activeBgDark: "rgba(59, 130, 246, 0.15)",
+    activeDot: "#2563eb",
+    cardBorderLight: "#bfdbfe",
+    iconBgLight: "#dbeafe",
+    iconBgDark: "rgba(59, 130, 246, 0.2)",
+    iconColor: "#1d4ed8",
+    gradient: "linear(to-br, secondary.800, secondary.600)",
+  },
+  SIT: {
+    code: "SIT",
+    label: "SIT",
+    sublabel: "System Integration Testing",
+    icon: FiActivity,
     colorScheme: "blue",
     activeBorder: "blue.500",
     activeBgLight: "#eff6ff",
@@ -177,11 +203,60 @@ export const ENV_CONFIGS: Record<string, EnvConfigItem> = {
     iconColor: "#1d4ed8",
     gradient: "linear(to-br, secondary.800, secondary.600)",
   },
+  RnD: {
+    code: "RND",
+    label: "RnD",
+    sublabel: "Research & Development",
+    icon: FiCompass,
+    colorScheme: "blue",
+    activeBorder: "blue.500",
+    activeBgLight: "#eff6ff",
+    activeBgDark: "rgba(59, 130, 246, 0.15)",
+    activeDot: "#2563eb",
+    cardBorderLight: "#bfdbfe",
+    iconBgLight: "#dbeafe",
+    iconBgDark: "rgba(59, 130, 246, 0.2)",
+    iconColor: "#1d4ed8",
+    gradient: "linear(to-br, secondary.800, secondary.600)",
+  },
+  // Backward compatibility aliases
+  Staging: {
+    code: "STG",
+    label: "Stagging",
+    sublabel: "Pre-Release Mirror Tier",
+    icon: FiLayers,
+    colorScheme: "blue",
+    activeBorder: "blue.500",
+    activeBgLight: "#eff6ff",
+    activeBgDark: "rgba(59, 130, 246, 0.15)",
+    activeDot: "#2563eb",
+    cardBorderLight: "#bfdbfe",
+    iconBgLight: "#dbeafe",
+    iconBgDark: "rgba(59, 130, 246, 0.2)",
+    iconColor: "#1d4ed8",
+    gradient: "linear(to-br, secondary.800, secondary.600)",
+  },
   Development: {
     code: "DEV",
-    label: "Development",
+    label: "Dev",
     sublabel: "Active Feature Sandbox",
     icon: FiCpu,
+    colorScheme: "blue",
+    activeBorder: "blue.500",
+    activeBgLight: "#eff6ff",
+    activeBgDark: "rgba(59, 130, 246, 0.15)",
+    activeDot: "#2563eb",
+    cardBorderLight: "#bfdbfe",
+    iconBgLight: "#dbeafe",
+    iconBgDark: "rgba(59, 130, 246, 0.2)",
+    iconColor: "#1d4ed8",
+    gradient: "linear(to-br, secondary.800, secondary.600)",
+  },
+  DRC: {
+    code: "DRC",
+    label: "DRC",
+    sublabel: "Disaster Recovery Failover",
+    icon: FiRefreshCw,
     colorScheme: "blue",
     activeBorder: "blue.500",
     activeBgLight: "#eff6ff",
@@ -211,22 +286,28 @@ export default function CreateEnvironmentView() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Form State: 1 by 1 Server Creation
-  const isStandardInitial = ["development", "drc", "staging", "uat", "production"].some((e) =>
-    initialEnv.toLowerCase().includes(e)
+  const isStandardInitial = DEFAULT_ENVIRONMENTS.some((e) =>
+    initialEnv.toLowerCase() === e.toLowerCase() ||
+    (e === "Dev" && initialEnv.toLowerCase().includes("dev")) ||
+    (e === "Stagging" && (initialEnv.toLowerCase().includes("stag") || initialEnv.toLowerCase().includes("stg"))) ||
+    (e === "SIT" && initialEnv.toLowerCase().includes("sit")) ||
+    (e === "RnD" && initialEnv.toLowerCase().includes("rnd"))
   );
 
   const [targetEnvironment, setTargetEnvironment] = useState<string>(
     initialEnv.toLowerCase().includes("dev")
-      ? "Development"
-      : initialEnv.toLowerCase().includes("drc")
-      ? "DRC"
-      : initialEnv.toLowerCase().includes("staging") || initialEnv.toLowerCase().includes("stg")
-      ? "Staging"
+      ? "Dev"
+      : initialEnv.toLowerCase().includes("stag") || initialEnv.toLowerCase().includes("stg")
+      ? "Stagging"
+      : initialEnv.toLowerCase().includes("sit")
+      ? "SIT"
       : initialEnv.toLowerCase().includes("uat")
       ? "UAT"
+      : initialEnv.toLowerCase().includes("rnd")
+      ? "RnD"
       : initialEnv.toLowerCase().includes("prod")
       ? "Production"
-      : initialEnv
+      : initialEnv || "Production"
   );
   const [customEnvironments, setCustomEnvironments] = useState<string[]>(
     isStandardInitial || !initialEnv ? [] : [initialEnv]
@@ -247,6 +328,26 @@ export default function CreateEnvironmentView() {
     handleEnvChange(trimmed);
     setTargetEnvironmentOther(trimmed);
     setIsAddingCustomEnv(false);
+  };
+
+  // Custom Site Data Center State & Confirmation Handler (matching target environment)
+  const [customSites, setCustomSites] = useState<string[]>([]);
+  const [isAddingCustomSite, setIsAddingCustomSite] = useState<boolean>(false);
+  const [customSiteInput, setCustomSiteInput] = useState<string>("");
+
+  const handleConfirmCustomSite = (nameToConfirm?: string) => {
+    const rawName = nameToConfirm !== undefined ? nameToConfirm : customSiteInput;
+    const trimmed = rawName.trim();
+    if (!trimmed) return;
+
+    if (!customSites.includes(trimmed)) {
+      setCustomSites((prev) => [...prev, trimmed]);
+    }
+    handleSiteChange(trimmed);
+    setSiteOther(trimmed);
+    setDcSelectionOther(trimmed);
+    setIsAddingCustomSite(false);
+    setCustomSiteInput("");
   };
 
   const [roleServer, setRoleServer] = useState<string>("App Server");
@@ -340,36 +441,51 @@ export default function CreateEnvironmentView() {
     if (token) setTokenData(token);
   }, []);
 
-  // Fetch Application Context
-  const loadAppDetail = useCallback(async () => {
-    if (!appId || !tokenData) return;
-    try {
-      setIsLoadingApp(true);
-      const res = await GetDetailById(appId, tokenData);
-      if (res && res.statusCode === RES_CODE_OK && res.data) {
-        setDataApplication(res.data as ApplicationMasterResponse);
-      }
-    } catch (e) {
-      console.error("Failed to fetch app detail:", e);
-    } finally {
-      setIsLoadingApp(false);
-    }
-  }, [appId, tokenData, GetDetailById]);
+  const initialFetchDoneRef = useRef<string>("");
+  const accessDataRef = useRef<AppAccessOverviewResponse | null>(null);
 
-  // Fetch Access URL to pre-fill
+  // Fetch Application Context & Access URL once per appId + tokenData
   useEffect(() => {
     if (!appId || !tokenData) return;
-    loadAppDetail();
-    GetAccessParameters(appId, tokenData).then((res) => {
-      if (res && res.statusCode === RES_CODE_OK && res.data) {
-        if (targetEnvironment === "Production" && res.data.prodUrl) {
-          setEnvLinkUrl(res.data.prodUrl);
-        } else if (targetEnvironment === "Development" && res.data.devUrl) {
-          setEnvLinkUrl(res.data.devUrl);
+    const key = `${appId}-${tokenData}`;
+    if (initialFetchDoneRef.current === key) return;
+    initialFetchDoneRef.current = key;
+
+    setIsLoadingApp(true);
+    GetDetailById(appId, tokenData)
+      .then((res) => {
+        if (res && res.statusCode === RES_CODE_OK && res.data) {
+          setDataApplication(res.data as ApplicationMasterResponse);
         }
-      }
-    });
-  }, [appId, tokenData, loadAppDetail, GetAccessParameters, targetEnvironment]);
+      })
+      .catch((e) => console.error("Failed to fetch app detail:", e))
+      .finally(() => setIsLoadingApp(false));
+
+    GetAccessParameters(appId, tokenData)
+      .then((res) => {
+        if (res && res.statusCode === RES_CODE_OK && res.data) {
+          accessDataRef.current = res.data;
+          if (targetEnvironment === "Production" && res.data.prodUrl) {
+            setEnvLinkUrl(res.data.prodUrl);
+          } else if ((targetEnvironment === "Development" || targetEnvironment === "Dev") && res.data.devUrl) {
+            setEnvLinkUrl(res.data.devUrl);
+          }
+        }
+      })
+      .catch((e) => console.error("Failed to fetch access parameters:", e));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appId, tokenData]);
+
+  // Sync access URL when targetEnvironment is changed
+  useEffect(() => {
+    const access = accessDataRef.current;
+    if (!access) return;
+    if (targetEnvironment === "Production" && access.prodUrl) {
+      setEnvLinkUrl(access.prodUrl);
+    } else if ((targetEnvironment === "Development" || targetEnvironment === "Dev") && access.devUrl) {
+      setEnvLinkUrl(access.devUrl);
+    }
+  }, [targetEnvironment]);
 
   // Auto-detect DC1/DC2 from IP
   const handleIpChange = (newIp: string) => {
@@ -391,16 +507,53 @@ export default function CreateEnvironmentView() {
     const prefix =
       newEnv === "Production"
         ? "PRD"
-        : newEnv === "Development"
+        : newEnv === "Stagging" || newEnv === "Staging"
+        ? "STG"
+        : newEnv === "Dev" || newEnv === "Development"
         ? "DEV"
-        : newEnv === "DRC"
-        ? "DRC"
+        : newEnv === "SIT"
+        ? "SIT"
         : newEnv === "UAT"
         ? "UAT"
-        : newEnv === "Staging"
-        ? "STG"
+        : newEnv === "RnD"
+        ? "RND"
         : newEnv.slice(0, 3).toUpperCase();
     setNamaVm(`VM-${prefix}-NODE-${Date.now().toString().slice(-4)}`);
+  };
+
+  // Filtered default environments based on selected Site Data Center
+  const availableDefaultEnvs = useMemo(() => {
+    if (site === "Google Cloud" || site === "AWS Cloud") {
+      return ["Production", "Dev"] as const;
+    }
+    return DEFAULT_ENVIRONMENTS;
+  }, [site]);
+
+  // Handle Site Data Center change with automatic environment realignment
+  const handleSiteChange = (newSite: string) => {
+    setSite(newSite);
+    if (newSite === "DC 1") {
+      setPrimarySite("DC1");
+      setDcSelection("DC 1");
+    } else if (newSite === "DC 2") {
+      setPrimarySite("DC2");
+      setDcSelection("DC 2");
+    } else {
+      setPrimarySite("-");
+      setDcSelection(newSite);
+    }
+    if (newSite !== "Other" && newSite !== "Other Site") {
+      setSiteOther("");
+      setDcSelectionOther("");
+    }
+
+    // When switching to Cloud provider, if current target environment is not in [Production, Dev] and not custom, switch to Production
+    if (newSite === "Google Cloud" || newSite === "AWS Cloud") {
+      const isCustom = customEnvironments.includes(targetEnvironment);
+      if (!isCustom && targetEnvironment !== "Production" && targetEnvironment !== "Dev" && targetEnvironment !== "Development") {
+        handleEnvChange("Production");
+      }
+    }
   };
 
   // Form Submit Handler
@@ -516,7 +669,7 @@ export default function CreateEnvironmentView() {
       return false;
     }
 
-    const isStandardEnv = ["Production", "DRC", "Staging", "UAT", "Development"].includes(targetEnvironment);
+    const isStandardEnv = (DEFAULT_ENVIRONMENTS as readonly string[]).includes(targetEnvironment) || ["Development", "Staging"].includes(targetEnvironment);
     if (!isStandardEnv && !targetEnvironment.trim() && !targetEnvironmentOther.trim()) {
       toast({
         title: "Validasi Gagal",
@@ -862,240 +1015,531 @@ export default function CreateEnvironmentView() {
               </Box>
             </Flex>
 
-            {/* Target Environment Selector (Header Placement - Easy to See) */}
-            <Box
-              bg="blackAlpha.200"
-              p={3}
-              rounded="lg"
-              border="1px solid"
-              borderColor="whiteAlpha.300"
-              backdropFilter="blur(6px)"
-            >
-              <Flex justify="space-between" align="center" mb={2.5} wrap="wrap" gap={2}>
-                <HStack spacing={2}>
-                  <Text fontSize="xs" fontWeight="800" textTransform="uppercase" letterSpacing="wider" color="whiteAlpha.900">
-                    Pilih Target Environment:
-                  </Text>
-                  <Tag size="sm" bg="white" color="blue.800" rounded="md" px={2.5} shadow="xs">
-                    <TagLabel fontSize="xs" fontWeight="bold">
-                      Aktif: {targetEnvironment} ({activeMeta.code})
-                    </TagLabel>
-                  </Tag>
-                </HStack>
+            {/* Stacked Vertical Header: 1. Site Data Center -> 2. Target Environment */}
+            <VStack spacing={3} align="stretch" w="full">
+              {/* STACK 1: Site Data Center Selection */}
+              <Box
+                bg="blackAlpha.200"
+                p={3}
+                rounded="lg"
+                border="1px solid"
+                borderColor="whiteAlpha.300"
+                backdropFilter="blur(6px)"
+              >
+                <Flex justify="space-between" align="center" mb={2.5} wrap="wrap" gap={2}>
+                  <HStack spacing={2} wrap="wrap">
+                    <Icon as={FiDatabase} color="white" boxSize={4} />
+                    <Text fontSize="xs" fontWeight="800" textTransform="uppercase" letterSpacing="wider" color="whiteAlpha.900">
+                      1. Site Data Center / Cloud Provider:
+                    </Text>
+                    <Tag size="sm" bg="white" color="blue.800" rounded="md" px={2.5} shadow="xs">
+                      <TagLabel fontSize="xs" fontWeight="bold">
+                        Aktif: {site}
+                      </TagLabel>
+                    </Tag>
+                  </HStack>
 
-                {/* Custom Environment Toggle */}
-                <Button
-                  size="xs"
-                  variant={isAddingCustomEnv ? "solid" : "outline"}
-                  bg={isAddingCustomEnv ? "white" : "transparent"}
-                  color={isAddingCustomEnv ? "blue.800" : "white"}
-                  borderColor="whiteAlpha.400"
-                  _hover={{ bg: isAddingCustomEnv ? "gray.100" : "whiteAlpha.300" }}
-                  rounded="md"
-                  fontSize="xs"
-                  leftIcon={isAddingCustomEnv ? <FiX /> : <FiGlobe />}
-                  onClick={() => {
-                    setIsAddingCustomEnv(!isAddingCustomEnv);
-                    if (!isAddingCustomEnv) {
-                      setTargetEnvironmentOther("");
-                    }
+                  {/* Custom Site Toggle Button */}
+                  <Button
+                    size="xs"
+                    variant={isAddingCustomSite ? "solid" : "outline"}
+                    bg={isAddingCustomSite ? "white" : "transparent"}
+                    color={isAddingCustomSite ? "blue.800" : "white"}
+                    borderColor="whiteAlpha.400"
+                    _hover={{ bg: isAddingCustomSite ? "gray.100" : "whiteAlpha.300" }}
+                    rounded="md"
+                    fontSize="xs"
+                    leftIcon={isAddingCustomSite ? <FiX /> : <FiPlus />}
+                    onClick={() => {
+                      setIsAddingCustomSite(!isAddingCustomSite);
+                      if (!isAddingCustomSite) {
+                        setCustomSiteInput("");
+                      }
+                    }}
+                  >
+                    {isAddingCustomSite ? "Tutup Input Kustom" : "+ Custom Site"}
+                  </Button>
+                </Flex>
+
+                <SimpleGrid
+                  columns={{
+                    base: 2,
+                    sm: (SERVER_SITE_OPTIONS.filter((s) => s !== "Other").length + customSites.length) <= 3 ? 3 : 3,
+                    md: (SERVER_SITE_OPTIONS.filter((s) => s !== "Other").length + customSites.length) <= 4 ? 4 : 5,
+                    xl: 5,
                   }}
+                  spacing={2}
+                  w="full"
                 >
-                  {isAddingCustomEnv ? "Batal" : "+ Custom Environment"}
-                </Button>
-              </Flex>
-
-              {/* Responsive environment cards (Standard 5 tiers + Custom Environment cards) */}
-              <SimpleGrid columns={{ base: 2, sm: 3, md: 5, xl: 6 }} spacing={2} w="full">
-                {(["Production", "DRC", "Staging", "UAT", "Development"] as const).map((envOption) => {
-                  const isSelected = targetEnvironment === envOption;
-                  const cfg = ENV_CONFIGS[envOption];
-
-                  return (
-                    <Box
-                      key={envOption}
-                      as="button"
-                      type="button"
-                      onClick={() => handleEnvChange(envOption)}
-                      px={3}
-                      py={2}
-                      rounded="md"
-                      textAlign="left"
-                      border="1px solid"
-                      borderColor={isSelected ? "white" : "whiteAlpha.300"}
-                      bg={isSelected ? "white" : "whiteAlpha.150"}
-                      color={isSelected ? "blue.800" : "white"}
-                      shadow={isSelected ? "sm" : "none"}
-                      transition="all 0.18s ease"
-                      _hover={{
-                        bg: isSelected ? "white" : "whiteAlpha.250",
-                        borderColor: "white",
-                        transform: "translateY(-1px)",
-                      }}
-                      _active={{
-                        transform: "scale(0.98)",
-                      }}
-                    >
-                      <Flex align="center" justify="space-between" mb={1}>
-                        <HStack spacing={1.5}>
-                          <Icon as={cfg.icon} boxSize={3.5} color={isSelected ? "blue.600" : "whiteAlpha.900"} />
-                          <Text fontSize="xs" fontWeight="bold">
-                            {cfg.code}
-                          </Text>
-                        </HStack>
-                        {isSelected && (
-                          <Icon as={FiCheckCircle} boxSize={3.5} color="blue.600" />
-                        )}
-                      </Flex>
-                      <Text
-                        fontSize="xs"
-                        fontWeight="800"
-                        lineHeight="short"
-                        noOfLines={1}
+                  {SERVER_SITE_OPTIONS.filter((s) => s !== "Other").map((siteOpt) => {
+                    const isSelected = site === siteOpt;
+                    return (
+                      <Box
+                        key={siteOpt}
+                        as="button"
+                        type="button"
+                        onClick={() => handleSiteChange(siteOpt)}
+                        px={3}
+                        py={2}
+                        rounded="md"
+                        textAlign="left"
+                        border="1px solid"
+                        borderColor={isSelected ? "white" : "whiteAlpha.300"}
+                        bg={isSelected ? "white" : "whiteAlpha.150"}
                         color={isSelected ? "blue.800" : "white"}
+                        shadow={isSelected ? "sm" : "none"}
+                        transition="all 0.18s ease"
+                        _hover={{
+                          bg: isSelected ? "white" : "whiteAlpha.250",
+                          borderColor: "white",
+                          transform: "translateY(-1px)",
+                        }}
+                        _active={{
+                          transform: "scale(0.98)",
+                        }}
                       >
-                        {cfg.label}
-                      </Text>
-                      <Text
-                        fontSize="xs"
-                        color={isSelected ? "blue.600" : "whiteAlpha.800"}
-                        noOfLines={1}
-                      >
-                        {cfg.sublabel}
-                      </Text>
-                    </Box>
-                  );
-                })}
-
-                {/* Confirmed Custom Environment Cards */}
-                {customEnvironments.map((customEnv) => {
-                  const isSelected = targetEnvironment === customEnv;
-                  const code = customEnv.length <= 4 ? customEnv.toUpperCase() : customEnv.slice(0, 4).toUpperCase();
-                  return (
-                    <Box
-                      key={customEnv}
-                      as="button"
-                      type="button"
-                      onClick={() => handleEnvChange(customEnv)}
-                      px={3}
-                      py={2}
-                      rounded="md"
-                      textAlign="left"
-                      border="1px solid"
-                      borderColor={isSelected ? "white" : "whiteAlpha.300"}
-                      bg={isSelected ? "white" : "whiteAlpha.150"}
-                      color={isSelected ? "blue.800" : "white"}
-                      shadow={isSelected ? "sm" : "none"}
-                      transition="all 0.18s ease"
-                      position="relative"
-                      _hover={{
-                        bg: isSelected ? "white" : "whiteAlpha.250",
-                        borderColor: "white",
-                        transform: "translateY(-1px)",
-                      }}
-                      _active={{
-                        transform: "scale(0.98)",
-                      }}
-                    >
-                      <Flex align="center" justify="space-between" mb={1}>
-                        <HStack spacing={1.5}>
-                          <Icon as={FiGlobe} boxSize={3.5} color={isSelected ? "blue.600" : "whiteAlpha.900"} />
-                          <Text fontSize="xs" fontWeight="bold">
-                            {code}
+                        <Flex align="center" justify="space-between" mb={0.5}>
+                          <Text fontSize="xs" fontWeight="extrabold">
+                            {siteOpt}
                           </Text>
-                        </HStack>
-                        <HStack spacing={1}>
                           {isSelected && (
                             <Icon as={FiCheckCircle} boxSize={3.5} color="blue.600" />
                           )}
-                          <IconButton
-                            aria-label="Hapus custom environment"
-                            icon={<FiX />}
-                            size="xs"
-                            variant="ghost"
-                            color={isSelected ? "gray.500" : "whiteAlpha.700"}
-                            _hover={{ color: "red.500" }}
-                            minW="18px"
-                            h="18px"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setCustomEnvironments((prev) => prev.filter((c) => c !== customEnv));
-                              if (targetEnvironment === customEnv) {
-                                handleEnvChange("Production");
-                              }
-                            }}
-                          />
-                        </HStack>
-                      </Flex>
-                      <Text
-                        fontSize="xs"
-                        fontWeight="800"
-                        lineHeight="short"
-                        noOfLines={1}
-                        color={isSelected ? "blue.800" : "white"}
-                      >
-                        {customEnv}
-                      </Text>
-                      <Text
-                        fontSize="xs"
-                        color={isSelected ? "blue.600" : "whiteAlpha.800"}
-                        noOfLines={1}
-                      >
-                        Custom Environment
-                      </Text>
-                    </Box>
-                  );
-                })}
-              </SimpleGrid>
+                        </Flex>
+                        <Text fontSize="2xs" color={isSelected ? "blue.600" : "whiteAlpha.800"}>
+                          {siteOpt === "DC 1" || siteOpt === "DC 2"
+                            ? "On-Premise DC"
+                            : "Public Cloud"}
+                        </Text>
+                      </Box>
+                    );
+                  })}
 
-              {isAddingCustomEnv && (
-                <Box mt={3} pt={2.5} borderTop="1px dashed" borderColor="whiteAlpha.400">
-                  <FormControl isRequired>
-                    <HStack justify="space-between" mb={1}>
-                      <FormLabel fontSize="xs" fontWeight="bold" color="white" mb={0}>
-                        Nama Environment Kustom (Tekan Tab atau Enter untuk konfirmasi)
-                      </FormLabel>
-                      <Text fontSize="xs" color="whiteAlpha.800">
-                        Tekan <b>Tab</b> atau <b>Enter</b> untuk menyimpan
-                      </Text>
-                    </HStack>
-                    <HStack spacing={2}>
-                      <Input
-                        size="sm"
+                  {/* Confirmed Custom Site Cards */}
+                  {customSites.map((customSite) => {
+                    const isSelected = site === customSite;
+                    const code = customSite.length <= 4 ? customSite.toUpperCase() : customSite.slice(0, 4).toUpperCase();
+                    return (
+                      <Box
+                        key={customSite}
+                        as="button"
+                        type="button"
+                        onClick={() => handleSiteChange(customSite)}
+                        px={3}
+                        py={2}
                         rounded="md"
-                        bg="white"
-                        color="gray.900"
-                        _placeholder={{ color: "gray.400" }}
-                        placeholder="Contoh: Hotfix, Sandbox, Pre-DRC, QA-Automated..."
-                        value={targetEnvironmentOther}
-                        onChange={(e) => setTargetEnvironmentOther(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === "Tab") {
-                            if (targetEnvironmentOther.trim()) {
-                              e.preventDefault();
-                              handleConfirmCustomEnv();
-                            }
-                          }
+                        textAlign="left"
+                        border="1px solid"
+                        borderColor={isSelected ? "white" : "whiteAlpha.300"}
+                        bg={isSelected ? "white" : "whiteAlpha.150"}
+                        color={isSelected ? "blue.800" : "white"}
+                        shadow={isSelected ? "sm" : "none"}
+                        transition="all 0.18s ease"
+                        position="relative"
+                        _hover={{
+                          bg: isSelected ? "white" : "whiteAlpha.250",
+                          borderColor: "white",
+                          transform: "translateY(-1px)",
                         }}
-                        autoFocus
-                      />
-                      <Button
-                        size="sm"
-                        colorScheme="blue"
-                        bg="white"
-                        color="blue.700"
-                        _hover={{ bg: "gray.100" }}
-                        fontWeight="bold"
-                        onClick={() => handleConfirmCustomEnv()}
-                        isDisabled={!targetEnvironmentOther.trim()}
+                        _active={{
+                          transform: "scale(0.98)",
+                        }}
                       >
-                        Simpan
-                      </Button>
-                    </HStack>
-                  </FormControl>
-                </Box>
-              )}
-            </Box>
+                        <Flex align="center" justify="space-between" mb={0.5}>
+                          <HStack spacing={1.5}>
+                            <Icon as={FiDatabase} boxSize={3.5} color={isSelected ? "blue.600" : "whiteAlpha.900"} />
+                            <Text fontSize="xs" fontWeight="bold">
+                              {code}
+                            </Text>
+                          </HStack>
+                          <HStack spacing={1}>
+                            {isSelected && (
+                              <Icon as={FiCheckCircle} boxSize={3.5} color="blue.600" />
+                            )}
+                            <IconButton
+                              aria-label="Hapus custom site"
+                              icon={<FiX />}
+                              size="xs"
+                              variant="ghost"
+                              color={isSelected ? "gray.500" : "whiteAlpha.700"}
+                              _hover={{ color: "red.500" }}
+                              minW="18px"
+                              h="18px"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCustomSites((prev) => prev.filter((s) => s !== customSite));
+                                if (site === customSite) {
+                                  handleSiteChange("DC 1");
+                                }
+                              }}
+                            />
+                          </HStack>
+                        </Flex>
+                        <Text
+                          fontSize="xs"
+                          fontWeight="800"
+                          lineHeight="short"
+                          noOfLines={1}
+                          color={isSelected ? "blue.800" : "white"}
+                        >
+                          {customSite}
+                        </Text>
+                        <Text
+                          fontSize="2xs"
+                          color={isSelected ? "blue.600" : "whiteAlpha.800"}
+                          noOfLines={1}
+                        >
+                          Custom Site
+                        </Text>
+                      </Box>
+                    );
+                  })}
+                </SimpleGrid>
+
+                {/* Custom Site Input Form (Press Tab or Enter to confirm) */}
+                {isAddingCustomSite && (
+                  <Box mt={3} pt={2.5} borderTop="1px dashed" borderColor="whiteAlpha.400">
+                    <FormControl isRequired>
+                      <HStack justify="space-between" mb={1}>
+                        <FormLabel fontSize="xs" fontWeight="bold" color="white" mb={0}>
+                          Nama Data Center / Cloud Kustom (Tekan Tab atau Enter untuk konfirmasi)
+                        </FormLabel>
+                        <Text fontSize="xs" color="whiteAlpha.800">
+                          Tekan <b>Tab</b> atau <b>Enter</b> untuk menyimpan
+                        </Text>
+                      </HStack>
+                      <HStack spacing={2}>
+                        <Input
+                          size="sm"
+                          rounded="md"
+                          bg="white"
+                          color="gray.900"
+                          _placeholder={{ color: "gray.400" }}
+                          placeholder="Contoh: Azure Cloud, DC Surabaya, Alibaba Cloud..."
+                          value={customSiteInput}
+                          onChange={(e) => setCustomSiteInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === "Tab") {
+                              if (customSiteInput.trim()) {
+                                e.preventDefault();
+                                handleConfirmCustomSite();
+                              }
+                            }
+                          }}
+                          autoFocus
+                        />
+                        <Button
+                          size="sm"
+                          colorScheme="blue"
+                          bg="white"
+                          color="blue.700"
+                          _hover={{ bg: "gray.100" }}
+                          fontWeight="bold"
+                          onClick={() => handleConfirmCustomSite()}
+                          isDisabled={!customSiteInput.trim()}
+                        >
+                          Simpan
+                        </Button>
+                      </HStack>
+                    </FormControl>
+                  </Box>
+                )}
+              </Box>
+
+              {/* STACK 2: Target Environment Selection (Conditioned by Site Data Center) */}
+              <Box
+                bg="blackAlpha.200"
+                p={3}
+                rounded="lg"
+                border="1px solid"
+                borderColor="whiteAlpha.300"
+                backdropFilter="blur(6px)"
+              >
+                <Flex justify="space-between" align="center" mb={2.5} wrap="wrap" gap={2}>
+                  <HStack spacing={2}>
+                    <Text fontSize="xs" fontWeight="800" textTransform="uppercase" letterSpacing="wider" color="whiteAlpha.900">
+                      2. Pilih Target Environment:
+                    </Text>
+                    <Tag size="sm" bg="white" color="blue.800" rounded="md" px={2.5} shadow="xs">
+                      <TagLabel fontSize="xs" fontWeight="bold">
+                        Aktif: {targetEnvironment} ({activeMeta.code})
+                      </TagLabel>
+                    </Tag>
+                  </HStack>
+
+                  {/* Custom Environment Toggle */}
+                  <Button
+                    size="xs"
+                    variant={isAddingCustomEnv ? "solid" : "outline"}
+                    bg={isAddingCustomEnv ? "white" : "transparent"}
+                    color={isAddingCustomEnv ? "blue.800" : "white"}
+                    borderColor="whiteAlpha.400"
+                    _hover={{ bg: isAddingCustomEnv ? "gray.100" : "whiteAlpha.300" }}
+                    rounded="md"
+                    fontSize="xs"
+                    leftIcon={isAddingCustomEnv ? <FiX /> : <FiGlobe />}
+                    onClick={() => {
+                      setIsAddingCustomEnv(!isAddingCustomEnv);
+                      if (!isAddingCustomEnv) {
+                        setTargetEnvironmentOther("");
+                      }
+                    }}
+                  >
+                    {isAddingCustomEnv ? "Tutup Input Kustom" : "+ Custom Environment"}
+                  </Button>
+                </Flex>
+
+                {/* Responsive environment cards (Filtered by Site + Confirmed Custom Cards) */}
+                <SimpleGrid
+                  columns={{
+                    base: 2,
+                    sm: (availableDefaultEnvs.length + customEnvironments.length) <= 3 ? 3 : 3,
+                    md: (availableDefaultEnvs.length + customEnvironments.length) <= 4 ? 4 : 6,
+                    xl: 6,
+                  }}
+                  spacing={2}
+                  w="full"
+                >
+                  {availableDefaultEnvs.map((envOption) => {
+                    const isSelected =
+                      targetEnvironment === envOption ||
+                      (envOption === "Dev" && targetEnvironment === "Development") ||
+                      (envOption === "Stagging" && targetEnvironment === "Staging");
+                    const cfg = ENV_CONFIGS[envOption] || {
+                      code: envOption.slice(0, 3).toUpperCase(),
+                      label: envOption,
+                      sublabel: "Environment Tier",
+                      icon: FiLayers,
+                    };
+
+                    return (
+                      <Box
+                        key={envOption}
+                        as="button"
+                        type="button"
+                        onClick={() => handleEnvChange(envOption)}
+                        px={3}
+                        py={2}
+                        rounded="md"
+                        textAlign="left"
+                        border="1px solid"
+                        borderColor={isSelected ? "white" : "whiteAlpha.300"}
+                        bg={isSelected ? "white" : "whiteAlpha.150"}
+                        color={isSelected ? "blue.800" : "white"}
+                        shadow={isSelected ? "sm" : "none"}
+                        transition="all 0.18s ease"
+                        _hover={{
+                          bg: isSelected ? "white" : "whiteAlpha.250",
+                          borderColor: "white",
+                          transform: "translateY(-1px)",
+                        }}
+                        _active={{
+                          transform: "scale(0.98)",
+                        }}
+                      >
+                        <Flex align="center" justify="space-between" mb={1}>
+                          <HStack spacing={1.5}>
+                            <Icon as={cfg.icon} boxSize={3.5} color={isSelected ? "blue.600" : "whiteAlpha.900"} />
+                            <Text fontSize="xs" fontWeight="bold">
+                              {cfg.code}
+                            </Text>
+                          </HStack>
+                          {isSelected && (
+                            <HStack spacing={1} align="center">
+                              <Badge
+                                display="inline-flex"
+                                alignItems="center"
+                                gap={1}
+                                colorScheme={status === "Aktif" ? "green" : status === "Non Aktif" ? "red" : "gray"}
+                                fontSize="3xs"
+                                px={1.5}
+                                py={0.5}
+                                rounded="full"
+                                fontWeight="bold"
+                              >
+                                <Box
+                                  w="6px"
+                                  h="6px"
+                                  rounded="full"
+                                  bg={status === "Aktif" ? "green.500" : status === "Non Aktif" ? "red.500" : "gray.400"}
+                                />
+                                {status}
+                              </Badge>
+                              <Icon as={FiCheckCircle} boxSize={3.5} color="blue.600" />
+                            </HStack>
+                          )}
+                        </Flex>
+                        <Text
+                          fontSize="xs"
+                          fontWeight="800"
+                          lineHeight="short"
+                          noOfLines={1}
+                          color={isSelected ? "blue.800" : "white"}
+                        >
+                          {cfg.label}
+                        </Text>
+                        <Text
+                          fontSize="xs"
+                          color={isSelected ? "blue.600" : "whiteAlpha.800"}
+                          noOfLines={1}
+                        >
+                          {cfg.sublabel}
+                        </Text>
+                      </Box>
+                    );
+                  })}
+
+                  {/* Confirmed Custom Environment Cards */}
+                  {customEnvironments.map((customEnv) => {
+                    const isSelected = targetEnvironment === customEnv;
+                    const code = customEnv.length <= 4 ? customEnv.toUpperCase() : customEnv.slice(0, 4).toUpperCase();
+                    return (
+                      <Box
+                        key={customEnv}
+                        as="button"
+                        type="button"
+                        onClick={() => handleEnvChange(customEnv)}
+                        px={3}
+                        py={2}
+                        rounded="md"
+                        textAlign="left"
+                        border="1px solid"
+                        borderColor={isSelected ? "white" : "whiteAlpha.300"}
+                        bg={isSelected ? "white" : "whiteAlpha.150"}
+                        color={isSelected ? "blue.800" : "white"}
+                        shadow={isSelected ? "sm" : "none"}
+                        transition="all 0.18s ease"
+                        position="relative"
+                        _hover={{
+                          bg: isSelected ? "white" : "whiteAlpha.250",
+                          borderColor: "white",
+                          transform: "translateY(-1px)",
+                        }}
+                        _active={{
+                          transform: "scale(0.98)",
+                        }}
+                      >
+                        <Flex align="center" justify="space-between" mb={1}>
+                          <HStack spacing={1.5}>
+                            <Icon as={FiGlobe} boxSize={3.5} color={isSelected ? "blue.600" : "whiteAlpha.900"} />
+                            <Text fontSize="xs" fontWeight="bold">
+                              {code}
+                            </Text>
+                          </HStack>
+                          <HStack spacing={1}>
+                            {isSelected && (
+                              <>
+                                <Badge
+                                  display="inline-flex"
+                                  alignItems="center"
+                                  gap={1}
+                                  colorScheme={status === "Aktif" ? "green" : status === "Non Aktif" ? "red" : "gray"}
+                                  fontSize="3xs"
+                                  px={1.5}
+                                  py={0.5}
+                                  rounded="full"
+                                  fontWeight="bold"
+                                >
+                                  <Box
+                                    w="6px"
+                                    h="6px"
+                                    rounded="full"
+                                    bg={status === "Aktif" ? "green.500" : status === "Non Aktif" ? "red.500" : "gray.400"}
+                                  />
+                                  {status}
+                                </Badge>
+                                <Icon as={FiCheckCircle} boxSize={3.5} color="blue.600" />
+                              </>
+                            )}
+                            <IconButton
+                              aria-label="Hapus custom environment"
+                              icon={<FiX />}
+                              size="xs"
+                              variant="ghost"
+                              color={isSelected ? "gray.500" : "whiteAlpha.700"}
+                              _hover={{ color: "red.500" }}
+                              minW="18px"
+                              h="18px"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCustomEnvironments((prev) => prev.filter((c) => c !== customEnv));
+                                if (targetEnvironment === customEnv) {
+                                  handleEnvChange("Production");
+                                }
+                              }}
+                            />
+                          </HStack>
+                        </Flex>
+                        <Text
+                          fontSize="xs"
+                          fontWeight="800"
+                          lineHeight="short"
+                          noOfLines={1}
+                          color={isSelected ? "blue.800" : "white"}
+                        >
+                          {customEnv}
+                        </Text>
+                        <Text
+                          fontSize="xs"
+                          color={isSelected ? "blue.600" : "whiteAlpha.800"}
+                          noOfLines={1}
+                        >
+                          Custom Environment
+                        </Text>
+                      </Box>
+                    );
+                  })}
+                </SimpleGrid>
+
+                {isAddingCustomEnv && (
+                  <Box mt={3} pt={2.5} borderTop="1px dashed" borderColor="whiteAlpha.400">
+                    <FormControl isRequired>
+                      <HStack justify="space-between" mb={1}>
+                        <FormLabel fontSize="xs" fontWeight="bold" color="white" mb={0}>
+                          Nama Environment Kustom (Tekan Tab atau Enter untuk konfirmasi)
+                        </FormLabel>
+                        <Text fontSize="xs" color="whiteAlpha.800">
+                          Tekan <b>Tab</b> atau <b>Enter</b> untuk menyimpan
+                        </Text>
+                      </HStack>
+                      <HStack spacing={2}>
+                        <Input
+                          size="sm"
+                          rounded="md"
+                          bg="white"
+                          color="gray.900"
+                          _placeholder={{ color: "gray.400" }}
+                          placeholder="Contoh: Hotfix, Sandbox, Pre-DRC, QA-Automated..."
+                          value={targetEnvironmentOther}
+                          onChange={(e) => setTargetEnvironmentOther(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === "Tab") {
+                              if (targetEnvironmentOther.trim()) {
+                                e.preventDefault();
+                                handleConfirmCustomEnv();
+                              }
+                            }
+                          }}
+                          autoFocus
+                        />
+                        <Button
+                          size="sm"
+                          colorScheme="blue"
+                          bg="white"
+                          color="blue.700"
+                          _hover={{ bg: "gray.100" }}
+                          fontWeight="bold"
+                          onClick={() => handleConfirmCustomEnv()}
+                          isDisabled={!targetEnvironmentOther.trim()}
+                        >
+                          Simpan
+                        </Button>
+                      </HStack>
+                    </FormControl>
+                  </Box>
+                )}
+              </Box>
+            </VStack>
           </VStack>
         </Box>
 
@@ -1190,7 +1634,19 @@ export default function CreateEnvironmentView() {
 
               {/* Status Server - Vertical */}
               <FormControl isRequired>
-                <FormLabel fontSize="xs" fontWeight="bold">Status Server</FormLabel>
+                <Flex justify="space-between" align="center" mb={1.5}>
+                  <FormLabel fontSize="xs" fontWeight="bold" mb={0}>Status Server</FormLabel>
+                  <Badge
+                    colorScheme={status === "Aktif" ? "green" : status === "Non Aktif" ? "red" : "gray"}
+                    px={2.5}
+                    py={0.5}
+                    rounded="full"
+                    fontSize="xs"
+                    fontWeight="bold"
+                  >
+                    {status}
+                  </Badge>
+                </Flex>
                 <ChakraSelect
                   size="md"
                   rounded="lg"
@@ -1416,41 +1872,23 @@ export default function CreateEnvironmentView() {
             </HStack>
 
             <VStack spacing={5} align="stretch" w="full">
-              {/* Site Data Center - Vertical */}
-              <FormControl isRequired>
-                <FormLabel fontSize="xs" fontWeight="bold">Site Data Center</FormLabel>
-                <ChakraSelect
-                  size="md"
-                  rounded="lg"
-                  value={site}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setSite(val);
-                    if (val !== "Other" && val !== "Other Site") setSiteOther("");
-                  }}
-                >
-                  {SERVER_SITE_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </ChakraSelect>
-                {(site === "Other" || site === "Other Site") && (
-                  <Input
-                    mt={2}
-                    size="md"
-                    rounded="lg"
-                    placeholder="Ketik lokasi data center / cloud custom..."
-                    value={siteOther}
-                    onChange={(e) => setSiteOther(e.target.value)}
-                  />
-                )}
-              </FormControl>
+              {/* Site Data Center Display (Configured in Header) */}
+              <Box p={3} rounded="lg" bg={isDark ? "gray.750" : "gray.50"} border="1px dashed" borderColor={isDark ? "gray.700" : "gray.200"}>
+                <HStack justify="space-between" fontSize="xs">
+                  <HStack spacing={2}>
+                    <Icon as={FiDatabase} color={isDark ? "blue.400" : "blue.600"} boxSize={3.5} />
+                    <Text color="gray.500" fontWeight="medium">Site Data Center / Cloud Provider:</Text>
+                  </HStack>
+                  <Badge colorScheme={site === "DC 1" ? "blue" : site === "DC 2" ? "purple" : "cyan"} px={2.5} py={1} rounded="md" fontWeight="bold">
+                    {(site === "Other" || site === "Other Site") ? (siteOther || "Other") : site}
+                  </Badge>
+                </HStack>
+              </Box>
 
 
               {/* Site Segment - Vertical */}
               <FormControl isRequired>
-                <FormLabel fontSize="xs" fontWeight="bold">Site Segment</FormLabel>
+                <FormLabel fontSize="xs" fontWeight="bold">Segment</FormLabel>
                 <ChakraSelect
                   size="md"
                   rounded="lg"
@@ -1733,7 +2171,7 @@ export default function CreateEnvironmentView() {
 
               {/* Test User & Test Data: Visible for Development, UAT, Staging, or when toggled/existing in Production */}
               {(() => {
-                const isTestDefaultEnv = ["development", "uat", "staging", "sit"].includes(targetEnvironment.toLowerCase());
+                const isTestDefaultEnv = ["dev", "development", "uat", "stagging", "staging", "sit", "rnd"].includes(targetEnvironment.toLowerCase());
                 const isVisible = isTestDefaultEnv || showTestingParams || Boolean(testUser.trim() || testData.trim());
 
                 if (!isVisible) {
@@ -1940,7 +2378,7 @@ export default function CreateEnvironmentView() {
 
                     <HStack justify="space-between">
                       <Text color="gray.500">Status Server:</Text>
-                      <Badge colorScheme={status === "Aktif" ? "green" : status === "Pasif" ? "yellow" : "red"} px={2} py={0.5} rounded="md">
+                      <Badge colorScheme={status === "Aktif" ? "green" : status === "Non Aktif" ? "red" : "gray"} px={2} py={0.5} rounded="md">
                         {status}
                       </Badge>
                     </HStack>
@@ -2096,9 +2534,13 @@ export default function CreateEnvironmentView() {
                     <Wrap spacing={2}>
                       {supportingTools.map((t) => (
                         <WrapItem key={t.id}>
-                          <Badge colorScheme="blue" variant="subtle" px={2} py={1} rounded="md" fontSize="xs">
-                            {t.name} {t.version && t.version !== "Latest" ? `(${t.version})` : ""} {t.year ? `• ${t.year}` : ""}
-                          </Badge>
+                          <Tag size="md" colorScheme="blue" variant="subtle" px={2.5} py={1} rounded="md">
+                            <TagLabel fontSize="xs" fontWeight="bold">
+                              {t.name}
+                              {t.version ? ` (${t.version})` : ""}
+                              {t.year ? ` • ${t.year}` : ""}
+                            </TagLabel>
+                          </Tag>
                         </WrapItem>
                       ))}
                     </Wrap>
@@ -2143,17 +2585,7 @@ export default function CreateEnvironmentView() {
               </VStack>
             </ModalBody>
 
-            <ModalFooter borderTop="1px solid" borderColor={isDark ? "gray.700" : "gray.200"} pt={3} justifyContent="space-between">
-              <Button
-                variant="ghost"
-                size="md"
-                rounded="lg"
-                leftIcon={<FiX />}
-                onClick={onCloseSummaryModal}
-                isDisabled={isSubmitting}
-              >
-                Cancel
-              </Button>
+            <ModalFooter borderTop="1px solid" borderColor={isDark ? "gray.700" : "gray.200"} pt={3} justifyContent="flex-end">
               <Button
                 colorScheme="secondary"
                 size="md"
