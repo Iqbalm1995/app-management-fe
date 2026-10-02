@@ -425,14 +425,11 @@ export const APP_ENV_LOCATION_OPTIONS = [
 export const SERVER_PRIMARY_DC_OPTIONS = ["DC1", "DC2", "-"] as const;
 
 export const SERVER_SITE_OPTIONS = [
-  "Data Center 1 (DC1)",
-  "Data Center 2 (DC2)",
-  "DC Narogong",
-  "DRC Surabaya",
-  "Head Office",
-  "AWS Cloud",
+  "DC 1",
+  "DC 2",
   "Google Cloud",
-  "Other Site",
+  "AWS Cloud",
+  "Other",
 ] as const;
 
 export const SERVER_ROLE_OPTIONS = [
@@ -451,10 +448,11 @@ export const SERVER_STATUS_OPTIONS = ["Aktif", "Pasif", "Non Aktif"] as const;
 
 export const SERVER_ENVIRONMENT_OPTIONS = [
   "Production",
-  "DRC",
-  "Staging",
+  "Stagging",
+  "Dev",
+  "SIT",
   "UAT",
-  "Development",
+  "RnD",
   "Other",
 ] as const;
 
