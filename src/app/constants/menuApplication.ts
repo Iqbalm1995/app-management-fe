@@ -167,6 +167,17 @@ export const LinkItems: LinkItemProps[] = [
         isDisplaySidebar: "Y",
       },
       {
+        name: "EOS",
+        icon: FiClock,
+        iconName: "FiClock",
+        link: "/workspace/eos",
+        role: ["admin"],
+        menuID: "1",
+        isPro: false,
+        children: [],
+        isDisplaySidebar: "Y",
+      },
+      {
         name: "My Performance",
         icon: FiAward,
         iconName: "FiAward",

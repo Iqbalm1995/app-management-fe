@@ -77,10 +77,7 @@ export interface DynamicRoutePattern {
   baseMenu?: string;
   moduleCode?: string;
   permission?:
-    | "make"
-    | "review"
-    | "approve"
-    | ("make" | "review" | "approve")[];
+    "make" | "review" | "approve" | ("make" | "review" | "approve")[];
 }
 
 export const dynamicRoutePatterns: DynamicRoutePattern[] = [
@@ -111,6 +108,18 @@ export const dynamicRoutePatterns: DynamicRoutePattern[] = [
   {
     pattern: "/cab/cab-request/detail",
     baseMenu: "/cab",
+  },
+  {
+    pattern: "/workspace/eos",
+    baseMenu: "/workspace",
+  },
+  {
+    pattern: "/workspace/eos/detail",
+    baseMenu: "/workspace",
+  },
+  {
+    pattern: "/workspace/eos/create",
+    baseMenu: "/workspace",
   },
   {
     pattern: "/cab/cab-request/create",
