@@ -5,6 +5,7 @@ import {
   radiusStyle,
   RES_CODE_OK,
   RES_GENERIC_ERROR_MSG,
+  ENABLE_UIM_SSO_BRANDING,
 } from "@/app/constants/applicationConstants";
 import { loginReturn, useAuth } from "@/app/context/AuthContext";
 import { encryptAES } from "@/app/helper/HashHelper";
@@ -454,33 +455,35 @@ const AuthPanelModal = () => {
                         textAlign="center"
                         px={8}
                       >
-                        <HStack
-                          spacing={2}
-                          px={3.5}
-                          py={1.5}
-                          borderRadius="full"
-                          bg="rgba(255, 255, 255, 0.16)"
-                          backdropFilter="blur(16px)"
-                          border="1px solid rgba(255, 255, 255, 0.3)"
-                          boxShadow="0 8px 24px rgba(0, 0, 0, 0.15)"
-                        >
-                          <Box
-                            w="7px"
-                            h="7px"
+                        {ENABLE_UIM_SSO_BRANDING && (
+                          <HStack
+                            spacing={2}
+                            px={3.5}
+                            py={1.5}
                             borderRadius="full"
-                            bg="green.400"
-                            boxShadow="0 0 8px #4ade80"
-                          />
-                          <Icon as={FiShield} boxSize={3.5} color="white" />
-                          <Text
-                            fontSize="2xs"
-                            fontWeight={700}
-                            letterSpacing="0.08em"
-                            textTransform="uppercase"
+                            bg="rgba(255, 255, 255, 0.16)"
+                            backdropFilter="blur(16px)"
+                            border="1px solid rgba(255, 255, 255, 0.3)"
+                            boxShadow="0 8px 24px rgba(0, 0, 0, 0.15)"
                           >
-                            Bank bjb UIM Integrated
-                          </Text>
-                        </HStack>
+                            <Box
+                              w="7px"
+                              h="7px"
+                              borderRadius="full"
+                              bg="green.400"
+                              boxShadow="0 0 8px #4ade80"
+                            />
+                            <Icon as={FiShield} boxSize={3.5} color="white" />
+                            <Text
+                              fontSize="2xs"
+                              fontWeight={700}
+                              letterSpacing="0.08em"
+                              textTransform="uppercase"
+                            >
+                              Bank bjb UIM Integrated
+                            </Text>
+                          </HStack>
+                        )}
                         <Text fontSize="3xl" fontWeight="bold">
                           Welcome Back
                         </Text>
@@ -647,133 +650,135 @@ const AuthForm: React.FC<AuthFormProps> = ({ isDevMode, setIsDevMode }) => {
   return (
     <VStack width={"full"} spacing={3} align="stretch">
       {/* Brand & UIM Integration Header Card */}
-      <Box
-        p={3}
-        borderRadius="xl"
-        bg={
-          isDevMode
-            ? "rgba(24, 12, 48, 0.65)"
-            : colorMode === "light"
-            ? "linear-gradient(135deg, rgba(239, 246, 255, 0.92), rgba(240, 253, 250, 0.8))"
-            : "linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 58, 138, 0.35))"
-        }
-        border="1px solid"
-        borderColor={
-          isDevMode
-            ? "rgba(168, 85, 247, 0.3)"
-            : colorMode === "light"
-            ? "rgba(59, 130, 246, 0.22)"
-            : "rgba(59, 130, 246, 0.3)"
-        }
-        boxShadow={
-          isDevMode
-            ? "0 4px 16px rgba(168, 85, 247, 0.15)"
-            : colorMode === "light"
-            ? "0 4px 16px rgba(37, 99, 235, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9)"
-            : "0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)"
-        }
-        mb={1}
-      >
-        <Flex align="center" justify="space-between">
-          {/* Left: Bank bjb Brand Logo */}
-          <Flex width={"75px"} py={0.5}>
-            <Image src={"/img/logo-bjb.png"} alt="Bank bjb" />
-          </Flex>
+      {ENABLE_UIM_SSO_BRANDING && (
+        <Box
+          p={3}
+          borderRadius="xl"
+          bg={
+            isDevMode
+              ? "rgba(24, 12, 48, 0.65)"
+              : colorMode === "light"
+              ? "linear-gradient(135deg, rgba(239, 246, 255, 0.92), rgba(240, 253, 250, 0.8))"
+              : "linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 58, 138, 0.35))"
+          }
+          border="1px solid"
+          borderColor={
+            isDevMode
+              ? "rgba(168, 85, 247, 0.3)"
+              : colorMode === "light"
+              ? "rgba(59, 130, 246, 0.22)"
+              : "rgba(59, 130, 246, 0.3)"
+          }
+          boxShadow={
+            isDevMode
+              ? "0 4px 16px rgba(168, 85, 247, 0.15)"
+              : colorMode === "light"
+              ? "0 4px 16px rgba(37, 99, 235, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.9)"
+              : "0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08)"
+          }
+          mb={1}
+        >
+          <Flex align="center" justify="space-between">
+            {/* Left: Bank bjb Brand Logo */}
+            <Flex width={"75px"} py={0.5}>
+              <Image src={"/img/logo-bjb.png"} alt="Bank bjb" />
+            </Flex>
 
-          <Divider
-            orientation="vertical"
-            h="32px"
-            mx={2}
-            borderColor={colorMode === "light" ? "gray.300" : "whiteAlpha.300"}
-          />
+            <Divider
+              orientation="vertical"
+              h="32px"
+              mx={2}
+              borderColor={colorMode === "light" ? "gray.300" : "whiteAlpha.300"}
+            />
 
-          {/* Right: Graphic UIM SSO Logo Emblem */}
-          <HStack spacing={2.5} align="center">
-            {/* Logo Emblem Squircle */}
-            <Box pos="relative">
-              <Flex
-                w="34px"
-                h="34px"
-                borderRadius="lg"
-                bgGradient={
-                  isDevMode
-                    ? "linear(to-br, #a855f7, #6366f1, #ec4899)"
-                    : "linear(to-br, #1e40af, #2563eb, #06b6d4)"
-                }
-                align="center"
-                justify="center"
-                color="white"
-                boxShadow={
-                  isDevMode
-                    ? "0 4px 10px rgba(168, 85, 247, 0.4)"
-                    : "0 4px 10px rgba(37, 99, 235, 0.35)"
-                }
-              >
-                <Icon as={FiShield} boxSize="17px" />
-              </Flex>
-              {/* Active Pulsing Live Indicator */}
-              <Box
-                pos="absolute"
-                bottom="-1px"
-                right="-1px"
-                w="9px"
-                h="9px"
-                borderRadius="full"
-                bg="green.400"
-                border="2px solid"
-                borderColor={colorMode === "light" ? "white" : "gray.900"}
-                boxShadow="0 0 6px #22c55e"
-              />
-            </Box>
+            {/* Right: Graphic UIM SSO Logo Emblem */}
+            <HStack spacing={2.5} align="center">
+              {/* Logo Emblem Squircle */}
+              <Box pos="relative">
+                <Flex
+                  w="34px"
+                  h="34px"
+                  borderRadius="lg"
+                  bgGradient={
+                    isDevMode
+                      ? "linear(to-br, #a855f7, #6366f1, #ec4899)"
+                      : "linear(to-br, #1e40af, #2563eb, #06b6d4)"
+                  }
+                  align="center"
+                  justify="center"
+                  color="white"
+                  boxShadow={
+                    isDevMode
+                      ? "0 4px 10px rgba(168, 85, 247, 0.4)"
+                      : "0 4px 10px rgba(37, 99, 235, 0.35)"
+                  }
+                >
+                  <Icon as={FiShield} boxSize="17px" />
+                </Flex>
+                {/* Active Pulsing Live Indicator */}
+                <Box
+                  pos="absolute"
+                  bottom="-1px"
+                  right="-1px"
+                  w="9px"
+                  h="9px"
+                  borderRadius="full"
+                  bg="green.400"
+                  border="2px solid"
+                  borderColor={colorMode === "light" ? "white" : "gray.900"}
+                  boxShadow="0 0 6px #22c55e"
+                />
+              </Box>
 
-            <VStack align="start" spacing={0}>
-              <HStack spacing={1.5} align="center">
+              <VStack align="start" spacing={0}>
+                <HStack spacing={1.5} align="center">
+                  <Text
+                    fontSize="xs"
+                    fontWeight={800}
+                    letterSpacing="0.04em"
+                    color={
+                      isDevMode
+                        ? "purple.200"
+                        : colorMode === "light"
+                        ? "blue.800"
+                        : "blue.100"
+                    }
+                    lineHeight="shorter"
+                  >
+                    UIM SSO
+                  </Text>
+                  <Badge
+                    fontSize="3xs"
+                    colorScheme="green"
+                    variant="solid"
+                    borderRadius="full"
+                    px={1.5}
+                    py={0.1}
+                    letterSpacing="wider"
+                  >
+                    ACTIVE
+                  </Badge>
+                </HStack>
                 <Text
-                  fontSize="xs"
-                  fontWeight={800}
-                  letterSpacing="0.04em"
+                  fontSize="3xs"
+                  fontWeight={500}
                   color={
                     isDevMode
-                      ? "purple.200"
+                      ? "purple.300"
                       : colorMode === "light"
-                      ? "blue.800"
-                      : "blue.100"
+                      ? "gray.500"
+                      : "gray.400"
                   }
+                  letterSpacing="0.02em"
                   lineHeight="shorter"
                 >
-                  UIM SSO
+                  Unified Identity Management
                 </Text>
-                <Badge
-                  fontSize="3xs"
-                  colorScheme="green"
-                  variant="solid"
-                  borderRadius="full"
-                  px={1.5}
-                  py={0.1}
-                  letterSpacing="wider"
-                >
-                  ACTIVE
-                </Badge>
-              </HStack>
-              <Text
-                fontSize="3xs"
-                fontWeight={500}
-                color={
-                  isDevMode
-                    ? "purple.300"
-                    : colorMode === "light"
-                    ? "gray.500"
-                    : "gray.400"
-                }
-                letterSpacing="0.02em"
-                lineHeight="shorter"
-              >
-                Unified Identity Management
-              </Text>
-            </VStack>
-          </HStack>
-        </Flex>
-      </Box>
+              </VStack>
+            </HStack>
+          </Flex>
+        </Box>
+      )}
 
       <Box>
         <HStack justify="space-between" align="center">
@@ -793,9 +798,9 @@ const AuthForm: React.FC<AuthFormProps> = ({ isDevMode, setIsDevMode }) => {
           mt={0.5}
           transition="color 0.3s ease"
         >
-          {isDevMode
+          {ENABLE_UIM_SSO_BRANDING
             ? "Use your User ID and Email/PC Password (UIM Authentication)"
-            : "Use your User ID and Email/PC Password (UIM Authentication)"}
+            : "Use your User ID and Password to sign in"}
         </Text>
       </Box>
       <Box>
@@ -807,7 +812,7 @@ const AuthForm: React.FC<AuthFormProps> = ({ isDevMode, setIsDevMode }) => {
               isInvalid={formik.errors.username ? true : false}
               isRequired
             >
-              <FormLabel my={0}>User ID / E-mail</FormLabel>
+              <FormLabel my={0}>User ID</FormLabel>
               <Input
                 id="username"
                 name="username"
