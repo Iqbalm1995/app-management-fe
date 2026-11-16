@@ -54,7 +54,7 @@ export const UserAssignmentsSection = ({ projectMembers }: UserAssignmentsSectio
             <FiUsers size={20} color="white" />
           </Box>
           <Heading size="md" color={colorMode === "light" ? "green.700" : "green.200"}>
-            Tim Project
+            Project Team
           </Heading>
         </HStack>
       </CardHeader>

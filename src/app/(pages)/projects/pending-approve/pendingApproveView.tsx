@@ -55,11 +55,11 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, useRef } from "react";
-import { FiEye, FiCheck, FiSearch, FiX, FiRefreshCw, FiClipboard, FiFileText, FiFilter, FiFolder } from "react-icons/fi";
+import { FiEye, FiCheck, FiSearch, FiX, FiRefreshCw, FiClipboard, FiFileText, FiFilter, FiFolder, FiEdit3 } from "react-icons/fi";
 
-type ProjectViewMode = "PENDING" | "ALL";
+type ProjectViewMode = "PENDING" | "MY_REVISE" | "ALL";
 
 // Helper functions
 const getProjectTypeLabel = (type: string): string => {
@@ -96,22 +96,64 @@ const getApprovalStatusColor = (status: string): string => {
 
 export default function PendingApproveView() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
   const [DataAuth, setDataAuth] = useState<AuthDataResponse | null>(null);
   const [tokenData, setTokenData] = useState<string>("");
-  const { GetWaitingApproval, List, CanApproveProject } = useProjects();
+  const { GetWaitingApproval, List, CanApproveProject, GetTabCounts } = useProjects();
   const { GetDetailById: GetRequirementDetail } = useRequirements();
   const { GetDetailByCode, GetStatusFlows } = useSysModuleGroup();
 
-  // View mode state with localStorage persistence
+  const [tabCounts, setTabCounts] = useState<{
+    pending: number;
+    myRevise: number;
+    all: number;
+  }>({ pending: 0, myRevise: 0, all: 0 });
+
+  const fetchTabCounts = async () => {
+    if (!tokenData) return;
+    try {
+      const res = await GetTabCounts(tokenData, {
+        projectType: FilterProjectType || undefined,
+        orgGroupId: DataAuth?.team?.orgGroupId || undefined,
+      });
+      if (res?.statusCode === RES_CODE_OK && res.data) {
+        setTabCounts({
+          pending: res.data.pendingCount ?? 0,
+          myRevise: res.data.myReviseCount ?? 0,
+          all: res.data.allCount ?? 0,
+        });
+      }
+    } catch (err) {
+      console.error("Error fetching tab counts:", err);
+    }
+  };
+
+  // Helper to normalize tab parameter (default is always PENDING / waiting approval)
+  const normalizeTab = (t?: string | null): ProjectViewMode => {
+    if (!t) return "PENDING";
+    const upper = t.toUpperCase().replace(/-/g, "_");
+    if (upper === "MY_REVISE" || upper === "REVISE") return "MY_REVISE";
+    if (upper === "ALL") return "ALL";
+    if (upper === "PENDING" || upper === "WAITING_APPROVAL" || upper === "WAITING") return "PENDING";
+    return "PENDING";
+  };
+
+  // View mode state — default is always PENDING (waiting approval) unless specified in URL
   const [viewMode, setViewMode] = useState<ProjectViewMode>(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("projectsViewMode");
-      return saved === "ALL" ? "ALL" : "PENDING";
+      const params = new URLSearchParams(window.location.search);
+      return normalizeTab(params.get("tab"));
     }
     return "PENDING";
   });
+
+  // Sync tab from URL param (defaults to PENDING if tab param is omitted or invalid)
+  useEffect(() => {
+    const t = searchParams.get("tab");
+    setViewMode(normalizeTab(t));
+  }, [searchParams]);
 
   // Save viewMode to localStorage when it changes
   useEffect(() => {
@@ -119,6 +161,15 @@ export default function PendingApproveView() {
       localStorage.setItem("projectsViewMode", viewMode);
     }
   }, [viewMode]);
+
+  // Tab switch handler that updates state, clears tab-specific filters, and syncs URL
+  const handleTabChange = (newMode: ProjectViewMode) => {
+    setViewMode(newMode);
+    setFilterProjectStatus("");
+    setFilterApprovalStatus("");
+    setPagination({ pageIndex: 0, pageSize });
+    router.replace(`/projects/pending-approve?tab=${newMode}`, { scroll: false });
+  };
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -540,10 +591,17 @@ export default function PendingApproveView() {
         accessorFn: (row) => row.createdAt,
         id: "additionalInfo",
         cell: (info) => {
-          // Find creator in userAssignment
+          // Find creator in userAssignment if available
           const creatorData = info.row.original.userAssignment?.find(
             (assignment) => assignment.userId === info.row.original.createdBy,
           );
+          const creatorName =
+            info.row.original.createdByName ||
+            creatorData?.userData?.nama ||
+            info.row.original.createdBy;
+          const creatorJabatan =
+            info.row.original.createdByJabatan ||
+            creatorData?.userData?.jabatan;
 
           return (
             <VStack align="start" spacing={1} fontSize="xs" w="full">
@@ -574,28 +632,19 @@ export default function PendingApproveView() {
               </HStack>
 
               {/* Created By */}
-              {creatorData?.userData ? (
-                <VStack align="start" spacing={0}>
-                  <HStack spacing={1}>
-                    <Text fontWeight="600" color="gray.600">
-                      Oleh:
-                    </Text>
-                    <Text fontWeight="600">{creatorData.userData.nama}</Text>
-                  </HStack>
-                  {creatorData.userData.jabatan && (
-                    <Text fontSize="2xs" color="gray.500" pl={10} noOfLines={1}>
-                      {creatorData.userData.jabatan}
-                    </Text>
-                  )}
-                </VStack>
-              ) : (
+              <VStack align="start" spacing={0}>
                 <HStack spacing={1}>
                   <Text fontWeight="600" color="gray.600">
                     Oleh:
                   </Text>
-                  <Text>{info.row.original.createdBy}</Text>
+                  <Text fontWeight="600">{creatorName}</Text>
                 </HStack>
-              )}
+                {creatorJabatan && (
+                  <Text fontSize="2xs" color="gray.500" pl={10} noOfLines={1}>
+                    {creatorJabatan}
+                  </Text>
+                )}
+              </VStack>
             </VStack>
           );
         },
@@ -632,12 +681,39 @@ export default function PendingApproveView() {
                 leftIcon={<FiEye />}
                 onClick={() => {
                   router.push(
-                    `/projects/preview?projectId=${info.row.original.id}`,
+                    `/projects/preview?projectId=${info.row.original.id}&from=pending-approve`,
                   );
                 }}
               >
                 Preview
               </Button>
+              {viewMode === "MY_REVISE" && (
+                <Button
+                  bg="orange.50"
+                  color="orange.700"
+                  size="xs"
+                  py={4}
+                  fontSize="sm"
+                  w="full"
+                  _hover={{
+                    bg: "orange.200",
+                    transform: "translateY(-2px)",
+                    boxShadow: "md",
+                  }}
+                  transition="all 0.2s"
+                  leftIcon={<FiEdit3 />}
+                  onClick={() => {
+                    const project = info.row.original;
+                    if (project.projectType === "PROCUREMENT") {
+                      router.push(`/projects-procurements/register?projectId=${project.id}&mode=REVISE`);
+                    } else {
+                      router.push(`/projects-manager/register?projectId=${project.id}&mode=REVISE`);
+                    }
+                  }}
+                >
+                  Revise
+                </Button>
+              )}
               {viewMode === "PENDING" &&
                 canApproveProjects.has(info.row.original.id) && (
                   <Button
@@ -717,6 +793,24 @@ export default function PendingApproveView() {
       });
     }
 
+    // For MY_REVISE tab, strictly filter by CreatedBy == current user and ProjectStatus == DECLINED
+    if (viewMode === "MY_REVISE") {
+      if (!DataAuth?.userId) {
+        setIsLoadingProcess(false);
+        return;
+      }
+      filterWhere.push({
+        field: "CreatedBy",
+        operator: "=" as const,
+        value: DataAuth.userId,
+      });
+      filterWhere.push({
+        field: "ProjectStatus",
+        operator: "=" as const,
+        value: "DECLINED",
+      });
+    }
+
     // ProjectStatus filter only for ALL tab
     if (viewMode === "ALL" && FilterProjectStatus) {
       filterWhere.push({
@@ -743,7 +837,7 @@ export default function PendingApproveView() {
       // Use waiting-approval endpoint
       response = await GetWaitingApproval(PayloadList, tokenData);
     } else {
-      // Use list endpoint for all projects
+      // Use list endpoint for MY_REVISE and ALL
       response = await List(PayloadList, tokenData);
     }
 
@@ -836,10 +930,12 @@ export default function PendingApproveView() {
 
   const refreshAction = () => {
     setRefreshData((prev) => prev + 1);
+    fetchTabCounts();
   };
   useEffect(() => {
     if (tokenData) {
       GetDataList();
+      fetchTabCounts();
     }
   }, [
     tokenData,
@@ -847,13 +943,29 @@ export default function PendingApproveView() {
     pageSize,
     RefreshData,
     viewMode,
-    DataAuth,]);
+    DataAuth,
+    FilterProjectType,
+  ]);
 
   return (
     <LayoutAdmin>
       <HeaderContent
-        titleName={viewMode === "PENDING" ? "Project Menunggu Persetujuan" : "Daftar Project"}
-        breadCrumb={["Home", "Projects", viewMode === "PENDING" ? "Pending Approval" : "List"]}
+        titleName={
+          viewMode === "PENDING"
+            ? "Project Menunggu Persetujuan"
+            : viewMode === "MY_REVISE"
+            ? "Project Perlu Revisi"
+            : "Daftar Project"
+        }
+        breadCrumb={[
+          "Home",
+          "Projects",
+          viewMode === "PENDING"
+            ? "Pending Approval"
+            : viewMode === "MY_REVISE"
+            ? "My Revise"
+            : "List",
+        ]}
       />
 
       <Box p={4}>
@@ -865,7 +977,7 @@ export default function PendingApproveView() {
                 <Box
                   w={10}
                   h={10}
-                  bg="blue.500"
+                  bg={viewMode === "MY_REVISE" ? "orange.500" : "blue.500"}
                   rounded="lg"
                   display="flex"
                   alignItems="center"
@@ -876,11 +988,16 @@ export default function PendingApproveView() {
                 </Box>
                 <VStack align="start" spacing={0}>
                   <Heading size="md" color={colorMode === "light" ? "gray.800" : "white"}>
-                    {viewMode === "PENDING" ? "Pending Approval Projects" : "All Projects"}
+                    {viewMode === "PENDING"
+                      ? "Pending Approval Projects"
+                      : viewMode === "MY_REVISE"
+                      ? "My Revise Projects"
+                      : "All Projects"}
                   </Heading>
                   <Text fontSize="sm" color={colorMode === "light" ? "gray.600" : "gray.400"}>
                     {DataProjects.length} projects found
                     {viewMode === "PENDING" && " waiting for approval"}
+                    {viewMode === "MY_REVISE" && " needing revision (declined)"}
                   </Text>
                 </VStack>
               </HStack>
@@ -891,21 +1008,70 @@ export default function PendingApproveView() {
                   size="sm"
                   variant={viewMode === "PENDING" ? "solid" : "ghost"}
                   colorScheme={viewMode === "PENDING" ? "blue" : "gray"}
-                  onClick={() => { setViewMode("PENDING"); setFilterProjectStatus(""); setFilterApprovalStatus(""); setPagination({ pageIndex: 0, pageSize }); }}
+                  onClick={() => handleTabChange("PENDING")}
                   fontSize="sm"
-                  px={4}
+                  px={3}
                 >
                   Pending Approval
+                  {tabCounts.pending > 0 && (
+                    <Badge
+                      ml={2}
+                      borderRadius="full"
+                      px={2}
+                      fontSize="xs"
+                      colorScheme={viewMode === "PENDING" ? "whiteAlpha" : "blue"}
+                      bg={viewMode === "PENDING" ? "blue.700" : "blue.100"}
+                      color={viewMode === "PENDING" ? "white" : "blue.800"}
+                    >
+                      {tabCounts.pending}
+                    </Badge>
+                  )}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={viewMode === "MY_REVISE" ? "solid" : "ghost"}
+                  colorScheme={viewMode === "MY_REVISE" ? "orange" : "gray"}
+                  onClick={() => handleTabChange("MY_REVISE")}
+                  fontSize="sm"
+                  px={3}
+                >
+                  My Revise
+                  {tabCounts.myRevise > 0 && (
+                    <Badge
+                      ml={2}
+                      borderRadius="full"
+                      px={2}
+                      fontSize="xs"
+                      colorScheme={viewMode === "MY_REVISE" ? "whiteAlpha" : "red"}
+                      bg={viewMode === "MY_REVISE" ? "red.600" : "red.100"}
+                      color={viewMode === "MY_REVISE" ? "white" : "red.800"}
+                    >
+                      {tabCounts.myRevise}
+                    </Badge>
+                  )}
                 </Button>
                 <Button
                   size="sm"
                   variant={viewMode === "ALL" ? "solid" : "ghost"}
                   colorScheme={viewMode === "ALL" ? "blue" : "gray"}
-                  onClick={() => setViewMode("ALL")}
+                  onClick={() => handleTabChange("ALL")}
                   fontSize="sm"
-                  px={4}
+                  px={3}
                 >
                   All Projects
+                  {tabCounts.all > 0 && (
+                    <Badge
+                      ml={2}
+                      borderRadius="full"
+                      px={2}
+                      fontSize="xs"
+                      colorScheme={viewMode === "ALL" ? "whiteAlpha" : "gray"}
+                      bg={viewMode === "ALL" ? "blue.700" : "gray.200"}
+                      color={viewMode === "ALL" ? "white" : "gray.800"}
+                    >
+                      {tabCounts.all}
+                    </Badge>
+                  )}
                 </Button>
               </HStack>
 

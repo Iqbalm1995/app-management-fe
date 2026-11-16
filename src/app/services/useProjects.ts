@@ -227,6 +227,8 @@ export interface ProjectDataResponse {
   sdlcStageName: string | null;
   createdAt: string;
   createdBy: string;
+  createdByName?: string | null;
+  createdByJabatan?: string | null;
   updatedAt: string | null;
   updatedBy: string | null;
   userAssignment: ProjectUserAssignmentResponse[];
@@ -236,6 +238,12 @@ export interface ProjectDataResponse {
   projectWorkflowProjectData: ProjectWorkflowResponse[];
   projectWorkflowData: ProjectWorkflowResponse[];
   targetApprovers: ProjectApproverResponse[];
+}
+
+export interface ProjectTabCountsResponse {
+  pendingCount: number;
+  myReviseCount: number;
+  allCount: number;
 }
 
 export interface ProjectApproverResponse {
@@ -260,6 +268,8 @@ export interface ProjectSdlcStageResponse {
   isCompleted: boolean;
   createdAt: string;
   createdBy: string;
+  createdByName?: string | null;
+  createdByJabatan?: string | null;
 }
 
 export interface ProjectSdlcStageReportResponse {
@@ -325,6 +335,8 @@ export interface ProjectUserAssignmentResponse {
   assignEndDate: string | null;
   createdAt: string;
   createdBy: string;
+  createdByName?: string | null;
+  createdByJabatan?: string | null;
   updatedAt: string | null;
   updatedBy: string | null;
 }
@@ -380,6 +392,8 @@ export interface ProjectWorkflowValueResponse {
   mediaObjectId?: string | null;
   createdAt: string;
   createdBy: string;
+  createdByName?: string | null;
+  createdByJabatan?: string | null;
   updatedAt?: string | null;
   updatedBy?: string | null;
   reffParentId?: string | null;
@@ -441,6 +455,11 @@ export interface ProjectRegisterPayload {
   backlogsProject: BacklogUpdatePayload[];
   workProgramsBacklogs: WorkProgramsPayload[];
   workPrograms: WorkProgramsPayload[];
+}
+
+export interface ProjectRevisePayload extends ProjectRegisterPayload {
+  projectId: string;
+  reviseNote?: string | null;
 }
 
 export interface ProjectWorkflowValueInsertPayload {
@@ -516,6 +535,8 @@ export interface AppsResponse {
   readyToLaunch: string;
   createdAt: string;
   createdBy: string;
+  createdByName?: string | null;
+  createdByJabatan?: string | null;
   updatedAt: string;
   updatedBy: string;
   project: AppsProjectShortResponse;
@@ -563,6 +584,8 @@ export interface AppsLogsResponse {
   changeDate: string;
   createdAt: string;
   createdBy: string;
+  createdByName?: string | null;
+  createdByJabatan?: string | null;
   updatedAt: string | null;
   updatedBy: string | null;
 }
@@ -692,6 +715,8 @@ export interface ProjectFeatureResponse {
   developmentStatus: string;
   createdAt: string;
   createdBy: string;
+  createdByName?: string | null;
+  createdByJabatan?: string | null;
 }
 
 export interface ProjectFeatureInsertPayload {
@@ -863,6 +888,10 @@ interface useProjectsServices {
     payload: PaggingListPayloadCustom,
     token: string
   ) => Promise<ApiGenericResponse<ProjectDataResponse[] | null> | null>;
+  GetTabCounts: (
+    token: string,
+    params?: { projectType?: string; requirementType?: string; orgGroupId?: string }
+  ) => Promise<ApiGenericResponse<ProjectTabCountsResponse | null> | null>;
   ApproveProject: (
     payload: { projectId: string; isApproved: boolean; note?: string; action?: string },
     token: string
@@ -935,6 +964,10 @@ interface useProjectsServices {
   ) => Promise<ApiGenericResponse<string | null> | null>;
   RegisterProjectNew: (
     payload: ProjectRegisterPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  ReviseProjectSubmit: (
+    payload: ProjectRevisePayload,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
   UpdateProjects: (
@@ -1416,6 +1449,58 @@ const useProjects = (): useProjectsServices => {
       const response = await axiosInstance.post<
         ApiGenericResponse<ProjectDataResponse[]>
       >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "An error occurred during request."
+        );
+        return {
+          statusCode: err.response?.status || RES_CODE_SERVER_ERROR,
+          data: null,
+          message: err.response?.data?.message || "Error occurred",
+          error: null,
+        };
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const GetTabCounts = async (
+    token: string,
+    params?: { projectType?: string; requirementType?: string; orgGroupId?: string }
+  ): Promise<ApiGenericResponse<ProjectTabCountsResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+
+    try {
+      const queryParams = new URLSearchParams();
+      if (params?.projectType) queryParams.append("projectType", params.projectType);
+      if (params?.requirementType) queryParams.append("requirementType", params.requirementType);
+      if (params?.orgGroupId) queryParams.append("orgGroupId", params.orgGroupId);
+
+      const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
+      const response = await axiosInstance.get<
+        ApiGenericResponse<ProjectTabCountsResponse>
+      >(`${UrlEndpoint}/v1/Projects/tab-counts${queryString}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -2179,6 +2264,46 @@ const useProjects = (): useProjectsServices => {
       ENDPOINT_PORT_BASIC
     );
     const PathEndpoint: string = "/v1/Projects/register-new";
+
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(err.response?.data?.message || "An error occurred.");
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const ReviseProjectSubmit = async (
+    payload: ProjectRevisePayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = "/v1/Projects/revise-submit";
 
     try {
       const response = await axiosInstance.post<
@@ -4869,6 +4994,7 @@ const useProjects = (): useProjectsServices => {
     ListByApp,
     GetAssignedProjects,
     GetWaitingApproval,
+    GetTabCounts,
     ApproveProject,
     ResumeProject,
     RequestHoldProject,
@@ -4888,6 +5014,7 @@ const useProjects = (): useProjectsServices => {
     GetProjectCount,
     InsertProjects,
     RegisterProjectNew,
+    ReviseProjectSubmit,
     UpdateProjects,
     DeleteProjects,
     ListPIC,
