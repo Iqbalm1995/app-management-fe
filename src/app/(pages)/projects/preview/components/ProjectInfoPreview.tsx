@@ -1,30 +1,30 @@
 "use client";
 
-import { ProjectDataResponse, AppsResponse } from "@/app/services/useProjects";
+import {
+  ProjectDataResponse,
+  AppsResponse,
+  ProjectUserAssignmentResponse,
+} from "@/app/services/useProjects";
+import { BacklogDataResponse } from "@/app/services/useRequirements";
 import {
   VStack,
   HStack,
   Heading,
   Text,
-  Card,
-  CardBody,
   Badge,
   Divider,
-  SimpleGrid,
   Box,
+  Flex,
   useColorMode,
-  IconButton,
-  Progress,
   Tabs,
   TabList,
-  Tab,
   TabPanels,
   TabPanel,
   Button,
-  Alert,
-  AlertIcon,
-  AlertTitle,
-  AlertDescription,
+  Grid,
+  GridItem,
+  Card,
+  CardBody,
   Modal,
   ModalOverlay,
   ModalContent,
@@ -37,21 +37,38 @@ import {
   FormControl,
   FormLabel,
 } from "@chakra-ui/react";
-import { FiInfo, FiCalendar, FiUsers, FiTarget, FiArrowLeft, FiLayers, FiCheck, FiArrowRight, FiX, FiCheckCircle, FiXCircle } from "react-icons/fi";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { GeneralInfoSection } from "./GeneralInfoSection";
-import { UserAssignmentsSection, OrganizationSection } from "./OrganizationSections";
+import {
+  FiInfo,
+  FiLayers,
+  FiCpu,
+  FiPlayCircle,
+  FiUsers,
+  FiBriefcase,
+  FiCalendar,
+  FiCheckCircle,
+  FiXCircle,
+  FiChevronLeft,
+  FiChevronRight,
+} from "react-icons/fi";
+import { useState, useRef } from "react";
+import {
+  radiusStyle,
+  PROJECT_TYPE_PROCUREMENT,
+} from "@/app/constants/applicationConstants";
+import {
+  TabButtonCustomStyle,
+  TabButtonCustomStyleHighLight,
+} from "@/app/components/TabsCustom";
+import { ProjectPreviewHeader } from "./ProjectPreviewHeader";
+import { ProjectRequirementCard } from "./ProjectRequirementCard";
 import { BacklogsSection } from "./BacklogsSection";
+import { GovernanceMatrixSection } from "./GovernanceMatrixSection";
+import { UserAssignmentsSection } from "./OrganizationSections";
 import { WorkStagesSection } from "./WorkStagesSection";
 import { ProcurementStagesSection } from "./ProcurementStagesSection";
 import { WorkProgramsSection } from "./WorkProgramsSection";
 import { StatusHistorySection } from "./StatusHistorySection";
-import { EnhancedApproverSection } from "./EnhancedApproverSection";
-import { ApplicationSection } from "./ApplicationSection";
-import { RequirementWorkProgramSection } from "./RequirementWorkProgramSection";
-import { BacklogDataResponse } from "@/app/services/useRequirements";
-import { ProjectUserAssignmentResponse } from "@/app/services/useProjects";
+import { ProjectPreviewSidebar } from "./ProjectPreviewSidebar";
 
 interface ProjectInfoPreviewProps {
   DataProject: ProjectDataResponse | null;
@@ -63,11 +80,17 @@ interface ProjectInfoPreviewProps {
   projectMembers?: ProjectUserAssignmentResponse[];
   canApprove?: boolean;
   approvalMode?: boolean;
-  onApprove?: (isApproved: boolean, note?: string, action?: string) => Promise<void>;
+  onApprove?: (
+    isApproved: boolean,
+    note?: string,
+    action?: string
+  ) => Promise<void>;
+  onRefresh?: () => void;
+  isLoading?: boolean;
 }
 
-const ProjectInfoPreview = ({ 
-  DataProject, 
+const ProjectInfoPreview = ({
+  DataProject,
   DataApps,
   statusHistory = [],
   workflowBacklogs = [],
@@ -76,22 +99,33 @@ const ProjectInfoPreview = ({
   projectMembers = [],
   canApprove = false,
   approvalMode = false,
-  onApprove 
+  onApprove,
+  onRefresh,
+  isLoading = false,
 }: ProjectInfoPreviewProps) => {
   const { colorMode } = useColorMode();
-  const router = useRouter();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const [selectedTabIndex, setSelectedTabIndex] = useState<number>(0);
   const [isApproving, setIsApproving] = useState(false);
   const [approvalNote, setApprovalNote] = useState("");
   const [approvalAction, setApprovalAction] = useState<string | null>(null);
 
-  const handleApprovalClick = (isApproved: boolean) => {
-    setApprovalAction(isApproved ? "APPROVE" : "DECLINE");
-    onOpen();
+  // Tab scroll reference & controls matching /projects/manage
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const isProcurement = DataProject?.projectType === PROJECT_TYPE_PROCUREMENT;
+
+  const scrollTabs = (direction: "left" | "right") => {
+    if (tabsRef.current) {
+      const scrollAmount = 260;
+      tabsRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
   };
 
-  const handleActionClick = (action: string) => {
-    setApprovalAction(action);
+  const handleApprovalClick = (isApproved: boolean) => {
+    setApprovalAction(isApproved ? "APPROVE" : "DECLINE");
     onOpen();
   };
 
@@ -105,227 +139,344 @@ const ProjectInfoPreview = ({
     onClose();
   };
 
-  // Debug: Check what data is available
   if (!DataProject) {
     return (
       <Box textAlign="center" py={12}>
-        <Text color="gray.500">No project data available</Text>
+        <Text color="gray.500">Project data not found</Text>
       </Box>
     );
   }
 
   return (
-    <VStack spacing={8} align="stretch">
-      {/* Hero Section */}
-      <Box
-        bgGradient="linear(135deg, secondary.600 0%, blue.500 50%, secondary.400 100%)"
-        rounded="2xl"
-        p={8}
-        color="white"
-        position="relative"
-        overflow="hidden"
-      >
-        {/* Background Pattern */}
-        <Box
-          position="absolute"
-          top="0"
-          left="0"
-          right="0"
-          bottom="0"
-          opacity="0.1"
-          bgImage="radial-gradient(circle at 20% 50%, white 1px, transparent 1px)"
-          bgSize="20px 20px"
-        />
+    <VStack spacing={6} align="stretch" w="full">
+      {/* 1. Hero Section matching /projects/manage (No Premature Progress Bar) */}
+      <ProjectPreviewHeader
+        DataProject={DataProject}
+        DataApps={DataApps}
+        projectId={DataProject.id}
+        IsLoadingProcess={isLoading}
+        onRefresh={onRefresh}
+        approvalMode={approvalMode}
+        projectMembers={projectMembers}
+      />
 
-        <Box position="relative" zIndex={1}>
-          <HStack mb={3} spacing={2}>
-            <IconButton
-              aria-label="Back"
-              icon={<FiArrowLeft />}
-              onClick={() => router.push("/projects/pending-approve")}
-              bg="whiteAlpha.300"
-              color="white"
-              size="md"
-              rounded="lg"
-              _hover={{ bg: "whiteAlpha.400" }}
-            />
-            <Button
-              onClick={() => router.push(`/projects/doc?projectId=${DataProject.id}`)}
-              bg="whiteAlpha.300"
-              color="white"
-              size="md"
-              rounded="lg"
-              _hover={{ bg: "whiteAlpha.400" }}
-            >
-              View As Doc
-            </Button>
-          </HStack>
-          <Badge
-            bg="whiteAlpha.300"
-            color="white"
-            fontSize="xs"
-            px={3}
-            py={1}
-            rounded="full"
-            mb={3}
-            display="inline-block"
+      {/* 2. 12-Column Grid Layout */}
+      <Grid templateColumns="repeat(12, 1fr)" w="full" gap={5}>
+        {/* Left Column: Proposal Evaluation Tabs (9 Columns on Desktop) */}
+        <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 9 }} w="full">
+          <Tabs
+            index={selectedTabIndex}
+            onChange={(idx) => setSelectedTabIndex(idx)}
+            variant="unstyled"
+            colorScheme="secondary"
+            size="lg"
           >
-            {DataProject.projectType || "Project"}
-          </Badge>
-          <Heading size="xl" mb={2}>
-            {DataProject.projectName}
-          </Heading>
-          <Text fontSize="md" opacity={0.9}>
-            {DataProject.projectDesc || "No description available"}
-          </Text>
-        </Box>
-      </Box>
+            {/* Tab Navigation Ribbon matching /projects/manage */}
+            <Box mb={4}>
+              <TabList
+                ref={tabsRef}
+                gap={2}
+                p={2}
+                overflowX="auto"
+                justifyContent="start"
+                sx={{
+                  scrollbarWidth: "none",
+                  msOverflowStyle: "none",
+                  "&::-webkit-scrollbar": { display: "none" },
+                }}
+              >
+                {/* 1. Details */}
+                <TabButtonCustomStyle>
+                  <HStack spacing={2}>
+                    <FiInfo size={16} />
+                    <Text>Details</Text>
+                  </HStack>
+                </TabButtonCustomStyle>
 
-      {/* Enhanced Approver Section */}
-      {approvalMode && canApprove && (
-        <EnhancedApproverSection
-          DataProject={DataProject}
-          canApprove={canApprove}
-          onApprove={() => handleApprovalClick(true)}
-          onDecline={() => handleApprovalClick(false)}
-        />
-      )}
+                {/* 2. Project Scope (Backlogs) */}
+                <TabButtonCustomStyleHighLight>
+                  <HStack spacing={2}>
+                    <FiLayers size={16} />
+                    <Text>Project Scope</Text>
+                  </HStack>
+                </TabButtonCustomStyleHighLight>
 
-      {/* General Information Section */}
-      <GeneralInfoSection DataProject={DataProject} />
+                {/* 3. Procurements (for PROCUREMENT projects matching /projects/manage) */}
+                {isProcurement && (
+                  <TabButtonCustomStyleHighLight>
+                    <HStack spacing={2}>
+                      <FiPlayCircle size={16} />
+                      <Text>Procurements</Text>
+                    </HStack>
+                  </TabButtonCustomStyleHighLight>
+                )}
 
-      {/* Requirement & Work Program Section */}
-      <RequirementWorkProgramSection DataProject={DataProject} />
+                {/* 4. Team */}
+                <TabButtonCustomStyle>
+                  <HStack spacing={2}>
+                    <FiUsers size={16} />
+                    <Text>Team</Text>
+                  </HStack>
+                </TabButtonCustomStyle>
 
-      {/* User Assignments Section */}
-      <UserAssignmentsSection projectMembers={projectMembers} />
+                {/* 5. Work Programs */}
+                <TabButtonCustomStyle>
+                  <HStack spacing={2}>
+                    <FiBriefcase size={16} />
+                    <Text>Work Programs</Text>
+                  </HStack>
+                </TabButtonCustomStyle>
 
-      {/* Requirement Organization Sections */}
-      {DataProject?.requirementData && (
-        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-          <OrganizationSection 
-            DataProject={DataProject} 
-            title="Requirement Initiated By" 
-            colorScheme="blue"
-            type="requirement-initiated"
+                {/* 6. Timeline */}
+                <TabButtonCustomStyle>
+                  <HStack spacing={2}>
+                    <FiCalendar size={16} />
+                    <Text>Timeline</Text>
+                  </HStack>
+                </TabButtonCustomStyle>
+              </TabList>
+
+              {/* Scroll buttons matching /projects/manage */}
+              <Flex justify="flex-end" mt={1}>
+                <HStack spacing={1}>
+                  <Button
+                    size="xs"
+                    onClick={() => scrollTabs("left")}
+                    bg={
+                      colorMode === "light"
+                        ? "secondary.500"
+                        : "secondary.700"
+                    }
+                    shadow="md"
+                    _hover={{
+                      bg:
+                        colorMode === "light"
+                          ? "secondary.400"
+                          : "secondary.600",
+                    }}
+                    color="white"
+                  >
+                    <FiChevronLeft />
+                  </Button>
+                  <Button
+                    size="xs"
+                    onClick={() => scrollTabs("right")}
+                    bg={
+                      colorMode === "light"
+                        ? "secondary.500"
+                        : "secondary.700"
+                    }
+                    shadow="md"
+                    _hover={{
+                      bg:
+                        colorMode === "light"
+                          ? "secondary.400"
+                          : "secondary.600",
+                    }}
+                    color="white"
+                  >
+                    <FiChevronRight />
+                  </Button>
+                </HStack>
+              </Flex>
+            </Box>
+
+            {/* Elevated Main Card Wrapper matching /projects/manage (minH="600px") */}
+            <Card
+              shadow="xl"
+              rounded={radiusStyle}
+              border="1px"
+              borderColor={colorMode === "light" ? "gray.200" : "gray.700"}
+              bg={colorMode === "light" ? "white" : "gray.800"}
+              overflow="hidden"
+              _hover={{
+                shadow: "2xl",
+                transform: "translateY(-2px)",
+              }}
+              transition="all 0.3s ease"
+            >
+              <CardBody p={{ base: 4, md: 6 }}>
+                <TabPanels minH="600px">
+                  {/* TAB 1: Details */}
+                  <TabPanel p={0}>
+                    <VStack spacing={6} align="stretch">
+                      <ProjectRequirementCard DataProject={DataProject} />
+                      <GovernanceMatrixSection DataProject={DataProject} />
+                    </VStack>
+                  </TabPanel>
+
+                  {/* TAB 2: Project Scope (Backlogs) */}
+                  <TabPanel p={0}>
+                    <VStack spacing={6} align="stretch">
+                      {backlogList && backlogList.length > 0 ? (
+                        <BacklogsSection
+                          backlogList={backlogList}
+                          backlogStats={backlogStats}
+                          requirementType={
+                            DataProject.requirementData?.requirementType
+                          }
+                        />
+                      ) : (
+                        <Box textAlign="center" py={12}>
+                          <Text color="gray.500">
+                            No scope backlog items defined for this project
+                          </Text>
+                        </Box>
+                      )}
+                    </VStack>
+                  </TabPanel>
+
+                  {/* TAB 3: Procurements (if isProcurement matching /projects/manage) */}
+                  {isProcurement && (
+                    <TabPanel p={0}>
+                      <VStack spacing={6} align="stretch">
+                        <ProcurementStagesSection DataProject={DataProject} />
+                      </VStack>
+                    </TabPanel>
+                  )}
+
+                  {/* TAB: Team */}
+                  <TabPanel p={0}>
+                    <VStack spacing={6} align="stretch">
+                      {projectMembers && projectMembers.length > 0 && (
+                        <UserAssignmentsSection
+                          projectMembers={projectMembers}
+                        />
+                      )}
+                      <WorkStagesSection DataProject={DataProject} />
+                      {!isProcurement && (
+                        <ProcurementStagesSection DataProject={DataProject} />
+                      )}
+                    </VStack>
+                  </TabPanel>
+
+                  {/* TAB: Work Programs */}
+                  <TabPanel p={0}>
+                    <VStack spacing={6} align="stretch">
+                      <WorkProgramsSection DataProject={DataProject} />
+                    </VStack>
+                  </TabPanel>
+
+                  {/* TAB: Timeline */}
+                  <TabPanel p={0}>
+                    <VStack spacing={6} align="stretch">
+                      {statusHistory && statusHistory.length > 0 ? (
+                        <StatusHistorySection statusHistory={statusHistory} />
+                      ) : (
+                        <Box textAlign="center" py={12}>
+                          <Text color="gray.500">
+                            No timeline history recorded yet
+                          </Text>
+                        </Box>
+                      )}
+                    </VStack>
+                  </TabPanel>
+                </TabPanels>
+              </CardBody>
+            </Card>
+          </Tabs>
+        </GridItem>
+
+        {/* Right Column: Actions & Summary Sidebar (3 Columns on Desktop) */}
+        <GridItem colSpan={{ base: 12, sm: 12, md: 12, lg: 3 }} w="full">
+          <ProjectPreviewSidebar
+            DataProject={DataProject}
+            DataApps={DataApps}
+            canApprove={canApprove}
+            approvalMode={approvalMode}
+            onApproveClick={() => handleApprovalClick(true)}
+            onDeclineClick={() => handleApprovalClick(false)}
+            backlogCount={backlogList.length}
+            teamMemberCount={projectMembers.length}
+            statusHistory={statusHistory}
           />
-          <OrganizationSection 
-            DataProject={DataProject} 
-            title="Requirement Managed By" 
-            colorScheme="cyan"
-            type="requirement-managed"
-          />
-        </SimpleGrid>
-      )}
+        </GridItem>
+      </Grid>
 
-      {/* Organization Sections */}
-      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-        <OrganizationSection 
-          DataProject={DataProject} 
-          title="Project Initiated By" 
-          colorScheme="purple"
-          type="initiated"
-        />
-        <OrganizationSection 
-          DataProject={DataProject} 
-          title="Project Managed By" 
-          colorScheme="orange"
-          type="managed"
-        />
-      </SimpleGrid>
-
-      {/* Application Section */}
-      <ApplicationSection DataProject={DataProject} />
-
-      {/* Backlogs Section */}
-      {backlogList && backlogList.length > 0 && (
-        <BacklogsSection 
-          backlogList={backlogList} 
-          backlogStats={backlogStats}
-          requirementType={DataProject?.requirementData?.requirementType}
-        />
-      )}
-
-      {/* Work Programs Section */}
-      <WorkProgramsSection DataProject={DataProject} />
-
-      {/* Work Stages Section */}
-      <WorkStagesSection DataProject={DataProject} />
-
-      {/* Procurement Stages Section (conditional) */}
-      <ProcurementStagesSection DataProject={DataProject} />
-
-      {/* Status History Section */}
-      {statusHistory && statusHistory.length > 0 && (
-        <StatusHistorySection statusHistory={statusHistory} />
-      )}
-
-
-
-      {/* Approval Modal */}
+      {/* Modal Confirmation for Approval / Decline */}
       <Modal isOpen={isOpen} onClose={onClose} size="lg">
         <ModalOverlay />
-        <ModalContent>
+        <ModalContent rounded={radiusStyle}>
           <ModalHeader>
-            {approvalAction === "APPROVE" ? "Approve Project" 
-              : approvalAction === "ON_HOLD" ? "On Hold Project"
-              : approvalAction === "CANCEL" ? "Cancel Project"
-              : "Decline Project"}
+            {approvalAction === "APPROVE"
+              ? "Confirm Project Approval"
+              : "Decline / Request Revision"}
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <VStack spacing={4} align="stretch">
-              <Box>
-                <Text fontWeight="bold" mb={2}>Project Information</Text>
+              <Box
+                p={4}
+                rounded="md"
+                bg={colorMode === "light" ? "gray.50" : "gray.900"}
+              >
+                <Text fontWeight="bold" fontSize="xs" color="gray.500" mb={2}>
+                  PROJECT INFORMATION
+                </Text>
                 <VStack align="stretch" spacing={2} fontSize="sm">
-                  {/* <HStack>
-                    <Text color="gray.500">Code:</Text>
-                    <Text fontWeight="semibold">{DataProject?.projectCode}</Text>
-                  </HStack> */}
-                  <HStack>
-                    <Text color="gray.500">Name:</Text>
-                    <Text fontWeight="semibold">{DataProject?.projectName}</Text>
+                  <HStack justify="space-between">
+                    <Text color="gray.500">Project Name:</Text>
+                    <Text fontWeight="semibold" textAlign="right" noOfLines={1}>
+                      {DataProject.projectName}
+                    </Text>
                   </HStack>
-                  <HStack>
-                    <Text color="gray.500">Type:</Text>
-                    <Badge colorScheme="blue">{DataProject?.projectType}</Badge>
+                  <HStack justify="space-between">
+                    <Text color="gray.500">Project Type:</Text>
+                    <Badge colorScheme="purple">{DataProject.projectType}</Badge>
                   </HStack>
-                  <HStack>
-                    <Text color="gray.500">Status:</Text>
-                    <Badge colorScheme="orange">{DataProject?.approvalStatus}</Badge>
+                  <HStack justify="space-between">
+                    <Text color="gray.500">Current Stage:</Text>
+                    <Badge colorScheme="orange">
+                      {DataProject.approvalStatus || DataProject.projectStatus}
+                    </Badge>
                   </HStack>
                 </VStack>
               </Box>
+
               <Divider />
+
               <FormControl>
-                <FormLabel>Note (Optional)</FormLabel>
+                <FormLabel fontSize="sm" fontWeight="semibold">
+                  Evaluation Note / Reason{" "}
+                  {approvalAction !== "APPROVE" ? "(Required)" : "(Optional)"}
+                </FormLabel>
                 <Textarea
                   value={approvalNote}
                   onChange={(e) => setApprovalNote(e.target.value)}
-                  placeholder={approvalAction === "APPROVE" ? "Add approval note..." 
-                    : approvalAction === "ON_HOLD" ? "Add reason for putting on hold..."
-                    : approvalAction === "CANCEL" ? "Add reason for canceling..."
-                    : "Add reason for declining..."}
+                  placeholder={
+                    approvalAction === "APPROVE"
+                      ? "Add approval note if any..."
+                      : "Please describe items that need correction or revision by applicant..."
+                  }
                   rows={4}
+                  rounded="md"
                 />
               </FormControl>
             </VStack>
           </ModalBody>
           <ModalFooter>
-            <Button variant="ghost" mr={3} onClick={onClose} isDisabled={isApproving}>
+            <Button
+              variant="ghost"
+              mr={3}
+              onClick={onClose}
+              isDisabled={isApproving}
+            >
               Cancel
             </Button>
             <Button
-              colorScheme={approvalAction === "APPROVE" ? "green" 
-                : approvalAction === "ON_HOLD" ? "orange" 
-                : "red"}
+              colorScheme={approvalAction === "APPROVE" ? "green" : "red"}
               onClick={handleConfirmApproval}
               isLoading={isApproving}
-              leftIcon={approvalAction ? <FiCheckCircle /> : <FiXCircle />}
+              leftIcon={
+                approvalAction === "APPROVE" ? (
+                  <FiCheckCircle />
+                ) : (
+                  <FiXCircle />
+                )
+              }
             >
-              {approvalAction === "APPROVE" ? "Confirm Approval" 
-                : approvalAction === "ON_HOLD" ? "Confirm On Hold"
-                : approvalAction === "CANCEL" ? "Confirm Cancel"
+              {approvalAction === "APPROVE"
+                ? "Confirm Approval"
                 : "Confirm Decline"}
             </Button>
           </ModalFooter>

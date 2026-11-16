@@ -75,6 +75,7 @@ export default function ProjectPreviewView({
   const [backlogStats, setBacklogStats] = useState<any>(null);
   const [backlogList, setBacklogList] = useState<BacklogDataResponse[]>([]);
   const [projectMembers, setProjectMembers] = useState<ProjectUserAssignmentResponse[]>([]);
+  const [refreshKey, setRefreshKey] = useState<number>(0);
 
   useEffect(() => {
     const storedData = localStorage.getItem("authData");
@@ -141,7 +142,7 @@ export default function ProjectPreviewView({
       };
       GetDataList();
     }
-  }, [DataAuth, projectId, isInitialized]);
+  }, [DataAuth, projectId, isInitialized, refreshKey]);
 
   useEffect(() => {
     if (DataAuth && DataProject && !DataApps && isInitialized) {
@@ -180,7 +181,7 @@ export default function ProjectPreviewView({
       };
       LoadStatusHistory();
     }
-  }, [DataAuth, projectId, tokenData, isInitialized]);
+  }, [DataAuth, projectId, tokenData, isInitialized, refreshKey]);
 
   useEffect(() => {
     if (DataAuth && DataProject?.reqParentId && tokenData && isInitialized) {
@@ -199,7 +200,7 @@ export default function ProjectPreviewView({
     } else {
       console.log("Skipping requirement fetch - reqParentId:", DataProject?.reqParentId);
     }
-  }, [DataAuth, DataProject?.reqParentId, tokenData, isInitialized]);
+  }, [DataAuth, DataProject?.reqParentId, tokenData, isInitialized, refreshKey]);
 
   useEffect(() => {
     if (DataAuth && projectId && tokenData && isInitialized) {
@@ -211,7 +212,7 @@ export default function ProjectPreviewView({
       };
       LoadWorkflowBacklogs();
     }
-  }, [DataAuth, projectId, tokenData, isInitialized]);
+  }, [DataAuth, projectId, tokenData, isInitialized, refreshKey]);
 
   useEffect(() => {
     if (DataAuth && projectId && tokenData && isInitialized) {
@@ -223,7 +224,7 @@ export default function ProjectPreviewView({
       };
       LoadBacklogStats();
     }
-  }, [DataAuth, projectId, tokenData, isInitialized]);
+  }, [DataAuth, projectId, tokenData, isInitialized, refreshKey]);
 
   useEffect(() => {
     if (DataAuth && projectId && tokenData && isInitialized) {
@@ -249,7 +250,7 @@ export default function ProjectPreviewView({
       };
       LoadBacklogList();
     }
-  }, [DataAuth, projectId, tokenData, isInitialized]);
+  }, [DataAuth, projectId, tokenData, isInitialized, refreshKey]);
 
   useEffect(() => {
     if (DataAuth && projectId && tokenData && isInitialized) {
@@ -261,7 +262,7 @@ export default function ProjectPreviewView({
       };
       LoadProjectMembers();
     }
-  }, [DataAuth, projectId, tokenData, isInitialized]);
+  }, [DataAuth, projectId, tokenData, isInitialized, refreshKey]);
 
 
 
@@ -318,6 +319,8 @@ export default function ProjectPreviewView({
             projectMembers={projectMembers}
             canApprove={canApprove}
             approvalMode={approvalMode}
+            isLoading={IsLoadingProcess}
+            onRefresh={() => setRefreshKey((prev) => prev + 1)}
             onApprove={async (isApproved: boolean, note?: string, action?: string) => {
               if (!projectId) return;
               const response = await ApproveProject(

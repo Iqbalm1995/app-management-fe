@@ -11,9 +11,16 @@ function ProcurementRegisterPageContent() {
   const searchParams = useSearchParams();
   const reqTypeParam = searchParams.get("reqType");
   const reqType = reqTypeParam?.toUpperCase();
+  const projectId = searchParams.get("projectId") || undefined;
+  const mode = searchParams.get("mode")?.toUpperCase() || undefined;
 
   return (
-    <ProjectRegisterView projectTypeRegister={PRJ_TYPE_REGISTER} reqType={reqType} />
+    <ProjectRegisterView
+      projectTypeRegister={PRJ_TYPE_REGISTER}
+      reqType={reqType}
+      projectId={projectId}
+      mode={mode}
+    />
   );
 }
 

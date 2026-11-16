@@ -60,6 +60,7 @@ import useProjects, {
   ProjectCountResponse,
   ProjectInsertPayload,
   ProjectRegisterPayload,
+  ProjectRevisePayload,
   ProjectUserInsertPayload,
 } from "@/app/services/useProjects";
 import useWorkflow, { WorkflowGroupResponse } from "@/app/services/useWorkflow";
@@ -164,6 +165,7 @@ import Link from "next/link";
 import { redirect, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import {
+  FiAlertCircle,
   FiAlertTriangle,
   FiArrowLeft,
   FiArrowRight,
@@ -277,14 +279,28 @@ const PROJECT_ROUTES = {
 interface ProjectRegisterViewProps {
   projectTypeRegister: string;
   reqType?: string | null;
+  projectId?: string;
+  mode?: string;
 }
 
 export default function ProjectRegisterView({
   projectTypeRegister,
   reqType,
+  projectId,
+  mode,
 }: ProjectRegisterViewProps) {
   const showToast = useToastHelper();
   const { colorMode } = useColorMode();
+
+  const isReviseMode = mode === "REVISE" && Boolean(projectId);
+  interface DeclineFeedback {
+    note: string;
+    approverName?: string;
+    approverJabatan?: string;
+    date?: string;
+  }
+  const [declineFeedback, setDeclineFeedback] = useState<DeclineFeedback | null>(null);
+  const [isLoadingExistingProject, setIsLoadingExistingProject] = useState<boolean>(false);
 
   const {
     GetDetailById: GetReqDetail,
@@ -293,7 +309,13 @@ export default function ProjectRegisterView({
   } = useRequirements();
   const { GetDetailByInitial: GetAppByInitial } = useApps();
   const { ListConstantData } = useConstants();
-  const { RegisterProjectNew, GetProjectCount } = useProjects();
+  const {
+    RegisterProjectNew,
+    ReviseProjectSubmit,
+    GetProjectCount,
+    GetDetailById: GetProjectDetailById,
+    GetProjectStatusHistory,
+  } = useProjects();
   const {
     GetDetailByUserId: GetUserID,
     List: ListUsers,
@@ -313,6 +335,7 @@ export default function ProjectRegisterView({
   const [ntpStatus, setNtpStatus] = useState<"syncing" | "synced" | "local">("syncing");
 
   const syncNTP = async (setField?: (date: string) => void) => {
+    if (isReviseMode) return;
     setNtpStatus("syncing");
     const toDateStr = (d: Date) => d.toISOString().split("T")[0];
     try {
@@ -355,8 +378,12 @@ export default function ProjectRegisterView({
   }, [DataAuth]);
   // End SetUp auth data on current page
 
-  // Auto-sync NTP on mount
-  useEffect(() => { syncNTP(); }, []);
+  // Auto-sync NTP on mount (skip in Revise mode to preserve existing project register date)
+  useEffect(() => {
+    if (!isReviseMode) {
+      syncNTP();
+    }
+  }, [isReviseMode]);
 
   // Services
   const GetUserIDServices = async (
@@ -573,13 +600,61 @@ export default function ProjectRegisterView({
     }
   };
 
+  const ReviseProjectData = async (data: ProjectInsertPayload) => {
+    // Filter only selected backlogs for internal development
+    const selectedBacklogsList =
+      projectTypeRegister == PROJECT_TYPE_INTERNAL_DEVELOPMENT
+        ? DataBacklogsRequirement.filter((b) =>
+            selectedBacklogIds.includes(b.id),
+          )
+        : [];
+
+    const backlogsProject: BacklogUpdatePayload[] =
+      mapBacklogArrayToUpdatePayload(selectedBacklogsList);
+
+    const payload: ProjectRevisePayload = {
+      ...data,
+      projectId: projectId!,
+      reviseNote: reviseNote?.trim() || null,
+      projectNo:
+        data.projectNo && data.projectNo.trim() && data.projectNo !== "-"
+          ? data.projectNo
+          : null,
+      userAssigns: ChoosedMemberProjects.map((u) => ({ userId: u.userId })),
+      backlogsProject,
+      workProgramsBacklogs: [],
+      workPrograms: data.workPrograms || [],
+    };
+
+    const requestData = await ReviseProjectSubmit(payload, tokenData);
+    const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+
+    if (isErrorResponse || !requestData) {
+      showToast({
+        description: requestData?.message || RES_GENERIC_ERROR_MSG,
+        statusToast: "error",
+      });
+      setActionLoading(false);
+      return;
+    } else {
+      showToast({
+        description: "Revisi project berhasil diajukan! Status project dikembalikan ke Menunggu Persetujuan Level 1.",
+        statusToast: "success",
+      });
+
+      setActionLoading(false);
+      redirect("/projects/pending-approve?tab=MY_REVISE");
+    }
+  };
+
   // Get route configuration based on project type
   const routeConfig = projectTypeRegister
     ? PROJECT_ROUTES[projectTypeRegister as keyof typeof PROJECT_ROUTES]
     : PROJECT_ROUTES[PROJECT_TYPE_PROCUREMENT]; // Default fallback
 
-  const backUrl =
-    projectTypeRegister === PROJECT_TYPE_INTERNAL_DEVELOPMENT
+  const backUrl = isReviseMode
+    ? "/projects/pending-approve?tab=MY_REVISE"
+    : projectTypeRegister === PROJECT_TYPE_INTERNAL_DEVELOPMENT
       ? `/projects-manager/?reqType=${reqType?.toLowerCase() || "brd"}`
       : routeConfig?.back || "/projects-procurements";
   const GetOptionDataServ = async (
@@ -649,45 +724,151 @@ export default function ProjectRegisterView({
     formik.setFieldValue(fieldData, null);
   };
 
-  const GetDataListBacklogs = async () => {
-    if (DataRequirement != null) {
-      const PayloadList: PaggingListPayload = {
-        search: "",
-        limit: MAX_SIZE_TABLE,
-        page: 0,
-        filterWhere: [
-          {
-            field: "reqId",
-            operator: "=",
-            value: DataRequirement.id,
-          },
-        ],
-        fieldOrder: ["backlogName"],
-        orderDir: "asc",
-      };
-      const requestData = await ListBacklog(PayloadList, tokenData);
-      const isErrorResponse = requestData?.statusCode !== RES_CODE_OK;
+  const GetDataListBacklogs = async (
+    overrideReqId?: string,
+    overrideProjectId?: string,
+  ): Promise<BacklogDataResponse[]> => {
+    const currentToken =
+      tokenData ||
+      (typeof window !== "undefined"
+        ? localStorage.getItem("tokenData") || ""
+        : "");
+    const targetReqId =
+      overrideReqId || DataRequirement?.id || formik.values.reqParentId;
+    const targetProjectId =
+      overrideProjectId || (isReviseMode ? projectId : undefined);
 
-      if (isErrorResponse || !requestData) {
-        showToast({
-          description: requestData?.message || RES_GENERIC_ERROR_MSG,
-          statusToast: "error",
-        });
-        return;
-      } else {
-        // console.log(requestData);
-        if (requestData.data == null) {
-          showToast({
-            description: "Data backlogs return error",
-            statusToast: "error",
-          });
-          return;
+    if (!targetReqId && !targetProjectId) {
+      return [];
+    }
+
+    setIsloadingBacklogs(true);
+    try {
+      let combinedBacklogs: BacklogDataResponse[] = [];
+
+      // 1. Fetch by reqId if available
+      if (targetReqId) {
+        const PayloadList: PaggingListPayload = {
+          search: "",
+          limit: MAX_SIZE_TABLE,
+          page: 0,
+          filterWhere: [
+            {
+              field: "reqId",
+              operator: "=",
+              value: targetReqId,
+            },
+          ],
+          fieldOrder: ["backlogName"],
+          orderDir: "asc",
+        };
+        const requestData = await ListBacklog(PayloadList, currentToken);
+        if (
+          requestData?.statusCode === RES_CODE_OK &&
+          Array.isArray(requestData.data)
+        ) {
+          combinedBacklogs = [...requestData.data];
         }
-
-        const itemsData: BacklogDataResponse[] =
-          requestData.data as BacklogDataResponse[];
-        setDataBacklogsRequirement(itemsData);
       }
+
+      // 2. Fetch by projectId if targetProjectId is provided (e.g. in revise mode)
+      if (targetProjectId) {
+        const PayloadProject: PaggingListPayload = {
+          search: "",
+          limit: MAX_SIZE_TABLE,
+          page: 0,
+          filterWhere: [
+            {
+              field: "projectId",
+              operator: "=",
+              value: targetProjectId,
+            },
+          ],
+          fieldOrder: ["backlogName"],
+          orderDir: "asc",
+        };
+        const prjBacklogsRes = await ListBacklog(PayloadProject, currentToken);
+        if (
+          prjBacklogsRes?.statusCode === RES_CODE_OK &&
+          Array.isArray(prjBacklogsRes.data)
+        ) {
+          prjBacklogsRes.data.forEach((pb) => {
+            const exists = combinedBacklogs.some((b) => b.id === pb.id);
+            if (!exists) {
+              combinedBacklogs.push(pb);
+            }
+          });
+        }
+      }
+
+      // Normalize and format backlog fields (dates, urgency, impact, priority, additional)
+      const normalizedBacklogs = combinedBacklogs.map((b) => {
+        const rawDeadline = b.backlogEnddate || b.backlogImplementEnddate;
+        const formattedDeadline = rawDeadline
+          ? rawDeadline.includes("T")
+            ? rawDeadline.split("T")[0]
+            : rawDeadline
+          : null;
+        const urgency = b.urgency ? b.urgency.toUpperCase() : "LOW";
+        const impact = b.impact ? b.impact.toUpperCase() : "LOW";
+        const priority = b.priority
+          ? b.priority.toUpperCase()
+          : getPriorityFromMatrix(impact, urgency);
+
+        const rfcImportant = b.rfcBacklogImportant
+          ? b.rfcBacklogImportant.toUpperCase()
+          : "NORMAL";
+        const rfcImpactOthers = b.rfcBacklogImpactOthers
+          ? b.rfcBacklogImpactOthers.toUpperCase()
+          : "SMALL";
+        const rfcPriorities = b.rfcPriorities
+          ? b.rfcPriorities.toUpperCase()
+          : getRfcPriorityWithIndex(rfcImportant, rfcImpactOthers).priority;
+
+        return {
+          ...b,
+          backlogEnddate: formattedDeadline,
+          backlogImplementEnddate: formattedDeadline,
+          urgency,
+          impact,
+          priority,
+          rfcBacklogImportant: rfcImportant,
+          rfcBacklogImpactOthers: rfcImpactOthers,
+          rfcPriorities,
+          envSide: b.envSide || "",
+          maintenanceCategory: b.maintenanceCategory || "",
+          maintenanceType: b.maintenanceType || "",
+          rppb: b.rppb || "N",
+          licensing: b.licensing || "N",
+        };
+      });
+
+      setDataBacklogsRequirement(normalizedBacklogs);
+
+      // In revise mode, auto-select backlogs that belong to this project
+      if (isReviseMode && targetProjectId) {
+        const preselectedIds = normalizedBacklogs
+          .filter(
+            (b) =>
+              b.projectId &&
+              b.projectId.toLowerCase() === targetProjectId.toLowerCase(),
+          )
+          .map((b) => b.id);
+        if (preselectedIds.length > 0) {
+          setSelectedBacklogIds(preselectedIds);
+        }
+      }
+
+      return normalizedBacklogs;
+    } catch (error) {
+      console.error("Error loading backlogs:", error);
+      showToast({
+        description: "Gagal memuat data requirement backlog.",
+        statusToast: "error",
+      });
+      return [];
+    } finally {
+      setIsloadingBacklogs(false);
     }
   };
 
@@ -751,6 +932,13 @@ export default function ProjectRegisterView({
     const getData = await GetDataMasterOrg("", MAX_SIZE_TABLE, []);
     if (getData.length > 0) {
       setOrganizationData(getData);
+      const divisions = getData
+        .filter((d) => d.orgType === ORG_CATEGORY_KEY_DIVISION)
+        .map((d) => ({
+          label: d.orgName,
+          value: d.id,
+        }));
+      setOptionDivision(divisions);
     }
     setIsLoadingProcess(false);
   };
@@ -896,6 +1084,7 @@ export default function ProjectRegisterView({
   // generate Project Number
   useEffect(() => {
     const getProjectCount = async () => {
+      if (isReviseMode) return; // Prevent overwriting existing project number in Revise mode
       if (tokenData) {
         try {
           const requestData = await GetProjectCount(tokenData);
@@ -952,6 +1141,28 @@ export default function ProjectRegisterView({
     formik.values.projectAcquisitionCode,
     OrganizationData,
     ProjectNoMode,
+  ]);
+
+  // Auto-sync Directorate for Divisi Yang Menginisiasi when Division is set
+  useEffect(() => {
+    if (
+      formik.values.proOwnerDivisionId &&
+      !formik.values.proOwnerDirectorateId &&
+      OrganizationData.length > 0
+    ) {
+      const division = OrganizationData.find(
+        (org) =>
+          org.id === formik.values.proOwnerDivisionId &&
+          org.orgType === ORG_CATEGORY_KEY_DIVISION,
+      );
+      if (division?.parentId) {
+        formik.setFieldValue("proOwnerDirectorateId", division.parentId);
+      }
+    }
+  }, [
+    formik.values.proOwnerDivisionId,
+    formik.values.proOwnerDirectorateId,
+    OrganizationData,
   ]);
 
   // end - formik
@@ -1231,25 +1442,42 @@ export default function ProjectRegisterView({
     (checked: boolean) => {
       if (checked) {
         const availableIds = DataBacklogsRequirement.filter(
-          (b) => b.projectId === null,
+          (b) =>
+            b.projectId === null ||
+            (isReviseMode &&
+              projectId &&
+              b.projectId?.toLowerCase() === projectId.toLowerCase()),
         ).map((b) => b.id);
         setSelectedBacklogIds(availableIds);
       } else {
         setSelectedBacklogIds([]);
       }
     },
-    [DataBacklogsRequirement],
+    [DataBacklogsRequirement, isReviseMode, projectId],
   );
 
   // Separate backlogs into 3 categories
   // Separate backlogs into 3 categories (memoized for performance)
   const assignedBacklogs = useMemo(
-    () => DataBacklogsRequirement.filter((b) => b.projectId !== null),
-    [DataBacklogsRequirement],
+    () =>
+      DataBacklogsRequirement.filter(
+        (b) =>
+          b.projectId !== null &&
+          (!isReviseMode ||
+            !projectId ||
+            b.projectId?.toLowerCase() !== projectId.toLowerCase()),
+      ),
+    [DataBacklogsRequirement, isReviseMode, projectId],
   );
 
   const availableBacklogs = useMemo(() => {
-    let filtered = DataBacklogsRequirement.filter((b) => b.projectId === null);
+    let filtered = DataBacklogsRequirement.filter(
+      (b) =>
+        b.projectId === null ||
+        (isReviseMode &&
+          projectId &&
+          b.projectId?.toLowerCase() === projectId.toLowerCase()),
+    );
 
     if (availableBacklogsFilter) {
       filtered = filtered.filter(
@@ -1264,7 +1492,7 @@ export default function ProjectRegisterView({
     }
 
     return filtered;
-  }, [DataBacklogsRequirement, availableBacklogsFilter]);
+  }, [DataBacklogsRequirement, availableBacklogsFilter, isReviseMode, projectId]);
 
   const selectedBacklogs = useMemo(
     () =>
@@ -1723,10 +1951,7 @@ export default function ProjectRegisterView({
       LoadAllOrganizationData();
       // LoadDataDirectorate();
 
-      if (
-        projectTypeRegister == PROJECT_TYPE_PROCUREMENT &&
-        DataRequirement == null
-      ) {
+      if (projectTypeRegister == PROJECT_TYPE_PROCUREMENT) {
         LoadWorkflowGroupsProcurements();
         LoadWorkflowPresetsProcurement();
       }
@@ -1827,7 +2052,10 @@ export default function ProjectRegisterView({
                 idInput={`deadlineSet-${info.row.index}`}
                 fieldName="backlogEnddate"
                 dataSource={info.row.original}
-                dataInput={info.row.original.backlogEnddate}
+                dataInput={
+                  info.row.original.backlogEnddate ||
+                  info.row.original.backlogImplementEnddate
+                }
                 updateBacklog={updateBacklog}
                 maxDate={DataRequirement?.appLiveTargetDate}
               />
@@ -2030,25 +2258,34 @@ export default function ProjectRegisterView({
         {
           accessorFn: (row) => row.priority,
           id: "priority",
-          cell: (info) => (
-            <Flex
-              w={"full"}
-              h={"full"}
-              justifyContent={"center"}
-              alignItems={"start"}
-              as={Stack}
-              spacing={1}
-            >
-              <Flex as={Stack} spacing={2}>
-                <Text
-                  fontWeight={600}
-                  color={priorityColor(info.row.original.priority)}
-                >
-                  {info.row.original.priority}
-                </Text>
+          cell: (info) => {
+            const rawPriority = info.row.original.priority;
+            const computedPriority =
+              rawPriority ||
+              getPriorityFromMatrix(
+                info.row.original.impact || "LOW",
+                info.row.original.urgency || "LOW",
+              );
+            return (
+              <Flex
+                w={"full"}
+                h={"full"}
+                justifyContent={"center"}
+                alignItems={"start"}
+                as={Stack}
+                spacing={1}
+              >
+                <Flex as={Stack} spacing={2}>
+                  <Text
+                    fontWeight={600}
+                    color={priorityColor(computedPriority || "LOW")}
+                  >
+                    {computedPriority || "LOW"}
+                  </Text>
+                </Flex>
               </Flex>
-            </Flex>
-          ),
+            );
+          },
           header: () => <span>Priority</span>,
           footer: (props) => props.column.id,
           meta: {
@@ -2248,6 +2485,7 @@ export default function ProjectRegisterView({
   const [submitCountdown, setSubmitCountdown] = useState(5);
   const [questionMsgDialog, setQuestionMsgDialog] = useState<string>("");
   const [captionDialog, setCaptionDialog] = useState<string>("");
+  const [reviseNote, setReviseNote] = useState<string>("");
 
   // Countdown timer for submit confirmation
   useEffect(() => {
@@ -2270,9 +2508,13 @@ export default function ProjectRegisterView({
   }, [openConfirmSaveDialog]);
 
   const handleConfirmSaveData = (data: ProjectInsertPayload) => {
-    setCaptionDialog("Submit Project Data");
+    setCaptionDialog(
+      isReviseMode ? "Ajukan Revisi Project" : "Submit Project Data",
+    );
     setQuestionMsgDialog(
-      `Are you sure you want to submit project data "${formik.values.projectName}"?`,
+      isReviseMode
+        ? `Apakah Anda yakin ingin mengajukan revisi untuk project "${formik.values.projectName}"? Status project akan dikembalikan ke Menunggu Persetujuan Level 1.`
+        : `Are you sure you want to submit project data "${formik.values.projectName}"?`,
     );
     setOpenConfirmSaveDialog(true);
   };
@@ -2403,7 +2645,11 @@ export default function ProjectRegisterView({
       return;
     }
 
-    await RegisterProjectData(formik.values);
+    if (isReviseMode) {
+      await ReviseProjectData(formik.values);
+    } else {
+      await RegisterProjectData(formik.values);
+    }
 
     // if (DataAuth && DataAuth.team) {
     //   await AddRequirement(formik.values);
@@ -2502,6 +2748,7 @@ export default function ProjectRegisterView({
 
   const ModalForm = useDisclosure();
   const handleModalMemmo = () => {
+    if (isReviseMode) return;
     ModalForm.onOpen();
   };
 
@@ -2511,155 +2758,160 @@ export default function ProjectRegisterView({
     dataResponse: RequirementWorkProgramDataResponse[],
   ) => {
     // map with WorkProgramsPayload
-    return dataResponse.map((item) => ({
-      directorateId: item.directorateId || "",
-      divisionId: item.divisionId,
-      groupId: item.groupId,
-      workProgramSource: item.workProgramSource,
-      workProgramCode: item.workProgramCode,
-      workProgramName: item.workProgramName,
-      workProgramAccName: item.workProgramAccName,
-      workProgramAccNumber: item.workProgramAccNumber,
-      workProgramAccCc: item.workProgramAccCc,
-      workProgramBudget: item.workProgramBudget,
-      workProgramReal: item.workProgramReal,
-    }));
+    return dataResponse.map((item) => {
+      let resolvedDirectorateId = item.directorateId || "";
+      if (
+        !resolvedDirectorateId &&
+        item.divisionId &&
+        OrganizationData &&
+        OrganizationData.length > 0
+      ) {
+        const foundOrg = OrganizationData.find(
+          (org) => org.id === item.divisionId,
+        );
+        if (foundOrg?.parentId) {
+          resolvedDirectorateId = foundOrg.parentId;
+        }
+      }
+      if (
+        !resolvedDirectorateId &&
+        item.workProgramSource === WORK_PROGRAM_INTERNAL
+      ) {
+        resolvedDirectorateId = DIRECTORATE_ID_IT_BJB;
+      }
+
+      return {
+        directorateId: resolvedDirectorateId,
+        divisionId:
+          item.divisionId ||
+          (item.workProgramSource === WORK_PROGRAM_INTERNAL
+            ? DIVISION_ID_IT_BJB
+            : null),
+        groupId: item.groupId || null,
+        workProgramSource: item.workProgramSource,
+        workProgramCode: item.workProgramCode || null,
+        workProgramName: item.workProgramName || null,
+        workProgramAccName: item.workProgramAccName || null,
+        workProgramAccNumber: item.workProgramAccNumber || null,
+        workProgramAccCc: item.workProgramAccCc || null,
+        workProgramBudget:
+          typeof item.workProgramBudget === "number"
+            ? item.workProgramBudget
+            : Number(item.workProgramBudget || 0),
+        workProgramReal:
+          typeof item.workProgramReal === "number"
+            ? item.workProgramReal
+            : Number(item.workProgramReal || 0),
+      };
+    });
   };
 
   // load reff from data requirements
   useEffect(() => {
-    // projectTypeRegister;
-    formik.setFieldValue(`projectType`, projectTypeRegister);
-    formik.setFieldValue(`projectCategory`, "PROJECT");
+    if (!isReviseMode) {
+      // projectTypeRegister;
+      formik.setFieldValue(`projectType`, projectTypeRegister);
+      formik.setFieldValue(`projectCategory`, "PROJECT");
 
-    console.log(IsHaveMemo);
-    console.log(projectTypeRegister);
-
-    if (IsHaveMemo == "N" && projectTypeRegister == PROJECT_TYPE_PROCUREMENT) {
-      console.log(PROJECT_TYPE_PROCUREMENT);
-      handleResetReffFromRequirementData();
-      formik.setFieldValue(`reqParentId`, null);
-      formik.setFieldValue("proOwnerDirectorateId", DIRECTORATE_ID_IT_BJB);
-      formik.setFieldValue("proOwnerDivisionId", DIVISION_ID_IT_BJB);
-      formik.setFieldValue("proManageByDirectorateId", DIRECTORATE_ID_IT_BJB);
-      formik.setFieldValue("proManageByDivisionId", DIVISION_ID_IT_BJB);
+      if (IsHaveMemo == "N" && projectTypeRegister == PROJECT_TYPE_PROCUREMENT) {
+        handleResetReffFromRequirementData();
+        formik.setFieldValue(`reqParentId`, null);
+        formik.setFieldValue("proOwnerDirectorateId", DIRECTORATE_ID_IT_BJB);
+        formik.setFieldValue("proOwnerDivisionId", DIVISION_ID_IT_BJB);
+        formik.setFieldValue("proManageByDirectorateId", DIRECTORATE_ID_IT_BJB);
+        formik.setFieldValue("proManageByDivisionId", DIVISION_ID_IT_BJB);
+      }
     }
 
     if (DataAuth && DataRequirement && tokenData) {
-      console.log("DataRequirement Loaded");
-      // Set proManageBy fields from requirement data
-      if (DataRequirement.reqManageByDirectorateId) {
-        formik.setFieldValue(
-          "proManageByDirectorateId",
-          DataRequirement.reqManageByDirectorateId,
-        );
-      }
-      if (DataRequirement.reqManageByDivisionId) {
-        formik.setFieldValue(
-          "proManageByDivisionId",
-          DataRequirement.reqManageByDivisionId,
-        );
-      }
-      if (DataRequirement.reqManageByGroupId) {
-        formik.setFieldValue(
-          "proManageByGroupId",
-          DataRequirement.reqManageByGroupId,
-        );
-      }
-      GetDataListBacklogs();
+      GetDataListBacklogs(DataRequirement.id);
 
-      formik.setFieldValue(`reqParentId`, DataRequirement.id);
-
-      formik.setFieldValue(
-        "proOwnerDirectorateId",
-        DataRequirement.senderDirectorateId,
-      );
-      // LoadDataDivision(
-      //   DataRequirement.senderDirectorateId || "",
-      //   "proOwnerDivisionId"
-      // );
-      formik.setFieldValue(
-        "proOwnerDivisionId",
-        DataRequirement.senderDivisionId,
-      );
-
-      const mapDataWorkPrograms =
-        DataRequirement.workPrograms && DataRequirement.workPrograms.length > 0
-          ? mapWorkProgramData(DataRequirement.workPrograms)
-          : [];
-      formik.setFieldValue("workPrograms", mapDataWorkPrograms);
-
-      const CountInternalWorkPrograms = mapDataWorkPrograms.filter(
-        (f) => f.workProgramSource == WORK_PROGRAM_INTERNAL,
-      ).length;
-      const CountExternalWorkPrograms = mapDataWorkPrograms.filter(
-        (f) => f.workProgramSource == WORK_PROGRAM_EXTERNAL,
-      ).length;
-
-      if (CountInternalWorkPrograms > 0) {
-        setWorkProgramInt("1");
-      }
-      if (CountExternalWorkPrograms > 0) {
-        setWorkProgramExt("1");
-      }
-
-      const userAssignPoject: UsersResponse[] = [];
-      // get user org project manage
-      const GetUserManageProject = async () => {
-        if (DataRequirement.assignedFromId) {
-          const ProjectManageOrg: UserOrganizationResponse | null =
-            await GetUserOrganizationServices(DataRequirement.assignedFromId);
-          // if (ProjectManageOrg) {
-          //   formik.setFieldValue(
-          //     `proManageByDivisionId`,
-          //     ProjectManageOrg.division.id
-          //   );
-          //   if (ProjectManageOrg.group) {
-          //     formik.setFieldValue(
-          //       `proManageByGroupId`,
-          //       ProjectManageOrg.group.id
-          //     );
-          //   }
-          //   if (ProjectManageOrg.team) {
-          //     formik.setFieldValue(
-          //       `proManageByTeamId`,
-          //       ProjectManageOrg.team.id
-          //     );
-          //   }
-          // }
-        }
-
-        // Set UserDefault Assign Project Member
-        if (DataRequirement.assignedFromId != null) {
-          const UserOwner = await GetUserIDServices(
-            DataRequirement.assignedFromId,
+      if (!isReviseMode) {
+        // Set proManageBy fields from requirement data only in new create mode
+        if (DataRequirement.reqManageByDirectorateId) {
+          formik.setFieldValue(
+            "proManageByDirectorateId",
+            DataRequirement.reqManageByDirectorateId,
           );
-          if (UserOwner) {
-            userAssignPoject.push(UserOwner);
-          }
+        }
+        if (DataRequirement.reqManageByDivisionId) {
+          formik.setFieldValue(
+            "proManageByDivisionId",
+            DataRequirement.reqManageByDivisionId,
+          );
+        }
+        if (DataRequirement.reqManageByGroupId) {
+          formik.setFieldValue(
+            "proManageByGroupId",
+            DataRequirement.reqManageByGroupId,
+          );
         }
 
-        // insert user reviewer in parallel and wait for all
-        const reviewers = await Promise.all(
-          (DataRequirement.approvalDatas ?? []).map(async (dt) => {
-            try {
-              return await GetUserIDServices(dt.approverUserCode);
-            } catch {
-              return null;
-            }
-          }),
+        formik.setFieldValue(`reqParentId`, DataRequirement.id);
+
+        formik.setFieldValue(
+          "proOwnerDirectorateId",
+          DataRequirement.senderDirectorateId,
+        );
+        formik.setFieldValue(
+          "proOwnerDivisionId",
+          DataRequirement.senderDivisionId,
         );
 
-        reviewers
-          .filter(Boolean)
-          .forEach((user) => userAssignPoject.push(user!));
+        const mapDataWorkPrograms =
+          DataRequirement.workPrograms && DataRequirement.workPrograms.length > 0
+            ? mapWorkProgramData(DataRequirement.workPrograms)
+            : [];
+        formik.setFieldValue("workPrograms", mapDataWorkPrograms);
 
-        // Set state only after all async ops done
-        if (userAssignPoject.length > 0) {
-          setChoosedMemberProjects(userAssignPoject);
+        const CountInternalWorkPrograms = mapDataWorkPrograms.filter(
+          (f) => f.workProgramSource == WORK_PROGRAM_INTERNAL,
+        ).length;
+        const CountExternalWorkPrograms = mapDataWorkPrograms.filter(
+          (f) => f.workProgramSource == WORK_PROGRAM_EXTERNAL,
+        ).length;
+
+        if (CountInternalWorkPrograms > 0) {
+          setWorkProgramInt("1");
         }
-      };
-      GetUserManageProject();
+        if (CountExternalWorkPrograms > 0) {
+          setWorkProgramExt("1");
+        }
+
+        const userAssignPoject: UsersResponse[] = [];
+        // get user org project manage
+        const GetUserManageProject = async () => {
+          if (DataRequirement.assignedFromId != null) {
+            const UserOwner = await GetUserIDServices(
+              DataRequirement.assignedFromId,
+            );
+            if (UserOwner) {
+              userAssignPoject.push(UserOwner);
+            }
+          }
+
+          // insert user reviewer in parallel and wait for all
+          const reviewers = await Promise.all(
+            (DataRequirement.approvalDatas ?? []).map(async (dt) => {
+              try {
+                return await GetUserIDServices(dt.approverUserCode);
+              } catch {
+                return null;
+              }
+            }),
+          );
+
+          reviewers
+            .filter(Boolean)
+            .forEach((user) => userAssignPoject.push(user!));
+
+          // Set state only after all async ops done
+          if (userAssignPoject.length > 0) {
+            setChoosedMemberProjects(userAssignPoject);
+          }
+        };
+        GetUserManageProject();
+      }
     }
   }, [DataAuth, DataRequirement, IsHaveMemo]);
 
@@ -2681,11 +2933,223 @@ export default function ProjectRegisterView({
   };
   // end reset filled data from req
 
+  // Helper to extract workflow group IDs recursively
+  const extractWorkflowGroupIds = (workflows?: any[]): string[] => {
+    if (!workflows || !Array.isArray(workflows)) return [];
+    const ids: string[] = [];
+    const traverse = (items: any[]) => {
+      items.forEach((item) => {
+        if (item.wfgId) {
+          ids.push(item.wfgId);
+        } else if (item.id) {
+          ids.push(item.id);
+        }
+        if (
+          item.workflowChild &&
+          Array.isArray(item.workflowChild) &&
+          item.workflowChild.length > 0
+        ) {
+          traverse(item.workflowChild);
+        }
+      });
+    };
+    traverse(workflows);
+    return ids;
+  };
+
+  // Load and Hydrate Existing Project Data in REVISE Mode
+  useEffect(() => {
+    const hydrateRevisionProject = async () => {
+      if (!isReviseMode || !projectId || !tokenData) return;
+
+      setIsLoadingExistingProject(true);
+      try {
+        // 1. Fetch Project Details
+        const projectRes = await GetProjectDetailById(projectId, tokenData);
+        // 2. Fetch Project Status History to get decline reason
+        const historyRes = await GetProjectStatusHistory(projectId, tokenData);
+
+        if (
+          historyRes?.statusCode === RES_CODE_OK &&
+          Array.isArray(historyRes.data)
+        ) {
+          const declinedItems = historyRes.data
+            .filter((h) => h.projectStatus === "DECLINED")
+            .sort(
+              (a, b) =>
+                new Date(b.createdAt).getTime() -
+                new Date(a.createdAt).getTime(),
+            );
+          if (declinedItems.length > 0) {
+            const latestDecline = declinedItems[0];
+            setDeclineFeedback({
+              note: latestDecline.approvalNote || "-",
+              approverName: latestDecline.approvalNama || undefined,
+              approverJabatan: latestDecline.approvalJabatan || undefined,
+              date: latestDecline.approvalAt || latestDecline.createdAt,
+            });
+          }
+        }
+
+        if (projectRes?.statusCode === RES_CODE_OK && projectRes.data) {
+          const projectData = projectRes.data;
+
+          // Step 1: Memo / Requirement Reference
+          let reqData: RequirementsResponse | null = null;
+          if (projectData.reqParentId) {
+            setIsHaveMemo("Y");
+            try {
+              const reqRes = await GetReqDetail(
+                projectData.reqParentId,
+                tokenData,
+              );
+              if (reqRes?.statusCode === RES_CODE_OK && reqRes.data) {
+                reqData = reqRes.data;
+                setDataRequirement(reqRes.data);
+              }
+            } catch (err) {
+              console.error(
+                "Failed to load parent requirement in revise mode",
+                err,
+              );
+            }
+          } else {
+            setIsHaveMemo("N");
+          }
+
+          // Hydrate Requirement Backlogs for this project
+          await GetDataListBacklogs(
+            projectData.reqParentId || undefined,
+            projectId,
+          );
+
+          // Step 1: Sub-characteristics options
+          if (projectData.projectCharasteristicCode) {
+            await LoadSubCharacteristicsProjectData(
+              projectData.projectCharasteristicCode,
+            );
+          }
+
+          // Step 1: Set Base Project Fields in Formik
+          formik.setValues((prev) => ({
+            ...prev,
+            projectNo: projectData.projectNo || prev.projectNo,
+            projectName: projectData.projectName || "",
+            projectDesc: projectData.projectDesc || null,
+            note: projectData.note || null,
+            projectCategory: projectData.projectCategory || "PROJECT",
+            projectType: projectData.projectType || projectTypeRegister,
+            projectRegisterDate: projectData.projectRegisterDate
+              ? projectData.projectRegisterDate.split("T")[0]
+              : prev.projectRegisterDate,
+            projectClosedDate: projectData.projectClosedDate
+              ? projectData.projectClosedDate.split("T")[0]
+              : null,
+            projectAcquisitionCode: projectData.projectAcquisitionCode || null,
+            projectCharasteristicCode:
+              projectData.projectCharasteristicCode || null,
+            projectSubCharasteristicCode:
+              projectData.projectSubCharasteristicCode || null,
+            proOwnerDirectorateId:
+              projectData.proOwnerDirectorateId ||
+              (projectData.proOwnerDivisionId && OrganizationData.length > 0
+                ? OrganizationData.find(
+                    (o) => o.id === projectData.proOwnerDivisionId,
+                  )?.parentId || null
+                : null),
+            proManageByDirectorateId:
+              projectData.proManageByDirectorateId || null,
+            proOwnerDivisionId: projectData.proOwnerDivisionId || null,
+            proOwnerGroupId: projectData.proOwnerGroupId || null,
+            proManageByDivisionId: projectData.proManageByDivisionId || null,
+            proManageByGroupId: projectData.proManageByGroupId || null,
+            proManageByTeamId: projectData.proManageByTeamId || null,
+            reqParentId: projectData.reqParentId || null,
+          }));
+
+          // Step 2: Hydrate Team Members
+          if (
+            projectData.userAssignment &&
+            Array.isArray(projectData.userAssignment) &&
+            projectData.userAssignment.length > 0
+          ) {
+            const mappedUsers = projectData.userAssignment
+              .map((u) => u.userData)
+              .filter(Boolean) as UsersResponse[];
+            setChoosedMemberProjects(mappedUsers);
+          }
+
+          // Step 3: Hydrate Work Programs (from projectData or parent requirement)
+          const wpSource =
+            projectData.workPrograms && projectData.workPrograms.length > 0
+              ? projectData.workPrograms
+              : reqData?.workPrograms && reqData.workPrograms.length > 0
+                ? reqData.workPrograms
+                : [];
+
+          if (wpSource.length > 0) {
+            const mappedWP = mapWorkProgramData(wpSource);
+            formik.setFieldValue("workPrograms", mappedWP);
+            const countExt = mappedWP.filter(
+              (x) => x.workProgramSource === WORK_PROGRAM_EXTERNAL,
+            ).length;
+            const countInt = mappedWP.filter(
+              (x) => x.workProgramSource === WORK_PROGRAM_INTERNAL,
+            ).length;
+            setWorkProgramExt(countExt > 0 ? "1" : "0");
+            setWorkProgramInt(countInt > 0 ? "1" : "0");
+          } else {
+            setWorkProgramExt("0");
+            setWorkProgramInt("0");
+          }
+
+          // Step 4: Hydrate Procurement Stages (projectWorkflowProjectData)
+          const procWfData =
+            projectData.projectWorkflowProjectData ||
+            (projectData as any).projectWorkflowBacklogs ||
+            [];
+          const procIds = extractWorkflowGroupIds(procWfData);
+          if (procIds.length > 0) {
+            setSelectedWorkflowProcurementsIds(new Set(procIds));
+            formik.setFieldValue("projectPlanWorkflowBacklogsIds", procIds);
+          }
+
+          // Step 5: Hydrate Work Stages (projectWorkflowData / projectWorkflowBacklogData)
+          const docWfData =
+            projectData.projectWorkflowData ||
+            (projectData as any).projectWorkflowBacklogData ||
+            [];
+          const docIds = extractWorkflowGroupIds(docWfData);
+          if (docIds.length > 0) {
+            setSelectedWorkflowIds(new Set(docIds));
+            formik.setFieldValue("projectPlanWorkflowIds", docIds);
+          }
+        }
+      } catch (error) {
+        console.error("Error hydrating project in revise mode:", error);
+        showToast({
+          description: "Gagal memuat data revisi project.",
+          statusToast: "error",
+        });
+      } finally {
+        setIsLoadingExistingProject(false);
+      }
+    };
+
+    hydrateRevisionProject();
+  }, [isReviseMode, projectId, tokenData]);
+
   return (
     <LayoutAdmin>
       <HeaderContent
-        titleName={HeaderDataContent.titleName}
-        breadCrumb={HeaderDataContent.breadCrumb}
+        titleName={
+          isReviseMode ? "Revisi Project" : HeaderDataContent.titleName
+        }
+        breadCrumb={
+          isReviseMode
+            ? ["Home", "Project Manager", "Revisi Project"]
+            : HeaderDataContent.breadCrumb
+        }
       />
 
       {/* Submit Data Confirmation Modal */}
@@ -2696,41 +3160,62 @@ export default function ProjectRegisterView({
       >
         <ModalOverlay bg="blackAlpha.500" backdropFilter="blur(8px)" />
         <ModalContent rounded={radiusStyle}>
-          <ModalHeader bg="orange.500" color="white" roundedTop={radiusStyle}>
+          <ModalHeader bg={isReviseMode ? "blue.500" : "orange.500"} color="white" roundedTop={radiusStyle}>
             <HStack>
               <Icon as={FiAlertTriangle} boxSize={5} />
-              <Text>Submit Project Data</Text>
+              <Text>{captionDialog || (isReviseMode ? "Ajukan Revisi Project" : "Submit Project Data")}</Text>
             </HStack>
           </ModalHeader>
           <ModalCloseButton color="white" />
           <ModalBody py={6}>
             <VStack spacing={4} align="stretch">
               <HStack spacing={2} align="flex-start">
-                <Icon as={FiAlertTriangle} color="orange.500" boxSize={5} mt={0.5} />
+                <Icon as={FiAlertTriangle} color={isReviseMode ? "blue.500" : "orange.500"} boxSize={5} mt={0.5} />
                 <Box>
-                  <Text fontWeight="bold" color="orange.500">WARNING: Submit Data Action</Text>
+                  <Text fontWeight="bold" color={isReviseMode ? "blue.500" : "orange.500"}>
+                    {isReviseMode ? "Konfirmasi Pengajuan Revisi" : "WARNING: Submit Data Action"}
+                  </Text>
                   <Text mt={2}>{questionMsgDialog}</Text>
                 </Box>
               </HStack>
 
-              <Card bg={colorMode === "light" ? "orange.50" : "orange.900"} borderColor="orange.200" borderWidth="1px">
+              <Card bg={colorMode === "light" ? (isReviseMode ? "blue.50" : "orange.50") : (isReviseMode ? "blue.950" : "orange.900")} borderColor={isReviseMode ? "blue.200" : "orange.200"} borderWidth="1px">
                 <CardBody>
                   <HStack spacing={2} align="flex-start">
-                    <Icon as={FiAlertTriangle} color="orange.500" boxSize={4} mt={0.5} />
+                    <Icon as={FiAlertTriangle} color={isReviseMode ? "blue.500" : "orange.500"} boxSize={4} mt={0.5} />
                     <Box>
-                      <Text fontWeight="bold" fontSize="sm">IMPORTANT:</Text>
+                      <Text fontWeight="bold" fontSize="sm">PENTING:</Text>
                       <Text fontSize="sm" mt={1}>
-                        Once submitted, this project data, including <strong>Stages Project</strong>, will be saved and processed. This action cannot be undone and cannot be edited after the project is approved.
+                        {isReviseMode
+                          ? "Setelah diajukan, status project akan kembali ke Menunggu Persetujuan Level 1 (WAITING APPROVAL 1) dan approver terkait akan diberitahukan untuk melakukan evaluasi ulang."
+                          : "Once submitted, this project data, including Stages Project, will be saved and processed. This action cannot be undone and cannot be edited after the project is approved."}
                       </Text>
                     </Box>
                   </HStack>
                 </CardBody>
               </Card>
 
+              {isReviseMode && (
+                <FormControl mt={1}>
+                  <FormLabel fontSize="sm" fontWeight="semibold">
+                    Catatan Revisi (Opsional)
+                  </FormLabel>
+                  <Textarea
+                    placeholder="Tuliskan catatan atau penjelasan singkat mengenai perbaikan/revisi yang diajukan..."
+                    value={reviseNote}
+                    onChange={(e) => setReviseNote(e.target.value)}
+                    size="sm"
+                    rows={3}
+                  />
+                </FormControl>
+              )}
+
               <HStack spacing={2} align="flex-start">
                 <Icon as={FiCheckCircle} color="green.500" boxSize={4} mt={0.5} />
                 <Text fontSize="sm">
-                  This action will save your project data and initiate the approval process.
+                  {isReviseMode
+                    ? "Tindakan ini akan memperbarui data project dan mengembalikan alur ke siklus persetujuan."
+                    : "This action will save your project data and initiate the approval process."}
                 </Text>
               </HStack>
             </VStack>
@@ -2738,18 +3223,18 @@ export default function ProjectRegisterView({
           <ModalFooter>
             <HStack spacing={3}>
               <Button leftIcon={<FiX />} onClick={() => setOpenConfirmSaveDialog(false)}>
-                Cancel
+                Batal
               </Button>
               <Button
                 leftIcon={<FiCheck />}
-                colorScheme="orange"
+                colorScheme={isReviseMode ? "blue" : "orange"}
                 onClick={async () => {
                   setOpenConfirmSaveDialog(false);
                   await handleSaveData();
                 }}
                 isDisabled={submitCountdown > 0}
               >
-                {submitCountdown > 0 ? `Wait ${submitCountdown}s` : `Submit Data`}
+                {submitCountdown > 0 ? `Wait ${submitCountdown}s` : (isReviseMode ? "Ajukan Revisi" : "Submit Data")}
               </Button>
             </HStack>
           </ModalFooter>
@@ -2797,7 +3282,7 @@ export default function ProjectRegisterView({
 
       {/* <form onSubmit={formik.handleSubmit} onReset={formik.handleReset}> */}
       {/* Requirement Validation */}
-      {IsLoadingProcess ? (
+      {IsLoadingProcess || isLoadingExistingProject ? (
         <LoadingMiniSignature />
       ) : (
         <Grid templateColumns="repeat(12, 1fr)" gap={6} w={"full"}>
@@ -2825,7 +3310,7 @@ export default function ProjectRegisterView({
               alignItems={"center"}
             >
               <Button
-                colorScheme="green"
+                colorScheme={isReviseMode ? "blue" : "green"}
                 leftIcon={<FiSave />}
                 onClick={() => handleConfirmSaveData(formik.values)}
                 isDisabled={activeStep !== steps.length - 1 || ActionLoading}
@@ -2834,10 +3319,94 @@ export default function ProjectRegisterView({
                 px={8}
                 size={"lg"}
               >
-                Submit Data
+                {isReviseMode ? "Ajukan Revisi" : "Submit Data"}
               </Button>
             </Flex>
           </GridItem>
+
+          {/* Decline Feedback Banner in Revise Mode */}
+          {isReviseMode && declineFeedback && (
+            <GridItem colSpan={12} w="full">
+              <Card
+                borderLeft="5px solid"
+                borderColor="orange.400"
+                bg={colorMode === "dark" ? "orange.950" : "orange.50"}
+                shadow="sm"
+                rounded="md"
+                p={4}
+              >
+                <Flex
+                  direction={{ base: "column", md: "row" }}
+                  align={{ base: "start", md: "center" }}
+                  justify="space-between"
+                  gap={3}
+                >
+                  <HStack spacing={3} align="flex-start" w="full">
+                    <Icon
+                      as={FiAlertCircle}
+                      color="orange.400"
+                      boxSize={6}
+                      mt={0.5}
+                    />
+                    <VStack align="start" spacing={1} flex={1}>
+                      <HStack spacing={2} wrap="wrap">
+                        <Badge
+                          colorScheme="orange"
+                          fontSize="xs"
+                          px={2}
+                          py={0.5}
+                          rounded="full"
+                        >
+                          PROJECT PERLU DIREVISI (DECLINED)
+                        </Badge>
+                        {declineFeedback.date && (
+                          <Text fontSize="xs" color="gray.500">
+                            {new Date(declineFeedback.date).toLocaleString(
+                              "id-ID",
+                              {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              },
+                            )}
+                          </Text>
+                        )}
+                      </HStack>
+                      <Text
+                        fontSize="sm"
+                        fontWeight="bold"
+                        color={
+                          colorMode === "dark" ? "orange.200" : "orange.900"
+                        }
+                      >
+                        Catatan Penolakan / Feedback Approver:
+                      </Text>
+                      <Text
+                        fontSize="sm"
+                        color={colorMode === "dark" ? "gray.200" : "gray.700"}
+                        whiteSpace="pre-wrap"
+                      >
+                        {declineFeedback.note ||
+                          "Tidak ada catatan penolakan spesifik."}
+                      </Text>
+                      {(declineFeedback.approverName ||
+                        declineFeedback.approverJabatan) && (
+                        <Text fontSize="xs" color="gray.500" pt={1}>
+                          Ditolak oleh:{" "}
+                          <strong>{declineFeedback.approverName}</strong>
+                          {declineFeedback.approverJabatan
+                            ? ` (${declineFeedback.approverJabatan})`
+                            : ""}
+                        </Text>
+                      )}
+                    </VStack>
+                  </HStack>
+                </Flex>
+              </Card>
+            </GridItem>
+          )}
 
           {/* Requirement Information */}
           <GridItem
@@ -3120,18 +3689,23 @@ export default function ProjectRegisterView({
                               <Stack spacing={0} h={"full"}>
                                 <RadioGroup
                                   onChange={(val) => {
+                                    if (isReviseMode) return;
                                     setIsHaveMemo(val as "Y" | "N");
                                     if (val === "N") {
                                       setProjectNoMode("auto");
                                     }
                                   }}
                                   value={IsHaveMemo ?? "Y"}
+                                  isDisabled={isReviseMode}
                                 >
                                   <Flex w={"full"} as={HStack} spacing={8}>
-                                    <Radio value={"Y"}>Sudah</Radio>
+                                    <Radio value={"Y"} isDisabled={isReviseMode}>
+                                      Sudah
+                                    </Radio>
                                     <Radio
                                       value={"N"}
                                       isDisabled={
+                                        isReviseMode ||
                                         projectTypeRegister !=
                                         PROJECT_TYPE_PROCUREMENT
                                       }
@@ -3144,9 +3718,9 @@ export default function ProjectRegisterView({
                                   </Flex>
                                 </RadioGroup>
                                 <FormHelperText as={"i"} fontSize={"xs"}>
-                                  Jika belum memiliki Memo pengantar, ada
-                                  beberapa informasi yang akan inputkan lain
-                                  waktu jika Memo pengantar sudah ada.*
+                                  {isReviseMode
+                                    ? "Status kepemilikan memo pengantar dikunci pada mode revisi."
+                                    : "Jika belum memiliki Memo pengantar, ada beberapa informasi yang akan inputkan lain waktu jika Memo pengantar sudah ada.*"}
                                 </FormHelperText>
                               </Stack>
                             </InputLayout>
@@ -3178,8 +3752,10 @@ export default function ProjectRegisterView({
                                   // minLength={25}
                                   // maxLength={27}
                                   isRequired
-                                  isDisabled={DataRequirement != null}
+                                  isDisabled={DataRequirement != null || isReviseMode}
                                   readOnly
+                                  cursor={isReviseMode ? "not-allowed" : undefined}
+                                  bg={isReviseMode ? "gray.100" : undefined}
                                   w={{
                                     base: "full",
                                     sm: "full",
@@ -3190,6 +3766,7 @@ export default function ProjectRegisterView({
                                 <Button
                                   colorScheme={"secondary"}
                                   onClick={() => handleModalMemmo()}
+                                  isDisabled={isReviseMode}
                                 >
                                   Pilih Memo
                                 </Button>
@@ -3439,16 +4016,27 @@ export default function ProjectRegisterView({
                                         }
                                       }}
                                       placeholder={"Pilih Directorate PIC"}
-                                      value={OrganizationData.filter(
-                                        (f) =>
-                                          f.orgType ==
-                                          ORG_CATEGORY_KEY_DIRECTORATE &&
-                                          f.id ==
-                                          formik.values.proOwnerDirectorateId,
-                                      ).map((d) => ({
-                                        label: d.orgName,
-                                        value: d.id,
-                                      }))}
+                                      value={(() => {
+                                        const targetDirId =
+                                          formik.values.proOwnerDirectorateId ||
+                                          OrganizationData.find(
+                                            (org) =>
+                                              org.id ===
+                                                formik.values
+                                                  .proOwnerDivisionId &&
+                                              org.orgType ===
+                                                ORG_CATEGORY_KEY_DIVISION,
+                                          )?.parentId;
+                                        return OrganizationData.filter(
+                                          (f) =>
+                                            f.orgType ==
+                                              ORG_CATEGORY_KEY_DIRECTORATE &&
+                                            f.id == targetDirId,
+                                        ).map((d) => ({
+                                          label: d.orgName,
+                                          value: d.id,
+                                        }));
+                                      })()}
                                     />
 
                                     <FormErrorMessage>
@@ -3475,30 +4063,43 @@ export default function ProjectRegisterView({
                                     <Select
                                       isDisabled={false}
                                       id={`proOwnerDivisionId`}
-                                      options={OptionDivision}
+                                      options={
+                                        OptionDivision.length > 0
+                                          ? OptionDivision
+                                          : OrganizationData.filter(
+                                              (f) =>
+                                                f.orgType ==
+                                                ORG_CATEGORY_KEY_DIVISION,
+                                            ).map((d) => ({
+                                              label: d.orgName,
+                                              value: d.id,
+                                            }))
+                                      }
                                       isSearchable={true}
                                       onMenuOpen={async () => {
-                                        setOptionDivision([]);
-                                        const whereParam: ListSearchByParam[] =
-                                          [
-                                            {
-                                              field: "orgType",
-                                              operator: "=",
-                                              value: ORG_CATEGORY_KEY_DIVISION,
-                                            },
-                                          ];
-                                        const dataDivision =
-                                          await GetDataMasterOrg(
-                                            "",
-                                            MAX_SIZE_TABLE,
-                                            whereParam,
-                                          );
-                                        const mapOptionData: OptionListProps[] =
-                                          dataDivision.map((d) => ({
-                                            label: d.orgName,
-                                            value: d.id,
-                                          }));
-                                        setOptionDivision(mapOptionData);
+                                        if (OptionDivision.length === 0) {
+                                          const whereParam: ListSearchByParam[] =
+                                            [
+                                              {
+                                                field: "orgType",
+                                                operator: "=",
+                                                value:
+                                                  ORG_CATEGORY_KEY_DIVISION,
+                                              },
+                                            ];
+                                          const dataDivision =
+                                            await GetDataMasterOrg(
+                                              "",
+                                              MAX_SIZE_TABLE,
+                                              whereParam,
+                                            );
+                                          const mapOptionData: OptionListProps[] =
+                                            dataDivision.map((d) => ({
+                                              label: d.orgName,
+                                              value: d.id,
+                                            }));
+                                          setOptionDivision(mapOptionData);
+                                        }
                                       }}
                                       onChange={async (e: any) => {
                                         if (e) {
@@ -3511,28 +4112,42 @@ export default function ProjectRegisterView({
                                             "proOwnerDivisionId",
                                           );
 
-                                          const whereParam: ListSearchByParam[] =
-                                            [
-                                              {
-                                                field: "id",
-                                                operator: "=",
-                                                value: e.value,
-                                              },
-                                            ];
-                                          const divisionData =
-                                            await GetDataMasterOrg(
-                                              "",
-                                              1,
-                                              whereParam,
+                                          const divisionInState =
+                                            OrganizationData.find(
+                                              (org) =>
+                                                org.id === e.value &&
+                                                org.orgType ===
+                                                  ORG_CATEGORY_KEY_DIVISION,
                                             );
-                                          if (
-                                            divisionData.length > 0 &&
-                                            divisionData[0].parentId
-                                          ) {
+                                          if (divisionInState?.parentId) {
                                             formik.setFieldValue(
                                               "proOwnerDirectorateId",
-                                              divisionData[0].parentId,
+                                              divisionInState.parentId,
                                             );
+                                          } else {
+                                            const whereParam: ListSearchByParam[] =
+                                              [
+                                                {
+                                                  field: "id",
+                                                  operator: "=",
+                                                  value: e.value,
+                                                },
+                                              ];
+                                            const divisionData =
+                                              await GetDataMasterOrg(
+                                                "",
+                                                1,
+                                                whereParam,
+                                              );
+                                            if (
+                                              divisionData.length > 0 &&
+                                              divisionData[0].parentId
+                                            ) {
+                                              formik.setFieldValue(
+                                                "proOwnerDirectorateId",
+                                                divisionData[0].parentId,
+                                              );
+                                            }
                                           }
 
                                           formik.setFieldValue(
@@ -3553,11 +4168,24 @@ export default function ProjectRegisterView({
                                       }}
                                       placeholder={"Pilih Divisi"}
                                       isLoading={IsLoadingProcess}
-                                      value={OptionDivision.find(
-                                        (x) =>
-                                          x.value ==
-                                          formik.values.proOwnerDivisionId,
-                                      )}
+                                      value={
+                                        OptionDivision.find(
+                                          (x) =>
+                                            x.value ==
+                                            formik.values.proOwnerDivisionId,
+                                        ) ||
+                                        OrganizationData.filter(
+                                          (f) =>
+                                            f.orgType ==
+                                              ORG_CATEGORY_KEY_DIVISION &&
+                                            f.id ==
+                                              formik.values.proOwnerDivisionId,
+                                        ).map((d) => ({
+                                          label: d.orgName,
+                                          value: d.id,
+                                        }))[0] ||
+                                        null
+                                      }
                                     />
                                     <FormErrorMessage>
                                       {formik.errors.proOwnerDivisionId}
@@ -3611,14 +4239,18 @@ export default function ProjectRegisterView({
                                       }}
                                       placeholder={"Pilih Group"}
                                       isLoading={IsLoadingProcess}
-                                      value={OrganizationData.filter(
-                                        (f) =>
-                                          f.orgType == ORG_CATEGORY_KEY_GROUP &&
-                                          f.id == formik.values.proOwnerGroupId,
-                                      ).map((d) => ({
-                                        label: d.orgName,
-                                        value: d.id,
-                                      }))}
+                                      value={
+                                        OrganizationData.filter(
+                                          (f) =>
+                                            f.orgType ==
+                                              ORG_CATEGORY_KEY_GROUP &&
+                                            f.id ==
+                                              formik.values.proOwnerGroupId,
+                                        ).map((d) => ({
+                                          label: d.orgName,
+                                          value: d.id,
+                                        }))[0] || null
+                                      }
                                     />
                                     <FormErrorMessage>
                                       {formik.errors.proOwnerGroupId}
@@ -3791,19 +4423,32 @@ export default function ProjectRegisterView({
                                 name="projectRegisterDate"
                                 type="date"
                                 value={formik.values.projectRegisterDate}
-                                isDisabled
+                                isDisabled={true}
+                                isReadOnly={true}
                                 onChange={() => {}}
-                                bg={ntpStatus === "synced" ? "green.50" : ntpStatus === "local" ? "yellow.50" : "gray.50"}
+                                bg={
+                                  isReviseMode
+                                    ? "gray.100"
+                                    : ntpStatus === "synced"
+                                    ? "green.50"
+                                    : ntpStatus === "local"
+                                    ? "yellow.50"
+                                    : "gray.50"
+                                }
                                 _disabled={{ opacity: 1, cursor: "not-allowed" }}
                               />
                               {/* NTP Sync Row */}
                               <HStack spacing={2} pt={1}>
                                 <Tooltip
-                                  label={ntpStatus === "synced"
-                                    ? `Synced from NTP Server (${TARGET_NTP_IP}:${NTP_PORT})`
-                                    : ntpStatus === "local"
-                                    ? "NTP Server unreachable — using local device time"
-                                    : "Syncing with NTP Server..."}
+                                  label={
+                                    isReviseMode
+                                      ? "Tanggal register project tidak dapat diubah pada mode revisi"
+                                      : ntpStatus === "synced"
+                                      ? `Synced from NTP Server (${TARGET_NTP_IP}:${NTP_PORT})`
+                                      : ntpStatus === "local"
+                                      ? "NTP Server unreachable — using local device time"
+                                      : "Syncing with NTP Server..."
+                                  }
                                   placement="bottom"
                                   hasArrow
                                 >
@@ -3816,21 +4461,43 @@ export default function ProjectRegisterView({
                                     onClick={() => syncNTP()}
                                     isLoading={ntpStatus === "syncing"}
                                     loadingText="Syncing..."
+                                    isDisabled={isReviseMode}
                                   >
                                     Sync NTP
                                   </Button>
                                 </Tooltip>
                                 <Badge
-                                  colorScheme={ntpStatus === "synced" ? "green" : ntpStatus === "local" ? "yellow" : "gray"}
+                                  colorScheme={
+                                    isReviseMode
+                                      ? "gray"
+                                      : ntpStatus === "synced"
+                                      ? "green"
+                                      : ntpStatus === "local"
+                                      ? "yellow"
+                                      : "gray"
+                                  }
                                   variant="subtle"
                                   rounded="full"
                                   px={2}
                                   fontSize="2xs"
                                 >
                                   <HStack spacing={1}>
-                                    <Icon as={ntpStatus === "synced" ? FiCheckCircle : ntpStatus === "local" ? FiWifiOff : FiRefreshCw} boxSize={3} />
+                                    <Icon
+                                      as={
+                                        isReviseMode
+                                          ? FiCheckCircle
+                                          : ntpStatus === "synced"
+                                          ? FiCheckCircle
+                                          : ntpStatus === "local"
+                                          ? FiWifiOff
+                                          : FiRefreshCw
+                                      }
+                                      boxSize={3}
+                                    />
                                     <Text>
-                                      {ntpStatus === "synced"
+                                      {isReviseMode
+                                        ? "Terkunci (Mode Revisi)"
+                                        : ntpStatus === "synced"
                                         ? `NTP Server (${TARGET_NTP_IP})`
                                         : ntpStatus === "local"
                                         ? "Local Device Time"
@@ -5885,7 +6552,7 @@ export default function ProjectRegisterView({
                       {projectTypeRegister ==
                         PROJECT_TYPE_INTERNAL_DEVELOPMENT && (
                           <>
-                            {IsLoadingProcess ? (
+                            {IsLoadingProcess || IsloadingBacklogs ? (
                               <LoadingMiniSignature />
                             ) : (
                               <VStack spacing={6} align="stretch" w="full">
@@ -6923,18 +7590,25 @@ const UpdateUrgencyImpactInput = ({
   dataInput,
   updateBacklog,
 }: UrgencyImpactInputProps) => {
-  const [optionValue, setOptionValue] = useState<string>(dataInput);
+  const normalizeOption = (val: string | null | undefined) => {
+    if (!val) return "LOW";
+    const upper = val.toUpperCase();
+    if (["LOW", "MEDIUM", "HIGH"].includes(upper)) return upper;
+    return "LOW";
+  };
+  const [optionValue, setOptionValue] = useState<string>(normalizeOption(dataInput));
   const [dataBacklog, setDataBacklog] =
     useState<BacklogDataResponse>(dataSource);
 
   useEffect(() => {
-    setOptionValue(dataInput);
+    setOptionValue(normalizeOption(dataInput));
     setDataBacklog(dataSource);
   }, [dataInput, dataSource]);
 
   const handleChange = (value: string) => {
-    setOptionValue(value);
-    const updatedBacklog = { ...dataBacklog, [fieldName]: value };
+    const upperVal = value.toUpperCase();
+    setOptionValue(upperVal);
+    const updatedBacklog = { ...dataBacklog, [fieldName]: upperVal };
     setDataBacklog(updatedBacklog);
     updateBacklog(updatedBacklog.id, updatedBacklog);
   };
@@ -7048,12 +7722,16 @@ const UpdateBacklogDateInput = ({
   maxDate,
 }: BacklogDateInputProps) => {
   const showToast = useToastHelper();
-  const [dateValue, setDateValue] = useState<string>(dataInput ?? "");
+  const formatDateForInput = (d: string | null | undefined) => {
+    if (!d) return "";
+    return d.includes("T") ? d.split("T")[0] : d;
+  };
+  const [dateValue, setDateValue] = useState<string>(formatDateForInput(dataInput));
   const [dataBacklog, setDataBacklog] =
     useState<BacklogDataResponse>(dataSource);
 
   useEffect(() => {
-    setDateValue(dataInput ?? "");
+    setDateValue(formatDateForInput(dataInput));
     setDataBacklog(dataSource);
   }, [dataInput, dataSource]);
 
@@ -7073,7 +7751,12 @@ const UpdateBacklogDateInput = ({
     }
 
     setDateValue(value);
-    const updatedBacklog = { ...dataBacklog, [fieldName]: value };
+    const updatedBacklog = {
+      ...dataBacklog,
+      [fieldName]: value,
+      backlogEnddate: value,
+      backlogImplementEnddate: value,
+    };
     setDataBacklog(updatedBacklog);
     updateBacklog(updatedBacklog.id, updatedBacklog);
   };
@@ -7085,7 +7768,7 @@ const UpdateBacklogDateInput = ({
       type="date"
       value={dateValue}
       onChange={(e) => handleChange(e.target.value)}
-      max={maxDate ?? undefined}
+      max={maxDate ? (maxDate.includes("T") ? maxDate.split("T")[0] : maxDate) : undefined}
       size="sm"
       variant={"flushed"}
     />
@@ -7109,10 +7792,6 @@ const AdditionalInfoUpdate = ({
   const [backlogDetail, setBacklogDetail] =
     useState<BacklogDataResponse>(dataSource);
 
-  const OpenAdditionalFormBacklog = () => {
-    AdditionalForm.onOpen();
-  };
-
   // State for form inputs
   const [formInputs, setFormInputs] = useState({
     envSide: dataSource.envSide || "",
@@ -7121,6 +7800,28 @@ const AdditionalInfoUpdate = ({
     rppb: dataSource.rppb || "N",
     licensing: dataSource.licensing || "N",
   });
+
+  useEffect(() => {
+    setFormInputs({
+      envSide: dataSource.envSide || "",
+      maintenanceCategory: dataSource.maintenanceCategory || "",
+      maintenanceType: dataSource.maintenanceType || "",
+      rppb: dataSource.rppb || "N",
+      licensing: dataSource.licensing || "N",
+    });
+    setBacklogDetail(dataSource);
+  }, [dataSource]);
+
+  const OpenAdditionalFormBacklog = () => {
+    setFormInputs({
+      envSide: dataSource.envSide || "",
+      maintenanceCategory: dataSource.maintenanceCategory || "",
+      maintenanceType: dataSource.maintenanceType || "",
+      rppb: dataSource.rppb || "N",
+      licensing: dataSource.licensing || "N",
+    });
+    AdditionalForm.onOpen();
+  };
 
   // Handle input changes
   const handleInputChange = (
