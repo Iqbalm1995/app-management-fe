@@ -44,6 +44,8 @@ export interface UsersResponse {
   kodeJabatan?: string | null;
   phoneNumber?: string | null;
   userStatus: string;
+  mainPwd?: string | null;
+  isContained?: boolean;
   profilePict?: string | null;
   kodeGroupKerja?: string | null;
   namaGroupKerja?: string | null;
@@ -54,6 +56,23 @@ export interface UsersResponse {
   updatedBy?: string | null;
   team: UserTeamResponse | null;
   teamRole: UserTeamRoleResponse | null;
+}
+
+export interface TableBreakdownItem {
+  tableName: string;
+  columnName: string;
+  affectedRows: number;
+  domainCategory: string;
+  roleDescription: string;
+}
+
+export interface UserCascadeRenamePreviewResponse {
+  oldUserId: string;
+  newUserId: string;
+  userFullname: string;
+  totalAffectedTables: number;
+  totalAffectedRows: number;
+  tableBreakdown: TableBreakdownItem[];
 }
 
 export interface UserShortResponse {
@@ -135,6 +154,36 @@ export interface UserUpdateOrgGroupPayload {
   orgCode: string;
 }
 
+export interface UserAdminUpdatePayload {
+  id: string;
+  nama: string;
+  nrp?: string | null;
+  nip?: string | null;
+  email: string;
+  phoneNumber?: string | null;
+  userStatus?: string | null;
+  kodeGroupKerja?: string | null;
+  namaGroupKerja?: string | null;
+  teamId?: string | null;
+  teamRoleId?: string | null;
+  jabatan?: string | null;
+  kodeJabatan?: string | null;
+  namaUnitKerja?: string | null;
+  kodeUnitKerja?: string | null;
+  costCentre?: string | null;
+  isApproval?: string | null;
+  kodeCabang?: string | null;
+  namaCabang?: string | null;
+  kodeInduk?: string | null;
+  namaInduk?: string | null;
+  kodeKanwil?: string | null;
+  namaKanwil?: string | null;
+  idFungsi?: string | null;
+  namaFungsi?: string | null;
+  kodePenempatan?: string | null;
+  namaPenempatan?: string | null;
+}
+
 interface useUsersServices {
   List: (
     payload: PaggingListPayload,
@@ -167,6 +216,43 @@ interface useUsersServices {
   ) => Promise<ApiGenericResponse<string | null> | null>;
   UpdateOrgUser: (
     payload: UserUpdateOrgGroupPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  AdminUpdateUser: (
+    payload: UserAdminUpdatePayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  EditUserStatus: (
+    userId: string,
+    status: string,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  ContainUser: (
+    userId: string,
+    reason: string | undefined,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  RestoreUser: (
+    userId: string,
+    defaultPassword: string | undefined,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  SoftDeleteUser: (
+    userId: string,
+    reason: string | undefined,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  PreviewCascadeRenameUser: (
+    payload: { oldUserId: string; newUserId: string },
+    token: string
+  ) => Promise<ApiGenericResponse<UserCascadeRenamePreviewResponse | null> | null>;
+  ExecuteCascadeRenameUser: (
+    payload: {
+      oldUserId: string;
+      newUserId: string;
+      reason?: string;
+      cascadeAuditFields?: boolean;
+    },
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
   isLoading: boolean;
@@ -522,6 +608,344 @@ const useUsers = (): useUsersServices => {
     }
   };
 
+  const AdminUpdateUser = async (
+    payload: UserAdminUpdatePayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+
+    try {
+      const response = await axiosInstance.post(
+        `${UrlEndpoint}/v1/Users/integrated/admin-update`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setIsLoading(false);
+      return response.data;
+    } catch (err: any) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message ||
+            "An error occurred during updating user profile."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const EditUserStatus = async (
+    userId: string,
+    status: string,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+
+    try {
+      const response = await axiosInstance.put(
+        `${UrlEndpoint}/v1/Users/integrated/edit-status`,
+        {
+          userId,
+          status,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setIsLoading(false);
+      return response.data;
+    } catch (err: any) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message ||
+            "An error occurred during updating user status."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const ContainUser = async (
+    userId: string,
+    reason: string | undefined,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+
+    try {
+      const response = await axiosInstance.post(
+        `${UrlEndpoint}/v1/Users/integrated/contain-user`,
+        {
+          userId,
+          reason,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setIsLoading(false);
+      return response.data;
+    } catch (err: any) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message ||
+            "An error occurred during containing user account."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const RestoreUser = async (
+    userId: string,
+    defaultPassword: string | undefined,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+
+    try {
+      const response = await axiosInstance.post(
+        `${UrlEndpoint}/v1/Users/integrated/restore-user`,
+        {
+          userId,
+          defaultPassword,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setIsLoading(false);
+      return response.data;
+    } catch (err: any) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message ||
+            "An error occurred during restoring user account."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const SoftDeleteUser = async (
+    userId: string,
+    reason: string | undefined,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+
+    try {
+      const response = await axiosInstance.post(
+        `${UrlEndpoint}/v1/Users/integrated/soft-delete`,
+        {
+          userId,
+          reason,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setIsLoading(false);
+      return response.data;
+    } catch (err: any) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message ||
+            "An error occurred during soft deleting user."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const PreviewCascadeRenameUser = async (
+    payload: { oldUserId: string; newUserId: string },
+    token: string
+  ): Promise<ApiGenericResponse<UserCascadeRenamePreviewResponse | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+
+    try {
+      const response = await axiosInstance.post(
+        `${UrlEndpoint}/v1/Users/integrated/cascade-rename/preview`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setIsLoading(false);
+      return response.data;
+    } catch (err: any) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message ||
+            "Gagal melakukan preview migrasi cascade USER_ID."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const ExecuteCascadeRenameUser = async (
+    payload: {
+      oldUserId: string;
+      newUserId: string;
+      reason?: string;
+      cascadeAuditFields?: boolean;
+    },
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+
+    try {
+      const response = await axiosInstance.post(
+        `${UrlEndpoint}/v1/Users/integrated/cascade-rename/execute`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setIsLoading(false);
+      return response.data;
+    } catch (err: any) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message ||
+            "Gagal mengeksekusi migrasi cascade USER_ID."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
   return {
     List,
     GetDetailById,
@@ -531,6 +955,13 @@ const useUsers = (): useUsersServices => {
     EditUserPassword,
     AdminResetPassword,
     UpdateOrgUser,
+    AdminUpdateUser,
+    EditUserStatus,
+    ContainUser,
+    RestoreUser,
+    SoftDeleteUser,
+    PreviewCascadeRenameUser,
+    ExecuteCascadeRenameUser,
     isLoading,
     error,
   };

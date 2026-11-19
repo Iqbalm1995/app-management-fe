@@ -331,6 +331,14 @@ export interface RequirementApprovalPayload {
   noteApproval?: string | null;
 }
 
+export interface RequirementAdminUpdatePayload {
+  id: string;
+  reqNumber: string;
+  reqNarative: string;
+  reqStatus: string;
+  isHaveMemo: string;
+}
+
 export interface RequirementsInsertPayload {
   // STG 1
   isHaveMemo: string;
@@ -603,6 +611,10 @@ interface useRequirements {
   ) => Promise<ApiGenericResponse<string | null> | null>;
   RegisterUpdate: (
     payload: RequirementsInsertPayload,
+    token: string
+  ) => Promise<ApiGenericResponse<string | null> | null>;
+  AdminUpdateRequirement: (
+    payload: RequirementAdminUpdatePayload,
     token: string
   ) => Promise<ApiGenericResponse<string | null> | null>;
   ApproveRequirement: (
@@ -940,6 +952,47 @@ const useRequirements = (): useRequirements => {
         const errorResponse = handleAxiosError(err);
         setError(
           err.response?.data?.message || "An error occurred during login."
+        );
+        return errorResponse;
+      } else {
+        setError("An unknown error occurred. Please try again.");
+        return {
+          statusCode: RES_CODE_SERVER_ERROR,
+          data: null,
+          message: "Error connect to api",
+          error: null,
+        };
+      }
+    }
+  };
+
+  const AdminUpdateRequirement = async (
+    payload: RequirementAdminUpdatePayload,
+    token: string
+  ): Promise<ApiGenericResponse<string | null> | null> => {
+    setIsLoading(true);
+    setError(null);
+    const UrlEndpoint: string = buildUrlPort(
+      ENDPOINT_API_BASEURL,
+      ENDPOINT_PORT_BASIC
+    );
+    const PathEndpoint: string = `/v1/Requirement/admin-update`;
+    try {
+      const response = await axiosInstance.post<
+        ApiGenericResponse<string | null>
+      >(`${UrlEndpoint}${PathEndpoint}`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setIsLoading(false);
+      return response.data;
+    } catch (err) {
+      setIsLoading(false);
+      if (axios.isAxiosError(err)) {
+        const errorResponse = handleAxiosError(err);
+        setError(
+          err.response?.data?.message || "Gagal memperbarui requirement oleh admin."
         );
         return errorResponse;
       } else {
@@ -1665,6 +1718,7 @@ const useRequirements = (): useRequirements => {
     InsertReq,
     RegisterDraft,
     RegisterUpdate,
+    AdminUpdateRequirement,
     ApproveRequirement,
     GetApprovalStatusChoices,
     StartReview,
