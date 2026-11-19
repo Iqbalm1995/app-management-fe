@@ -99,7 +99,8 @@ import {
 import { FaFileExcel, FaFilePdf } from "react-icons/fa";
 import useWorkerQueue, { QueueMetricsResponse } from "@/app/services/useWorkerQueue";
 import { DownloadManagerItemResponse, DownloadOtpLogItemResponse } from "@/app/services/useDownloadManager";
-import { RES_CODE_OK, WORKER_QUEUE_PASSKEY } from "@/app/constants/applicationConstants";
+import { RES_CODE_OK } from "@/app/constants/applicationConstants";
+import { useAdminConsoleAuth } from "@/app/context/AdminConsoleAuthContext";
 import Link from "next/link";
 
 function formatDuration(startedAt?: string | null, completedAt?: string | null, createdAt?: string): string {
@@ -130,12 +131,8 @@ export default function WorkerQueuePage() {
   const tableBorderColor = useColorModeValue("gray.200", "gray.700");
   const pageBg = useColorModeValue("gray.50", "gray.900");
 
-  // Tech Security Passkey State
-  const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
-  const [passkeyInput, setPasskeyInput] = useState<string>("");
-  const [showPasskey, setShowPasskey] = useState<boolean>(false);
-  const [passkeyError, setPasskeyError] = useState<string | null>(null);
-  const [isVerifyingKey, setIsVerifyingKey] = useState<boolean>(false);
+  // Admin Console Auth from Unified Provider
+  const { isUnlocked, lockConsole } = useAdminConsoleAuth();
 
   const [tokenData, setTokenData] = useState<string>("");
   const [dataReport, setDataReport] = useState<DownloadManagerItemResponse[]>([]);
@@ -206,9 +203,11 @@ export default function WorkerQueuePage() {
   } = useDisclosure();
   const cancelAlertRef = useRef<any>(null);
 
+  const workerQueue = useWorkerQueue();
+  const workerQueueRef = useRef(workerQueue);
+  workerQueueRef.current = workerQueue;
+
   const {
-    ListAdminJobs,
-    GetQueueMetrics,
     CancelJob,
     DismissJob,
     RetryJob,
@@ -216,50 +215,53 @@ export default function WorkerQueuePage() {
     DownloadExportFile,
     ResendOtpAdmin,
     GetJobOtpLogs,
-  } = useWorkerQueue();
+  } = workerQueue;
 
-  // Load token & check unlocked state on mount
+  // Load token on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("tokenData") || "";
       setTokenData(token);
-
-      const savedUnlocked = sessionStorage.getItem("wq_ops_unlocked") === "true";
-      if (savedUnlocked) {
-        setIsUnlocked(true);
-      }
     }
   }, []);
 
   // Fetch Jobs & Metrics (only runs when unlocked)
-  const fetchData = useCallback(async () => {
-    if (!isUnlocked) return;
-    setIsLoadingData(true);
-    const [jobsRes, metricsRes] = await Promise.all([
-      ListAdminJobs(
-        {
-          search: globalFilter,
-          limit: 200,
-          page: 0,
-          filterWhere: [],
-          fieldOrder: ["createdAt"],
-          orderDir: "desc",
-        },
-        statusFilter,
-        tokenData
-      ),
-      GetQueueMetrics(tokenData),
-    ]);
+  const fetchData = useCallback(
+    async (silent = false) => {
+      if (!isUnlocked) return;
+      if (!silent) setIsLoadingData(true);
+      try {
+        const [jobsRes, metricsRes] = await Promise.all([
+          workerQueueRef.current.ListAdminJobs(
+            {
+              search: globalFilter,
+              limit: 200,
+              page: 0,
+              filterWhere: [],
+              fieldOrder: ["createdAt"],
+              orderDir: "desc",
+            },
+            statusFilter,
+            tokenData
+          ),
+          workerQueueRef.current.GetQueueMetrics(tokenData),
+        ]);
 
-    if (jobsRes?.statusCode === RES_CODE_OK && jobsRes.data) {
-      setDataReport(jobsRes.data);
-    }
-    if (metricsRes?.statusCode === RES_CODE_OK && metricsRes.data) {
-      setMetrics(metricsRes.data);
-    }
-    setLastRefreshed(new Date());
-    setIsLoadingData(false);
-  }, [isUnlocked, globalFilter, statusFilter, tokenData, ListAdminJobs, GetQueueMetrics]);
+        if (jobsRes?.statusCode === RES_CODE_OK && jobsRes.data) {
+          setDataReport(jobsRes.data);
+        }
+        if (metricsRes?.statusCode === RES_CODE_OK && metricsRes.data) {
+          setMetrics(metricsRes.data);
+        }
+        setLastRefreshed(new Date());
+      } catch (err) {
+        console.error("WorkerQueue fetch error:", err);
+      } finally {
+        if (!silent) setIsLoadingData(false);
+      }
+    },
+    [isUnlocked, globalFilter, statusFilter, tokenData]
+  );
 
   useEffect(() => {
     if (isUnlocked) {
@@ -267,11 +269,11 @@ export default function WorkerQueuePage() {
     }
   }, [isUnlocked, fetchData]);
 
-  // Polling Effect
+  // Polling Effect (silent polling avoids spinner flicker)
   useEffect(() => {
     if (!isUnlocked || pollInterval <= 0) return;
     const interval = setInterval(() => {
-      fetchData();
+      fetchData(true);
     }, pollInterval);
     return () => clearInterval(interval);
   }, [isUnlocked, pollInterval, fetchData]);
@@ -300,52 +302,6 @@ export default function WorkerQueuePage() {
     });
     return Array.from(set);
   }, [dataReport]);
-
-  // Unlock Handler
-  const handleUnlockSubmit = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    setIsVerifyingKey(true);
-    setPasskeyError(null);
-
-    setTimeout(() => {
-      if (passkeyInput.trim() === WORKER_QUEUE_PASSKEY) {
-        setIsUnlocked(true);
-        sessionStorage.setItem("wq_ops_unlocked", "true");
-        setPasskeyError(null);
-        toast({
-          title: "Akses Terbuka",
-          description: "Selamat datang di Worker Queue Monitor Console.",
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
-      } else {
-        setPasskeyError("Passkey tidak valid. Akses ditolak.");
-        toast({
-          title: "Akses Ditolak",
-          description: "Kunci akses (Passkey) yang Anda masukkan salah.",
-          status: "error",
-          duration: 3000,
-          isClosable: true,
-        });
-      }
-      setIsVerifyingKey(false);
-    }, 200);
-  };
-
-  // Lock Console Handler
-  const handleLockConsole = () => {
-    setIsUnlocked(false);
-    sessionStorage.removeItem("wq_ops_unlocked");
-    setPasskeyInput("");
-    setPasskeyError(null);
-    toast({
-      title: "Console Terkunci",
-      description: "Console Worker Queue telah dikunci kembali.",
-      status: "info",
-      duration: 2000,
-    });
-  };
 
   // Handle Download
   const handleDownload = async (job: DownloadManagerItemResponse) => {
@@ -1000,154 +956,8 @@ export default function WorkerQueuePage() {
   });
 
   return (
-    <Box position="relative" bg={pageBg} minH="100vh">
-      {/* Security Passkey Lock Overlay */}
-      {!isUnlocked && (
-        <Flex
-          position="fixed"
-          top={0}
-          left={0}
-          right={0}
-          bottom={0}
-          zIndex={9999}
-          bg="blackAlpha.700"
-          backdropFilter="blur(16px)"
-          justify="center"
-          align="center"
-          p={4}
-        >
-          <Card
-            maxW="420px"
-            w="full"
-            bg={useColorModeValue("white", "gray.850")}
-            border="1px"
-            borderColor={useColorModeValue("blue.300", "blue.500")}
-            shadow="2xl"
-            rounded="3xl"
-            p={6}
-            position="relative"
-            overflow="hidden"
-          >
-            {/* Top Accent Line */}
-            <Box
-              position="absolute"
-              top={0}
-              left={0}
-              right={0}
-              h="4px"
-              bgGradient="linear(to-r, blue.400, purple.500, cyan.400)"
-            />
-
-            <VStack spacing={5} align="stretch">
-              <VStack spacing={2} textAlign="center">
-                <Flex
-                  w={14}
-                  h={14}
-                  rounded="2xl"
-                  bgGradient="linear(to-tr, blue.500, purple.600)"
-                  color="white"
-                  align="center"
-                  justify="center"
-                  shadow="lg"
-                >
-                  <Icon as={FiLock} boxSize={7} />
-                </Flex>
-                <Heading as="h4" size="md" letterSpacing="tight">
-                  Worker Queue Console
-                </Heading>
-                <Badge
-                  colorScheme="purple"
-                  variant="subtle"
-                  fontSize="2xs"
-                  px={2.5}
-                  py={0.5}
-                  rounded="full"
-                >
-                  ADVANCED TECH OPS • PASSKEY REQUIRED
-                </Badge>
-                <Text fontSize="xs" color="gray.500">
-                  Halaman supervisor antrean worker ini diproteksi khusus pengguna teknis. Masukkan Passkey untuk membuka console.
-                </Text>
-              </VStack>
-
-              <form onSubmit={handleUnlockSubmit}>
-                <VStack spacing={4} align="stretch">
-                  <Box>
-                    <Text fontSize="2xs" fontWeight="bold" color="gray.500" mb={1.5} textTransform="uppercase">
-                      Security Passkey
-                    </Text>
-                    <InputGroup size="md">
-                      <InputLeftElement pointerEvents="none">
-                        <Icon as={FiKey} color="blue.400" />
-                      </InputLeftElement>
-                      <Input
-                        type={showPasskey ? "text" : "password"}
-                        placeholder="Masukkan Passkey (6 digit)"
-                        value={passkeyInput}
-                        onChange={(e) => {
-                          setPasskeyInput(e.target.value);
-                          if (passkeyError) setPasskeyError(null);
-                        }}
-                        rounded="xl"
-                        autoFocus
-                        letterSpacing={showPasskey ? "normal" : "widest"}
-                        borderColor={passkeyError ? "red.400" : undefined}
-                      />
-                      <InputRightElement>
-                        <IconButton
-                          aria-label="Toggle password view"
-                          icon={showPasskey ? <FiEyeOff /> : <FiEye />}
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setShowPasskey(!showPasskey)}
-                        />
-                      </InputRightElement>
-                    </InputGroup>
-                    {passkeyError && (
-                      <Text fontSize="2xs" color="red.500" mt={1.5} fontWeight="600">
-                        {passkeyError}
-                      </Text>
-                    )}
-                  </Box>
-
-                  <Button
-                    type="submit"
-                    colorScheme="blue"
-                    size="md"
-                    rounded="xl"
-                    leftIcon={<FiUnlock />}
-                    isLoading={isVerifyingKey}
-                    w="full"
-                    shadow="md"
-                  >
-                    Buka Kunci Akses
-                  </Button>
-                </VStack>
-              </form>
-
-              <Divider />
-
-              <Flex justify="center">
-                <Link href="/">
-                  <Button size="xs" variant="ghost" leftIcon={<FiArrowLeft />}>
-                    Kembali ke Beranda
-                  </Button>
-                </Link>
-              </Flex>
-            </VStack>
-          </Card>
-        </Flex>
-      )}
-
-      {/* Main Content Area (Blurred when locked) */}
-      <Box
-        filter={!isUnlocked ? "blur(14px) brightness(0.65)" : "none"}
-        pointerEvents={!isUnlocked ? "none" : "auto"}
-        userSelect={!isUnlocked ? "none" : "auto"}
-        transition="filter 0.3s ease, opacity 0.3s ease"
-        py={6}
-      >
-        <Container maxW="container.xl">
+    <Box position="relative" bg={pageBg} minH="100vh" py={6}>
+      <Container maxW="container.xl">
           {/* Top Operations Header */}
           <Flex justify="space-between" align="center" mb={6} wrap="wrap" gap={4}>
             <HStack spacing={3}>
@@ -1207,7 +1017,7 @@ export default function WorkerQueuePage() {
                 icon={<FiRefreshCcw />}
                 size="sm"
                 isLoading={isLoadingData}
-                onClick={fetchData}
+                onClick={() => fetchData(false)}
               />
 
               {/* Purge Stuck Jobs */}
@@ -1227,7 +1037,7 @@ export default function WorkerQueuePage() {
                   colorScheme="red"
                   variant="outline"
                   leftIcon={<FiLock />}
-                  onClick={handleLockConsole}
+                  onClick={lockConsole}
                 >
                   Lock
                 </Button>
@@ -1534,7 +1344,6 @@ export default function WorkerQueuePage() {
           </CardBody>
         </Card>
       </Container>
-    </Box>
 
       {/* Detail / Log Inspector Modal */}
       <Modal isOpen={isDetailModalOpen} onClose={onCloseDetailModal} size="xl">
